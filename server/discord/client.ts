@@ -151,15 +151,42 @@ export async function initDiscordBot() {
 
           try {
             log(`Executing command: ${interaction.commandName}`, 'discord');
+            
+            // تنظیم مهلت زمانی برای پاسخگویی به دستور
+            // اگر پس از 3 ثانیه پاسخی ارسال نشده باشد، یک پاسخ موقت ارسال می‌کنیم
+            const replyTimeout = setTimeout(async () => {
+              if (!interaction.replied && !interaction.deferred) {
+                try {
+                  await interaction.deferReply({ ephemeral: true });
+                  log(`Deferred reply for command ${interaction.commandName} due to timeout`, 'discord');
+                } catch (e) {
+                  // اگر همزمان با این عملیات، دستور اصلی پاسخ داده باشد، ممکن است خطا رخ دهد که آن را نادیده می‌گیریم
+                  log(`Failed to defer reply for command ${interaction.commandName}`, 'error');
+                }
+              }
+            }, 3000);
+            
+            // اجرای دستور
             await command.execute(interaction);
+            
+            // پاسخ ارسال شد، پس مهلت زمانی را لغو می‌کنیم
+            clearTimeout(replyTimeout);
+            
             log(`Successfully executed command: ${interaction.commandName}`, 'discord');
           } catch (error: any) {
             console.error(`Error executing command ${interaction.commandName}:`, error);
             log(`Error executing command ${interaction.commandName}: ${error?.message || 'Unknown error'}`, 'error');
-            if (interaction.replied || interaction.deferred) {
-              await interaction.followUp({ content: 'خطایی در اجرای این دستور رخ داده است!', ephemeral: true });
-            } else {
-              await interaction.reply({ content: 'خطایی در اجرای این دستور رخ داده است!', ephemeral: true });
+            
+            try {
+              if (interaction.replied) {
+                await interaction.followUp({ content: 'خطایی در اجرای این دستور رخ داده است!', ephemeral: true });
+              } else if (interaction.deferred) {
+                await interaction.editReply({ content: 'خطایی در اجرای این دستور رخ داده است!' });
+              } else {
+                await interaction.reply({ content: 'خطایی در اجرای این دستور رخ داده است!', ephemeral: true });
+              }
+            } catch (followupError) {
+              console.error(`Failed to send error message for ${interaction.commandName}:`, followupError);
             }
           }
         } else if (interaction.isButton()) {
@@ -175,19 +202,112 @@ export async function initDiscordBot() {
             return;
           }
           
+          // تنظیم مهلت زمانی برای پاسخگویی به تعامل دکمه
+          const buttonReplyTimeout = setTimeout(async () => {
+            if (!interaction.replied && !interaction.deferred) {
+              try {
+                await interaction.deferReply({ ephemeral: true });
+                log(`Deferred reply for button interaction ${interaction.customId} due to timeout`, 'discord');
+              } catch (e) {
+                log(`Failed to defer reply for button interaction ${interaction.customId}`, 'error');
+              }
+            }
+          }, 3000);
+          
           // Handle regular button interactions
-          await handleButtonInteraction(interaction);
-        } else if (interaction.isStringSelectMenu()) {
-          await handleSelectMenuInteraction(interaction);
-        } else if (interaction.isModalSubmit()) {
-          // Handle special case for number guess to maintain backward compatibility
-          if (interaction.customId === 'guess_number_modal') {
-            const { handleNumberGuessModalSubmit } = await import('./games/numberGuess');
-            await handleNumberGuessModalSubmit(interaction);
+          try {
+            await handleButtonInteraction(interaction);
+            clearTimeout(buttonReplyTimeout);
+          } catch (buttonError: any) {
+            clearTimeout(buttonReplyTimeout);
+            console.error(`Error handling button interaction ${interaction.customId}:`, buttonError);
+            log(`Error in button handler: ${buttonError?.message || 'Unknown error'}`, 'error');
+            
+            try {
+              if (interaction.replied) {
+                await interaction.followUp({ content: 'خطایی در اجرای دکمه رخ داده است!', ephemeral: true });
+              } else if (interaction.deferred) {
+                await interaction.editReply({ content: 'خطایی در اجرای دکمه رخ داده است!' });
+              } else {
+                await interaction.reply({ content: 'خطایی در اجرای دکمه رخ داده است!', ephemeral: true });
+              }
+            } catch (followupError) {
+              console.error(`Failed to send error message for button interaction:`, followupError);
+            }
           }
-          // Use the dedicated modal handler for all other cases
-          else {
-            await handleModalSubmit(interaction);
+        } else if (interaction.isStringSelectMenu()) {
+          // تنظیم مهلت زمانی برای پاسخگویی به تعامل منوی انتخاب
+          const menuReplyTimeout = setTimeout(async () => {
+            if (!interaction.replied && !interaction.deferred) {
+              try {
+                await interaction.deferReply({ ephemeral: true });
+                log(`Deferred reply for menu interaction ${interaction.customId} due to timeout`, 'discord');
+              } catch (e) {
+                log(`Failed to defer reply for menu interaction ${interaction.customId}`, 'error');
+              }
+            }
+          }, 3000);
+          
+          try {
+            await handleSelectMenuInteraction(interaction);
+            clearTimeout(menuReplyTimeout);
+          } catch (menuError: any) {
+            clearTimeout(menuReplyTimeout);
+            console.error(`Error handling menu interaction ${interaction.customId}:`, menuError);
+            log(`Error in menu handler: ${menuError?.message || 'Unknown error'}`, 'error');
+            
+            try {
+              if (interaction.replied) {
+                await interaction.followUp({ content: 'خطایی در منوی انتخاب رخ داده است!', ephemeral: true });
+              } else if (interaction.deferred) {
+                await interaction.editReply({ content: 'خطایی در منوی انتخاب رخ داده است!' });
+              } else {
+                await interaction.reply({ content: 'خطایی در منوی انتخاب رخ داده است!', ephemeral: true });
+              }
+            } catch (followupError) {
+              console.error(`Failed to send error message for menu interaction:`, followupError);
+            }
+          }
+        } else if (interaction.isModalSubmit()) {
+          // تنظیم مهلت زمانی برای پاسخگویی به تعامل مودال
+          const modalReplyTimeout = setTimeout(async () => {
+            if (!interaction.replied && !interaction.deferred) {
+              try {
+                await interaction.deferReply({ ephemeral: true });
+                log(`Deferred reply for modal interaction ${interaction.customId} due to timeout`, 'discord');
+              } catch (e) {
+                log(`Failed to defer reply for modal interaction ${interaction.customId}`, 'error');
+              }
+            }
+          }, 3000);
+          
+          try {
+            // Handle special case for number guess to maintain backward compatibility
+            if (interaction.customId === 'guess_number_modal') {
+              const { handleNumberGuessModalSubmit } = await import('./games/numberGuess');
+              await handleNumberGuessModalSubmit(interaction);
+            }
+            // Use the dedicated modal handler for all other cases
+            else {
+              await handleModalSubmit(interaction);
+            }
+            clearTimeout(modalReplyTimeout);
+          } catch (modalError: any) {
+            clearTimeout(modalReplyTimeout);
+            console.error(`Error handling modal interaction ${interaction.customId}:`, modalError);
+            log(`Error in modal handler: ${modalError?.message || 'Unknown error'}`, 'error');
+            
+            try {
+              if (interaction.replied) {
+                await interaction.followUp({ content: 'خطایی در فرم ورودی رخ داده است!', ephemeral: true });
+              } else if (interaction.deferred) {
+                await interaction.editReply({ content: 'خطایی در فرم ورودی رخ داده است!' });
+              } else {
+                await interaction.reply({ content: 'خطایی در فرم ورودی رخ داده است!', ephemeral: true });
+              }
+            } catch (followupError) {
+              console.error(`Failed to send error message for modal interaction:`, followupError);
+            }
           }
         }
       } catch (error) {

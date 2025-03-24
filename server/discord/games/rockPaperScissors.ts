@@ -19,29 +19,50 @@ export async function handleRockPaperScissors(
   action: string
 ) {
   try {
-    // Get user data
+    // برای جلوگیری از تایم‌اوت، ابتدا درخواست را معلق نگه می‌داریم اگر هنوز پاسخی ارسال نشده
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.deferUpdate();
+    }
+    
+    // دریافت اطلاعات کاربر
     const user = await storage.getUserByDiscordId(interaction.user.id);
     
     if (!user) {
-      await interaction.reply({
-        content: 'شما ابتدا باید یک حساب کاربری ایجاد کنید. از دستور /menu استفاده کنید.',
-        ephemeral: true
-      });
+      if (interaction.deferred) {
+        await interaction.editReply({
+          content: '⚠️ شما ابتدا باید یک حساب کاربری ایجاد کنید. از دستور /menu استفاده کنید.'
+        });
+      } else if (interaction.replied) {
+        await interaction.followUp({
+          content: '⚠️ شما ابتدا باید یک حساب کاربری ایجاد کنید. از دستور /menu استفاده کنید.',
+          ephemeral: true
+        });
+      } else {
+        await interaction.reply({
+          content: '⚠️ شما ابتدا باید یک حساب کاربری ایجاد کنید. از دستور /menu استفاده کنید.',
+          ephemeral: true
+        });
+      }
       return;
     }
     
-    // Start the game
+    // شروع بازی
     if (action === 'start') {
-      // Check if user has enough Ccoin
+      // بررسی موجودی کافی
       if (user.wallet < BET_AMOUNT) {
-        await interaction.reply({
-          content: `You don't have enough Ccoin to play. You need ${BET_AMOUNT} Ccoin but you have ${user.wallet} Ccoin.`,
-          ephemeral: true
-        });
+        const errorContent = `❌ شما سکه کافی برای بازی ندارید. شما به ${BET_AMOUNT} سکه نیاز دارید اما فقط ${user.wallet} سکه دارید.`;
+        
+        if (interaction.deferred) {
+          await interaction.editReply({ content: errorContent });
+        } else if (interaction.replied) {
+          await interaction.followUp({ content: errorContent, ephemeral: true });
+        } else {
+          await interaction.reply({ content: errorContent, ephemeral: true });
+        }
         return;
       }
       
-      // Create the game embed
+      // ساخت امبد بازی
       const embed = new EmbedBuilder()
         .setColor('#3498DB')
         .setTitle('✂️ بازی سنگ کاغذ قیچی')
@@ -54,7 +75,7 @@ export async function handleRockPaperScissors(
         .setFooter({ text: 'سنگ، کاغذ یا قیچی را انتخاب کنید!' })
         .setTimestamp();
       
-      // Create colorful buttons
+      // ساخت دکمه‌ها
       const row = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
           new ButtonBuilder()
@@ -71,7 +92,7 @@ export async function handleRockPaperScissors(
             .setStyle(ButtonStyle.Danger)
         );
       
-      // Back button
+      // دکمه بازگشت
       const backRow = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
           new ButtonBuilder()
@@ -80,11 +101,19 @@ export async function handleRockPaperScissors(
             .setStyle(ButtonStyle.Secondary)
         );
       
-      // Send the game message
-      if (interaction.replied || interaction.deferred) {
+      // ارسال پیام بازی بسته به وضعیت تعامل
+      if (interaction.deferred) {
+        await interaction.editReply({ embeds: [embed], components: [row, backRow] });
+      } else if (interaction.replied) {
         await interaction.followUp({ embeds: [embed], components: [row, backRow], ephemeral: false });
+      } else if ('update' in interaction && typeof interaction.update === 'function') {
+        try {
+          await interaction.update({ embeds: [embed], components: [row, backRow] });
+        } catch (e) {
+          await interaction.reply({ embeds: [embed], components: [row, backRow], ephemeral: false });
+        }
       } else {
-        await interaction.update({ embeds: [embed], components: [row, backRow] });
+        await interaction.reply({ embeds: [embed], components: [row, backRow], ephemeral: false });
       }
       
       return;

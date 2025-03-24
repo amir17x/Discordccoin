@@ -392,33 +392,45 @@ export async function adminMenu(
       return adminMenu(interaction, 'main');
     }
 
-    // Send the message
-    if (interaction instanceof ChatInputCommandInteraction) {
-      await interaction.reply({ embeds: [embed], components: components, ephemeral: true });
+    // Send or update the message
+    if (interaction.deferred) {
+      await interaction.editReply({ embeds: [embed], components: components });
+    } else if (interaction instanceof ChatInputCommandInteraction) {
+      if (!interaction.replied) {
+        await interaction.reply({ embeds: [embed], components: components, ephemeral: true });
+      } else {
+        await interaction.followUp({ embeds: [embed], components: components, ephemeral: true });
+      }
     } else if ('update' in interaction && typeof interaction.update === 'function') {
       try {
         await interaction.update({ embeds: [embed], components: components });
       } catch (e) {
         // If update fails (might be due to deferred interaction), send a new message
-        await interaction.reply({ embeds: [embed], components: components, ephemeral: true });
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({ embeds: [embed], components: components, ephemeral: true });
+        } else {
+          await interaction.followUp({ embeds: [embed], components: components, ephemeral: true });
+        }
       }
     } else {
-      await interaction.reply({ embeds: [embed], components: components, ephemeral: true });
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({ embeds: [embed], components: components, ephemeral: true });
+      } else {
+        await interaction.followUp({ embeds: [embed], components: components, ephemeral: true });
+      }
     }
   } catch (error) {
     console.error('Error in admin menu:', error);
     
     try {
-      if (interaction instanceof ChatInputCommandInteraction) {
-        await interaction.reply({
-          content: 'متاسفانه در نمایش پنل ادمین خطایی رخ داد!',
-          ephemeral: true
-        });
+      const errorMessage = 'متاسفانه در نمایش پنل ادمین خطایی رخ داد! لطفاً دوباره تلاش کنید.';
+      
+      if (interaction.deferred) {
+        await interaction.editReply({ content: errorMessage });
+      } else if (interaction.replied) {
+        await interaction.followUp({ content: errorMessage, ephemeral: true });
       } else {
-        await interaction.reply({
-          content: 'متاسفانه در نمایش پنل ادمین خطایی رخ داد!',
-          ephemeral: true
-        });
+        await interaction.reply({ content: errorMessage, ephemeral: true });
       }
     } catch (e) {
       console.error('Error handling admin menu failure:', e);

@@ -500,21 +500,30 @@ async function handleDailyReward(interaction: ButtonInteraction) {
 // Handler for depositing money to bank
 async function handleDeposit(interaction: ButtonInteraction, amount: number) {
   try {
+    // برای اطمینان از عدم تایم‌اوت، یک پاسخ با تاخیر ارسال می‌کنیم
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferReply({ ephemeral: true });
+    }
+    
     const user = await storage.getUserByDiscordId(interaction.user.id);
     
     if (!user) {
-      await interaction.reply({
-        content: 'You need to create an account first. Use the /menu command.',
-        ephemeral: true
-      });
+      const message = '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.';
+      if (interaction.deferred) {
+        await interaction.editReply({ content: message });
+      } else {
+        await interaction.reply({ content: message, ephemeral: true });
+      }
       return;
     }
     
     if (user.wallet < amount) {
-      await interaction.reply({
-        content: `You don't have enough Ccoin in your wallet. You have ${user.wallet} Ccoin.`,
-        ephemeral: true
-      });
+      const message = `⚠️ موجودی کیف پول شما کافی نیست. موجودی فعلی: ${user.wallet} سکه`;
+      if (interaction.deferred) {
+        await interaction.editReply({ content: message });
+      } else {
+        await interaction.reply({ content: message, ephemeral: true });
+      }
       return;
     }
     
@@ -524,23 +533,30 @@ async function handleDeposit(interaction: ButtonInteraction, amount: number) {
     
     await storage.transferToBank(user.id, amount);
     
-    await interaction.reply({
-      content: `Successfully deposited ${depositAmount} Ccoin to your bank. (Fee: ${fee} Ccoin)`,
-      ephemeral: true
-    });
+    const message = `✅ مبلغ ${depositAmount} سکه با موفقیت به حساب بانکی شما واریز شد. (کارمزد: ${fee} سکه)`;
+    if (interaction.deferred) {
+      await interaction.editReply({ content: message });
+    } else {
+      await interaction.reply({ content: message, ephemeral: true });
+    }
     
     // After a short delay, refresh the economy menu
     setTimeout(async () => {
-      if (interaction.replied || interaction.deferred) {
+      try {
         await economyMenu(interaction, true);
+      } catch (e) {
+        console.error('Error refreshing economy menu after deposit:', e);
       }
     }, 1500);
   } catch (error) {
     console.error('Error in deposit handler:', error);
-    await interaction.reply({
-      content: 'Sorry, there was an error processing your deposit!',
-      ephemeral: true
-    });
+    
+    const errorMessage = '❌ متأسفانه در پردازش واریز شما خطایی رخ داد!';
+    if (interaction.deferred) {
+      await interaction.editReply({ content: errorMessage });
+    } else if (!interaction.replied) {
+      await interaction.reply({ content: errorMessage, ephemeral: true });
+    }
   }
 }
 

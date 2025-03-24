@@ -16,14 +16,25 @@ export async function gamesMenu(
   followUp: boolean = false
 ) {
   try {
+    // راه‌اندازی پاسخ با تاخیر (defer) تا از خطای تایم‌اوت جلوگیری شود
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferReply();
+    }
+    
     // Check if user exists
     const user = await storage.getUserByDiscordId(interaction.user.id);
     
     if (!user) {
-      await interaction.reply({
-        content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.',
-        ephemeral: true
-      });
+      if (interaction.deferred) {
+        await interaction.editReply({
+          content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.'
+        });
+      } else {
+        await interaction.reply({
+          content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.',
+          ephemeral: true
+        });
+      }
       return;
     }
     
@@ -116,47 +127,101 @@ export async function gamesMenu(
     
     // Send the appropriate menu based on the state
     if (state === 'solo') {
-      if (followUp) {
+      if (interaction.deferred) {
+        await interaction.editReply({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3] });
+      } else if (followUp) {
         await interaction.followUp({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3], ephemeral: true });
+      } else if ('update' in interaction && typeof interaction.update === 'function') {
+        try {
+          await interaction.update({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3] });
+        } catch (e) {
+          if (!interaction.replied && !interaction.deferred) {
+            await interaction.reply({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3], ephemeral: false });
+          } else {
+            await interaction.followUp({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3], ephemeral: false });
+          }
+        }
       } else {
-        await interaction.update({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3] });
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3], ephemeral: false });
+        } else {
+          await interaction.followUp({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3], ephemeral: false });
+        }
       }
     } else if (state === 'competitive') {
       // Competitive games not implemented yet
-      await interaction.reply({
-        content: '🔜 بازی‌های رقابتی در به‌روزرسانی‌های آینده اضافه خواهند شد!',
-        ephemeral: true
-      });
+      const notImplementedMessage = '🔜 بازی‌های رقابتی در به‌روزرسانی‌های آینده اضافه خواهند شد!';
+      
+      if (interaction.deferred) {
+        await interaction.editReply({ content: notImplementedMessage });
+      } else if (interaction.replied) {
+        await interaction.followUp({ content: notImplementedMessage, ephemeral: true });
+      } else {
+        await interaction.reply({ content: notImplementedMessage, ephemeral: true });
+      }
       
       // Return to main games menu
       setTimeout(async () => {
-        if (followUp) {
-          await interaction.followUp({ embeds: [embed], components: [row1, row2], ephemeral: true });
-        } else {
-          await interaction.update({ embeds: [embed], components: [row1, row2] });
+        try {
+          if (interaction.deferred) {
+            await interaction.editReply({ embeds: [embed], components: [row1, row2] });
+          } else if (followUp) {
+            await interaction.followUp({ embeds: [embed], components: [row1, row2], ephemeral: true });
+          } else if ('update' in interaction && typeof interaction.update === 'function') {
+            await interaction.update({ embeds: [embed], components: [row1, row2] });
+          }
+        } catch (e) {
+          console.error("Error returning to main games menu:", e);
         }
       }, 2000);
     } else if (state === 'group') {
       // Group games not implemented yet
-      await interaction.reply({
-        content: '🔜 بازی‌های گروهی در به‌روزرسانی‌های آینده اضافه خواهند شد!',
-        ephemeral: true
-      });
+      const notImplementedMessage = '🔜 بازی‌های گروهی در به‌روزرسانی‌های آینده اضافه خواهند شد!';
+      
+      if (interaction.deferred) {
+        await interaction.editReply({ content: notImplementedMessage });
+      } else if (interaction.replied) {
+        await interaction.followUp({ content: notImplementedMessage, ephemeral: true });
+      } else {
+        await interaction.reply({ content: notImplementedMessage, ephemeral: true });
+      }
       
       // Return to main games menu
       setTimeout(async () => {
-        if (followUp) {
-          await interaction.followUp({ embeds: [embed], components: [row1, row2], ephemeral: true });
-        } else {
-          await interaction.update({ embeds: [embed], components: [row1, row2] });
+        try {
+          if (interaction.deferred) {
+            await interaction.editReply({ embeds: [embed], components: [row1, row2] });
+          } else if (followUp) {
+            await interaction.followUp({ embeds: [embed], components: [row1, row2], ephemeral: true });
+          } else if ('update' in interaction && typeof interaction.update === 'function') {
+            await interaction.update({ embeds: [embed], components: [row1, row2] });
+          }
+        } catch (e) {
+          console.error("Error returning to main games menu:", e);
         }
       }, 2000);
     } else {
       // Main games menu
-      if (followUp) {
+      if (interaction.deferred) {
+        await interaction.editReply({ embeds: [embed], components: [row1, row2] });
+      } else if (followUp) {
         await interaction.followUp({ embeds: [embed], components: [row1, row2], ephemeral: true });
+      } else if ('update' in interaction && typeof interaction.update === 'function') {
+        try {
+          await interaction.update({ embeds: [embed], components: [row1, row2] });
+        } catch (e) {
+          if (!interaction.replied && !interaction.deferred) {
+            await interaction.reply({ embeds: [embed], components: [row1, row2], ephemeral: false });
+          } else {
+            await interaction.followUp({ embeds: [embed], components: [row1, row2], ephemeral: false });
+          }
+        }
       } else {
-        await interaction.update({ embeds: [embed], components: [row1, row2] });
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({ embeds: [embed], components: [row1, row2], ephemeral: false });
+        } else {
+          await interaction.followUp({ embeds: [embed], components: [row1, row2], ephemeral: false });
+        }
       }
     }
     
@@ -164,16 +229,14 @@ export async function gamesMenu(
     console.error('Error in games menu:', error);
     
     try {
-      if (followUp) {
-        await interaction.followUp({
-          content: '❌ متأسفانه در نمایش منوی بازی‌ها خطایی رخ داد!',
-          ephemeral: true
-        });
+      const errorMessage = '❌ متأسفانه در نمایش منوی بازی‌ها خطایی رخ داد! لطفاً دوباره تلاش کنید.';
+      
+      if (interaction.deferred) {
+        await interaction.editReply({ content: errorMessage });
+      } else if (interaction.replied) {
+        await interaction.followUp({ content: errorMessage, ephemeral: true });
       } else {
-        await interaction.reply({
-          content: '❌ متأسفانه در نمایش منوی بازی‌ها خطایی رخ داد!',
-          ephemeral: true
-        });
+        await interaction.reply({ content: errorMessage, ephemeral: true });
       }
     } catch (e) {
       console.error('Error handling games menu failure:', e);
