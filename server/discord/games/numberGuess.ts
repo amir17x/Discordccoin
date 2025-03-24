@@ -78,13 +78,13 @@ export async function handleNumberGuess(
         .setFooter({ text: `عددی بین 1 تا ${MAX_NUMBER} را حدس بزنید` })
         .setTimestamp();
       
-      // Create guess button
+      // Create colorful guess button
       const row = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
           new ButtonBuilder()
             .setCustomId('game:numberguess:guess_button')
             .setLabel('🎯 حدس زدن')
-            .setStyle(ButtonStyle.Primary)
+            .setStyle(ButtonStyle.Success)
         );
       
       // Back button
@@ -93,7 +93,7 @@ export async function handleNumberGuess(
           new ButtonBuilder()
             .setCustomId('games')
             .setLabel('🔙 انصراف')
-            .setStyle(ButtonStyle.Secondary)
+            .setStyle(ButtonStyle.Danger)
         );
       
       // Send the game message
@@ -202,7 +202,7 @@ export async function handleNumberGuess(
         : `عدد مورد نظر **بزرگتر** از ${userGuess} است.`;
     }
     
-    // Create buttons for next actions
+    // Create colorful buttons for next actions
     const row = new ActionRowBuilder<ButtonBuilder>();
     
     if (isGameOver) {
@@ -210,22 +210,22 @@ export async function handleNumberGuess(
         new ButtonBuilder()
           .setCustomId('game:numberguess:start')
           .setLabel('🔄 بازی مجدد')
-          .setStyle(ButtonStyle.Primary),
+          .setStyle(ButtonStyle.Success),
         new ButtonBuilder()
           .setCustomId('games')
           .setLabel('🔙 بازگشت به منوی بازی‌ها')
-          .setStyle(ButtonStyle.Secondary)
+          .setStyle(ButtonStyle.Danger)
       );
     } else {
       row.addComponents(
         new ButtonBuilder()
           .setCustomId('game:numberguess:guess_button')
           .setLabel('🎯 حدس بعدی')
-          .setStyle(ButtonStyle.Primary),
+          .setStyle(ButtonStyle.Success),
         new ButtonBuilder()
           .setCustomId('games')
           .setLabel('🔙 انصراف')
-          .setStyle(ButtonStyle.Secondary)
+          .setStyle(ButtonStyle.Danger)
       );
     }
     
