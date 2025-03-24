@@ -14,7 +14,37 @@ import {
   InventoryItem,
   Transaction,
   TransferStats,
+  InsertStock,
 } from "@shared/schema";
+
+// کلاس‌های موقت برای استاک که بعدا باید با اسکیما جایگزین شوند
+type StockData = {
+  id: number;
+  symbol: string;
+  name: string;
+  description: string;
+  currentPrice: number;
+  previousPrice: number;
+  priceHistory: {
+    timestamp: string;
+    price: number;
+  }[];
+  volatility: number;
+  trend: number;
+  sector: string;
+  totalShares: number;
+  availableShares: number;
+  updatedAt: Date;
+};
+
+type UserStockData = {
+  id: number;
+  userId: number;
+  stockId: number;
+  quantity: number;
+  purchasePrice: number;
+  purchaseDate: Date;
+};
 
 export interface IStorage {
   // User operations
@@ -23,6 +53,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, updates: Partial<User>): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
+  getUserTransactions(userId: number): Promise<Transaction[]>;
   
   // Economy operations
   addToWallet(userId: number, amount: number): Promise<User | undefined>;
@@ -65,6 +96,10 @@ export interface IStorage {
   getAllAchievements(): Promise<Achievement[]>;
   getUserAchievements(userId: number): Promise<{achievement: Achievement, userAchievement: UserAchievement}[]>;
   updateAchievementProgress(userId: number, achievementId: number, progress: number): Promise<boolean>;
+  
+  // Stock operations
+  getAllStocks(): Promise<StockData[]>;
+  getUserStocks(userId: number): Promise<UserStockData[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -76,6 +111,8 @@ export class MemStorage implements IStorage {
   private achievements: Map<number, Achievement> = new Map();
   private userAchievements: Map<number, UserAchievement[]> = new Map();
   private games: Game[] = [];
+  private stocks: Map<number, StockData> = new Map();
+  private userStocks: Map<number, UserStockData[]> = new Map();
   
   private currentUserId = 1;
   private currentItemId = 1;
@@ -85,6 +122,8 @@ export class MemStorage implements IStorage {
   private currentGameId = 1;
   private currentUserQuestId = 1;
   private currentUserAchievementId = 1;
+  private currentStockId = 1;
+  private currentUserStockId = 1;
 
   constructor() {
     this.initializeData();
@@ -288,6 +327,21 @@ export class MemStorage implements IStorage {
 
   async getAllUsers(): Promise<User[]> {
     return Array.from(this.users.values());
+  }
+  
+  async getUserTransactions(userId: number): Promise<Transaction[]> {
+    const user = this.users.get(userId);
+    if (!user) return [];
+    
+    // اگر فیلد تراکنش‌ها وجود نداشت، آرایه خالی برگردان
+    if (!user.transactions) {
+      user.transactions = [];
+    }
+    
+    // مرتب‌سازی تراکنش‌ها از جدیدترین به قدیمی‌ترین
+    return [...user.transactions].sort((a, b) => 
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
   }
 
   // Economy operations
@@ -850,6 +904,15 @@ export class MemStorage implements IStorage {
   // Achievement operations
   async getAllAchievements(): Promise<Achievement[]> {
     return Array.from(this.achievements.values());
+  }
+  
+  // Stock market operations
+  async getAllStocks(): Promise<StockData[]> {
+    return Array.from(this.stocks.values());
+  }
+  
+  async getUserStocks(userId: number): Promise<UserStockData[]> {
+    return this.userStocks.get(userId) || [];
   }
 
   async getUserAchievements(userId: number): Promise<{achievement: Achievement, userAchievement: UserAchievement}[]> {

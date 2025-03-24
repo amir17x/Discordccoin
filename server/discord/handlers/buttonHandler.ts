@@ -1,5 +1,6 @@
 import { ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { storage } from '../../storage';
+import { Transaction } from '@shared/schema';
 import { mainMenu } from '../components/mainMenu';
 import { economyMenu, transferUser } from '../components/economyMenu';
 import { gamesMenu } from '../components/gamesMenu';
@@ -165,6 +166,12 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       await shopMenu(interaction);
       return;
     }
+    
+    // Handle shop pagination
+    if (action.startsWith('shop_page_')) {
+      await shopMenu(interaction);
+      return;
+    }
 
     if (action === 'inventory') {
       await inventoryMenu(interaction);
@@ -182,6 +189,13 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     }
 
     if (action === 'profile') {
+      await profileMenu(interaction);
+      return;
+    }
+    
+    // Handle profile menu buttons
+    if (action === 'profile_stats' || action === 'profile_achievements' || 
+        action === 'profile_items' || action === 'profile_transactions') {
       await profileMenu(interaction);
       return;
     }
@@ -415,6 +429,84 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       return;
     }
     
+    // Handle bank transaction history
+    if (action === 'bank_history') {
+      // دریافت کاربر
+      const user = await storage.getUserByDiscordId(interaction.user.id);
+      if (!user) {
+        await interaction.reply({ content: '❌ کاربر یافت نشد!', ephemeral: true });
+        return;
+      }
+      
+      // دریافت تراکنش‌های کاربر
+      const transactions = await storage.getUserTransactions(user.id);
+      
+      // ایجاد امبد برای نمایش تراکنش‌ها
+      const embed = new EmbedBuilder()
+        .setColor('#4169E1')
+        .setTitle('📋 تاریخچه تراکنش‌های بانکی')
+        .setDescription('آخرین تراکنش‌های شما در سیستم بانکی')
+        .setFooter({ text: `${interaction.user.username} | صفحه 1` })
+        .setTimestamp();
+      
+      // فیلتر کردن تراکنش‌های بانکی
+      const bankTransactions = transactions.filter((t: Transaction) => 
+        ['deposit', 'withdraw', 'bank_interest'].includes(t.type)
+      ).slice(0, 10);
+      
+      if (bankTransactions.length === 0) {
+        embed.setDescription('شما هنوز هیچ تراکنش بانکی انجام نداده‌اید.');
+      } else {
+        bankTransactions.forEach((tx: Transaction, index: number) => {
+          let emoji = '';
+          let typeText = '';
+          
+          switch (tx.type) {
+            case 'deposit':
+              emoji = '💸';
+              typeText = 'واریز به بانک';
+              break;
+            case 'withdraw':
+              emoji = '💰';
+              typeText = 'برداشت از بانک';
+              break;
+            case 'bank_interest':
+              emoji = '📈';
+              typeText = 'سود بانکی';
+              break;
+          }
+          
+          const date = new Date(tx.timestamp).toLocaleDateString('fa-IR');
+          const time = new Date(tx.timestamp).toLocaleTimeString('fa-IR');
+          
+          const amountStr = tx.type === 'withdraw' ? `-${tx.amount}` : `+${tx.amount}`;
+          const feeStr = tx.fee > 0 ? ` (کارمزد: ${tx.fee})` : '';
+          
+          embed.addFields({
+            name: `${emoji} ${typeText} - ${date} ${time}`,
+            value: `مبلغ: ${amountStr} Ccoin${feeStr}`,
+            inline: false
+          });
+        });
+      }
+      
+      // دکمه بازگشت
+      const row = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('bank_menu')
+            .setLabel('🔙 بازگشت به منوی بانک')
+            .setStyle(ButtonStyle.Secondary)
+        );
+      
+      await interaction.reply({
+        embeds: [embed],
+        components: [row],
+        ephemeral: true
+      });
+      return;
+    }
+    
     // Handle transfer user button (نمایش مودال انتقال سکه)
     if (action === 'transfer_user') {
       await transferUser(interaction);
@@ -429,6 +521,57 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     
     if (action === 'exchange_50') {
       await handleExchange(interaction, 50);
+      return;
+    }
+    
+    // Handle exchange menu (تبدیل سکه به کریستال)
+    if (action === 'exchange') {
+      // دریافت کاربر
+      const user = await storage.getUserByDiscordId(interaction.user.id);
+      if (!user) {
+        await interaction.reply({ content: '❌ کاربر یافت نشد!', ephemeral: true });
+        return;
+      }
+      
+      // ایجاد امبد برای نمایش منوی تبدیل سکه
+      const embed = new EmbedBuilder()
+        .setColor('#9932CC')
+        .setTitle('💎 تبدیل سکه به کریستال')
+        .setDescription('کریستال ارز ویژه Ccoin است که با آن می‌توانید آیتم‌های منحصر به فرد خریداری کنید')
+        .addFields(
+          { name: '💳 موجودی کیف پول', value: `${user.wallet} Ccoin`, inline: true },
+          { name: '💎 موجودی کریستال', value: `${user.crystals}`, inline: true },
+          { name: '📊 نرخ تبدیل', value: '1000 Ccoin = 10 کریستال', inline: true },
+          { name: '💸 کارمزد تبدیل', value: '5%', inline: true },
+          { name: '⚠️ نکته مهم', value: 'تبدیل سکه به کریستال غیرقابل بازگشت است!\nبا کریستال می‌توانید آیتم‌های ویژه از فروشگاه خریداری کنید.' }
+        )
+        .setFooter({ text: `${interaction.user.username} | کریستال‌ها قابل انتقال به کاربران دیگر نیستند` })
+        .setTimestamp();
+      
+      // دکمه‌های تبدیل
+      const row = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('exchange_10')
+            .setLabel('💎 تبدیل به 10 کریستال')
+            .setStyle(ButtonStyle.Primary)
+            .setDisabled(user.wallet < 1050), // 1000 + 5% fee
+          new ButtonBuilder()
+            .setCustomId('exchange_50')
+            .setLabel('💎 تبدیل به 50 کریستال')
+            .setStyle(ButtonStyle.Primary)
+            .setDisabled(user.wallet < 5250), // 5000 + 5% fee
+          new ButtonBuilder()
+            .setCustomId('economy')
+            .setLabel('🔙 بازگشت')
+            .setStyle(ButtonStyle.Secondary)
+        );
+      
+      await interaction.reply({
+        embeds: [embed],
+        components: [row],
+        ephemeral: true
+      });
       return;
     }
     
@@ -975,14 +1118,21 @@ async function handleSellItem(interaction: ButtonInteraction, itemId: number) {
 // Handler for exchanging Ccoin to crystals
 async function handleExchange(interaction: ButtonInteraction, crystalAmount: number) {
   try {
+    // برای اطمینان از عدم تایم‌اوت، یک پاسخ با تاخیر ارسال می‌کنیم
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferReply({ ephemeral: true });
+    }
+    
     // Get user data
     const user = await storage.getUserByDiscordId(interaction.user.id);
     
     if (!user) {
-      await interaction.reply({
-        content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.',
-        ephemeral: true
-      });
+      const message = '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.';
+      if (interaction.deferred) {
+        await interaction.editReply({ content: message });
+      } else {
+        await interaction.reply({ content: message, ephemeral: true });
+      }
       return;
     }
     
@@ -994,24 +1144,18 @@ async function handleExchange(interaction: ButtonInteraction, crystalAmount: num
     
     // Check if user has enough Ccoin
     if (user.wallet < totalCost) {
-      await interaction.reply({
-        content: `❌ موجودی کیف پول شما کافی نیست! برای دریافت ${crystalAmount} کریستال به ${totalCost} سکه نیاز دارید (شامل 5% کارمزد).`,
-        ephemeral: true
-      });
+      const message = `❌ موجودی کیف پول شما کافی نیست! برای دریافت ${crystalAmount} کریستال به ${totalCost} سکه نیاز دارید (شامل 5% کارمزد).`;
+      if (interaction.deferred) {
+        await interaction.editReply({ content: message });
+      } else {
+        await interaction.reply({ content: message, ephemeral: true });
+      }
       return;
     }
     
-    // Deduct Ccoin from wallet
-    user.wallet -= totalCost;
-    
-    // Add crystals
-    user.crystals += crystalAmount;
-    
-    // Update user data
-    await storage.updateUser(user.id, {
-      wallet: user.wallet,
-      crystals: user.crystals
-    });
+    // Deduct Ccoin from wallet and add crystals
+    await storage.addToWallet(user.id, -totalCost);
+    await storage.addCrystals(user.id, crystalAmount);
     
     // Log the transaction
     const logger = getLogger(interaction.client);
@@ -1029,10 +1173,12 @@ async function handleExchange(interaction: ButtonInteraction, crystalAmount: num
     );
     
     // Reply with success message
-    await interaction.reply({
-      content: `✅ تبدیل سکه به کریستال با موفقیت انجام شد!\n\n💰 سکه پرداخت شده: ${totalCost} (شامل ${fee} کارمزد)\n💎 کریستال دریافتی: ${crystalAmount}\n\nاکنون شما ${user.crystals} کریستال دارید!`,
-      ephemeral: true
-    });
+    const message = `✅ تبدیل سکه به کریستال با موفقیت انجام شد!\n\n💰 سکه پرداخت شده: ${totalCost} (شامل ${fee} کارمزد)\n💎 کریستال دریافتی: ${crystalAmount}\n\nاکنون شما ${user.crystals + crystalAmount} کریستال دارید!`;
+    if (interaction.deferred) {
+      await interaction.editReply({ content: message });
+    } else {
+      await interaction.reply({ content: message, ephemeral: true });
+    }
     
     // Refresh economy menu after 2 seconds
     setTimeout(async () => {

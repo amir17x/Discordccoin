@@ -123,10 +123,15 @@ export async function handleRockPaperScissors(
     
     // Check if user has enough Ccoin
     if (user.wallet < BET_AMOUNT) {
-      await interaction.reply({
-        content: `💰 سکه‌های شما برای بازی کافی نیست. شما به ${BET_AMOUNT} سکه نیاز دارید اما ${user.wallet} سکه در کیف پول خود دارید.`,
-        ephemeral: true
-      });
+      const errorContent = `💰 سکه‌های شما برای بازی کافی نیست. شما به ${BET_AMOUNT} سکه نیاز دارید اما ${user.wallet} سکه در کیف پول خود دارید.`;
+      
+      if (interaction.deferred) {
+        await interaction.editReply({ content: errorContent });
+      } else if (interaction.replied) {
+        await interaction.followUp({ content: errorContent, ephemeral: true });
+      } else {
+        await interaction.reply({ content: errorContent, ephemeral: true });
+      }
       return;
     }
     
@@ -259,10 +264,21 @@ export async function handleRockPaperScissors(
     console.error('Error in rock paper scissors game:', error);
     
     try {
-      await interaction.reply({
-        content: '❌ متأسفانه در پردازش بازی خطایی رخ داد!',
-        ephemeral: true
-      });
+      if (interaction.deferred) {
+        await interaction.editReply({
+          content: '❌ متأسفانه در پردازش بازی خطایی رخ داد!'
+        });
+      } else if (interaction.replied) {
+        await interaction.followUp({
+          content: '❌ متأسفانه در پردازش بازی خطایی رخ داد!',
+          ephemeral: true
+        });
+      } else {
+        await interaction.reply({
+          content: '❌ متأسفانه در پردازش بازی خطایی رخ داد!',
+          ephemeral: true
+        });
+      }
     } catch (e) {
       console.error('Error handling rock paper scissors failure:', e);
     }

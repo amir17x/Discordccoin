@@ -215,7 +215,7 @@ async function handleDeposit(interaction: StringSelectMenuInteraction, amount: n
     await storage.transferToBank(user.id, amount);
     
     await interaction.reply({
-      content: `Successfully deposited ${depositAmount} Ccoin to your bank. (Fee: ${fee} Ccoin)`,
+      content: `✅ مبلغ ${depositAmount} سکه با موفقیت به حساب بانکی شما واریز شد. (کارمزد: ${fee} سکه)`,
       ephemeral: true
     });
   } catch (error) {
@@ -251,7 +251,7 @@ async function handleWithdraw(interaction: StringSelectMenuInteraction, amount: 
     await storage.transferToWallet(user.id, amount);
     
     await interaction.reply({
-      content: `Successfully withdrew ${amount} Ccoin from your bank.`,
+      content: `✅ مبلغ ${amount} سکه با موفقیت از حساب بانکی شما برداشت شد.`,
       ephemeral: true
     });
   } catch (error) {
