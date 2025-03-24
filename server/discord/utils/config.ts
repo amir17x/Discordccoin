@@ -50,6 +50,25 @@ export interface BotConfig {
     stealCooldown: number; // زمان بین دزدی‌ها (به دقیقه)
     maxStealPerDay: number; // حداکثر تعداد دزدی در روز
   };
+
+  // بخش‌های فعال/غیرفعال
+  features: {
+    economy: boolean; // بخش اقتصادی
+    games: boolean; // بازی‌ها
+    inventory: boolean; // انبار و آیتم‌ها
+    quests: boolean; // کوئست‌ها
+    clans: boolean; // کلن‌ها
+    war: boolean; // جنگ کلن‌ها
+    island: boolean; // جزیره کلن
+    shop: boolean; // فروشگاه
+    wheel: boolean; // چرخ شانس
+    robbery: boolean; // دزدی
+    lottery: boolean; // لاتاری
+    stocks: boolean; // بازار سهام
+    investments: boolean; // سرمایه‌گذاری
+    achievements: boolean; // دستاوردها
+    giveaways: boolean; // گیواوی
+  };
 }
 
 // تنظیمات پیش‌فرض
@@ -84,6 +103,23 @@ const defaultConfig: BotConfig = {
     maxTransferPerUser: 2000,
     stealCooldown: 240, // 4 ساعت
     maxStealPerDay: 5,
+  },
+  features: {
+    economy: true,
+    games: true,
+    inventory: true,
+    quests: true,
+    clans: true,
+    war: true,
+    island: true,
+    shop: true,
+    wheel: true,
+    robbery: true,
+    lottery: true,
+    stocks: true,
+    investments: true,
+    achievements: true,
+    giveaways: true
   }
 };
 
@@ -139,6 +175,7 @@ export class BotConfigManager {
       general: { ...defaultConfig.general, ...loadedConfig.general },
       games: { ...defaultConfig.games, ...loadedConfig.games },
       security: { ...defaultConfig.security, ...loadedConfig.security },
+      features: { ...defaultConfig.features, ...loadedConfig.features },
     };
   }
 
@@ -220,6 +257,36 @@ export class BotConfigManager {
    */
   public updateGameSettings(settings: Partial<BotConfig['games']>): void {
     this.config.games = { ...this.config.games, ...settings };
+    this.saveConfig(this.config);
+  }
+
+  /**
+   * بروزرسانی وضعیت فعال/غیرفعال بودن قابلیت‌های ربات
+   */
+  public updateFeatureSettings(settings: Partial<BotConfig['features']>): void {
+    this.config.features = { ...this.config.features, ...settings };
+    this.saveConfig(this.config);
+  }
+
+  /**
+   * بررسی فعال بودن یک قابلیت خاص
+   * @param featureName نام قابلیت
+   * @returns آیا قابلیت فعال است یا خیر
+   */
+  public isFeatureEnabled(featureName: keyof BotConfig['features']): boolean {
+    return this.config.features?.[featureName] ?? true; // اگر در تنظیمات نباشد، به طور پیش‌فرض فعال است
+  }
+
+  /**
+   * فعال/غیرفعال کردن یک قابلیت خاص
+   * @param featureName نام قابلیت
+   * @param enabled فعال یا غیرفعال
+   */
+  public setFeatureEnabled(featureName: keyof BotConfig['features'], enabled: boolean): void {
+    if (!this.config.features) {
+      this.config.features = { ...defaultConfig.features };
+    }
+    this.config.features[featureName] = enabled;
     this.saveConfig(this.config);
   }
 }

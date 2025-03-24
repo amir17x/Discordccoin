@@ -16,6 +16,7 @@ import {
   UserResolvable
 } from 'discord.js';
 import { storage } from '../../storage';
+import { botConfig } from '../utils/config';
 
 // Admin Panel Menu
 export async function adminMenu(
