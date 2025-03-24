@@ -181,14 +181,19 @@ export interface ItemEffects {
 
 // Define Transaction
 export interface Transaction {
-  type: 'deposit' | 'withdraw' | 'transfer_in' | 'transfer_out' | 'game_win' | 'game_loss' | 'quest_reward';
+  type: 'deposit' | 'withdraw' | 'transfer_in' | 'transfer_out' | 'game_win' | 'game_loss' | 'quest_reward' | 
+        'steal_success' | 'steal_victim' | 'steal_failed' | 'item_purchase' | 'item_purchase_crystal' | 'welcome_bonus';
   amount: number;
   fee: number;
   timestamp: Date;
-  sourceId?: number;  // برای انتقال دریافتی
-  targetId?: number;  // برای انتقال خروجی
-  gameType?: string;  // برای تراکنش‌های بازی
-  questId?: number;   // برای پاداش‌های کوئست
+  sourceId?: number;     // برای انتقال دریافتی یا سرقت
+  targetId?: number;     // برای انتقال خروجی یا سرقت
+  sourceName?: string;   // نام کاربر فرستنده
+  targetName?: string;   // نام کاربر گیرنده
+  gameType?: string;     // برای تراکنش‌های بازی
+  questId?: number;      // برای پاداش‌های کوئست
+  itemId?: number;       // شناسه آیتم خریداری شده
+  itemName?: string;     // نام آیتم خریداری شده
 }
 
 // Define Transfer Statistics

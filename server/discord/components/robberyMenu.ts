@@ -204,9 +204,15 @@ export async function handleRobbery(
     
     if (isSuccessful) {
       // Robbery successful
-      await storage.addToWallet(user.id, robAmount);
-      await storage.addToWallet(targetUser.id, -robAmount);
+      await storage.addToWallet(user.id, robAmount, 'steal_success', {
+        targetId: targetUser.id,
+        targetName: targetUser.username
+      });
       
+      await storage.addToWallet(targetUser.id, -robAmount, 'steal_victim', {
+        sourceId: user.id,
+        sourceName: user.username
+      });
       const successEmbed = new EmbedBuilder()
         .setColor('#4CAF50')
         .setTitle('🕵️‍♂️ سرقت موفق!')
@@ -222,7 +228,10 @@ export async function handleRobbery(
       
     } else {
       // Robbery failed - user gets fined
-      await storage.addToWallet(user.id, -robAmount);
+      await storage.addToWallet(user.id, -robAmount, 'steal_failed', {
+        targetId: targetUser.id,
+        targetName: targetUser.username
+      });
       
       const failedEmbed = new EmbedBuilder()
         .setColor('#F44336')
