@@ -150,14 +150,15 @@ export async function gamesMenu(
     } else if (state === 'competitive') {
       // Create competitive games menu
       embed.setTitle('🏆 بازی‌های رقابتی')
-        .setDescription('با دوستان خود رقابت کنید و Ccoin بیشتری ببرید!')
+        .setDescription('با دوستان خود رقابت کنید و Ccoin بیشتری ببرید! ⚔️')
         .setFields(
           { name: '📝 توضیحات', value: 'بازی‌های رقابتی به صورت دو نفره قابل انجام است. هر بازیکن باید مقدار مشخصی Ccoin را شرط‌بندی کند تا در بازی شرکت کند.', inline: false },
           { name: '💰 موجودی', value: `${user.wallet} Ccoin`, inline: true },
           { name: '💎 کریستال', value: `${user.crystals}`, inline: true }
         );
       
-      // Create competitive games buttons
+      // Create competitive games buttons - 3 columns layout (3-4 buttons per row)
+      // Row 1 (first set of 3 games)
       const competitiveGameRow1 = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
           new ButtonBuilder()
@@ -167,26 +168,54 @@ export async function gamesMenu(
           new ButtonBuilder()
             .setCustomId('game:duel:start')
             .setLabel('⚔️ دوئل')
-            .setStyle(ButtonStyle.Danger)
-            .setDisabled(true) // Not implemented yet
-        );
-        
-      const competitiveGameRow2 = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(
+            .setStyle(ButtonStyle.Danger),
           new ButtonBuilder()
             .setCustomId('game:quick_poker:start')
             .setLabel('🃏 پوکر سریع')
             .setStyle(ButtonStyle.Secondary)
-            .setDisabled(true), // Not implemented yet
-          new ButtonBuilder()
-            .setCustomId('game:type_race:start')
-            .setLabel('⌨️ مسابقه تایپ')
-            .setStyle(ButtonStyle.Success)
-            .setDisabled(true) // Not implemented yet
         );
         
+      // Row 2 (second set of 3 games)
+      const competitiveGameRow2 = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('game:type_race:start')
+            .setLabel('⌨️ مسابقه سرعت تایپ')
+            .setStyle(ButtonStyle.Success),
+          new ButtonBuilder()
+            .setCustomId('game:dart:start')
+            .setLabel('🎯 دارت رقابتی')
+            .setStyle(ButtonStyle.Primary),
+          new ButtonBuilder()
+            .setCustomId('game:mafia:start')
+            .setLabel('🕵️‍♂️ مافیا (جدید)')
+            .setStyle(ButtonStyle.Secondary)
+        );
+
+      // Row 3 (third set of 3 games)
       const competitiveGameRow3 = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
+          new ButtonBuilder()
+            .setCustomId('game:bomb:start')
+            .setLabel('💣 بمب زمان‌دار (جدید)')
+            .setStyle(ButtonStyle.Danger),
+          new ButtonBuilder()
+            .setCustomId('game:penalty:start')
+            .setLabel('⚽ پنالتی شانس (جدید)')
+            .setStyle(ButtonStyle.Success),
+          new ButtonBuilder()
+            .setCustomId('game:archery:start')
+            .setLabel('🏹 تیراندازی هدف (جدید)')
+            .setStyle(ButtonStyle.Primary)
+        );
+      
+      // Row 4 (rankings and back button)
+      const competitiveGameRow4 = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('game:rankings:view')
+            .setLabel('📊 رتبه‌بندی بازی‌ها')
+            .setStyle(ButtonStyle.Secondary),
           new ButtonBuilder()
             .setCustomId('menu')
             .setLabel('🔙 بازگشت')
@@ -195,24 +224,24 @@ export async function gamesMenu(
       
       // Send the competitive games menu
       if (interaction.deferred) {
-        await interaction.editReply({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3] });
+        await interaction.editReply({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3, competitiveGameRow4] });
       } else if (followUp) {
-        await interaction.followUp({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3], ephemeral: true });
+        await interaction.followUp({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3, competitiveGameRow4], ephemeral: true });
       } else if ('update' in interaction && typeof interaction.update === 'function') {
         try {
-          await interaction.update({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3] });
+          await interaction.update({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3, competitiveGameRow4] });
         } catch (e) {
           if (!interaction.replied && !interaction.deferred) {
-            await interaction.reply({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3], ephemeral: false });
+            await interaction.reply({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3, competitiveGameRow4], ephemeral: false });
           } else {
-            await interaction.followUp({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3], ephemeral: false });
+            await interaction.followUp({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3, competitiveGameRow4], ephemeral: false });
           }
         }
       } else {
         if (!interaction.replied && !interaction.deferred) {
-          await interaction.reply({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3], ephemeral: false });
+          await interaction.reply({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3, competitiveGameRow4], ephemeral: false });
         } else {
-          await interaction.followUp({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3], ephemeral: false });
+          await interaction.followUp({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3, competitiveGameRow4], ephemeral: false });
         }
       }
     } else if (state === 'group') {
