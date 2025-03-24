@@ -86,8 +86,8 @@ export async function mainMenu(
             .setLabel('🎡 چرخ شانس')
             .setStyle(ButtonStyle.Primary),
           new ButtonBuilder()
-            .setCustomId('robbery')
-            .setLabel('🕵️‍♂️ سرقت')
+            .setCustomId('stocks')
+            .setLabel('📈 سهام')
             .setStyle(ButtonStyle.Secondary),
         );
       
@@ -146,10 +146,6 @@ export async function mainMenu(
       const row3 = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
           new ButtonBuilder()
-            .setCustomId('stocks')
-            .setLabel('📈 سهام')
-            .setStyle(ButtonStyle.Success),
-          new ButtonBuilder()
             .setCustomId('lottery')
             .setLabel('🎟️ قرعه‌کشی')
             .setStyle(ButtonStyle.Secondary),
@@ -157,6 +153,11 @@ export async function mainMenu(
             .setCustomId('giveaway_bridge')
             .setLabel('🎮 قرعه‌کشی گیواوی')
             .setStyle(ButtonStyle.Primary),
+          new ButtonBuilder()
+            .setCustomId('robbery')
+            .setLabel('🕵️‍♂️ سرقت (منسوخ)')
+            .setStyle(ButtonStyle.Danger)
+            .setDisabled(true),
         );
       
       // Row 4: دکمه بازگشت به منوی اصلی

@@ -13,7 +13,9 @@
     "prefix": "!",
     "adminRoleId": "1343981256949497988",
     "moderatorRoleId": "",
-    "guildId": ""
+    "guildId": "",
+    "token": "",
+    "clientId": ""
   },
   "games": {
     "minBet": 10,

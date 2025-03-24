@@ -1,13 +1,15 @@
 import { REST, Routes } from 'discord.js';
 import { commands } from './commands';
 import { log } from '../vite';
+import { botConfig } from './utils/config';
 
 export async function deployCommands() {
-  const token = process.env.DISCORD_TOKEN;
-  const clientId = process.env.DISCORD_CLIENT_ID;
+  const config = botConfig.getConfig();
+  const token = process.env.DISCORD_TOKEN || config.general.token;
+  const clientId = process.env.DISCORD_CLIENT_ID || config.general.clientId;
   
   if (!token || !clientId) {
-    log('Missing DISCORD_TOKEN or DISCORD_CLIENT_ID environment variables', 'error');
+    log('Missing Discord token or client ID. Commands will not be deployed.', 'error');
     return;
   }
 
@@ -23,6 +25,8 @@ export async function deployCommands() {
 
     log('Successfully reloaded application (/) commands.', 'discord');
   } catch (error) {
-    console.error(error);
+    log(`Error deploying commands: ${error}`, 'error');
+    console.error("Command deployment error:", error);
+    throw error;
   }
 }

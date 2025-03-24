@@ -1,0 +1,1 @@
+console.log('DISCORD_TOKEN:', process.env.DISCORD_TOKEN ? 'exists [first 5 chars: ' + process.env.DISCORD_TOKEN.substring(0, 5) + '...]' : 'not found'); console.log('DISCORD_CLIENT_ID:', process.env.DISCORD_CLIENT_ID ? 'exists [value: ' + process.env.DISCORD_CLIENT_ID + ']' : 'not found');

@@ -90,6 +90,24 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       await robberyMenu(interaction);
       return;
     }
+    
+    if (action === 'help') {
+      // نمایش راهنمای ربات
+      await interaction.reply({
+        content: '🎮 **راهنمای ربات Ccoin**\n\n' +
+                '**منوی اقتصاد**: مدیریت سکه و دریافت جایزه روزانه\n' +
+                '**بازی‌ها**: بازی کنید و سکه برنده شوید\n' +
+                '**فروشگاه**: خرید آیتم‌های مختلف\n' +
+                '**کوله‌پشتی**: مدیریت آیتم‌های خریداری شده\n' +
+                '**ماموریت‌ها**: ماموریت انجام دهید و جایزه بگیرید\n' +
+                '**کلن‌ها**: عضو کلن شوید یا کلن خود را بسازید\n' +
+                '**چرخ شانس**: شانس خود را امتحان کنید\n' +
+                '**سرقت**: از کاربران دیگر سرقت کنید (فقط در بخش اقتصاد)\n\n' +
+                '**نکته**: برای امنیت بیشتر، سکه‌های خود را در بانک نگهداری کنید.',
+        ephemeral: true
+      });
+      return;
+    }
 
     // Handle game buttons
     if (action === 'game') {
@@ -193,6 +211,24 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       return;
     }
     
+    // Handle deposit menu
+    if (action === 'deposit_menu') {
+      await economyMenu(interaction);
+      return;
+    }
+    
+    // Handle withdraw menu
+    if (action === 'withdraw_menu') {
+      await economyMenu(interaction);
+      return;
+    }
+    
+    // Handle transfer menu
+    if (action === 'transfer_menu') {
+      await economyMenu(interaction);
+      return;
+    }
+    
     // Handle exchange actions
     if (action === 'exchange_10') {
       await handleExchange(interaction, 10);
@@ -281,6 +317,23 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     
     if (action === 'giveaway_check_balance') {
       await checkGiveawayBalance(interaction);
+      return;
+    }
+    
+    // Handle other options menu buttons that are not yet implemented
+    if (action === 'marketplace' || action === 'tournaments' || action === 'achievements' || 
+        action === 'seasons' || action === 'parallel_worlds' || action === 'calendar') {
+      await interaction.reply({
+        content: '🔜 این ویژگی هنوز در حال توسعه است و به زودی اضافه خواهد شد!',
+        ephemeral: true
+      });
+      
+      // After a short delay, return to main menu
+      setTimeout(async () => {
+        if (interaction.replied || interaction.deferred) {
+          await mainMenu(interaction, true);
+        }
+      }, 2000);
       return;
     }
     

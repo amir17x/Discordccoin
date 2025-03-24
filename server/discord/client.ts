@@ -45,9 +45,24 @@ client.commands = new Collection();
 
 export async function initDiscordBot() {
   try {
-    // Load and deploy commands
+    // Load commands
     await loadCommands(client);
-    await deployCommands();
+    
+    // Get token and client ID from config or environment variables
+    const botSettings = botConfig.getConfig();
+    const discordToken = process.env.DISCORD_TOKEN || botSettings.general.token;
+    const discordClientId = process.env.DISCORD_CLIENT_ID || botSettings.general.clientId;
+    
+    if (discordToken && discordClientId) {
+      try {
+        await deployCommands();
+      } catch (error) {
+        log('Error deploying commands: ' + error, 'error');
+        console.error('Failed to deploy commands:', error);
+      }
+    } else {
+      log('Missing Discord token or client ID. Commands will not be deployed.', 'error');
+    }
 
     // Ready event
     client.on(Events.ClientReady, () => {
@@ -209,9 +224,17 @@ export async function initDiscordBot() {
       }
     });
 
-    // Login the client
-    await client.login(process.env.DISCORD_TOKEN);
-    return client;
+    // Try to login with token
+    try {
+      // Login the client
+      log('Attempting to login with Discord token...', 'discord');
+      await client.login(discordToken);
+      log('Successfully logged in to Discord', 'discord');
+      return client;
+    } catch (loginError) {
+      log(`Failed to login: ${loginError}`, 'error');
+      throw loginError;
+    }
   } catch (error) {
     console.error('Failed to initialize Discord bot:', error);
     throw error;

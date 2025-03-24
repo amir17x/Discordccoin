@@ -31,6 +31,8 @@ export interface BotConfig {
     adminRoleId: string; // آی‌دی رول ادمین
     moderatorRoleId: string; // آی‌دی رول مدیریت
     guildId: string; // آی‌دی سرور اصلی
+    token?: string; // توکن دیسکورد (اختیاری - ترجیحاً از متغیر محیطی استفاده شود)
+    clientId?: string; // آیدی کلاینت دیسکورد (اختیاری - ترجیحاً از متغیر محیطی استفاده شود)
   };
   
   // تنظیمات بازی‌ها
@@ -68,6 +70,8 @@ const defaultConfig: BotConfig = {
     adminRoleId: '1343981256949497988',
     moderatorRoleId: '',
     guildId: '',
+    token: '',
+    clientId: '',
   },
   games: {
     minBet: 10,
