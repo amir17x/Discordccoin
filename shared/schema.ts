@@ -75,18 +75,41 @@ export const clans = pgTable("clans", {
   level: integer("level").notNull().default(1),
   memberCount: integer("member_count").notNull().default(1),
   experience: integer("experience").notNull().default(0),
+  
   // آمار جنگ کلن‌ها
   warWins: integer("war_wins").notNull().default(0),
   warLosses: integer("war_losses").notNull().default(0),
+  
+  // اطلاعات مدیریت اعضا (استایل Clash of Clans)
+  coLeaderIds: jsonb("co_leader_ids").$type<string[]>().default([]),
+  elderIds: jsonb("elder_ids").$type<string[]>().default([]),
+  
+  // فیلدهای مربوط به وار کلن
+  warStatus: text("war_status").default('none'), // none, preparation, active, ended
+  warOpponentId: integer("war_opponent_id"),
+  warOpponentName: text("war_opponent_name"),
+  warScore: integer("war_score").default(0),
+  warOpponentScore: integer("war_opponent_score").default(0),
+  warStartTime: timestamp("war_start_time"),
+  warEndTime: timestamp("war_end_time"),
+  warPreparationEndTime: timestamp("war_preparation_end_time"),
+  warReadyMembers: integer("war_ready_members").default(0),
+  
   // ویژگی‌های جزیره کلن
+  hasIsland: boolean("has_island").default(false),
   islandLevel: integer("island_level").notNull().default(0),
   buildings: jsonb("buildings").$type<ClanBuilding[]>().default([]),
+  lastResourceCollection: timestamp("last_resource_collection"),
+  
   // پروژه‌های فعلی
   activeProjects: jsonb("active_projects").$type<ClanProject[]>().default([]),
+  
   // امکانات و قابلیت‌های فعال
   perks: jsonb("perks").$type<ClanPerk[]>().default([]),
+  
   // ماموریت‌های کلن
   missions: jsonb("missions").$type<ClanMission[]>().default([]),
+  
   // پرچم و آواتار کلن
   banner: text("banner"),
   createdAt: timestamp("created_at").defaultNow(),

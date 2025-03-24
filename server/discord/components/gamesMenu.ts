@@ -194,7 +194,7 @@ export async function gamesMenu(
             .setStyle(ButtonStyle.Success), // سبز برای بازی‌های دقت و مهارت
           new ButtonBuilder()
             .setCustomId('game:mafia:start')
-            .setLabel('🕵️‍♂️ مافیا (جدید)')
+            .setLabel('🕵️‍♂️ مافیا')
             .setStyle(ButtonStyle.Danger) // قرمز برای بازی‌های استراتژیک و مخفی‌کاری
         );
 
@@ -203,15 +203,15 @@ export async function gamesMenu(
         .addComponents(
           new ButtonBuilder()
             .setCustomId('game:bomb:start')
-            .setLabel('💣 بمب زمان‌دار (جدید)')
+            .setLabel('💣 بمب زمان‌دار')
             .setStyle(ButtonStyle.Danger), // قرمز برای بازی‌های پرهیجان
           new ButtonBuilder()
             .setCustomId('game:penalty:start')
-            .setLabel('⚽ پنالتی شانس (جدید)')
+            .setLabel('⚽ پنالتی شانس')
             .setStyle(ButtonStyle.Primary), // آبی برای بازی‌های ورزشی
           new ButtonBuilder()
             .setCustomId('game:archery:start')
-            .setLabel('🏹 تیراندازی هدف (جدید)')
+            .setLabel('🏹 تیراندازی هدف')
             .setStyle(ButtonStyle.Success) // سبز برای بازی‌های دقت
         );
       

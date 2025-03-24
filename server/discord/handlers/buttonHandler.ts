@@ -20,6 +20,7 @@ import { handleCoinFlip } from '../games/coinFlip';
 import { handleRockPaperScissors } from '../games/rockPaperScissors';
 import { handleNumberGuess } from '../games/numberGuess';
 import { handleDiceDuel } from '../games/diceDuel';
+import { showMatchmakingMenu, startRandomMatchmaking, showInviteOpponentMenu, cancelMatchmaking } from '../games/matchmaking';
 import { getLogger, LogType } from '../utils/logger';
 import { botConfig } from '../utils/config';
 
@@ -353,6 +354,7 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     if (action === 'game') {
       const gameType = params[0];
 
+      // تک نفره
       if (gameType === 'coinflip') {
         if (params[1] === 'start') {
           await handleCoinFlip(interaction, 'start');
@@ -387,9 +389,13 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
         return;
       }
       
+      // بازی‌های رقابتی - نمایش منوی matchmaking
+      
+      // تاس دو نفره
       if (gameType === 'dice_duel') {
         if (params[1] === 'start') {
-          await handleDiceDuel(interaction, 'start');
+          // نمایش منوی matchmaking
+          await showMatchmakingMenu(interaction, 'dice_duel', '🎲 تاس دو نفره');
         } else if (params[1] === 'invite') {
           const targetId = params[2];
           await handleDiceDuel(interaction, 'invite', targetId);
@@ -403,6 +409,94 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
           const gameId = params[2];
           await handleDiceDuel(interaction, 'roll', gameId);
         }
+        return;
+      }
+      
+      // دوئل
+      if (gameType === 'duel') {
+        if (params[1] === 'start') {
+          await showMatchmakingMenu(interaction, 'duel', '⚔️ دوئل');
+        }
+        return;
+      }
+      
+      // پوکر سریع
+      if (gameType === 'quick_poker') {
+        if (params[1] === 'start') {
+          await showMatchmakingMenu(interaction, 'quick_poker', '🃏 پوکر سریع');
+        }
+        return;
+      }
+      
+      // مسابقه سرعت تایپ
+      if (gameType === 'type_race') {
+        if (params[1] === 'start') {
+          await showMatchmakingMenu(interaction, 'type_race', '⌨️ مسابقه سرعت تایپ');
+        }
+        return;
+      }
+      
+      // دارت رقابتی
+      if (gameType === 'dart') {
+        if (params[1] === 'start') {
+          await showMatchmakingMenu(interaction, 'dart', '🎯 دارت رقابتی');
+        }
+        return;
+      }
+      
+      // مافیا
+      if (gameType === 'mafia') {
+        if (params[1] === 'start') {
+          await showMatchmakingMenu(interaction, 'mafia', '🕵️‍♂️ مافیا');
+        }
+        return;
+      }
+      
+      // بمب زمان‌دار
+      if (gameType === 'bomb') {
+        if (params[1] === 'start') {
+          await showMatchmakingMenu(interaction, 'bomb', '💣 بمب زمان‌دار');
+        }
+        return;
+      }
+      
+      // پنالتی شانس
+      if (gameType === 'penalty') {
+        if (params[1] === 'start') {
+          await showMatchmakingMenu(interaction, 'penalty', '⚽ پنالتی شانس');
+        }
+        return;
+      }
+      
+      // تیراندازی هدف
+      if (gameType === 'archery') {
+        if (params[1] === 'start') {
+          await showMatchmakingMenu(interaction, 'archery', '🏹 تیراندازی هدف');
+        }
+        return;
+      }
+    }
+    
+    // Handle matchmaking actions
+    if (action === 'matchmaking') {
+      const matchmakingType = params[0];
+      const gameType = params[1];
+      
+      // جستجوی تصادفی
+      if (matchmakingType === 'random') {
+        await startRandomMatchmaking(interaction, gameType);
+        return;
+      }
+      
+      // دعوت رقیب
+      if (matchmakingType === 'invite') {
+        await showInviteOpponentMenu(interaction, gameType);
+        return;
+      }
+      
+      // لغو جستجو
+      if (matchmakingType === 'cancel') {
+        await cancelMatchmaking(interaction, gameType);
         return;
       }
     }

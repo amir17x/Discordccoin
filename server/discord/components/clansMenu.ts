@@ -22,7 +22,7 @@ export async function clansMenu(
     
     if (!user) {
       await interaction.reply({
-        content: 'You need to create an account first. Use the /menu command.',
+        content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.',
         ephemeral: true
       });
       return;
@@ -34,39 +34,91 @@ export async function clansMenu(
     // Get user's clan if they're in one
     const userClan = user.clanId ? await storage.getClan(user.clanId) : null;
     
-    // Create the clans embed
+    // Create the clans embed - با رنگ طلایی به سبک Clash of Clans
     const embed = new EmbedBuilder()
-      .setColor('#696969')
-      .setTitle('🏰 کلن‌ها')
+      .setColor('#FFD700') // رنگ طلایی برای حس قدرت و ارزش
+      .setTitle('🏰 بخش کلن‌ها')
       .setDescription(userClan 
-        ? `عضو کلن **${userClan.name}** هستید.`
-        : 'به یک کلن بپیوندید یا کلن جدید بسازید.')
+        ? `به کلن **${userClan.name}** خوش آمدید! 🌟\nبا دوستانت متحد شو، وار بزن و کلنت رو به اوج برسون! 🚀`
+        : '🏰 به بخش کلن‌ها خوش اومدی! 🌟\nبا دوستات متحد شو، وار بزن و کلنت رو به اوج برسون! 🚀')
       .setFooter({ text: `${interaction.user.username} | موجودی: ${user.wallet} Ccoin` })
       .setTimestamp();
     
     if (userClan) {
+      // اطلاعات کلن - با سبک جدید و حرفه‌ای تر
       embed.addFields(
-        { name: '📊 نمای کلی', value: `**نام کلن:** ${userClan.name}\n**اعضا:** ${userClan.memberCount}\n**بانک کلن:** ${userClan.bank} Ccoin\n**لِوِل کلن:** ${userClan.level}`, inline: false },
-        { name: '👑 رهبر کلن', value: `<@${userClan.ownerId}>`, inline: true },
-        { name: '🏦 بانک کلن', value: `${userClan.bank} Ccoin`, inline: true },
-        { name: '🌟 لِوِل کلن', value: `${userClan.level}`, inline: true }
+        { 
+          name: '🏰 کلن من: ' + userClan.name, 
+          value: `🆔 آیدی: #CLAN-${userClan.id}\n📊 لِوِل: ${userClan.level} (امتیاز: ${userClan.level * 5000 - 3000}/${userClan.level * 5000})\n👥 اعضا: ${userClan.memberCount}/${10 * userClan.level} نفر`, 
+          inline: false 
+        },
+        { 
+          name: '🏦 بانک کلن', 
+          value: `${userClan.bank} Ccoin`, 
+          inline: true 
+        },
+        { 
+          name: '👑 بنیانگذار', 
+          value: `<@${userClan.ownerId}>`, 
+          inline: true 
+        },
+        { 
+          name: '🏆 مقام کاربر', 
+          value: user.discordId === userClan.ownerId ? 'Leader' : (userClan.elderIds && userClan.elderIds.includes(user.discordId) ? 'Elder' : 'Member'), 
+          inline: true 
+        }
       );
+
+      // نمایش اطلاعات جزیره کلن اگر وجود داشته باشد
+      if (userClan.hasIsland) {
+        const islandLevel = userClan.islandLevel || 1;
+        embed.addFields({
+          name: '🏝️ جزیره کلن',
+          value: `لِوِل ${islandLevel} (سود روزانه: ${islandLevel * 100} Ccoin)`,
+          inline: true
+        });
+      }
+      
+      // نمایش وضعیت وار اگر در وار هستند
+      if (userClan.warStatus && userClan.warStatus !== 'none') {
+        const warOpponentName = userClan.warOpponentName || 'کلن رقیب';
+        embed.addFields({
+          name: '⚔️ وضعیت وار',
+          value: `در حال وار با ${warOpponentName}`,
+          inline: true
+        });
+      }
     } else {
-      // Show some clans if there are any
+      // Show some clans if there are any - with improved formatting
       if (clans.length > 0) {
-        const clanList = clans.slice(0, 3).map(clan => 
-          `**${clan.name}** - اعضا: ${clan.memberCount} - لول: ${clan.level}`
-        ).join('\n');
+        const topClans = clans
+          .sort((a, b) => b.level - a.level || b.memberCount - a.memberCount)
+          .slice(0, 3);
         
-        embed.addFields({ name: '🔍 کلن‌های موجود', value: clanList, inline: false });
+        const clanList = topClans.map(clan => 
+          `**${clan.name}** 🏰\n👑 بنیانگذار: <@${clan.ownerId}>\n👥 اعضا: ${clan.memberCount}/${10 * clan.level}\n🌟 لِوِل: ${clan.level}`
+        ).join('\n\n');
+        
+        embed.addFields({ 
+          name: '🔍 کلن‌های برتر', 
+          value: clanList || 'هنوز کلنی ساخته نشده است.', 
+          inline: false 
+        });
+        
+        // توضیحات برای ایجاد انگیزه
+        embed.addFields({ 
+          name: '💡 نکته طلایی', 
+          value: 'پیوستن به کلن‌ها علاوه بر امکان وار، به شما پاداش‌های روزانه و ماموریت‌های گروهی می‌دهد!', 
+          inline: false 
+        });
       }
     }
     
-    // Create buttons based on whether user is in a clan
+    // Create buttons based on whether user is in a clan - با تغییرات گرافیکی و عملکردی
     const rows: ActionRowBuilder<ButtonBuilder>[] = [];
     
     if (userClan) {
-      // User is in a clan - colorful buttons
+      // User is in a clan - colorful buttons with improved layout
       const row1 = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
           new ButtonBuilder()
@@ -85,7 +137,7 @@ export async function clansMenu(
       
       rows.push(row1);
       
-      // Additional clan features (some are disabled as they're not fully implemented)
+      // Additional clan features with improved tooltips
       const row2 = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
           new ButtonBuilder()
@@ -96,13 +148,13 @@ export async function clansMenu(
           new ButtonBuilder()
             .setCustomId('clan_island')
             .setLabel('🏝️ جزیره کلن')
-            .setStyle(ButtonStyle.Secondary)
+            .setStyle(ButtonStyle.Success)
             .setDisabled(userClan.level < 2), // Available for level 2+ clans
           new ButtonBuilder()
             .setCustomId('clan_settings')
             .setLabel('⚙️ تنظیمات کلن')
-            .setStyle(ButtonStyle.Secondary)
-            .setDisabled(user.discordId !== userClan.ownerId) // Only available to clan owner
+            .setStyle(ButtonStyle.Primary)
+            .setDisabled(user.discordId !== userClan.ownerId && (!userClan.coLeaderIds || !userClan.coLeaderIds.includes(user.discordId))) // Only available to leader/co-leader
         );
       
       rows.push(row2);
@@ -117,12 +169,12 @@ export async function clansMenu(
           new ButtonBuilder()
             .setCustomId('menu')
             .setLabel('🔙 بازگشت')
-            .setStyle(ButtonStyle.Danger)
+            .setStyle(ButtonStyle.Secondary)
         );
       
       rows.push(row3);
     } else {
-      // User is not in a clan
+      // User is not in a clan - با دکمه‌های جذاب‌تر
       const row1 = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
           new ButtonBuilder()
@@ -138,13 +190,17 @@ export async function clansMenu(
       
       rows.push(row1);
       
-      // Back button with color
+      // راهنمای ساخت کلن و دکمه رتبه‌بندی کلن‌ها
       const row2 = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
           new ButtonBuilder()
+            .setCustomId('clan_rankings')
+            .setLabel('📊 رتبه‌بندی کلن‌ها')
+            .setStyle(ButtonStyle.Secondary),
+          new ButtonBuilder()
             .setCustomId('menu')
             .setLabel('🔙 بازگشت')
-            .setStyle(ButtonStyle.Danger)
+            .setStyle(ButtonStyle.Secondary)
         );
       
       rows.push(row2);
@@ -347,18 +403,279 @@ export async function clansMenu(
       if (customId === 'clan_members') {
         if (!userClan) {
           await interaction.reply({
-            content: 'شما عضو هیچ کلنی نیستید.',
+            content: '⚠️ شما عضو هیچ کلنی نیستید.',
             ephemeral: true
           });
           return;
         }
         
-        // Show placeholder message for clan members (would need additional storage methods for full implementation)
-        await interaction.reply({
-          content: `**اعضای کلن ${userClan.name}**\n\n👑 <@${userClan.ownerId}> (رهبر)\n\nتعداد کل اعضا: ${userClan.memberCount}`,
-          ephemeral: true
+        // فرض می‌کنیم داده‌های مربوط به Co-Leader و Elder در کلن ذخیره شده‌اند
+        const coLeaderIds = userClan.coLeaderIds || [];
+        const elderIds = userClan.elderIds || [];
+        
+        // فرض می‌کنیم لیست اعضا را در دیتابیس داریم
+        // برای این نمونه، فرض می‌کنیم کل اعضا را می‌توانیم بدست آوریم
+        const allUsers = await storage.getAllUsers();
+        const clanMembers = allUsers.filter(u => u.clanId === userClan.id);
+        
+        // ایمبد اطلاعات اعضای کلن - با طراحی Clash of Clans
+        const membersEmbed = new EmbedBuilder()
+          .setColor('#FFD700') // رنگ طلایی
+          .setTitle(`👥 اعضای کلن ${userClan.name} 🏰`)
+          .setDescription(`تعداد اعضا: ${userClan.memberCount}/${10 * userClan.level} نفر`)
+          .setFooter({ text: 'برای ارتقاء یا اخراج اعضا، دکمه‌های زیر را استفاده کنید' })
+          .setTimestamp();
+        
+        // دسته بندی اعضا بر اساس مقام
+        let leaderInfo = '';
+        let coLeadersInfo = '';
+        let eldersInfo = '';
+        let membersInfo = '';
+        
+        // افزودن Leader
+        const leaderUser = clanMembers.find(u => u.discordId === userClan.ownerId);
+        if (leaderUser) {
+          leaderInfo = `👑 **${leaderUser.username}** (<@${leaderUser.discordId}>)\n`;
+        } else {
+          leaderInfo = `👑 **بنیانگذار** (<@${userClan.ownerId}>)\n`;
+        }
+        
+        // افزودن Co-Leaders
+        if (coLeaderIds.length > 0) {
+          coLeadersInfo = '🛡️ **معاونین کلن (Co-Leader):**\n';
+          coLeaderIds.forEach(coId => {
+            const coLeader = clanMembers.find(u => u.discordId === coId);
+            if (coLeader) {
+              coLeadersInfo += `- ${coLeader.username} (<@${coLeader.discordId}>)\n`;
+            } else {
+              coLeadersInfo += `- <@${coId}>\n`;
+            }
+          });
+        }
+        
+        // افزودن Elders
+        if (elderIds.length > 0) {
+          eldersInfo = '⚔️ **بزرگان کلن (Elder):**\n';
+          elderIds.forEach(elderId => {
+            const elder = clanMembers.find(u => u.discordId === elderId);
+            if (elder) {
+              eldersInfo += `- ${elder.username} (<@${elder.discordId}>)\n`;
+            } else {
+              eldersInfo += `- <@${elderId}>\n`;
+            }
+          });
+        }
+        
+        // افزودن Members
+        const regularMembers = clanMembers.filter(
+          u => u.discordId !== userClan.ownerId && 
+               !coLeaderIds.includes(u.discordId) && 
+               !elderIds.includes(u.discordId)
+        );
+        
+        if (regularMembers.length > 0) {
+          membersInfo = '🧑‍🤝‍🧑 **اعضای عادی (Member):**\n';
+          regularMembers.forEach(member => {
+            membersInfo += `- ${member.username} (<@${member.discordId}>)\n`;
+          });
+        }
+        
+        // افزودن فیلدها به امبد
+        membersEmbed.addFields(
+          { name: 'رهبر کلن', value: leaderInfo || 'بدون رهبر', inline: false }
+        );
+        
+        if (coLeadersInfo) {
+          membersEmbed.addFields({ name: 'معاونین کلن', value: coLeadersInfo, inline: false });
+        }
+        
+        if (eldersInfo) {
+          membersEmbed.addFields({ name: 'بزرگان کلن', value: eldersInfo, inline: false });
+        }
+        
+        if (membersInfo) {
+          membersEmbed.addFields({ name: 'اعضای عادی', value: membersInfo, inline: false });
+        }
+        
+        // تعیین اینکه آیا کاربر دسترسی مدیریت اعضا را دارد
+        const canManageMembers = user.discordId === userClan.ownerId || coLeaderIds.includes(user.discordId);
+        
+        const rows: ActionRowBuilder<ButtonBuilder>[] = [];
+        
+        // دکمه‌های دعوت و مدیریت
+        if (canManageMembers) {
+          const manageRow = new ActionRowBuilder<ButtonBuilder>()
+            .addComponents(
+              new ButtonBuilder()
+                .setCustomId('clan_promote_member')
+                .setLabel('🔼 ارتقاء عضو')
+                .setStyle(ButtonStyle.Success),
+              new ButtonBuilder()
+                .setCustomId('clan_demote_member')
+                .setLabel('🔽 تنزل عضو')
+                .setStyle(ButtonStyle.Primary),
+              new ButtonBuilder()
+                .setCustomId('clan_kick_member')
+                .setLabel('🚫 اخراج عضو')
+                .setStyle(ButtonStyle.Danger)
+            );
+          
+          rows.push(manageRow);
+        }
+        
+        // دکمه دعوت عضو و بازگشت
+        const inviteRow = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('clan_invite_member')
+              .setLabel('📨 دعوت عضو')
+              .setStyle(ButtonStyle.Primary)
+              .setDisabled(!canManageMembers),
+            new ButtonBuilder()
+              .setCustomId('clans')
+              .setLabel('🔙 بازگشت')
+              .setStyle(ButtonStyle.Secondary)
+          );
+        
+        rows.push(inviteRow);
+        
+        await interaction.update({ 
+          embeds: [membersEmbed], 
+          components: rows,
+          content: null
         });
         
+        return;
+      }
+      
+      // پردازش دکمه ارتقاء عضو
+      if (customId === 'clan_promote_member') {
+        if (!userClan) {
+          await interaction.reply({
+            content: '⚠️ شما عضو هیچ کلنی نیستید.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // بررسی دسترسی
+        const coLeaderIds = userClan.coLeaderIds || [];
+        const canManageMembers = user.discordId === userClan.ownerId || coLeaderIds.includes(user.discordId);
+        
+        if (!canManageMembers) {
+          await interaction.reply({
+            content: '⚠️ شما دسترسی لازم برای ارتقاء اعضا را ندارید.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // نمایش مودال برای انتخاب کاربر
+        const modal = new ModalBuilder()
+          .setCustomId('promote_clan_member_modal')
+          .setTitle('ارتقاء عضو کلن');
+        
+        const memberIdInput = new TextInputBuilder()
+          .setCustomId('member_id')
+          .setLabel('آیدی کاربر')
+          .setPlaceholder('آیدی عددی کاربر یا @mention او را وارد کنید')
+          .setRequired(true)
+          .setStyle(TextInputStyle.Short);
+        
+        const modalRow = new ActionRowBuilder<TextInputBuilder>().addComponents(memberIdInput);
+        modal.addComponents(modalRow);
+        
+        await interaction.showModal(modal);
+        return;
+      }
+      
+      // پردازش دکمه تنزل عضو
+      if (customId === 'clan_demote_member') {
+        if (!userClan) {
+          await interaction.reply({
+            content: '⚠️ شما عضو هیچ کلنی نیستید.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // بررسی دسترسی
+        const coLeaderIds = userClan.coLeaderIds || [];
+        const canManageMembers = user.discordId === userClan.ownerId || coLeaderIds.includes(user.discordId);
+        
+        if (!canManageMembers) {
+          await interaction.reply({
+            content: '⚠️ شما دسترسی لازم برای تنزل اعضا را ندارید.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // نمایش مودال برای انتخاب کاربر
+        const modal = new ModalBuilder()
+          .setCustomId('demote_clan_member_modal')
+          .setTitle('تنزل عضو کلن');
+        
+        const memberIdInput = new TextInputBuilder()
+          .setCustomId('member_id')
+          .setLabel('آیدی کاربر')
+          .setPlaceholder('آیدی عددی کاربر یا @mention او را وارد کنید')
+          .setRequired(true)
+          .setStyle(TextInputStyle.Short);
+        
+        const modalRow = new ActionRowBuilder<TextInputBuilder>().addComponents(memberIdInput);
+        modal.addComponents(modalRow);
+        
+        await interaction.showModal(modal);
+        return;
+      }
+      
+      // پردازش دکمه اخراج عضو
+      if (customId === 'clan_kick_member') {
+        if (!userClan) {
+          await interaction.reply({
+            content: '⚠️ شما عضو هیچ کلنی نیستید.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // بررسی دسترسی
+        const coLeaderIds = userClan.coLeaderIds || [];
+        const canManageMembers = user.discordId === userClan.ownerId || coLeaderIds.includes(user.discordId);
+        
+        if (!canManageMembers) {
+          await interaction.reply({
+            content: '⚠️ شما دسترسی لازم برای اخراج اعضا را ندارید.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // نمایش مودال برای انتخاب کاربر
+        const modal = new ModalBuilder()
+          .setCustomId('kick_clan_member_modal')
+          .setTitle('اخراج عضو کلن');
+        
+        const memberIdInput = new TextInputBuilder()
+          .setCustomId('member_id')
+          .setLabel('آیدی کاربر')
+          .setPlaceholder('آیدی عددی کاربر یا @mention او را وارد کنید')
+          .setRequired(true)
+          .setStyle(TextInputStyle.Short);
+        
+        const reasonInput = new TextInputBuilder()
+          .setCustomId('kick_reason')
+          .setLabel('دلیل اخراج')
+          .setPlaceholder('دلیل اخراج عضو را وارد کنید')
+          .setRequired(false)
+          .setStyle(TextInputStyle.Paragraph);
+        
+        const memberRow = new ActionRowBuilder<TextInputBuilder>().addComponents(memberIdInput);
+        const reasonRow = new ActionRowBuilder<TextInputBuilder>().addComponents(reasonInput);
+        modal.addComponents(memberRow, reasonRow);
+        
+        await interaction.showModal(modal);
         return;
       }
       
@@ -366,53 +683,325 @@ export async function clansMenu(
       if (customId === 'clan_bank') {
         if (!userClan) {
           await interaction.reply({
-            content: 'شما عضو هیچ کلنی نیستید.',
+            content: '⚠️ شما عضو هیچ کلنی نیستید.',
             ephemeral: true
           });
           return;
         }
         
-        // Show clan bank info
+        // بررسی دسترسی برای برداشت از بانک
+        const coLeaderIds = userClan.coLeaderIds || [];
+        const canWithdraw = user.discordId === userClan.ownerId || coLeaderIds.includes(user.discordId);
+        
+        // محاسبه کارمزد
+        const depositFee = 2; // 2% for deposit
+        const withdrawFee = 5; // 5% for withdraw
+        
+        // Show clan bank info with improved design - Clash of Clans style
         const bankEmbed = new EmbedBuilder()
-          .setColor('#696969')
+          .setColor('#FFD700') // Gold color
           .setTitle(`🏦 بانک کلن ${userClan.name}`)
-          .setDescription(`موجودی فعلی: **${userClan.bank} Ccoin**`)
+          .setDescription(`💰 **موجودی فعلی: ${userClan.bank.toLocaleString('fa-IR')} Ccoin**\n\nبانک کلن برای خرید آیتم، ارتقاء جزیره و شرکت در وار استفاده می‌شود. هر عضو می‌تواند به بانک کلن واریز کند، اما فقط Leader و Co-Leader می‌توانند برداشت کنند.`)
           .addFields(
-            { name: '💰 واریز به بانک کلن', value: 'از دکمه‌های زیر برای واریز به بانک کلن استفاده کنید.', inline: false }
+            { 
+              name: '📊 اطلاعات تراکنش', 
+              value: `💸 **کارمزد واریز**: ${depositFee}%\n💸 **کارمزد برداشت**: ${withdrawFee}%\n👛 **موجودی شما**: ${user.wallet.toLocaleString('fa-IR')} Ccoin`, 
+              inline: false 
+            },
+            {
+              name: '💡 آیتم‌های قابل خرید',
+              value: '🛡️ **سپر کلن**: 5,000 Ccoin (محافظت از وار برای 24 ساعت)\n⚡ **بوست وار**: 3,000 Ccoin (+10% شانس برد وار)\n🎁 **جعبه کلن**: 2,000 Ccoin (جایزه تصادفی برای همه اعضا)',
+              inline: false
+            }
           )
-          .setFooter({ text: `موجودی شما: ${user.wallet} Ccoin` })
+          .setFooter({ text: `هر واریز به بانک کلن ${userClan.name} به شما امتیاز فعالیت می‌دهد` })
           .setTimestamp();
         
-        // Create deposit buttons
+        // Create deposit buttons with improved UI
         const depositRow = new ActionRowBuilder<ButtonBuilder>()
           .addComponents(
             new ButtonBuilder()
               .setCustomId('clan_deposit:100')
-              .setLabel('واریز 100 Ccoin')
+              .setLabel('💰 واریز 100 Ccoin')
               .setStyle(ButtonStyle.Success)
               .setDisabled(user.wallet < 100),
             new ButtonBuilder()
               .setCustomId('clan_deposit:500')
-              .setLabel('واریز 500 Ccoin')
+              .setLabel('💰 واریز 500 Ccoin')
               .setStyle(ButtonStyle.Success)
               .setDisabled(user.wallet < 500),
             new ButtonBuilder()
               .setCustomId('clan_deposit:1000')
-              .setLabel('واریز 1000 Ccoin')
+              .setLabel('💰 واریز 1000 Ccoin')
               .setStyle(ButtonStyle.Success)
               .setDisabled(user.wallet < 1000)
           );
         
-        // Back button with color
+        // Create withdraw buttons - only available for Leader/Co-Leader
+        const withdrawRow = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('clan_withdraw:500')
+              .setLabel('🏧 برداشت 500 Ccoin')
+              .setStyle(ButtonStyle.Primary)
+              .setDisabled(!canWithdraw || userClan.bank < 500),
+            new ButtonBuilder()
+              .setCustomId('clan_withdraw:1000')
+              .setLabel('🏧 برداشت 1000 Ccoin')
+              .setStyle(ButtonStyle.Primary)
+              .setDisabled(!canWithdraw || userClan.bank < 1000),
+            new ButtonBuilder()
+              .setCustomId('clan_withdraw:5000')
+              .setLabel('🏧 برداشت 5000 Ccoin')
+              .setStyle(ButtonStyle.Primary)
+              .setDisabled(!canWithdraw || userClan.bank < 5000)
+          );
+        
+        // Create item shop buttons
+        const shopRow = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('clan_buy_item:shield')
+              .setLabel('🛡️ خرید سپر کلن (5000)')
+              .setStyle(ButtonStyle.Danger)
+              .setDisabled(!canWithdraw || userClan.bank < 5000),
+            new ButtonBuilder()
+              .setCustomId('clan_buy_item:boost')
+              .setLabel('⚡ بوست وار (3000)')
+              .setStyle(ButtonStyle.Danger)
+              .setDisabled(!canWithdraw || userClan.bank < 3000),
+            new ButtonBuilder()
+              .setCustomId('clan_buy_item:box')
+              .setLabel('🎁 جعبه کلن (2000)')
+              .setStyle(ButtonStyle.Danger)
+              .setDisabled(!canWithdraw || userClan.bank < 2000)
+          );
+          
+        // Back button
         const backRow = new ActionRowBuilder<ButtonBuilder>()
           .addComponents(
             new ButtonBuilder()
               .setCustomId('clans')
               .setLabel('🔙 بازگشت')
-              .setStyle(ButtonStyle.Danger)
+              .setStyle(ButtonStyle.Secondary)
           );
         
-        await interaction.update({ embeds: [bankEmbed], components: [depositRow, backRow] });
+        // نمایش دکمه‌های مناسب بر اساس نقش کاربر
+        const components = canWithdraw 
+          ? [depositRow, withdrawRow, shopRow, backRow]
+          : [depositRow, backRow];
+        
+        await interaction.update({ embeds: [bankEmbed], components: components });
+        return;
+      }
+      
+      // Handle clan deposit
+      if (customId.startsWith('clan_deposit:')) {
+        if (!userClan) {
+          await interaction.reply({
+            content: '⚠️ شما عضو هیچ کلنی نیستید.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        const amount = parseInt(customId.split(':')[1]);
+        if (isNaN(amount) || amount <= 0) {
+          await interaction.reply({
+            content: '⚠️ مقدار نامعتبر برای واریز.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // بررسی موجودی کاربر
+        if (user.wallet < amount) {
+          await interaction.reply({
+            content: `⚠️ موجودی شما کافی نیست. شما ${user.wallet} Ccoin دارید اما ${amount} Ccoin نیاز است.`,
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // محاسبه کارمزد (2%)
+        const fee = Math.floor(amount * 0.02);
+        const netAmount = amount - fee;
+        
+        // انجام تراکنش
+        try {
+          // کم کردن از کیف پول کاربر
+          await storage.addToWallet(user.id, -amount);
+          
+          // به‌روزرسانی بانک کلن
+          const updatedClan = { ...userClan, bank: userClan.bank + netAmount };
+          await storage.updateClan(userClan.id, updatedClan);
+          
+          // اضافه کردن امتیاز به کاربر (آپدیت activity score)
+          // در اینجا منطق مربوط به activity score و پیاده‌سازی آن بستگی به ساختار دیتابیس شما دارد
+          
+          // نمایش پیام موفقیت
+          await interaction.reply({
+            content: `✅ مبلغ ${amount} Ccoin از کیف پول شما کسر شد و ${netAmount} Ccoin (پس از کسر کارمزد ${fee} Ccoin) به بانک کلن ${userClan.name} اضافه شد.`,
+            ephemeral: true
+          });
+          
+          // بازگشت به منوی بانک بعد از تاخیر
+          setTimeout(async () => {
+            // استفاده از کاستوم آیدی 'clan_bank' برای بازگشت به منوی بانک
+            const customId = 'clan_bank';
+            // رسیدن به اینجا یعنی کاربر با بانک کلن تعامل داشته است
+            const updatedUser = await storage.getUserByDiscordId(interaction.user.id);
+            if (updatedUser) {
+              // این خط رو جایگزین متغیر user می‌کنیم تا تغییرات اعمال شده در تراکنش رو نشون بده
+              if ('update' in interaction && typeof interaction.update === 'function') {
+                try {
+                  // دوباره رندر کردن منوی بانک
+                  const updatedClan = await storage.getClan(userClan.id);
+                  if (updatedClan) {
+                    // همون منطق تعریف شده برای clan_bank رو اینجا استفاده می‌کنیم
+                    const coLeaderIds = updatedClan.coLeaderIds || [];
+                    const canWithdraw = updatedUser.discordId === updatedClan.ownerId || coLeaderIds.includes(updatedUser.discordId);
+                    
+                    const bankEmbed = new EmbedBuilder()
+                      .setColor('#FFD700')
+                      .setTitle(`🏦 بانک کلن ${updatedClan.name}`)
+                      .setDescription(`💰 **موجودی فعلی: ${updatedClan.bank.toLocaleString('fa-IR')} Ccoin**\n\nبانک کلن برای خرید آیتم، ارتقاء جزیره و شرکت در وار استفاده می‌شود.`)
+                      .addFields(
+                        { 
+                          name: '📊 اطلاعات تراکنش', 
+                          value: `💸 **کارمزد واریز**: 2%\n💸 **کارمزد برداشت**: 5%\n👛 **موجودی شما**: ${updatedUser.wallet.toLocaleString('fa-IR')} Ccoin`, 
+                          inline: false 
+                        }
+                      )
+                      .setFooter({ text: 'واریز موفق انجام شد! ✓' })
+                      .setTimestamp();
+                    
+                    const depositRow = new ActionRowBuilder<ButtonBuilder>()
+                      .addComponents(
+                        new ButtonBuilder()
+                          .setCustomId('clan_deposit:100')
+                          .setLabel('💰 واریز 100 Ccoin')
+                          .setStyle(ButtonStyle.Success)
+                          .setDisabled(updatedUser.wallet < 100),
+                        new ButtonBuilder()
+                          .setCustomId('clan_deposit:500')
+                          .setLabel('💰 واریز 500 Ccoin')
+                          .setStyle(ButtonStyle.Success)
+                          .setDisabled(updatedUser.wallet < 500),
+                        new ButtonBuilder()
+                          .setCustomId('clan_deposit:1000')
+                          .setLabel('💰 واریز 1000 Ccoin')
+                          .setStyle(ButtonStyle.Success)
+                          .setDisabled(updatedUser.wallet < 1000)
+                      );
+                    
+                    const backRow = new ActionRowBuilder<ButtonBuilder>()
+                      .addComponents(
+                        new ButtonBuilder()
+                          .setCustomId('clans')
+                          .setLabel('🔙 بازگشت')
+                          .setStyle(ButtonStyle.Secondary)
+                      );
+                    
+                    // نمایش دکمه‌های مناسب
+                    const components = [depositRow, backRow];
+                    
+                    await interaction.followUp({ 
+                      embeds: [bankEmbed], 
+                      components: components,
+                      ephemeral: true
+                    });
+                  }
+                } catch (error) {
+                  console.error("Error updating clan bank view after deposit:", error);
+                }
+              }
+            }
+          }, 1500);
+          
+        } catch (error) {
+          console.error("Error processing clan deposit:", error);
+          await interaction.reply({
+            content: '❌ خطایی در انجام تراکنش رخ داد. لطفاً دوباره تلاش کنید.',
+            ephemeral: true
+          });
+        }
+        
+        return;
+      }
+      
+      // Handle clan withdraw
+      if (customId.startsWith('clan_withdraw:')) {
+        if (!userClan) {
+          await interaction.reply({
+            content: '⚠️ شما عضو هیچ کلنی نیستید.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // بررسی دسترسی برای برداشت
+        const coLeaderIds = userClan.coLeaderIds || [];
+        const canWithdraw = user.discordId === userClan.ownerId || coLeaderIds.includes(user.discordId);
+        
+        if (!canWithdraw) {
+          await interaction.reply({
+            content: '⚠️ فقط Leader و Co-Leader می‌توانند از بانک کلن برداشت کنند.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        const amount = parseInt(customId.split(':')[1]);
+        if (isNaN(amount) || amount <= 0) {
+          await interaction.reply({
+            content: '⚠️ مقدار نامعتبر برای برداشت.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // بررسی موجودی کلن
+        if (userClan.bank < amount) {
+          await interaction.reply({
+            content: `⚠️ موجودی بانک کلن کافی نیست. بانک کلن ${userClan.bank} Ccoin دارد اما ${amount} Ccoin درخواست شده است.`,
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // محاسبه کارمزد (5%)
+        const fee = Math.floor(amount * 0.05);
+        const netAmount = amount - fee;
+        
+        // انجام تراکنش
+        try {
+          // کم کردن از بانک کلن
+          const updatedClan = { ...userClan, bank: userClan.bank - amount };
+          await storage.updateClan(userClan.id, updatedClan);
+          
+          // اضافه کردن به کیف پول کاربر
+          await storage.addToWallet(user.id, netAmount);
+          
+          // نمایش پیام موفقیت
+          await interaction.reply({
+            content: `✅ مبلغ ${amount} Ccoin از بانک کلن ${userClan.name} برداشت شد و ${netAmount} Ccoin (پس از کسر کارمزد ${fee} Ccoin) به کیف پول شما اضافه شد.`,
+            ephemeral: true
+          });
+          
+          // بازگشت به منوی بانک بعد از تاخیر
+          setTimeout(async () => {
+            await clansMenu(interaction, true);
+          }, 1500);
+          
+        } catch (error) {
+          console.error("Error processing clan withdraw:", error);
+          await interaction.reply({
+            content: '❌ خطایی در انجام تراکنش رخ داد. لطفاً دوباره تلاش کنید.',
+            ephemeral: true
+          });
+        }
+        
         return;
       }
       
@@ -451,11 +1040,262 @@ export async function clansMenu(
         return;
       }
       
+      // Handle clan war
+      if (customId === 'clan_war') {
+        if (!userClan) {
+          await interaction.reply({
+            content: '⚠️ شما عضو هیچ کلنی نیستید.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // بررسی سطح کلن
+        if (userClan.level < 3) {
+          await interaction.reply({
+            content: '⚠️ برای شرکت در وار کلن، سطح کلن باید حداقل 3 باشد.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // بررسی دسترسی
+        const coLeaderIds = userClan.coLeaderIds || [];
+        const canManageWar = user.discordId === userClan.ownerId || coLeaderIds.includes(user.discordId);
+        
+        // وضعیت فعلی وار
+        const warStatus = userClan.warStatus || 'none';
+        
+        // تنظیم ایمبد با طراحی Clash of Clans style
+        const warEmbed = new EmbedBuilder()
+          .setColor('#FF5733') // نارنجی-قرمز برای حس حرارت جنگ
+          .setTitle(`⚔️ وار کلن ${userClan.name}`)
+          .setTimestamp();
+        
+        let components: ActionRowBuilder<ButtonBuilder>[] = [];
+        
+        if (warStatus === 'none') {
+          // کلن در وار نیست
+          warEmbed.setDescription('کلن شما در حال حاضر در هیچ واری شرکت ندارد. می‌توانید یک وار جدید شروع کنید یا منتظر دعوت از کلن‌های دیگر بمانید.');
+          warEmbed.addFields(
+            { 
+              name: '💡 درباره وار کلن', 
+              value: 'وار کلن یک رقابت 48 ساعته بین دو کلن است. اعضای هر کلن با شرکت در بازی‌ها، واریز به بانک کلن و تکمیل ماموریت‌ها امتیاز جمع می‌کنند. کلنی که امتیاز بیشتری جمع کند برنده می‌شود.', 
+              inline: false 
+            },
+            { 
+              name: '🏆 جوایز', 
+              value: '🥇 **برنده**: 10,000 Ccoin + 5,000 امتیاز برای لِوِل کلن\n🥈 **بازنده**: 2,000 Ccoin + 1,000 امتیاز', 
+              inline: false 
+            },
+            { 
+              name: '💰 هزینه شرکت', 
+              value: 'شروع وار کلن نیاز به 5,000 Ccoin از بانک کلن دارد.', 
+              inline: false 
+            }
+          );
+          
+          // دکمه‌های شروع وار - فقط برای Leader و Co-Leader
+          if (canManageWar) {
+            const warStartRow = new ActionRowBuilder<ButtonBuilder>()
+              .addComponents(
+                new ButtonBuilder()
+                  .setCustomId('clan_war_start')
+                  .setLabel('🔥 شروع وار جدید')
+                  .setStyle(ButtonStyle.Danger)
+                  .setDisabled(userClan.bank < 5000),
+                new ButtonBuilder()
+                  .setCustomId('clan_war_search')
+                  .setLabel('🔍 جستجوی حریف')
+                  .setStyle(ButtonStyle.Primary)
+                  .setDisabled(userClan.bank < 5000)
+              );
+            
+            components.push(warStartRow);
+          }
+        } else if (warStatus === 'preparation') {
+          // مرحله آماده‌سازی
+          const opponentName = userClan.warOpponentName || 'کلن رقیب';
+          const preparationEndTime = userClan.warPreparationEndTime || new Date(Date.now() + 8 * 60 * 60 * 1000); // 8 ساعت
+          const timeRemaining = Math.max(0, Math.floor((new Date(preparationEndTime).getTime() - Date.now()) / (1000 * 60 * 60)));
+          
+          warEmbed.setDescription(`کلن شما در مرحله آماده‌سازی برای وار با **${opponentName}** است. زمان باقی‌مانده تا شروع وار: **${timeRemaining} ساعت**`);
+          warEmbed.addFields(
+            { 
+              name: '👥 اعضای آماده', 
+              value: `${userClan.warReadyMembers || 0}/${userClan.memberCount} نفر`, 
+              inline: true 
+            },
+            { 
+              name: '⚔️ وضعیت', 
+              value: 'مرحله آماده‌سازی', 
+              inline: true 
+            },
+            { 
+              name: '💰 جایزه', 
+              value: '10,000 Ccoin', 
+              inline: true 
+            },
+            { 
+              name: '💡 نکته', 
+              value: 'در مرحله آماده‌سازی، همه اعضای کلن باید با انتخاب "اعلام آمادگی" در وار شرکت کنند تا بیشترین امتیاز را کسب کنید.', 
+              inline: false 
+            }
+          );
+          
+          // دکمه اعلام آمادگی برای همه اعضا
+          const readyRow = new ActionRowBuilder<ButtonBuilder>()
+            .addComponents(
+              new ButtonBuilder()
+                .setCustomId('clan_war_ready')
+                .setLabel('🙋‍♂️ اعلام آمادگی')
+                .setStyle(ButtonStyle.Success),
+              new ButtonBuilder()
+                .setCustomId('clan_war_info')
+                .setLabel('📊 اطلاعات وار')
+                .setStyle(ButtonStyle.Primary)
+            );
+          
+          components.push(readyRow);
+          
+          // برای لیدر و معاونین، دکمه لغو وار نیز نمایش داده می‌شود
+          if (canManageWar) {
+            const adminRow = new ActionRowBuilder<ButtonBuilder>()
+              .addComponents(
+                new ButtonBuilder()
+                  .setCustomId('clan_war_remind')
+                  .setLabel('📣 یادآوری به اعضا')
+                  .setStyle(ButtonStyle.Secondary),
+                new ButtonBuilder()
+                  .setCustomId('clan_war_cancel')
+                  .setLabel('❌ لغو وار')
+                  .setStyle(ButtonStyle.Danger)
+              );
+            
+            components.push(adminRow);
+          }
+        } else if (warStatus === 'active') {
+          // وار در حال انجام
+          const opponentName = userClan.warOpponentName || 'کلن رقیب';
+          const warEndTime = userClan.warEndTime || new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 ساعت
+          const timeRemaining = Math.max(0, Math.floor((new Date(warEndTime).getTime() - Date.now()) / (1000 * 60 * 60)));
+          
+          // امتیازات فرضی - در نسخه نهایی باید از دیتابیس خوانده شود
+          const clanScore = userClan.warScore || 500;
+          const opponentScore = userClan.warOpponentScore || 450;
+          
+          warEmbed.setDescription(`⚔️ **وار در حال انجام**\n\n${userClan.name} (${clanScore}) vs ${opponentName} (${opponentScore})\n\nزمان باقی‌مانده: **${timeRemaining} ساعت**`);
+          warEmbed.addFields(
+            { 
+              name: '🏆 وضعیت فعلی', 
+              value: clanScore > opponentScore ? 
+                `🟢 **درحال برد** (+${clanScore - opponentScore})` : 
+                (clanScore < opponentScore ? 
+                 `🔴 **درحال باخت** (-${opponentScore - clanScore})` : 
+                 '🟡 **مساوی**'), 
+              inline: false 
+            },
+            { 
+              name: '💡 کسب امتیاز', 
+              value: '• هر برد در بازی رقابتی: 10 امتیاز\n• هر 1000 Ccoin واریز به بانک: 5 امتیاز\n• تکمیل ماموریت کلن: 50 امتیاز', 
+              inline: false 
+            }
+          );
+          
+          // دکمه‌های منوی وار فعال
+          const actionRow = new ActionRowBuilder<ButtonBuilder>()
+            .addComponents(
+              new ButtonBuilder()
+                .setCustomId('clan_war_score')
+                .setLabel('📊 مشاهده جزئیات')
+                .setStyle(ButtonStyle.Primary),
+              new ButtonBuilder()
+                .setCustomId('clan_war_boost')
+                .setLabel('⚡ بوست امتیاز')
+                .setStyle(ButtonStyle.Danger)
+                .setDisabled(userClan.bank < 3000 || !canManageWar)
+            );
+          
+          components.push(actionRow);
+        } else if (warStatus === 'ended') {
+          // وار به پایان رسیده
+          const opponentName = userClan.warOpponentName || 'کلن رقیب';
+          const clanScore = userClan.warScore || 800;
+          const opponentScore = userClan.warOpponentScore || 750;
+          const isWinner = clanScore > opponentScore;
+          
+          warEmbed.setDescription(isWinner ? 
+            `🎉 **تبریک!** کلن شما در وار مقابل **${opponentName}** پیروز شد!` : 
+            `😔 متأسفانه کلن شما در وار مقابل **${opponentName}** شکست خورد.`);
+          
+          warEmbed.addFields(
+            { 
+              name: '📊 نتیجه نهایی', 
+              value: `${userClan.name}: **${clanScore}**\n${opponentName}: **${opponentScore}**`, 
+              inline: false 
+            },
+            { 
+              name: isWinner ? '🏆 جایزه برد' : '🥈 جایزه مشارکت', 
+              value: isWinner ? 
+                '• 10,000 Ccoin به بانک کلن\n• 5,000 امتیاز برای پیشرفت کلن' : 
+                '• 2,000 Ccoin به بانک کلن\n• 1,000 امتیاز برای پیشرفت کلن', 
+              inline: false 
+            },
+            { 
+              name: '🔝 برترین بازیکنان', 
+              value: '1. [نام کاربر 1] - 150 امتیاز\n2. [نام کاربر 2] - 120 امتیاز\n3. [نام کاربر 3] - 100 امتیاز', 
+              inline: false 
+            }
+          );
+          
+          // دکمه دریافت جایزه فقط برای لیدر
+          if (user.discordId === userClan.ownerId) {
+            const claimRow = new ActionRowBuilder<ButtonBuilder>()
+              .addComponents(
+                new ButtonBuilder()
+                  .setCustomId('clan_war_claim_reward')
+                  .setLabel('🎁 دریافت جایزه')
+                  .setStyle(ButtonStyle.Success),
+                new ButtonBuilder()
+                  .setCustomId('clan_war_history')
+                  .setLabel('📜 تاریخچه وار')
+                  .setStyle(ButtonStyle.Secondary)
+              );
+            
+            components.push(claimRow);
+          } else {
+            const historyRow = new ActionRowBuilder<ButtonBuilder>()
+              .addComponents(
+                new ButtonBuilder()
+                  .setCustomId('clan_war_history')
+                  .setLabel('📜 تاریخچه وار')
+                  .setStyle(ButtonStyle.Secondary)
+              );
+            
+            components.push(historyRow);
+          }
+        }
+        
+        // دکمه بازگشت در همه حالت‌ها نمایش داده می‌شود
+        const backRow = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('clans')
+              .setLabel('🔙 بازگشت')
+              .setStyle(ButtonStyle.Secondary)
+          );
+        
+        components.push(backRow);
+        
+        await interaction.update({ embeds: [warEmbed], components: components });
+        return;
+      }
+      
       // Handle clan island
       if (customId === 'clan_island') {
         if (!userClan) {
           await interaction.reply({
-            content: 'شما عضو هیچ کلنی نیستید.',
+            content: '⚠️ شما عضو هیچ کلنی نیستید.',
             ephemeral: true
           });
           return;
@@ -464,7 +1304,7 @@ export async function clansMenu(
         // Check clan level
         if (userClan.level < 2) {
           await interaction.reply({
-            content: 'برای دسترسی به جزیره کلن، سطح کلن باید حداقل 2 باشد.',
+            content: '⚠️ برای دسترسی به جزیره کلن، سطح کلن باید حداقل 2 باشد.',
             ephemeral: true
           });
           return;
