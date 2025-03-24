@@ -703,6 +703,84 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       return;
     }
     
+    // Handle admin menu navigation
+    if (action.startsWith('admin_')) {
+      // Extract the category from the button ID (e.g., admin_economy -> economy)
+      const category = action.replace('admin_', '');
+      
+      // Handle economy management buttons
+      if (action === 'admin_add_coin') {
+        await handleAdminAddCoin(interaction);
+        return;
+      }
+      
+      if (action === 'admin_remove_coin') {
+        await handleAdminRemoveCoin(interaction);
+        return;
+      }
+      
+      if (action === 'admin_distribute') {
+        await handleAdminDistributeCoin(interaction);
+        return;
+      }
+      
+      if (action === 'admin_set_interest') {
+        await handleAdminSetInterest(interaction);
+        return;
+      }
+      
+      if (action === 'admin_set_tax') {
+        await handleAdminSetTax(interaction);
+        return;
+      }
+      
+      if (action === 'admin_reset_economy') {
+        await handleAdminResetEconomy(interaction);
+        return;
+      }
+      
+      // User management buttons
+      if (action === 'admin_search_user') {
+        await handleAdminSearchUser(interaction);
+        return;
+      }
+      
+      if (action === 'admin_ban_user') {
+        await handleAdminBanUser(interaction);
+        return;
+      }
+      
+      if (action === 'admin_reset_user') {
+        await handleAdminResetUser(interaction);
+        return;
+      }
+      
+      if (action === 'admin_top_users') {
+        await handleAdminTopUsers(interaction);
+        return;
+      }
+      
+      if (action === 'admin_inactive_users') {
+        await handleAdminInactiveUsers(interaction);
+        return;
+      }
+      
+      if (action === 'admin_user_logs') {
+        await handleAdminUserLogs(interaction);
+        return;
+      }
+      
+      // If it's a regular category navigation
+      if (category === 'menu') {
+        // Return to main admin menu
+        await adminMenu(interaction);
+      } else {
+        // Navigate to specific admin submenu
+        await adminMenu(interaction, category);
+      }
+      return;
+    }
+    
     // Handle log settings
     if (action.startsWith('admin_set_') && action.endsWith('_log')) {
       // Extract the log type from the button ID (e.g., admin_set_transaction_log -> transaction)
@@ -2138,6 +2216,558 @@ async function handleClanStartProject(interaction: ButtonInteraction, projectId:
     console.error('Error in clan start project handler:', error);
     await interaction.reply({
       content: 'متأسفانه خطایی در شروع پروژه رخ داد!',
+      ephemeral: true
+    });
+  }
+}
+
+// Admin functions for economy management
+async function handleAdminAddCoin(interaction: ButtonInteraction) {
+  try {
+    // Check if user has admin permissions
+    const member = interaction.guild?.members.cache.get(interaction.user.id);
+    const adminRoleId = botConfig.getConfig().general.adminRoleId;
+    
+    if (!member?.roles.cache.has(adminRoleId)) {
+      await interaction.reply({
+        content: 'شما دسترسی لازم برای این عملیات را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Create a modal for user ID and amount input
+    const modal = new ModalBuilder()
+      .setCustomId('admin_add_coin_modal')
+      .setTitle('افزودن سکه به کاربر');
+    
+    const userIdInput = new TextInputBuilder()
+      .setCustomId('userId')
+      .setLabel('آی‌دی کاربر را وارد کنید')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('مثال: 1234567890123456789')
+      .setRequired(true);
+    
+    const amountInput = new TextInputBuilder()
+      .setCustomId('amount')
+      .setLabel('مقدار سکه را وارد کنید')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('مثال: 1000')
+      .setRequired(true);
+    
+    const userIdRow = new ActionRowBuilder<TextInputBuilder>().addComponents(userIdInput);
+    const amountRow = new ActionRowBuilder<TextInputBuilder>().addComponents(amountInput);
+    
+    modal.addComponents(userIdRow, amountRow);
+    
+    await interaction.showModal(modal);
+  } catch (error) {
+    console.error('Error showing add coin modal:', error);
+    await interaction.reply({
+      content: 'متاسفانه در نمایش فرم افزودن سکه خطایی رخ داد!',
+      ephemeral: true
+    });
+  }
+}
+
+async function handleAdminRemoveCoin(interaction: ButtonInteraction) {
+  try {
+    // Check if user has admin permissions
+    const member = interaction.guild?.members.cache.get(interaction.user.id);
+    const adminRoleId = botConfig.getConfig().general.adminRoleId;
+    
+    if (!member?.roles.cache.has(adminRoleId)) {
+      await interaction.reply({
+        content: 'شما دسترسی لازم برای این عملیات را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Create a modal for user ID and amount input
+    const modal = new ModalBuilder()
+      .setCustomId('admin_remove_coin_modal')
+      .setTitle('کاهش سکه کاربر');
+    
+    const userIdInput = new TextInputBuilder()
+      .setCustomId('userId')
+      .setLabel('آی‌دی کاربر را وارد کنید')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('مثال: 1234567890123456789')
+      .setRequired(true);
+    
+    const amountInput = new TextInputBuilder()
+      .setCustomId('amount')
+      .setLabel('مقدار سکه را وارد کنید')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('مثال: 1000')
+      .setRequired(true);
+    
+    const userIdRow = new ActionRowBuilder<TextInputBuilder>().addComponents(userIdInput);
+    const amountRow = new ActionRowBuilder<TextInputBuilder>().addComponents(amountInput);
+    
+    modal.addComponents(userIdRow, amountRow);
+    
+    await interaction.showModal(modal);
+  } catch (error) {
+    console.error('Error showing remove coin modal:', error);
+    await interaction.reply({
+      content: 'متاسفانه در نمایش فرم کاهش سکه خطایی رخ داد!',
+      ephemeral: true
+    });
+  }
+}
+
+async function handleAdminDistributeCoin(interaction: ButtonInteraction) {
+  try {
+    // Check if user has admin permissions
+    const member = interaction.guild?.members.cache.get(interaction.user.id);
+    const adminRoleId = botConfig.getConfig().general.adminRoleId;
+    
+    if (!member?.roles.cache.has(adminRoleId)) {
+      await interaction.reply({
+        content: 'شما دسترسی لازم برای این عملیات را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Create a modal for amount input
+    const modal = new ModalBuilder()
+      .setCustomId('admin_distribute_coin_modal')
+      .setTitle('توزیع سکه بین کاربران');
+    
+    const amountInput = new TextInputBuilder()
+      .setCustomId('amount')
+      .setLabel('مقدار سکه برای هر کاربر')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('مثال: 100')
+      .setRequired(true);
+    
+    const reasonInput = new TextInputBuilder()
+      .setCustomId('reason')
+      .setLabel('دلیل توزیع سکه')
+      .setStyle(TextInputStyle.Paragraph)
+      .setPlaceholder('مثال: هدیه مناسبتی')
+      .setRequired(true);
+    
+    const amountRow = new ActionRowBuilder<TextInputBuilder>().addComponents(amountInput);
+    const reasonRow = new ActionRowBuilder<TextInputBuilder>().addComponents(reasonInput);
+    
+    modal.addComponents(amountRow, reasonRow);
+    
+    await interaction.showModal(modal);
+  } catch (error) {
+    console.error('Error showing distribute coin modal:', error);
+    await interaction.reply({
+      content: 'متاسفانه در نمایش فرم توزیع سکه خطایی رخ داد!',
+      ephemeral: true
+    });
+  }
+}
+
+async function handleAdminSetInterest(interaction: ButtonInteraction) {
+  try {
+    // Check if user has admin permissions
+    const member = interaction.guild?.members.cache.get(interaction.user.id);
+    const adminRoleId = botConfig.getConfig().general.adminRoleId;
+    
+    if (!member?.roles.cache.has(adminRoleId)) {
+      await interaction.reply({
+        content: 'شما دسترسی لازم برای این عملیات را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Create a modal for rate input
+    const modal = new ModalBuilder()
+      .setCustomId('admin_set_interest_modal')
+      .setTitle('تنظیم نرخ سود بانکی');
+    
+    const rateInput = new TextInputBuilder()
+      .setCustomId('rate')
+      .setLabel('نرخ سود بانکی (درصد)')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('مثال: 5')
+      .setRequired(true);
+    
+    const rateRow = new ActionRowBuilder<TextInputBuilder>().addComponents(rateInput);
+    
+    modal.addComponents(rateRow);
+    
+    await interaction.showModal(modal);
+  } catch (error) {
+    console.error('Error showing set interest modal:', error);
+    await interaction.reply({
+      content: 'متاسفانه در نمایش فرم تنظیم نرخ سود خطایی رخ داد!',
+      ephemeral: true
+    });
+  }
+}
+
+async function handleAdminSetTax(interaction: ButtonInteraction) {
+  try {
+    // Check if user has admin permissions
+    const member = interaction.guild?.members.cache.get(interaction.user.id);
+    const adminRoleId = botConfig.getConfig().general.adminRoleId;
+    
+    if (!member?.roles.cache.has(adminRoleId)) {
+      await interaction.reply({
+        content: 'شما دسترسی لازم برای این عملیات را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Create a modal for rate input
+    const modal = new ModalBuilder()
+      .setCustomId('admin_set_tax_modal')
+      .setTitle('تنظیم نرخ مالیات');
+    
+    const rateInput = new TextInputBuilder()
+      .setCustomId('rate')
+      .setLabel('نرخ مالیات بر انتقال (درصد)')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('مثال: 2')
+      .setRequired(true);
+    
+    const rateRow = new ActionRowBuilder<TextInputBuilder>().addComponents(rateInput);
+    
+    modal.addComponents(rateRow);
+    
+    await interaction.showModal(modal);
+  } catch (error) {
+    console.error('Error showing set tax modal:', error);
+    await interaction.reply({
+      content: 'متاسفانه در نمایش فرم تنظیم نرخ مالیات خطایی رخ داد!',
+      ephemeral: true
+    });
+  }
+}
+
+async function handleAdminResetEconomy(interaction: ButtonInteraction) {
+  try {
+    // Check if user has admin permissions
+    const member = interaction.guild?.members.cache.get(interaction.user.id);
+    const adminRoleId = botConfig.getConfig().general.adminRoleId;
+    
+    if (!member?.roles.cache.has(adminRoleId)) {
+      await interaction.reply({
+        content: 'شما دسترسی لازم برای این عملیات را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Create confirmation buttons
+    const row = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_reset_economy_confirm')
+          .setLabel('بله، ریست کن')
+          .setStyle(ButtonStyle.Danger),
+        new ButtonBuilder()
+          .setCustomId('admin_economy')
+          .setLabel('خیر، لغو کن')
+          .setStyle(ButtonStyle.Secondary)
+      );
+    
+    await interaction.reply({
+      content: '⚠️ **هشدار:** این عملیات تمام سکه‌های کاربران را ریست می‌کند و قابل بازگشت نیست. آیا مطمئن هستید؟',
+      components: [row],
+      ephemeral: true
+    });
+  } catch (error) {
+    console.error('Error in reset economy:', error);
+    await interaction.reply({
+      content: 'متاسفانه در انجام عملیات خطایی رخ داد!',
+      ephemeral: true
+    });
+  }
+}
+
+// Admin functions for user management
+async function handleAdminSearchUser(interaction: ButtonInteraction) {
+  try {
+    // Check if user has admin permissions
+    const member = interaction.guild?.members.cache.get(interaction.user.id);
+    const adminRoleId = botConfig.getConfig().general.adminRoleId;
+    
+    if (!member?.roles.cache.has(adminRoleId)) {
+      await interaction.reply({
+        content: 'شما دسترسی لازم برای این عملیات را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Create a modal for user ID input
+    const modal = new ModalBuilder()
+      .setCustomId('admin_search_user_modal')
+      .setTitle('جستجوی کاربر');
+    
+    const userIdInput = new TextInputBuilder()
+      .setCustomId('userId')
+      .setLabel('آی‌دی کاربر یا نام کاربری را وارد کنید')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('مثال: 1234567890123456789 یا username#1234')
+      .setRequired(true);
+    
+    const userIdRow = new ActionRowBuilder<TextInputBuilder>().addComponents(userIdInput);
+    
+    modal.addComponents(userIdRow);
+    
+    await interaction.showModal(modal);
+  } catch (error) {
+    console.error('Error showing search user modal:', error);
+    await interaction.reply({
+      content: 'متاسفانه در نمایش فرم جستجوی کاربر خطایی رخ داد!',
+      ephemeral: true
+    });
+  }
+}
+
+async function handleAdminBanUser(interaction: ButtonInteraction) {
+  try {
+    // Check if user has admin permissions
+    const member = interaction.guild?.members.cache.get(interaction.user.id);
+    const adminRoleId = botConfig.getConfig().general.adminRoleId;
+    
+    if (!member?.roles.cache.has(adminRoleId)) {
+      await interaction.reply({
+        content: 'شما دسترسی لازم برای این عملیات را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Create a modal for user ID and reason input
+    const modal = new ModalBuilder()
+      .setCustomId('admin_ban_user_modal')
+      .setTitle('مسدود کردن کاربر');
+    
+    const userIdInput = new TextInputBuilder()
+      .setCustomId('userId')
+      .setLabel('آی‌دی کاربر را وارد کنید')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('مثال: 1234567890123456789')
+      .setRequired(true);
+    
+    const reasonInput = new TextInputBuilder()
+      .setCustomId('reason')
+      .setLabel('دلیل مسدودسازی')
+      .setStyle(TextInputStyle.Paragraph)
+      .setPlaceholder('مثال: تقلب در بازی')
+      .setRequired(true);
+    
+    const userIdRow = new ActionRowBuilder<TextInputBuilder>().addComponents(userIdInput);
+    const reasonRow = new ActionRowBuilder<TextInputBuilder>().addComponents(reasonInput);
+    
+    modal.addComponents(userIdRow, reasonRow);
+    
+    await interaction.showModal(modal);
+  } catch (error) {
+    console.error('Error showing ban user modal:', error);
+    await interaction.reply({
+      content: 'متاسفانه در نمایش فرم مسدودسازی کاربر خطایی رخ داد!',
+      ephemeral: true
+    });
+  }
+}
+
+async function handleAdminResetUser(interaction: ButtonInteraction) {
+  try {
+    // Check if user has admin permissions
+    const member = interaction.guild?.members.cache.get(interaction.user.id);
+    const adminRoleId = botConfig.getConfig().general.adminRoleId;
+    
+    if (!member?.roles.cache.has(adminRoleId)) {
+      await interaction.reply({
+        content: 'شما دسترسی لازم برای این عملیات را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Create a modal for user ID input
+    const modal = new ModalBuilder()
+      .setCustomId('admin_reset_user_modal')
+      .setTitle('ریست کاربر');
+    
+    const userIdInput = new TextInputBuilder()
+      .setCustomId('userId')
+      .setLabel('آی‌دی کاربر را وارد کنید')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('مثال: 1234567890123456789')
+      .setRequired(true);
+    
+    const confirmInput = new TextInputBuilder()
+      .setCustomId('confirm')
+      .setLabel('برای تایید عبارت "RESET" را وارد کنید')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('RESET')
+      .setRequired(true);
+    
+    const userIdRow = new ActionRowBuilder<TextInputBuilder>().addComponents(userIdInput);
+    const confirmRow = new ActionRowBuilder<TextInputBuilder>().addComponents(confirmInput);
+    
+    modal.addComponents(userIdRow, confirmRow);
+    
+    await interaction.showModal(modal);
+  } catch (error) {
+    console.error('Error showing reset user modal:', error);
+    await interaction.reply({
+      content: 'متاسفانه در نمایش فرم ریست کاربر خطایی رخ داد!',
+      ephemeral: true
+    });
+  }
+}
+
+async function handleAdminTopUsers(interaction: ButtonInteraction) {
+  try {
+    // Check if user has admin permissions
+    const member = interaction.guild?.members.cache.get(interaction.user.id);
+    const adminRoleId = botConfig.getConfig().general.adminRoleId;
+    
+    if (!member?.roles.cache.has(adminRoleId)) {
+      await interaction.reply({
+        content: 'شما دسترسی لازم برای این عملیات را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    await interaction.deferReply({ ephemeral: true });
+    
+    // Get all users and sort them by total balance
+    const users = await storage.getAllUsers();
+    const topUsers = users
+      .sort((a, b) => (b.wallet + b.bank) - (a.wallet + a.bank))
+      .slice(0, 10);
+    
+    const embed = new EmbedBuilder()
+      .setTitle('🏆 لیست کاربران برتر (بر اساس ثروت)')
+      .setColor('#FFD700')
+      .setDescription('لیست ۱۰ کاربر برتر بر اساس مجموع سکه‌ها')
+      .setTimestamp();
+    
+    for (let i = 0; i < topUsers.length; i++) {
+      const user = topUsers[i];
+      embed.addFields({
+        name: `${i + 1}. ${user.username}`,
+        value: `💰 مجموع: ${user.wallet + user.bank} سکه\n` +
+               `👛 کیف پول: ${user.wallet} سکه\n` +
+               `🏦 بانک: ${user.bank} سکه\n` +
+               `💎 کریستال: ${user.crystals}`
+      });
+    }
+    
+    await interaction.editReply({ embeds: [embed] });
+  } catch (error) {
+    console.error('Error in top users handler:', error);
+    await interaction.editReply({
+      content: 'متاسفانه در دریافت لیست کاربران برتر خطایی رخ داد!'
+    });
+  }
+}
+
+async function handleAdminInactiveUsers(interaction: ButtonInteraction) {
+  try {
+    // Check if user has admin permissions
+    const member = interaction.guild?.members.cache.get(interaction.user.id);
+    const adminRoleId = botConfig.getConfig().general.adminRoleId;
+    
+    if (!member?.roles.cache.has(adminRoleId)) {
+      await interaction.reply({
+        content: 'شما دسترسی لازم برای این عملیات را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    await interaction.deferReply({ ephemeral: true });
+    
+    // Get all users and find inactive ones (no activity in last 30 days)
+    const users = await storage.getAllUsers();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const inactiveUsers = users.filter(user => {
+      // Check lastSeen or createdAt date
+      const lastActivity = user.lastSeen || user.createdAt;
+      return lastActivity && new Date(lastActivity) < thirtyDaysAgo;
+    }).slice(0, 10);
+    
+    const embed = new EmbedBuilder()
+      .setTitle('⏰ لیست کاربران غیرفعال')
+      .setColor('#808080')
+      .setDescription('لیست کاربرانی که در ۳۰ روز گذشته فعالیتی نداشته‌اند')
+      .setTimestamp();
+    
+    if (inactiveUsers.length === 0) {
+      embed.setDescription('هیچ کاربر غیرفعالی یافت نشد!');
+    } else {
+      for (let i = 0; i < inactiveUsers.length; i++) {
+        const user = inactiveUsers[i];
+        const lastActivity = user.lastSeen || user.createdAt;
+        const daysSinceActivity = lastActivity ? 
+          Math.floor((Date.now() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24)) : 
+          'نامشخص';
+        
+        embed.addFields({
+          name: `${i + 1}. ${user.username}`,
+          value: `🆔 آی‌دی: ${user.discordId}\n` +
+                 `⏱️ آخرین فعالیت: ${daysSinceActivity} روز پیش\n` +
+                 `💰 مجموع سکه‌ها: ${user.wallet + user.bank}`
+        });
+      }
+    }
+    
+    await interaction.editReply({ embeds: [embed] });
+  } catch (error) {
+    console.error('Error in inactive users handler:', error);
+    await interaction.editReply({
+      content: 'متاسفانه در دریافت لیست کاربران غیرفعال خطایی رخ داد!'
+    });
+  }
+}
+
+async function handleAdminUserLogs(interaction: ButtonInteraction) {
+  try {
+    // Check if user has admin permissions
+    const member = interaction.guild?.members.cache.get(interaction.user.id);
+    const adminRoleId = botConfig.getConfig().general.adminRoleId;
+    
+    if (!member?.roles.cache.has(adminRoleId)) {
+      await interaction.reply({
+        content: 'شما دسترسی لازم برای این عملیات را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Create a modal for user ID input
+    const modal = new ModalBuilder()
+      .setCustomId('admin_user_logs_modal')
+      .setTitle('مشاهده لاگ کاربر');
+    
+    const userIdInput = new TextInputBuilder()
+      .setCustomId('userId')
+      .setLabel('آی‌دی کاربر را وارد کنید')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('مثال: 1234567890123456789')
+      .setRequired(true);
+    
+    const userIdRow = new ActionRowBuilder<TextInputBuilder>().addComponents(userIdInput);
+    
+    modal.addComponents(userIdRow);
+    
+    await interaction.showModal(modal);
+  } catch (error) {
+    console.error('Error showing user logs modal:', error);
+    await interaction.reply({
+      content: 'متاسفانه در نمایش فرم مشاهده لاگ کاربر خطایی رخ داد!',
       ephemeral: true
     });
   }
