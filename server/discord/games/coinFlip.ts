@@ -55,7 +55,7 @@ export async function handleCoinFlip(
         .setFooter({ text: 'شیر یا خط را انتخاب کنید!' })
         .setTimestamp();
       
-      // Create buttons
+      // Create buttons with different colors
       const row = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
           new ButtonBuilder()
@@ -65,7 +65,7 @@ export async function handleCoinFlip(
           new ButtonBuilder()
             .setCustomId('game:coinflip:tails')
             .setLabel('🪙 خط')
-            .setStyle(ButtonStyle.Primary)
+            .setStyle(ButtonStyle.Success)
         );
       
       // Back button
@@ -74,7 +74,7 @@ export async function handleCoinFlip(
           new ButtonBuilder()
             .setCustomId('games')
             .setLabel('🔙 انصراف')
-            .setStyle(ButtonStyle.Secondary)
+            .setStyle(ButtonStyle.Danger)
         );
       
       // Send the game message
@@ -110,17 +110,17 @@ export async function handleCoinFlip(
       .setTitle('🪙 بازی شیر یا خط')
       .setTimestamp();
     
-    // Create buttons for next actions
+    // Create colorful buttons for next actions
     const row = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
           .setCustomId('game:coinflip:start')
           .setLabel('🔄 بازی مجدد')
-          .setStyle(ButtonStyle.Primary),
+          .setStyle(ButtonStyle.Success),
         new ButtonBuilder()
           .setCustomId('games')
           .setLabel('🔙 بازگشت به منوی بازی‌ها')
-          .setStyle(ButtonStyle.Secondary)
+          .setStyle(ButtonStyle.Danger)
       );
     
     if (won) {

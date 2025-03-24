@@ -54,7 +54,7 @@ export async function handleRockPaperScissors(
         .setFooter({ text: 'سنگ، کاغذ یا قیچی را انتخاب کنید!' })
         .setTimestamp();
       
-      // Create buttons
+      // Create colorful buttons
       const row = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
           new ButtonBuilder()
@@ -64,11 +64,11 @@ export async function handleRockPaperScissors(
           new ButtonBuilder()
             .setCustomId('game:rps:paper')
             .setLabel('📄 کاغذ')
-            .setStyle(ButtonStyle.Primary),
+            .setStyle(ButtonStyle.Success),
           new ButtonBuilder()
             .setCustomId('game:rps:scissors')
             .setLabel('✂️ قیچی')
-            .setStyle(ButtonStyle.Primary)
+            .setStyle(ButtonStyle.Danger)
         );
       
       // Back button
@@ -146,17 +146,17 @@ export async function handleRockPaperScissors(
       )
       .setTimestamp();
     
-    // Create buttons for next actions
+    // Create colorful buttons for next actions
     const row = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
           .setCustomId('game:rps:start')
           .setLabel('🔄 بازی مجدد')
-          .setStyle(ButtonStyle.Primary),
+          .setStyle(ButtonStyle.Success),
         new ButtonBuilder()
           .setCustomId('games')
           .setLabel('🔙 بازگشت به منوی بازی‌ها')
-          .setStyle(ButtonStyle.Secondary)
+          .setStyle(ButtonStyle.Danger)
       );
     
     let won = false;
