@@ -19,6 +19,7 @@ import { giveawayBridgeMenu, buyGiveawayTickets, checkGiveawayBalance } from '..
 import { handleCoinFlip } from '../games/coinFlip';
 import { handleRockPaperScissors } from '../games/rockPaperScissors';
 import { handleNumberGuess } from '../games/numberGuess';
+import { handleDiceDuel } from '../games/diceDuel';
 import { getLogger, LogType } from '../utils/logger';
 import { botConfig } from '../utils/config';
 
@@ -337,6 +338,25 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
         } else if (params[1] === 'guess') {
           const guess = parseInt(params[2]);
           await handleNumberGuess(interaction, 'guess', guess);
+        }
+        return;
+      }
+      
+      if (gameType === 'dice_duel') {
+        if (params[1] === 'start') {
+          await handleDiceDuel(interaction, 'start');
+        } else if (params[1] === 'invite') {
+          const targetId = params[2];
+          await handleDiceDuel(interaction, 'invite', targetId);
+        } else if (params[1] === 'accept') {
+          const inviterId = params[2];
+          await handleDiceDuel(interaction, 'accept', inviterId);
+        } else if (params[1] === 'reject') {
+          const inviterId = params[2];
+          await handleDiceDuel(interaction, 'reject', inviterId);
+        } else if (params[1] === 'roll') {
+          const gameId = params[2];
+          await handleDiceDuel(interaction, 'roll', gameId);
         }
         return;
       }

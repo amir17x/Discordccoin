@@ -148,31 +148,73 @@ export async function gamesMenu(
         }
       }
     } else if (state === 'competitive') {
-      // Competitive games not implemented yet
-      const notImplementedMessage = '🔜 بازی‌های رقابتی در به‌روزرسانی‌های آینده اضافه خواهند شد!';
+      // Create competitive games menu
+      embed.setTitle('🏆 بازی‌های رقابتی')
+        .setDescription('با دوستان خود رقابت کنید و Ccoin بیشتری ببرید!')
+        .setFields(
+          { name: '📝 توضیحات', value: 'بازی‌های رقابتی به صورت دو نفره قابل انجام است. هر بازیکن باید مقدار مشخصی Ccoin را شرط‌بندی کند تا در بازی شرکت کند.', inline: false },
+          { name: '💰 موجودی', value: `${user.wallet} Ccoin`, inline: true },
+          { name: '💎 کریستال', value: `${user.crystals}`, inline: true }
+        );
       
+      // Create competitive games buttons
+      const competitiveGameRow1 = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('game:dice_duel:start')
+            .setLabel('🎲 تاس دو نفره')
+            .setStyle(ButtonStyle.Primary),
+          new ButtonBuilder()
+            .setCustomId('game:duel:start')
+            .setLabel('⚔️ دوئل')
+            .setStyle(ButtonStyle.Danger)
+            .setDisabled(true) // Not implemented yet
+        );
+        
+      const competitiveGameRow2 = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('game:quick_poker:start')
+            .setLabel('🃏 پوکر سریع')
+            .setStyle(ButtonStyle.Secondary)
+            .setDisabled(true), // Not implemented yet
+          new ButtonBuilder()
+            .setCustomId('game:type_race:start')
+            .setLabel('⌨️ مسابقه تایپ')
+            .setStyle(ButtonStyle.Success)
+            .setDisabled(true) // Not implemented yet
+        );
+        
+      const competitiveGameRow3 = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('menu')
+            .setLabel('🔙 بازگشت')
+            .setStyle(ButtonStyle.Secondary)
+        );
+      
+      // Send the competitive games menu
       if (interaction.deferred) {
-        await interaction.editReply({ content: notImplementedMessage });
-      } else if (interaction.replied) {
-        await interaction.followUp({ content: notImplementedMessage, ephemeral: true });
-      } else {
-        await interaction.reply({ content: notImplementedMessage, ephemeral: true });
-      }
-      
-      // Return to main games menu
-      setTimeout(async () => {
+        await interaction.editReply({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3] });
+      } else if (followUp) {
+        await interaction.followUp({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3], ephemeral: true });
+      } else if ('update' in interaction && typeof interaction.update === 'function') {
         try {
-          if (interaction.deferred) {
-            await interaction.editReply({ embeds: [embed], components: [row1, row2] });
-          } else if (followUp) {
-            await interaction.followUp({ embeds: [embed], components: [row1, row2], ephemeral: true });
-          } else if ('update' in interaction && typeof interaction.update === 'function') {
-            await interaction.update({ embeds: [embed], components: [row1, row2] });
-          }
+          await interaction.update({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3] });
         } catch (e) {
-          console.error("Error returning to main games menu:", e);
+          if (!interaction.replied && !interaction.deferred) {
+            await interaction.reply({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3], ephemeral: false });
+          } else {
+            await interaction.followUp({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3], ephemeral: false });
+          }
         }
-      }, 2000);
+      } else {
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3], ephemeral: false });
+        } else {
+          await interaction.followUp({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3], ephemeral: false });
+        }
+      }
     } else if (state === 'group') {
       // Group games not implemented yet
       const notImplementedMessage = '🔜 بازی‌های گروهی در به‌روزرسانی‌های آینده اضافه خواهند شد!';
