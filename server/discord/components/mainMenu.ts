@@ -29,9 +29,9 @@ export async function mainMenu(
     // Create the main embed
     const embed = new EmbedBuilder()
       .setColor('#5865F2')
-      .setTitle('🎮 Gaming Bot Menu')
+      .setTitle('🎮 ربات گیمینگ Ccoin')
       .setDescription('🎉 به ربات ما خوش اومدی! یه بخش رو انتخاب کن و لذت ببر! 😍')
-      .setFooter({ text: `${interaction.user.username} | Wallet: ${user.wallet} Ccoin | Bank: ${user.bank} Ccoin | 💎: ${user.crystals}` })
+      .setFooter({ text: `${interaction.user.username} | کیف پول: ${user.wallet} Ccoin | بانک: ${user.bank} Ccoin | کریستال: ${user.crystals} 💎` })
       .setTimestamp();
     
     // Create button rows with more options and appropriate colors
@@ -126,14 +126,16 @@ export async function mainMenu(
     
     // Send or update the message
     if (interaction instanceof ChatInputCommandInteraction) {
-      await interaction.reply({ embeds: [embed], components: [row1, row2, row3], ephemeral: false });
-    } else {
+      await interaction.reply({ embeds: [embed], components: [row1, row2, row3, row4, row5], ephemeral: false });
+    } else if ('update' in interaction && typeof interaction.update === 'function') {
       try {
-        await interaction.update({ embeds: [embed], components: [row1, row2, row3] });
+        await interaction.update({ embeds: [embed], components: [row1, row2, row3, row4, row5] });
       } catch (e) {
         // If update fails (might be due to deferred interaction), send a new message
-        await interaction.reply({ embeds: [embed], components: [row1, row2, row3], ephemeral: false });
+        await interaction.reply({ embeds: [embed], components: [row1, row2, row3, row4, row5], ephemeral: false });
       }
+    } else {
+      await interaction.reply({ embeds: [embed], components: [row1, row2, row3, row4, row5], ephemeral: false });
     }
     
   } catch (error) {

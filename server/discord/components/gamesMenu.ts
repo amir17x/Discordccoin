@@ -37,7 +37,7 @@ export async function gamesMenu(
         { name: '💵 موجودی', value: `${user.wallet} Ccoin`, inline: true },
         { name: '💎 کریستال', value: `${user.crystals}`, inline: true }
       )
-      .setFooter({ text: `${interaction.user.username} | Win Ratio: ${user.totalGamesPlayed > 0 ? Math.round((user.totalGamesWon / user.totalGamesPlayed) * 100) : 0}%` })
+      .setFooter({ text: `${interaction.user.username} | نرخ برد: ${user.totalGamesPlayed > 0 ? Math.round((user.totalGamesWon / user.totalGamesPlayed) * 100) : 0}%` })
       .setTimestamp();
     
     // Create button rows
@@ -66,29 +66,38 @@ export async function gamesMenu(
           .setStyle(ButtonStyle.Secondary)
       );
     
-    // Create solo games menu
-    const soloGamesMenu = new ActionRowBuilder<StringSelectMenuBuilder>()
+    // Create solo games buttons (matching the UI in the screenshots)
+    const soloGameRow1 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
-        new StringSelectMenuBuilder()
-          .setCustomId('menu:game')
-          .setPlaceholder('انتخاب بازی')
-          .addOptions(
-            new StringSelectMenuOptionBuilder()
-              .setLabel('شیر یا خط')
-              .setValue('coinflip')
-              .setDescription('20 Ccoin ورودی، 40 Ccoin جایزه در صورت برد')
-              .setEmoji('🪙'),
-            new StringSelectMenuOptionBuilder()
-              .setLabel('سنگ کاغذ قیچی')
-              .setValue('rps')
-              .setDescription('20 Ccoin ورودی، 40 Ccoin جایزه در صورت برد')
-              .setEmoji('✂️'),
-            new StringSelectMenuOptionBuilder()
-              .setLabel('حدس عدد')
-              .setValue('numberguess')
-              .setDescription('30 Ccoin ورودی، 100 Ccoin جایزه در صورت برد')
-              .setEmoji('🔢')
-          )
+        new ButtonBuilder()
+          .setCustomId('game:coinflip:start')
+          .setLabel('🪙 شیر یا خط')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('game:rps:start')
+          .setLabel('✂️ سنگ کاغذ قیچی')
+          .setStyle(ButtonStyle.Success)
+      );
+      
+    const soloGameRow2 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('game:numberguess:start')
+          .setLabel('🔢 حدس عدد')
+          .setStyle(ButtonStyle.Danger),
+        new ButtonBuilder()
+          .setCustomId('game:wheel:start')
+          .setLabel('🎡 گردونه شانس')
+          .setStyle(ButtonStyle.Secondary)
+          .setDisabled(true) // Not implemented yet
+      );
+      
+    const soloGameRow3 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('menu')
+          .setLabel('🔙 بازگشت')
+          .setStyle(ButtonStyle.Secondary)
       );
     
     // Track what state we're in
@@ -108,9 +117,9 @@ export async function gamesMenu(
     // Send the appropriate menu based on the state
     if (state === 'solo') {
       if (followUp) {
-        await interaction.followUp({ embeds: [embed], components: [soloGamesMenu, row2], ephemeral: true });
+        await interaction.followUp({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3], ephemeral: true });
       } else {
-        await interaction.update({ embeds: [embed], components: [soloGamesMenu, row2] });
+        await interaction.update({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3] });
       }
     } else if (state === 'competitive') {
       // Competitive games not implemented yet
