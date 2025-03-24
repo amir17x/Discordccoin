@@ -92,22 +92,22 @@ export async function shopMenu(
       itemButtons.push(row);
     });
     
-    // Create navigation buttons
+    // Create colorful navigation buttons
     const navRow = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
           .setCustomId(`shop_page_${Math.max(1, currentPage - 1)}`)
           .setLabel('◀️ قبلی')
-          .setStyle(ButtonStyle.Secondary)
+          .setStyle(ButtonStyle.Primary)
           .setDisabled(currentPage <= 1),
         new ButtonBuilder()
           .setCustomId('menu')
           .setLabel('🔙 بازگشت')
-          .setStyle(ButtonStyle.Secondary),
+          .setStyle(ButtonStyle.Danger),
         new ButtonBuilder()
           .setCustomId(`shop_page_${Math.min(totalPages, currentPage + 1)}`)
           .setLabel('بعدی ▶️')
-          .setStyle(ButtonStyle.Secondary)
+          .setStyle(ButtonStyle.Primary)
           .setDisabled(currentPage >= totalPages)
       );
     

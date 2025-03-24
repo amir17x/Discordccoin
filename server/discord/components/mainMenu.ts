@@ -35,7 +35,7 @@ export async function mainMenu(
       .setTimestamp();
     
     // Create button rows with more options and appropriate colors
-    // Row 1: Economy, Games, Shop
+    // Row 1: Economy, Games, Shop - with colorful buttons
     const row1 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
@@ -49,33 +49,33 @@ export async function mainMenu(
         new ButtonBuilder()
           .setCustomId('shop')
           .setLabel('🛒 فروشگاه')
-          .setStyle(ButtonStyle.Secondary),
+          .setStyle(ButtonStyle.Danger),
       );
     
-    // Row 2: Marketplace, Inventory, Quests
+    // Row 2: Marketplace, Inventory, Quests - with colorful buttons
     const row2 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
           .setCustomId('marketplace')
           .setLabel('🏪 بازار')
-          .setStyle(ButtonStyle.Secondary),
+          .setStyle(ButtonStyle.Primary),
         new ButtonBuilder()
           .setCustomId('inventory')
           .setLabel('🎒 کوله‌پشتی')
-          .setStyle(ButtonStyle.Secondary),
+          .setStyle(ButtonStyle.Success),
         new ButtonBuilder()
           .setCustomId('quests')
           .setLabel('🎯 ماموریت‌ها')
           .setStyle(ButtonStyle.Danger),
       );
     
-    // Row 3: Clans, Tournaments, Achievements
+    // Row 3: Clans, Tournaments, Achievements - with colorful buttons
     const row3 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
           .setCustomId('clans')
           .setLabel('🏰 کلن‌ها')
-          .setStyle(ButtonStyle.Secondary),
+          .setStyle(ButtonStyle.Danger),
         new ButtonBuilder()
           .setCustomId('tournaments')
           .setLabel('🏁 تورنمنت‌ها')
@@ -86,7 +86,7 @@ export async function mainMenu(
           .setStyle(ButtonStyle.Success),
       );
       
-    // Row 4: Profile, Wheel, Seasons
+    // Row 4: Profile, Wheel, Seasons - with colorful buttons
     const row4 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
@@ -103,7 +103,7 @@ export async function mainMenu(
           .setStyle(ButtonStyle.Success),
       );
     
-    // Row 5: Parallel Worlds, Calendar, Help, Exit
+    // Row 5: Parallel Worlds, Calendar, Help, Exit - with colorful buttons
     const row5 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
@@ -113,11 +113,11 @@ export async function mainMenu(
         new ButtonBuilder()
           .setCustomId('calendar')
           .setLabel('📅 تقویم')
-          .setStyle(ButtonStyle.Secondary),
+          .setStyle(ButtonStyle.Success),
         new ButtonBuilder()
           .setCustomId('help')
           .setLabel('📜 راهنما')
-          .setStyle(ButtonStyle.Secondary),
+          .setStyle(ButtonStyle.Primary),
         new ButtonBuilder()
           .setCustomId('exit')
           .setLabel('🔙 خروج')
