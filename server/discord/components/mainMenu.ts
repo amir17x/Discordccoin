@@ -157,12 +157,7 @@ export async function mainMenu(
           new ButtonBuilder()
             .setCustomId('giveaway_bridge')
             .setLabel('🎮 قرعه‌کشی گیواوی')
-            .setStyle(ButtonStyle.Primary),
-          new ButtonBuilder()
-            .setCustomId('robbery')
-            .setLabel('🕵️‍♂️ سرقت (منسوخ)')
-            .setStyle(ButtonStyle.Danger)
-            .setDisabled(true),
+            .setStyle(ButtonStyle.Primary)
         );
       
       // Row 4: دکمه بازگشت به منوی اصلی

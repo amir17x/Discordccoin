@@ -1,4 +1,4 @@
-import { ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } from 'discord.js';
+import { ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { storage } from '../../storage';
 import { mainMenu } from '../components/mainMenu';
 import { economyMenu } from '../components/economyMenu';
@@ -22,6 +22,100 @@ import { getLogger, LogType } from '../utils/logger';
 import { botConfig } from '../utils/config';
 
 // Button handler function
+// Handler for investment history
+async function handleInvestmentHistory(interaction: ButtonInteraction) {
+  try {
+    // برای اطمینان از عدم تایم‌اوت، یک پاسخ با تاخیر ارسال می‌کنیم
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferReply({ ephemeral: true });
+    }
+    
+    const user = await storage.getUserByDiscordId(interaction.user.id);
+    
+    if (!user) {
+      const message = '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.';
+      if (interaction.deferred) {
+        await interaction.editReply({ content: message });
+      } else {
+        await interaction.reply({ content: message, ephemeral: true });
+      }
+      return;
+    }
+    
+    // بررسی سرمایه‌گذاری‌های کاربر
+    const investments = user.investments || [];
+    
+    if (investments.length === 0) {
+      const message = '📈 شما هیچ سرمایه‌گذاری فعالی ندارید. می‌توانید از منوی سرمایه‌گذاری، پول خود را سرمایه‌گذاری کنید.';
+      if (interaction.deferred) {
+        await interaction.editReply({ content: message });
+      } else {
+        await interaction.reply({ content: message, ephemeral: true });
+      }
+      
+      // بعد از مدت کوتاهی، منوی سرمایه‌گذاری را نمایش می‌دهیم
+      setTimeout(async () => {
+        if (interaction.replied || interaction.deferred) {
+          await investmentMenu(interaction, true);
+        }
+      }, 2000);
+      
+      return;
+    }
+    
+    // ایجاد امبد برای نمایش تاریخچه سرمایه‌گذاری‌ها
+    const embed = new EmbedBuilder()
+      .setColor('#9370DB')
+      .setTitle('📋 تاریخچه سرمایه‌گذاری‌های شما')
+      .setDescription(`شما در حال حاضر ${investments.length} سرمایه‌گذاری فعال دارید.`)
+      .setFooter({ text: 'Ccoin Investment System', iconURL: interaction.client.user?.displayAvatarURL() });
+    
+    // افزودن سرمایه‌گذاری‌ها به امبد
+    investments.forEach((investment, index) => {
+      const startDate = new Date(investment.startDate).toLocaleDateString('fa-IR');
+      const endDate = new Date(investment.endDate).toLocaleDateString('fa-IR');
+      const daysLeft = Math.ceil((new Date(investment.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+      
+      embed.addFields({ 
+        name: `${index + 1}. ${investment.type === 'low_risk' ? '🔵 کم ریسک' : 
+                      investment.type === 'medium_risk' ? '🟡 ریسک متوسط' : '🔴 پرریسک'}`, 
+        value: `مبلغ: ${investment.amount} Ccoin\nسود: ${investment.expectedReturn - investment.amount} Ccoin (${Math.round((investment.expectedReturn/investment.amount - 1) * 100)}%)\nتاریخ شروع: ${startDate}\nتاریخ پایان: ${endDate}\nروز باقیمانده: ${daysLeft}`,
+        inline: true 
+      });
+    });
+    
+    // ایجاد دکمه بازگشت به منوی سرمایه‌گذاری
+    const row = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('investment_menu')
+          .setLabel('🔙 بازگشت به منوی سرمایه‌گذاری')
+          .setStyle(ButtonStyle.Secondary)
+      );
+    
+    // ارسال پاسخ
+    if (interaction.deferred) {
+      await interaction.editReply({ embeds: [embed], components: [row] });
+    } else {
+      await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+    }
+  } catch (error) {
+    console.error('Error in investment history handler:', error);
+    try {
+      const errorMessage = '❌ متأسفانه در نمایش تاریخچه سرمایه‌گذاری شما خطایی رخ داد! لطفاً دوباره تلاش کنید.';
+      if (interaction.deferred) {
+        await interaction.editReply({ content: errorMessage });
+      } else if (interaction.replied) {
+        await interaction.followUp({ content: errorMessage, ephemeral: true });
+      } else {
+        await interaction.reply({ content: errorMessage, ephemeral: true });
+      }
+    } catch (e) {
+      console.error('Error handling investment history failure:', e);
+    }
+  }
+}
+
 export async function handleButtonInteraction(interaction: ButtonInteraction) {
   // Get the custom ID of the button
   const customId = interaction.customId;
@@ -47,6 +141,11 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     }
 
     if (action === 'games') {
+      await gamesMenu(interaction);
+      return;
+    }
+    
+    if (action === 'solo_games' || action === 'competitive_games' || action === 'group_games') {
       await gamesMenu(interaction);
       return;
     }
@@ -202,6 +301,12 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     // Handle investment actions
     if (action === 'invest_low' || action === 'invest_medium' || action === 'invest_high') {
       await investmentMenu(interaction);
+      return;
+    }
+    
+    // Handle investment history
+    if (action === 'investment_history') {
+      await handleInvestmentHistory(interaction);
       return;
     }
     
@@ -399,7 +504,7 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
 
     // If no handler matched, reply with an error
     await interaction.reply({
-      content: 'Sorry, I could not process that button. Please try again.',
+      content: '❌ متأسفانه نتوانستم این دکمه را پردازش کنم. لطفاً دوباره تلاش کنید.',
       ephemeral: true
     });
 
@@ -408,12 +513,12 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     try {
       if (interaction.replied || interaction.deferred) {
         await interaction.followUp({
-          content: 'There was an error while processing your request!',
+          content: '❌ خطایی هنگام پردازش درخواست شما رخ داد!',
           ephemeral: true
         });
       } else {
         await interaction.reply({
-          content: 'There was an error while processing your request!',
+          content: '❌ خطایی هنگام پردازش درخواست شما رخ داد!',
           ephemeral: true
         });
       }
@@ -426,17 +531,24 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
 // Handler for daily reward
 async function handleDailyReward(interaction: ButtonInteraction) {
   try {
+    // برای اطمینان از عدم تایم‌اوت، یک پاسخ با تاخیر ارسال می‌کنیم
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferReply({ ephemeral: true });
+    }
+    
     const user = await storage.getUserByDiscordId(interaction.user.id);
     
     if (!user) {
-      await interaction.reply({
-        content: 'You need to create an account first. Use the /menu command.',
-        ephemeral: true
-      });
+      const message = '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.';
+      if (interaction.deferred) {
+        await interaction.editReply({ content: message });
+      } else {
+        await interaction.reply({ content: message, ephemeral: true });
+      }
       return;
     }
     
-    // Check if daily reward already claimed
+    // بررسی آیا جایزه روزانه قبلاً دریافت شده است
     const now = new Date();
     const lastDaily = user.lastDaily ? new Date(user.lastDaily) : null;
     
@@ -445,14 +557,16 @@ async function handleDailyReward(interaction: ButtonInteraction) {
       const hours = Math.floor((nextReset.getTime() - now.getTime()) / (60 * 60 * 1000));
       const minutes = Math.floor(((nextReset.getTime() - now.getTime()) % (60 * 60 * 1000)) / (60 * 1000));
       
-      await interaction.reply({
-        content: `You already claimed your daily reward! Next reward available in ${hours}h ${minutes}m.`,
-        ephemeral: true
-      });
+      const message = `⏳ شما قبلاً جایزه روزانه خود را دریافت کرده‌اید! جایزه بعدی در ${hours} ساعت و ${minutes} دقیقه دیگر قابل دریافت است.`;
+      if (interaction.deferred) {
+        await interaction.editReply({ content: message });
+      } else {
+        await interaction.reply({ content: message, ephemeral: true });
+      }
       return;
     }
     
-    // Check streak
+    // بررسی زنجیره روزانه
     let streak = 0;
     if (lastDaily && now.getTime() - lastDaily.getTime() < 48 * 60 * 60 * 1000) {
       streak = user.dailyStreak + 1;
@@ -460,29 +574,30 @@ async function handleDailyReward(interaction: ButtonInteraction) {
       streak = 1;
     }
     
-    // Calculate reward
+    // محاسبه جایزه
     let reward = 50;
     if (streak >= 7) {
-      reward += 200; // Bonus for 7-day streak
+      reward += 200; // جایزه اضافی برای زنجیره 7 روزه
     }
     
-    // Apply reward
+    // اعمال جایزه
     await storage.addToWallet(user.id, reward);
     await storage.updateUser(user.id, { lastDaily: now, dailyStreak: streak });
     
-    let message = `You claimed your daily reward of ${reward} Ccoin!`;
+    let message = `🎁 شما جایزه روزانه خود به مقدار ${reward} سکه را دریافت کردید!`;
     if (streak >= 7) {
-      message += ` (Includes 7-day streak bonus of 200 Ccoin!)`;
+      message += ` (شامل جایزه ویژه زنجیره ۷ روزه به مقدار ۲۰۰ سکه!)`;
     } else if (streak > 1) {
-      message += ` Your current streak: ${streak} days.`;
+      message += ` زنجیره فعلی شما: ${streak} روز.`;
     }
     
-    await interaction.reply({
-      content: message,
-      ephemeral: true
-    });
+    if (interaction.deferred) {
+      await interaction.editReply({ content: message });
+    } else {
+      await interaction.reply({ content: message, ephemeral: true });
+    }
     
-    // After a short delay, refresh the economy menu
+    // بعد از مدت کوتاهی، منوی اقتصاد را به‌روزرسانی می‌کنیم
     setTimeout(async () => {
       if (interaction.replied || interaction.deferred) {
         await economyMenu(interaction, true);
@@ -490,10 +605,18 @@ async function handleDailyReward(interaction: ButtonInteraction) {
     }, 1500);
   } catch (error) {
     console.error('Error in daily reward handler:', error);
-    await interaction.reply({
-      content: 'Sorry, there was an error claiming your daily reward!',
-      ephemeral: true
-    });
+    try {
+      const errorMessage = '❌ متأسفانه در دریافت جایزه روزانه شما خطایی رخ داد! لطفاً دوباره تلاش کنید.';
+      if (interaction.deferred) {
+        await interaction.editReply({ content: errorMessage });
+      } else if (interaction.replied) {
+        await interaction.followUp({ content: errorMessage, ephemeral: true });
+      } else {
+        await interaction.reply({ content: errorMessage, ephemeral: true });
+      }
+    } catch (e) {
+      console.error('Error handling daily reward failure:', e);
+    }
   }
 }
 
@@ -563,43 +686,59 @@ async function handleDeposit(interaction: ButtonInteraction, amount: number) {
 // Handler for withdrawing money from bank
 async function handleWithdraw(interaction: ButtonInteraction, amount: number) {
   try {
+    // برای اطمینان از عدم تایم‌اوت، یک پاسخ با تاخیر ارسال می‌کنیم
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferReply({ ephemeral: true });
+    }
+    
     const user = await storage.getUserByDiscordId(interaction.user.id);
     
     if (!user) {
-      await interaction.reply({
-        content: 'You need to create an account first. Use the /menu command.',
-        ephemeral: true
-      });
+      const message = '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.';
+      if (interaction.deferred) {
+        await interaction.editReply({ content: message });
+      } else {
+        await interaction.reply({ content: message, ephemeral: true });
+      }
       return;
     }
     
     if (user.bank < amount) {
-      await interaction.reply({
-        content: `You don't have enough Ccoin in your bank. You have ${user.bank} Ccoin.`,
-        ephemeral: true
-      });
+      const message = `⚠️ موجودی حساب بانکی شما کافی نیست. موجودی فعلی: ${user.bank} سکه`;
+      if (interaction.deferred) {
+        await interaction.editReply({ content: message });
+      } else {
+        await interaction.reply({ content: message, ephemeral: true });
+      }
       return;
     }
     
     await storage.transferToWallet(user.id, amount);
     
-    await interaction.reply({
-      content: `Successfully withdrew ${amount} Ccoin from your bank.`,
-      ephemeral: true
-    });
+    const message = `✅ مبلغ ${amount} سکه با موفقیت از حساب بانکی شما برداشت شد.`;
+    if (interaction.deferred) {
+      await interaction.editReply({ content: message });
+    } else {
+      await interaction.reply({ content: message, ephemeral: true });
+    }
     
-    // After a short delay, refresh the economy menu
+    // بعد از مدت کوتاهی، منوی اقتصاد را به‌روزرسانی می‌کنیم
     setTimeout(async () => {
-      if (interaction.replied || interaction.deferred) {
+      try {
         await economyMenu(interaction, true);
+      } catch (e) {
+        console.error('Error refreshing economy menu after withdraw:', e);
       }
     }, 1500);
   } catch (error) {
     console.error('Error in withdraw handler:', error);
-    await interaction.reply({
-      content: 'Sorry, there was an error processing your withdrawal!',
-      ephemeral: true
-    });
+    
+    const errorMessage = '❌ متأسفانه در پردازش برداشت شما خطایی رخ داد!';
+    if (interaction.deferred) {
+      await interaction.editReply({ content: errorMessage });
+    } else if (!interaction.replied) {
+      await interaction.reply({ content: errorMessage, ephemeral: true });
+    }
   }
 }
 
@@ -610,7 +749,7 @@ async function handleBuyItem(interaction: ButtonInteraction, itemId: number) {
     
     if (!user) {
       await interaction.reply({
-        content: 'You need to create an account first. Use the /menu command.',
+        content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.',
         ephemeral: true
       });
       return;
@@ -620,7 +759,7 @@ async function handleBuyItem(interaction: ButtonInteraction, itemId: number) {
     
     if (!item) {
       await interaction.reply({
-        content: 'This item does not exist.',
+        content: '❌ این آیتم وجود ندارد.',
         ephemeral: true
       });
       return;
@@ -629,7 +768,7 @@ async function handleBuyItem(interaction: ButtonInteraction, itemId: number) {
     // Check if user has enough currency
     if (item.price && user.wallet < item.price) {
       await interaction.reply({
-        content: `You don't have enough Ccoin. This item costs ${item.price} Ccoin.`,
+        content: `❌ سکه‌های شما کافی نیست. این آیتم ${item.price} سکه قیمت دارد.`,
         ephemeral: true
       });
       return;
@@ -637,7 +776,7 @@ async function handleBuyItem(interaction: ButtonInteraction, itemId: number) {
     
     if (item.crystalPrice && user.crystals < item.crystalPrice) {
       await interaction.reply({
-        content: `You don't have enough crystals. This item costs ${item.crystalPrice} crystals.`,
+        content: `❌ کریستال‌های شما کافی نیست. این آیتم ${item.crystalPrice} کریستال قیمت دارد.`,
         ephemeral: true
       });
       return;
@@ -648,7 +787,7 @@ async function handleBuyItem(interaction: ButtonInteraction, itemId: number) {
     
     if (success) {
       await interaction.reply({
-        content: `You successfully purchased ${item.emoji} ${item.name}!`,
+        content: `✅ شما با موفقیت آیتم ${item.emoji} ${item.name} را خریداری کردید!`,
         ephemeral: true
       });
       
@@ -660,14 +799,14 @@ async function handleBuyItem(interaction: ButtonInteraction, itemId: number) {
       }, 1500);
     } else {
       await interaction.reply({
-        content: 'Sorry, there was an error processing your purchase.',
+        content: '❌ متأسفانه در پردازش خرید شما خطایی رخ داد.',
         ephemeral: true
       });
     }
   } catch (error) {
     console.error('Error in buy item handler:', error);
     await interaction.reply({
-      content: 'Sorry, there was an error processing your purchase!',
+      content: '❌ متأسفانه در پردازش خرید شما خطایی رخ داد!',
       ephemeral: true
     });
   }
@@ -680,7 +819,7 @@ async function handleUseItem(interaction: ButtonInteraction, itemId: number) {
     
     if (!user) {
       await interaction.reply({
-        content: 'You need to create an account first. Use the /menu command.',
+        content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.',
         ephemeral: true
       });
       return;
@@ -690,7 +829,7 @@ async function handleUseItem(interaction: ButtonInteraction, itemId: number) {
     
     if (!item) {
       await interaction.reply({
-        content: 'This item does not exist.',
+        content: '❌ این آیتم وجود ندارد.',
         ephemeral: true
       });
       return;
@@ -700,7 +839,7 @@ async function handleUseItem(interaction: ButtonInteraction, itemId: number) {
     const success = await storage.useItem(user.id, itemId);
     
     if (success) {
-      let message = `You used ${item.emoji} ${item.name}!`;
+      let message = `✅ شما از آیتم ${item.emoji} ${item.name} استفاده کردید!`;
       
       if (item.type === 'role') {
         // Calculate expiration time
@@ -708,7 +847,7 @@ async function handleUseItem(interaction: ButtonInteraction, itemId: number) {
         expires.setHours(expires.getHours() + (item.duration || 24));
         const expirationDate = expires.toLocaleString();
         
-        message += ` It will be active until ${expirationDate}.`;
+        message += ` این آیتم تا ${expirationDate} فعال خواهد بود.`;
       }
       
       await interaction.reply({
@@ -724,14 +863,14 @@ async function handleUseItem(interaction: ButtonInteraction, itemId: number) {
       }, 1500);
     } else {
       await interaction.reply({
-        content: `You don't have ${item.emoji} ${item.name} in your inventory.`,
+        content: `❌ شما آیتم ${item.emoji} ${item.name} را در کوله‌پشتی خود ندارید.`,
         ephemeral: true
       });
     }
   } catch (error) {
     console.error('Error in use item handler:', error);
     await interaction.reply({
-      content: 'Sorry, there was an error using that item!',
+      content: '❌ متأسفانه در استفاده از آیتم خطایی رخ داد!',
       ephemeral: true
     });
   }
@@ -741,7 +880,7 @@ async function handleUseItem(interaction: ButtonInteraction, itemId: number) {
 async function handleSellItem(interaction: ButtonInteraction, itemId: number) {
   // TODO: Implement sell functionality
   await interaction.reply({
-    content: 'Selling items will be available in a future update!',
+    content: '🔜 فروش آیتم‌ها در به‌روزرسانی‌های آینده در دسترس خواهد بود!',
     ephemeral: true
   });
 }
@@ -1078,7 +1217,7 @@ async function handleClaimQuest(interaction: ButtonInteraction, questId: number)
     
     if (!user) {
       await interaction.reply({
-        content: 'You need to create an account first. Use the /menu command.',
+        content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.',
         ephemeral: true
       });
       return;
@@ -1090,7 +1229,7 @@ async function handleClaimQuest(interaction: ButtonInteraction, questId: number)
     
     if (!userQuest) {
       await interaction.reply({
-        content: 'This quest does not exist or is not available to you.',
+        content: '❌ این ماموریت وجود ندارد یا برای شما در دسترس نیست.',
         ephemeral: true
       });
       return;
@@ -1102,7 +1241,7 @@ async function handleClaimQuest(interaction: ButtonInteraction, questId: number)
       await storage.updateQuestProgress(user.id, questId, userQuest.userQuest.progress);
       
       await interaction.reply({
-        content: `Quest completed! You received ${userQuest.quest.reward} Ccoin as a reward.`,
+        content: `🎉 ماموریت تکمیل شد! شما ${userQuest.quest.reward} سکه به عنوان پاداش دریافت کردید.`,
         ephemeral: true
       });
       
@@ -1114,19 +1253,19 @@ async function handleClaimQuest(interaction: ButtonInteraction, questId: number)
       }, 1500);
     } else if (userQuest.userQuest.completed) {
       await interaction.reply({
-        content: 'You have already claimed the reward for this quest.',
+        content: '⚠️ شما قبلاً پاداش این ماموریت را دریافت کرده‌اید.',
         ephemeral: true
       });
     } else {
       await interaction.reply({
-        content: `This quest is not completed yet. Progress: ${userQuest.userQuest.progress}/${userQuest.quest.targetAmount}`,
+        content: `⏳ این ماموریت هنوز تکمیل نشده است. پیشرفت: ${userQuest.userQuest.progress}/${userQuest.quest.targetAmount}`,
         ephemeral: true
       });
     }
   } catch (error) {
     console.error('Error in claim quest handler:', error);
     await interaction.reply({
-      content: 'Sorry, there was an error claiming your quest reward!',
+      content: '❌ متأسفانه در دریافت پاداش ماموریت خطایی رخ داد!',
       ephemeral: true
     });
   }

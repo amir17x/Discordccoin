@@ -39,9 +39,12 @@ export default function Home() {
             </div>
             <h1 className="text-white text-xl font-bold">Discord Gaming Bot</h1>
           </div>
-          <nav>
+          <nav className="flex gap-2">
             <Link href="/admin">
               <Button variant="secondary">Admin Panel</Button>
+            </Link>
+            <Link href="/simulator">
+              <Button variant="outline">Bot Simulator</Button>
             </Link>
           </nav>
         </div>
