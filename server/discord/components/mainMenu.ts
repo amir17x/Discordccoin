@@ -34,7 +34,8 @@ export async function mainMenu(
       .setFooter({ text: `${interaction.user.username} | Wallet: ${user.wallet} Ccoin | Bank: ${user.bank} Ccoin | 💎: ${user.crystals}` })
       .setTimestamp();
     
-    // Create button rows
+    // Create button rows with more options and appropriate colors
+    // Row 1: Economy, Games, Shop
     const row1 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
@@ -51,8 +52,13 @@ export async function mainMenu(
           .setStyle(ButtonStyle.Secondary),
       );
     
+    // Row 2: Marketplace, Inventory, Quests
     const row2 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
+        new ButtonBuilder()
+          .setCustomId('marketplace')
+          .setLabel('🏪 بازار')
+          .setStyle(ButtonStyle.Secondary),
         new ButtonBuilder()
           .setCustomId('inventory')
           .setLabel('🎒 کوله‌پشتی')
@@ -61,12 +67,9 @@ export async function mainMenu(
           .setCustomId('quests')
           .setLabel('🎯 ماموریت‌ها')
           .setStyle(ButtonStyle.Danger),
-        new ButtonBuilder()
-          .setCustomId('profile')
-          .setLabel('👤 پروفایل')
-          .setStyle(ButtonStyle.Primary),
       );
     
+    // Row 3: Clans, Tournaments, Achievements
     const row3 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
@@ -74,9 +77,51 @@ export async function mainMenu(
           .setLabel('🏰 کلن‌ها')
           .setStyle(ButtonStyle.Secondary),
         new ButtonBuilder()
+          .setCustomId('tournaments')
+          .setLabel('🏁 تورنمنت‌ها')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('achievements')
+          .setLabel('🎖️ دستاوردها')
+          .setStyle(ButtonStyle.Success),
+      );
+      
+    // Row 4: Profile, Wheel, Seasons
+    const row4 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('profile')
+          .setLabel('👤 پروفایل')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('wheel')
+          .setLabel('🎡 چرخ شانس')
+          .setStyle(ButtonStyle.Danger),
+        new ButtonBuilder()
+          .setCustomId('seasons')
+          .setLabel('🏆 فصل‌ها')
+          .setStyle(ButtonStyle.Success),
+      );
+    
+    // Row 5: Parallel Worlds, Calendar, Help, Exit
+    const row5 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('parallel_worlds')
+          .setLabel('🌀 جهان‌های موازی')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('calendar')
+          .setLabel('📅 تقویم')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
           .setCustomId('help')
           .setLabel('📜 راهنما')
           .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId('exit')
+          .setLabel('🔙 خروج')
+          .setStyle(ButtonStyle.Danger),
       );
     
     // Send or update the message
