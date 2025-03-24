@@ -55,7 +55,7 @@ export async function economyMenu(
       .setStyle(dailyAvailable ? ButtonStyle.Success : ButtonStyle.Secondary)
       .setDisabled(!dailyAvailable);
     
-    // Create button rows
+    // Create colorful button rows
     const row1 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         dailyButton,
@@ -66,7 +66,7 @@ export async function economyMenu(
         new ButtonBuilder()
           .setCustomId('withdraw_menu')
           .setLabel('💰 برداشت از بانک')
-          .setStyle(ButtonStyle.Primary)
+          .setStyle(ButtonStyle.Success)
       );
     
     const row2 = new ActionRowBuilder<ButtonBuilder>()
@@ -74,7 +74,7 @@ export async function economyMenu(
         new ButtonBuilder()
           .setCustomId('menu')
           .setLabel('🔙 بازگشت')
-          .setStyle(ButtonStyle.Secondary)
+          .setStyle(ButtonStyle.Danger)
       );
     
     // Create deposit options menu

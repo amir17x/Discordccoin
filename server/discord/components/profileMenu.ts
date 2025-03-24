@@ -87,7 +87,7 @@ export async function profileMenu(
       embed.addFields({ name: '🏆 دستاوردها', value: 'هنوز هیچ دستاوردی کسب نکرده‌اید.', inline: false });
     }
     
-    // Create button rows
+    // Create colorful button rows
     const row1 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
@@ -97,11 +97,11 @@ export async function profileMenu(
         new ButtonBuilder()
           .setCustomId('profile_achievements')
           .setLabel('🎖️ دستاوردها')
-          .setStyle(ButtonStyle.Primary),
+          .setStyle(ButtonStyle.Success),
         new ButtonBuilder()
           .setCustomId('profile_items')
           .setLabel('🎒 آیتم‌ها')
-          .setStyle(ButtonStyle.Primary)
+          .setStyle(ButtonStyle.Danger)
       );
     
     const row2 = new ActionRowBuilder<ButtonBuilder>()
@@ -109,7 +109,7 @@ export async function profileMenu(
         new ButtonBuilder()
           .setCustomId('menu')
           .setLabel('🔙 بازگشت')
-          .setStyle(ButtonStyle.Secondary)
+          .setStyle(ButtonStyle.Danger)
       );
     
     // Handle profile section buttons
@@ -156,13 +156,13 @@ export async function profileMenu(
           });
         });
         
-        // Back button
+        // Back button with color
         const backRow = new ActionRowBuilder<ButtonBuilder>()
           .addComponents(
             new ButtonBuilder()
               .setCustomId('profile')
               .setLabel('🔙 بازگشت')
-              .setStyle(ButtonStyle.Secondary)
+              .setStyle(ButtonStyle.Danger)
           );
         
         await interaction.update({ embeds: [statsEmbed], components: [backRow] });
@@ -192,13 +192,13 @@ export async function profileMenu(
           });
         });
         
-        // Back button
+        // Back button with color
         const backRow = new ActionRowBuilder<ButtonBuilder>()
           .addComponents(
             new ButtonBuilder()
               .setCustomId('profile')
               .setLabel('🔙 بازگشت')
-              .setStyle(ButtonStyle.Secondary)
+              .setStyle(ButtonStyle.Danger)
           );
         
         await interaction.update({ embeds: [achievementsEmbed], components: [backRow] });
