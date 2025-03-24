@@ -10,7 +10,21 @@ const menu = {
     .setDescription('باز کردن منوی اصلی ربات بازی'),
   
   async execute(interaction: any) {
-    await mainMenu(interaction);
+    try {
+      // ارسال یک پاسخ تاخیری برای جلوگیری از تایم‌اوت
+      await interaction.deferReply();
+      
+      // فراخوانی منوی اصلی
+      await mainMenu(interaction);
+    } catch (error) {
+      console.error("Error in menu command:", error);
+      // اطمینان از ارسال پاسخ حتی در صورت وقوع خطا
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({ content: "در حال بارگذاری منو...", ephemeral: true });
+      } else if (interaction.deferred) {
+        await interaction.editReply({ content: "خطا در بارگذاری منو! لطفاً دوباره تلاش کنید." });
+      }
+    }
   }
 };
 
@@ -191,16 +205,28 @@ const admin = {
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator), // Requires administrator permission
   
   async execute(interaction: any) {
-    // Check if user has permission
-    if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
-      await interaction.reply({
-        content: '⛔ شما دسترسی لازم برای استفاده از پنل ادمین را ندارید!',
-        ephemeral: true
-      });
-      return;
+    try {
+      // ارسال یک پاسخ تاخیری برای جلوگیری از تایم‌اوت
+      await interaction.deferReply({ ephemeral: true });
+      
+      // Check if user has permission
+      if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+        await interaction.editReply({
+          content: '⛔ شما دسترسی لازم برای استفاده از پنل ادمین را ندارید!'
+        });
+        return;
+      }
+      
+      // فراخوانی منوی ادمین
+      await adminMenu(interaction);
+    } catch (error) {
+      console.error("Error in admin command:", error);
+      if (interaction.deferred) {
+        await interaction.editReply({ content: "خطا در بارگذاری پنل ادمین! لطفاً دوباره تلاش کنید." });
+      } else if (!interaction.replied) {
+        await interaction.reply({ content: "خطا در بارگذاری پنل ادمین! لطفاً دوباره تلاش کنید.", ephemeral: true });
+      }
     }
-    
-    await adminMenu(interaction);
   }
 };
 

@@ -17,6 +17,11 @@ export async function mainMenu(
   showOther: boolean = false
 ) {
   try {
+    // راه‌اندازی پاسخ با تاخیر (defer) تا از خطای تایم‌اوت جلوگیری شود
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferReply({ ephemeral: true });
+    }
+    
     // Check if user exists, create if not
     let user = await storage.getUserByDiscordId(interaction.user.id);
     
@@ -173,33 +178,45 @@ export async function mainMenu(
     }
     
     // Send or update the message
-    if (interaction instanceof ChatInputCommandInteraction) {
-      await interaction.reply({ embeds: [embed], components: components, ephemeral: false });
+    if (interaction.deferred) {
+      await interaction.editReply({ embeds: [embed], components: components });
+    } else if (interaction instanceof ChatInputCommandInteraction) {
+      if (!interaction.replied) {
+        await interaction.reply({ embeds: [embed], components: components, ephemeral: false });
+      } else {
+        await interaction.followUp({ embeds: [embed], components: components, ephemeral: false });
+      }
     } else if ('update' in interaction && typeof interaction.update === 'function') {
       try {
         await interaction.update({ embeds: [embed], components: components });
       } catch (e) {
         // If update fails (might be due to deferred interaction), send a new message
-        await interaction.reply({ embeds: [embed], components: components, ephemeral: false });
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({ embeds: [embed], components: components, ephemeral: false });
+        } else {
+          await interaction.followUp({ embeds: [embed], components: components, ephemeral: false });
+        }
       }
     } else {
-      await interaction.reply({ embeds: [embed], components: components, ephemeral: false });
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({ embeds: [embed], components: components, ephemeral: false });
+      } else {
+        await interaction.followUp({ embeds: [embed], components: components, ephemeral: false });
+      }
     }
     
   } catch (error) {
     console.error('Error in main menu:', error);
     
     try {
-      if (interaction instanceof ChatInputCommandInteraction) {
-        await interaction.reply({
-          content: 'Sorry, there was an error displaying the menu!',
-          ephemeral: true
-        });
+      const errorMessage = 'خطایی در نمایش منو رخ داد! لطفاً دوباره تلاش کنید.';
+      
+      if (interaction.deferred) {
+        await interaction.editReply({ content: errorMessage });
+      } else if (interaction.replied) {
+        await interaction.followUp({ content: errorMessage, ephemeral: true });
       } else {
-        await interaction.reply({
-          content: 'Sorry, there was an error updating the menu!',
-          ephemeral: true
-        });
+        await interaction.reply({ content: errorMessage, ephemeral: true });
       }
     } catch (e) {
       console.error('Error handling main menu failure:', e);

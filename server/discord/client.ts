@@ -150,13 +150,16 @@ export async function initDiscordBot() {
           }
 
           try {
+            log(`Executing command: ${interaction.commandName}`, 'discord');
             await command.execute(interaction);
-          } catch (error) {
-            console.error(error);
+            log(`Successfully executed command: ${interaction.commandName}`, 'discord');
+          } catch (error: any) {
+            console.error(`Error executing command ${interaction.commandName}:`, error);
+            log(`Error executing command ${interaction.commandName}: ${error?.message || 'Unknown error'}`, 'error');
             if (interaction.replied || interaction.deferred) {
-              await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
+              await interaction.followUp({ content: 'خطایی در اجرای این دستور رخ داده است!', ephemeral: true });
             } else {
-              await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+              await interaction.reply({ content: 'خطایی در اجرای این دستور رخ داده است!', ephemeral: true });
             }
           }
         } else if (interaction.isButton()) {
