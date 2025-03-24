@@ -13,11 +13,20 @@ export default function Home() {
     queryKey: ['/api/health'],
   });
   
-  const { data: botStats, isLoading: statsLoading, error: statsError } = useQuery({
+  const { data: botStats, isLoading: statsLoading, error: statsError } = useQuery<{
+    totalUsers: number;
+    totalCcoin: number;
+    totalCrystals: number;
+    totalClans: number;
+  }>({
     queryKey: ['/api/stats'],
   });
   
-  const { data: botStatus, isLoading: statusLoading, error: statusError } = useQuery({
+  const { data: botStatus, isLoading: statusLoading, error: statusError } = useQuery<{
+    status: string;
+    version: string;
+    uptime: number;
+  }>({
     queryKey: ['/api/bot/status'],
   });
   
@@ -58,7 +67,7 @@ export default function Home() {
               <CardDescription>Current status of the Discord bot</CardDescription>
             </CardHeader>
             <CardContent>
-              <BotStatus isLoading={statusLoading} status={botStatus} />
+              <BotStatus isLoading={statusLoading} status={botStatus as {status: string; version: string; uptime: number} | undefined} />
             </CardContent>
           </Card>
           
@@ -68,7 +77,7 @@ export default function Home() {
               <CardDescription>Current metrics and statistics</CardDescription>
             </CardHeader>
             <CardContent>
-              <BotStatistics isLoading={statsLoading} stats={botStats} />
+              <BotStatistics isLoading={statsLoading} stats={botStats as {totalUsers: number; totalCcoin: number; totalCrystals: number; totalClans: number;} | undefined} />
             </CardContent>
             <CardFooter className="border-t pt-4">
               <Link href="/admin">

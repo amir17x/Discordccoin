@@ -114,15 +114,14 @@ export async function gamesMenu(
     // Track what state we're in
     let state = 'main';
     
-    // Check if this is a specific button interaction
-    if (interaction.isButton()) {
-      if (interaction.customId === 'solo_games') {
-        state = 'solo';
-      } else if (interaction.customId === 'competitive_games') {
-        state = 'competitive';
-      } else if (interaction.customId === 'group_games') {
-        state = 'group';
-      }
+    // Check what custom ID we have to determine state
+    const customId = interaction.customId;
+    if (customId === 'solo_games') {
+      state = 'solo';
+    } else if (customId === 'competitive_games') {
+      state = 'competitive';
+    } else if (customId === 'group_games') {
+      state = 'group';
     }
     
     // Send the appropriate menu based on the state

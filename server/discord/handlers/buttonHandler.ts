@@ -124,6 +124,7 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
   const [action, ...params] = customId.split(':');
 
   try {
+    
     // Handle navigation buttons
     if (action === 'menu') {
       await mainMenu(interaction);
@@ -145,7 +146,17 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       return;
     }
     
-    if (action === 'solo_games' || action === 'competitive_games' || action === 'group_games') {
+    if (action === 'solo_games') {
+      await gamesMenu(interaction);
+      return;
+    }
+    
+    if (action === 'competitive_games') {
+      await gamesMenu(interaction);
+      return;
+    }
+    
+    if (action === 'group_games') {
       await gamesMenu(interaction);
       return;
     }
