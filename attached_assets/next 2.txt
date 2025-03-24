@@ -1,0 +1,499 @@
+### 📜 مستند جامع و دقیق برای به‌روزرسانی ربات دیسکورد اقتصادی با ccoin 
+این متن به‌عنوان یک راهنمای کامل و بسیار جزئی برای هوش مصنوعی بعدی طراحی شده تا تمام بخش‌های ربات که نیاز به به‌روزرسانی دارن رو اصلاح کنه. تمرکز اصلی روی اضافه کردن دکمه‌های **بازگشت به منوی اصلی** به بخش‌هایی که فاقد این قابلیت هستن، به‌روزرسانی منوها و دکمه‌ها، و ارائه جزئیات بالا با کدهای نمونه در **Discord.js** هست. هدف اینه که هیچ چیزی از قلم نیفته و هوش مصنوعی بتونه دقیقاً بفهمه چیکار باید بکنه! 🚀💻
+
+---
+
+#### 🌟 هدف از این به‌روزرسانی  
+1. **اضافه کردن دکمه بازگشت به منو**: در تمام بخش‌هایی که دکمه "بازگشت" وجود نداره، این قابلیت اضافه بشه تا تجربه کاربری (UX) بهتر بشه و کاربرا به‌راحتی بین منوها جابه‌جا بشن.  
+2. **به‌روزرسانی منوها**: مطمئن بشیم که همه منوها ساختار یکنواخت و تعاملی دارن، با دکمه‌های واضح و عملکرد مشخص.  
+3. **جزئیات بالا**: هر بخش با توضیحات کامل، مثال‌های کدنویسی و موارد مورد نیاز شرح داده می‌شه.  
+
+---
+
+#### 📋 بخش‌هایی که نیاز به به‌روزرسانی دارن  
+بر اساس توضیحات قبلی، فرض می‌کنیم منوهای اصلی ربات شامل این موارد هستن:  
+- 🎮 منوی بازی‌ها  
+- 🏦 منوی اقتصاد و بانک  
+- 🛒 منوی فروشگاه  
+- 🎯 منوی مأموریت‌ها  
+-⚔️ منوی دوئل و رقابت‌ها  
+- 🎰 منوی جکپات و بخت‌آزمایی  
+- 🛠 منوی تنظیمات و مدیریت  
+
+مشکل اینه که بعضی از این منوها (مثلاً منوی جکپات، مأموریت‌ها یا دوئل) ممکنه دکمه **بازگشت به منوی اصلی** نداشته باشن. همچنین، باید مطمئن بشیم که همه دکمه‌ها به‌روز و کاربردی هستن.
+
+---
+
+#### 🔧 دستورالعمل‌های به‌روزرسانی  
+##### 1️⃣ ساختار کلی منوها  
+هر منو باید یه **سیستم تعاملی** با دکمه‌ها داشته باشه که شامل:  
+- دکمه‌های اصلی برای هر عملکرد (مثلاً "واریز به بانک"، "شروع دوئل").  
+- دکمه **بازگشت به منوی اصلی** (با ایموجی ⬅️ و برچسب "Back to Main Menu").  
+- نمایش گرافیکی با **Embed** برای جذابیت بیشتر.  
+
+##### 2️⃣ اضافه کردن دکمه بازگشت  
+برای هر منو که دکمه بازگشت نداره:  
+- یه دکمه با **ID مشخص** (مثلاً `back_to_main`) اضافه بشه.  
+- وقتی کاربر روش کلیک کنه، به منوی اصلی برگرده که شامل همه گزینه‌های اولیه (بازی‌ها، بانک، فروشگاه و ...) باشه.  
+- این دکمه باید توی **تمام زیرمنوها** (مثلاً زیرمنوی سرمایه‌گذاری در بانک یا زیرمنوی خرید در فروشگاه) باشه.
+
+##### 3️⃣ جزئیات هر بخش  
+در ادامه، هر منو رو با جزئیات بررسی می‌کنم و اگه نیاز به آپدیت داره، توضیح می‌دم و کد نمونه می‌ذارم.
+
+---
+
+#### 🎮 1. منوی بازی‌ها  
+**وضعیت فعلی:** شامل دکمه‌هایی مثل "تاس"، "شیر یا خط"، "دوئل" و غیره.  
+**مشکل:** ممکنه زیرمنوی "دوئل" یا "شرط‌بندی روی دوئل" دکمه بازگشت نداشته باشه.  
+**به‌روزرسانی:**  
+- اضافه کردن دکمه بازگشت به منوی اصلی در همه زیرمنوها.  
+- نمایش یه Embed اولیه با همه گزینه‌ها و دکمه‌های تعاملی.  
+
+💻 **کد نمونه (Discord.js):**  
+```javascript
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName('games')
+    .setDescription('ورود به منوی بازی‌ها'),
+  async execute(interaction) {
+    const gameEmbed = new EmbedBuilder()
+      .setColor('#00FF00')
+      .setTitle('🎮 منوی بازی‌ها')
+      .setDescription('یه بازی انتخاب کن و سرگرم شو!')
+      .addFields(
+        { name: '🎲 تاس', value: 'یه عدد حدس بزن!', inline: true },
+        { name: '🪙 شیر یا خط', value: 'شانست رو امتحان کن!', inline: true },
+        { name: '⚔️ دوئل', value: 'با یکی رقابت کن!', inline: true }
+      );
+
+    const buttons = new ActionRowBuilder()
+      .addComponents(
+        new ButtonBuilder().setCustomId('dice').setLabel('تاس').setStyle(ButtonStyle.Primary).setEmoji('🎲'),
+        new ButtonBuilder().setCustomId('coinflip').setLabel('شیر یا خط').setStyle(ButtonStyle.Primary).setEmoji('🪙'),
+        new ButtonBuilder().setCustomId('duel').setLabel('دوئل').setStyle(ButtonStyle.Primary).setEmoji('⚔️'),
+        new ButtonBuilder().setCustomId('back_to_main').setLabel('بازگشت').setStyle(ButtonStyle.Secondary).setEmoji('⬅️')
+      );
+
+    await interaction.reply({ embeds: [gameEmbed], components: [buttons] });
+
+    const collector = interaction.channel.createMessageComponentCollector({ time: 60000 });
+    collector.on('collect', async i => {
+      if (i.customId === 'back_to_main') {
+        await i.update({ content: 'برگشتی به منوی اصلی!', embeds: [], components: [] });
+        // اینجا باید منوی اصلی رو دوباره نشون بده
+      } else if (i.customId === 'duel') {
+        const duelEmbed = new EmbedBuilder().setTitle('⚔️ منوی دوئل').setDescription('یه حریف انتخاب کن!');
+        const duelButtons = new ActionRowBuilder()
+          .addComponents(
+            new ButtonBuilder().setCustomId('start_duel').setLabel('شروع دوئل').setStyle(ButtonStyle.Danger).setEmoji('⚔️'),
+            new ButtonBuilder().setCustomId('back_to_main').setLabel('بازگشت').setStyle(ButtonStyle.Secondary).setEmoji('⬅️')
+          );
+        await i.update({ embeds: [duelEmbed], components: [duelButtons] });
+      }
+    });
+  }
+};
+```
+
+---
+
+#### 🏦 2. منوی اقتصاد و بانک  
+**وضعیت فعلی:** شامل "موجودی"، "واریز"، "برداشت"، "سرمایه‌گذاری".  
+**مشکل:** زیرمنوی "سرمایه‌گذاری" ممکنه دکمه بازگشت نداشته باشه.  
+**به‌روزرسانی:**  
+- اضافه کردن دکمه بازگشت توی زیرمنوی سرمایه‌گذاری و هر بخش دیگه.  
+- یه Embed با توضیحات کامل برای هر گزینه.  
+
+💻 **کد نمونه (Discord.js):**  
+```javascript
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName('bank')
+    .setDescription('مدیریت اقتصاد و بانک'),
+  async execute(interaction) {
+    const bankEmbed = new EmbedBuilder()
+      .setColor('#FFD700')
+      .setTitle('🏦 منوی بانک')
+      .setDescription('پولت رو مدیریت کن!')
+      .addFields(
+        { name: '💰 موجودی', value: 'موجودیت رو ببین', inline: true },
+        { name: '🏦 واریز', value: 'سکه به بانک بفرست', inline: true },
+        { name: '📈 سرمایه‌گذاری', value: 'سود بگیر!', inline: true }
+      );
+
+    const buttons = new ActionRowBuilder()
+      .addComponents(
+        new ButtonBuilder().setCustomId('balance').setLabel('موجودی').setStyle(ButtonStyle.Primary).setEmoji('💰'),
+        new ButtonBuilder().setCustomId('deposit').setLabel('واریز').setStyle(ButtonStyle.Primary).setEmoji('🏦'),
+        new ButtonBuilder().setCustomId('invest').setLabel('سرمایه‌گذاری').setStyle(ButtonStyle.Primary).setEmoji('📈'),
+        new ButtonBuilder().setCustomId('back_to_main').setLabel('بازگشت').setStyle(ButtonStyle.Secondary).setEmoji('⬅️')
+      );
+
+    await interaction.reply({ embeds: [bankEmbed], components: [buttons] });
+
+    const collector = interaction.channel.createMessageComponentCollector({ time: 60000 });
+    collector.on('collect', async i => {
+      if (i.customId === 'invest') {
+        const investEmbed = new EmbedBuilder()
+          .setTitle('📈 سرمایه‌گذاری')
+          .setDescription('مقدار سکه رو برای سرمایه‌گذاری انتخاب کن!');
+        const investButtons = new ActionRowBuilder()
+          .addComponents(
+            new ButtonBuilder().setCustomId('invest_1000').setLabel('1000 سکه').setStyle(ButtonStyle.Success),
+            new ButtonBuilder().setCustomId('invest_5000').setLabel('5000 سکه').setStyle(ButtonStyle.Success),
+            new ButtonBuilder().setCustomId('back_to_main').setLabel('بازگشت').setStyle(ButtonStyle.Secondary).setEmoji('⬅️')
+          );
+        await i.update({ embeds: [investEmbed], components: [investButtons] });
+      } else if (i.customId === 'back_to_main') {
+        await i.update({ content: 'برگشتی به منوی اصلی!', embeds: [], components: [] });
+        // اینجا منوی اصلی رو نشون بده
+      }
+    });
+  }
+};
+```
+
+---
+
+#### 🛒 3. منوی فروشگاه  
+**وضعیت فعلی:** شامل "خرید"، "کوله‌پشتی"، "فروش".  
+**مشکل:** زیرمنوی "خرید" یا "کوله‌پشتی" ممکنه دکمه بازگشت نداشته باشه.  
+**به‌روزرسانی:**  
+- اضافه کردن دکمه بازگشت توی هر زیرمنو.  
+- نمایش آیتم‌ها با قیمت و موجودی توی Embed.
+
+💻 **کد نمونه (Discord.js):**  
+```javascript
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName('shop')
+    .setDescription('ورود به فروشگاه'),
+  async execute(interaction) {
+    const shopEmbed = new EmbedBuilder()
+      .setColor('#00FFFF')
+      .setTitle('🛒 فروشگاه')
+      .setDescription('آیتم‌های مورد علاقه‌ت رو بخر!')
+      .addFields(
+        { name: '🔪 چاقوی جیب‌بری', value: '1500 Holi Coin', inline: true },
+        { name: '🕶 ماسک نینجا', value: '3000 Holi Coin', inline: true }
+      );
+
+    const buttons = new ActionRowBuilder()
+      .addComponents(
+        new ButtonBuilder().setCustomId('buy').setLabel('خرید').setStyle(ButtonStyle.Primary).setEmoji('🛍'),
+        new ButtonBuilder().setCustomId('inventory').setLabel('کوله‌پشتی').setStyle(ButtonStyle.Primary).setEmoji('🎒'),
+        new ButtonBuilder().setCustomId('back_to_main').setLabel('بازگشت').setStyle(ButtonStyle.Secondary).setEmoji('⬅️')
+      );
+
+    await interaction.reply({ embeds: [shopEmbed], components: [buttons] });
+
+    const collector = interaction.channel.createMessageComponentCollector({ time: 60000 });
+    collector.on('collect', async i => {
+      if (i.customId === 'buy') {
+        const buyEmbed = new EmbedBuilder()
+          .setTitle('🛍 خرید')
+          .setDescription('چی می‌خوای بخری؟');
+        const buyButtons = new ActionRowBuilder()
+          .addComponents(
+            new ButtonBuilder().setCustomId('buy_knife').setLabel('چاقوی جیب‌بری').setStyle(ButtonStyle.Success),
+            new ButtonBuilder().setCustomId('buy_mask').setLabel('ماسک نینجا').setStyle(ButtonStyle.Success),
+            new ButtonBuilder().setCustomId('back_to_main').setLabel('بازگشت').setStyle(ButtonStyle.Secondary).setEmoji('⬅️')
+          );
+        await i.update({ embeds: [buyEmbed], components: [buyButtons] });
+      } else if (i.customId === 'back_to_main') {
+        await i.update({ content: 'برگشتی به منوی اصلی!', embeds: [], components: [] });
+      }
+    });
+  }
+};
+```
+
+---
+
+#### 🎯 4. منوی مأموریت‌ها  
+**وضعیت فعلی:** شامل "مشاهده مأموریت‌ها"، "دریافت جوایز".  
+**مشکل:** ممکنه دکمه بازگشت توی زیرمنوی "مشاهده مأموریت‌ها" نباشه.  
+**به‌روزرسانی:**  
+- اضافه کردن دکمه بازگشت توی همه زیرمنوها.  
+
+💻 **کد نمونه (Discord.js):**  
+```javascript
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName('quests')
+    .setDescription('مدیریت مأموریت‌ها'),
+  async execute(interaction) {
+    const questEmbed = new EmbedBuilder()
+      .setColor('#FF4500')
+      .setTitle('🎯 مأموریت‌ها')
+      .setDescription('مأموریت‌هات رو انجام بده و جایزه بگیر!')
+      .addFields(
+        { name: '📜 مشاهده', value: 'مأموریت‌های روزانه', inline: true },
+        { name: '🏆 جوایز', value: 'پاداش‌ها رو بگیر', inline: true }
+      );
+
+    const buttons = new ActionRowBuilder()
+      .addComponents(
+        new ButtonBuilder().setCustomId('view_quests').setLabel('مشاهده').setStyle(ButtonStyle.Primary).setEmoji('📜'),
+        new ButtonBuilder().setCustomId('claim_rewards').setLabel('جوایز').setStyle(ButtonStyle.Primary).setEmoji('🏆'),
+        new ButtonBuilder().setCustomId('back_to_main').setLabel('بازگشت').setStyle(ButtonStyle.Secondary).setEmoji('⬅️')
+      );
+
+    await interaction.reply({ embeds: [questEmbed], components: [buttons] });
+
+    const collector = interaction.channel.createMessageComponentCollector({ time: 60000 });
+    collector.on('collect', async i => {
+      if (i.customId === 'view_quests') {
+        const viewEmbed = new EmbedBuilder()
+          .setTitle('📜 مأموریت‌های روزانه')
+          .setDescription('1. 10 پیام بفرست\n2. یه دوئل ببر');
+        const viewButtons = new ActionRowBuilder()
+          .addComponents(
+            new ButtonBuilder().setCustomId('back_to_main').setLabel('بازگشت').setStyle(ButtonStyle.Secondary).setEmoji('⬅️')
+          );
+        await i.update({ embeds: [viewEmbed], components: [viewButtons] });
+      } else if (i.customId === 'back_to_main') {
+        await i.update({ content: 'برگشتی به منوی اصلی!', embeds: [], components: [] });
+      }
+    });
+  }
+};
+```
+
+---
+
+#### ⚔️ 5. منوی دوئل و رقابت‌ها  
+**وضعیت فعلی:** شامل "شروع دوئل"، "شرط‌بندی روی دوئل".  
+**مشکل:** زیرمنوی "شرط‌بندی" ممکنه دکمه بازگشت نداشته باشه.  
+**به‌روزرسانی:**  
+- دکمه بازگشت توی همه زیرمنوها اضافه بشه.
+
+💻 **کد نمونه (Discord.js):**  
+```javascript
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName('duel')
+    .setDescription('ورود به منوی دوئل'),
+  async execute(interaction) {
+    const duelEmbed = new EmbedBuilder()
+      .setColor('#FF0000')
+      .setTitle('⚔️ منوی دوئل')
+      .setDescription('با کی می‌خوای رقابت کنی؟')
+      .addFields(
+        { name: '⚔️ شروع دوئل', value: 'یه حریف انتخاب کن', inline: true },
+        { name: '🎲 شرط‌بندی', value: 'روی دوئل بقیه شرط ببند', inline: true }
+      );
+
+    const buttons = new ActionRowBuilder()
+      .addComponents(
+        new ButtonBuilder().setCustomId('start_duel').setLabel('شروع دوئل').setStyle(ButtonStyle.Danger).setEmoji('⚔️'),
+        new ButtonBuilder().setCustomId('bet_duel').setLabel('شرط‌بندی').setStyle(ButtonStyle.Primary).setEmoji('🎲'),
+        new ButtonBuilder().setCustomId('back_to_main').setLabel('بازگشت').setStyle(ButtonStyle.Secondary).setEmoji('⬅️')
+      );
+
+    await interaction.reply({ embeds: [duelEmbed], components: [buttons] });
+
+    const collector = interaction.channel.createMessageComponentCollector({ time: 60000 });
+    collector.on('collect', async i => {
+      if (i.customId === 'bet_duel') {
+        const betEmbed = new EmbedBuilder()
+          .setTitle('🎲 شرط‌بندی روی دوئل')
+          .setDescription('مقدار سکه رو برای شرط‌بندی انتخاب کن!');
+        const betButtons = new ActionRowBuilder()
+          .addComponents(
+            new ButtonBuilder().setCustomId('bet_500').setLabel('500 سکه').setStyle(ButtonStyle.Success),
+            new ButtonBuilder().setCustomId('back_to_main').setLabel('بازگشت').setStyle(ButtonStyle.Secondary).setEmoji('⬅️')
+          );
+        await i.update({ embeds: [betEmbed], components: [betButtons] });
+      } else if (i.customId === 'back_to_main') {
+        await i.update({ content: 'برگشتی به منوی اصلی!', embeds: [], components: [] });
+      }
+    });
+  }
+};
+```
+
+---
+
+#### 🎰 6. منوی جکپات و بخت‌آزمایی  
+**وضعیت فعلی:** شامل "شرکت در جکپات"، "خرید بلیت".  
+**مشکل:** زیرمنوی "خرید بلیت" ممکنه دکمه بازگشت نداشته باشه.  
+**به‌روزرسانی:**  
+- دکمه بازگشت اضافه بشه.
+
+💻 **کد نمونه (Discord.js):**  
+```javascript
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName('jackpot')
+    .setDescription('ورود به منوی جکپات و بخت‌آزمایی'),
+  async execute(interaction) {
+    const jackpotEmbed = new EmbedBuilder()
+      .setColor('#FFFF00')
+      .setTitle('🎰 جکپات و بخت‌آزمایی')
+      .setDescription('شانست رو امتحان کن!')
+      .addFields(
+        { name: '💰 جکپات', value: 'سکه‌هات رو سرمایه‌گذاری کن', inline: true },
+        { name: '🎟️ بلیت', value: 'بلیت بخر و برنده شو', inline: true }
+      );
+
+    const buttons = new ActionRowBuilder()
+      .addComponents(
+        new ButtonBuilder().setCustomId('join_jackpot').setLabel('جکپات').setStyle(ButtonStyle.Primary).setEmoji('💰'),
+        new ButtonBuilder().setCustomId('buy_ticket').setLabel('خرید بلیت').setStyle(ButtonStyle.Primary).setEmoji('🎟️'),
+        new ButtonBuilder().setCustomId('back_to_main').setLabel('بازگشت').setStyle(ButtonStyle.Secondary).setEmoji('⬅️')
+      );
+
+    await interaction.reply({ embeds: [jackpotEmbed], components: [buttons] });
+
+    const collector = interaction.channel.createMessageComponentCollector({ time: 60000 });
+    collector.on('collect', async i => {
+      if (i.customId === 'buy_ticket') {
+        const ticketEmbed = new EmbedBuilder()
+          .setTitle('🎟️ خرید بلیت')
+          .setDescription('چند تا بلیت می‌خوای؟ (هر بلیت 500 سکه)');
+        const ticketButtons = new ActionRowBuilder()
+          .addComponents(
+            new ButtonBuilder().setCustomId('buy_1_ticket').setLabel('1 بلیت').setStyle(ButtonStyle.Success),
+            new ButtonBuilder().setCustomId('back_to_main').setLabel('بازگشت').setStyle(ButtonStyle.Secondary).setEmoji('⬅️')
+          );
+        await i.update({ embeds: [ticketEmbed], components: [ticketButtons] });
+      } else if (i.customId === 'back_to_main') {
+        await i.update({ content: 'برگشتی به منوی اصلی!', embeds: [], components: [] });
+      }
+    });
+  }
+};
+```
+
+---
+
+#### 🛠 7. منوی تنظیمات و مدیریت  
+**وضعیت فعلی:** فقط برای مدیران، شامل "مدیریت کاربران"، "تنظیم اقتصاد".  
+**مشکل:** زیرمنوها ممکنه دکمه بازگشت نداشته باشن.  
+**به‌روزرسانی:**  
+- دکمه بازگشت توی هر زیرمنو اضافه بشه.
+
+💻 **کد نمونه (Discord.js):**  
+```javascript
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName('admin')
+    .setDescription('منوی مدیریت (فقط برای ادمین‌ها)'),
+  async execute(interaction) {
+    if (!interaction.member.permissions.has('Administrator')) return interaction.reply('❌ فقط ادمین‌ها می‌تونن از این دستور استفاده کنن!');
+
+    const adminEmbed = new EmbedBuilder()
+      .setColor('#FF00FF')
+      .setTitle('🛠 منوی مدیریت')
+      .setDescription('تنظیمات سرور رو مدیریت کن!')
+      .addFields(
+        { name: '📊 کاربران', value: 'مدیریت کاربرها', inline: true },
+        { name: '💰 اقتصاد', value: 'تنظیم سکه‌ها', inline: true }
+      );
+
+    const buttons = new ActionRowBuilder()
+      .addComponents(
+        new ButtonBuilder().setCustomId('manage_users').setLabel('کاربران').setStyle(ButtonStyle.Primary).setEmoji('📊'),
+        new ButtonBuilder().setCustomId('manage_economy').setLabel('اقتصاد').setStyle(ButtonStyle.Primary).setEmoji('💰'),
+        new ButtonBuilder().setCustomId('back_to_main').setLabel('بازگشت').setStyle(ButtonStyle.Secondary).setEmoji('⬅️')
+      );
+
+    await interaction.reply({ embeds: [adminEmbed], components: [buttons] });
+
+    const collector = interaction.channel.createMessageComponentCollector({ time: 60000 });
+    collector.on('collect', async i => {
+      if (i.customId === 'manage_economy') {
+        const econEmbed = new EmbedBuilder()
+          .setTitle('💰 مدیریت اقتصاد')
+          .setDescription('نرخ سود، مالیات و ... رو تنظیم کن');
+        const econButtons = new ActionRowBuilder()
+          .addComponents(
+            new ButtonBuilder().setCustomId('set_profit').setLabel('تنظیم سود').setStyle(ButtonStyle.Success),
+            new ButtonBuilder().setCustomId('back_to_main').setLabel('بازگشت').setStyle(ButtonStyle.Secondary).setEmoji('⬅️')
+          );
+        await i.update({ embeds: [econEmbed], components: [econButtons] });
+      } else if (i.customId === 'back_to_main') {
+        await i.update({ content: 'برگشتی به منوی اصلی!', embeds: [], components: [] });
+      }
+    });
+  }
+};
+```
+
+---
+
+#### 📌 منوی اصلی (Main Menu)  
+برای اینکه دکمه بازگشت کار کنه، باید یه منوی اصلی جامع داشته باشیم که کاربرا بتونن بهش برگردن:  
+
+💻 **کد نمونه (Discord.js):**  
+```javascript
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName('menu')
+    .setDescription('منوی اصلی ربات'),
+  async execute(interaction) {
+    const mainEmbed = new EmbedBuilder()
+      .setColor('#00FFFF')
+      .setTitle('🌟 منوی اصلی')
+      .setDescription('به ربات اقتصادی خوش اومدی!')
+      .addFields(
+        { name: '🎮 بازی‌ها', value: 'سرگرمی و شرط‌بندی', inline: true },
+        { name: '🏦 بانک', value: 'مدیریت سکه‌ها', inline: true },
+        { name: '🛒 فروشگاه', value: 'خرید آیتم‌ها', inline: true },
+        { name: '🎯 مأموریت‌ها', value: 'پاداش بگیر', inline: true },
+        { name: '⚔️ دوئل', value: 'رقابت کن', inline: true },
+        { name: '🎰 جکپات', value: 'شانست رو امتحان کن', inline: true }
+      );
+
+    const buttons = new ActionRowBuilder()
+      .addComponents(
+        new ButtonBuilder().setCustomId('games').setLabel('بازی‌ها').setStyle(ButtonStyle.Primary).setEmoji('🎮'),
+        new ButtonBuilder().setCustomId('bank').setLabel('بانک').setStyle(ButtonStyle.Primary).setEmoji('🏦'),
+        new ButtonBuilder().setCustomId('shop').setLabel('فروشگاه').setStyle(ButtonStyle.Primary).setEmoji('🛒'),
+        new ButtonBuilder().setCustomId('quests').setLabel('مأموریت‌ها').setStyle(ButtonStyle.Primary).setEmoji('🎯'),
+        new ButtonBuilder().setCustomId('duel').setLabel('دوئل').setStyle(ButtonStyle.Primary).setEmoji('⚔️'),
+        new ButtonBuilder().setCustomId('jackpot').setLabel('جکپات').setStyle(ButtonStyle.Primary).setEmoji('🎰')
+      );
+
+    await interaction.reply({ embeds: [mainEmbed], components: [buttons] });
+
+    const collector = interaction.channel.createMessageComponentCollector({ time: 60000 });
+    collector.on('collect', async i => {
+      if (i.customId === 'games') await require('./games').execute(i);
+      else if (i.customId === 'bank') await require('./bank').execute(i);
+      else if (i.customId === 'shop') await require('./shop').execute(i);
+      else if (i.customId === 'quests') await require('./quests').execute(i);
+      else if (i.customId === 'duel') await require('./duel').execute(i);
+      else if (i.customId === 'jackpot') await require('./jackpot').execute(i);
+    });
+  }
+};
+```
+
+---
+
+#### 🎯 دستورالعمل نهایی برای هوش مصنوعی  
+1. **بررسی همه منوها**: هر منو و زیرمنو رو چک کن و مطمئن شو که دکمه **بازگشت به منوی اصلی** (با `customId: 'back_to_main'`) داره.  
+2. **به‌روزرسانی دکمه‌ها**: اگه دکمه‌ای قدیمی یا بدون عملکرد پیدا کردی، با توجه به توضیحات جایگزینش کن.  
+3. **پیاده‌سازی تعاملی**: از **ButtonBuilder** و **EmbedBuilder** استفاده کن تا همه منوها تعاملی و گرافیکی باشن.  
+4. **اتصال به منوی اصلی**: وقتی کاربر روی "بازگشت" کلیک می‌کنه، منوی اصلی (کدی که بالا دادم) رو نشون بده.  
+5. **تست کامل**: بعد از آپدیت، یه تست کامل انجام بده که همه دکمه‌ها کار کنن و هیچ باگی نباشه.  
+
+🔥 این مستند باید همه نیازات رو پوشش بده! اگه هنوز چیزی کمه یا می‌خوای بخش خاصی رو بیشتر باز کنم، بگو! 😎

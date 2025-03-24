@@ -21,7 +21,7 @@ export async function gamesMenu(
     
     if (!user) {
       await interaction.reply({
-        content: 'You need to create an account first. Use the /menu command.',
+        content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.',
         ephemeral: true
       });
       return;
@@ -124,7 +124,7 @@ export async function gamesMenu(
     } else if (state === 'competitive') {
       // Competitive games not implemented yet
       await interaction.reply({
-        content: 'Competitive games will be available in a future update!',
+        content: '🔜 بازی‌های رقابتی در به‌روزرسانی‌های آینده اضافه خواهند شد!',
         ephemeral: true
       });
       
@@ -139,7 +139,7 @@ export async function gamesMenu(
     } else if (state === 'group') {
       // Group games not implemented yet
       await interaction.reply({
-        content: 'Group games will be available in a future update!',
+        content: '🔜 بازی‌های گروهی در به‌روزرسانی‌های آینده اضافه خواهند شد!',
         ephemeral: true
       });
       
@@ -166,12 +166,12 @@ export async function gamesMenu(
     try {
       if (followUp) {
         await interaction.followUp({
-          content: 'Sorry, there was an error displaying the games menu!',
+          content: '❌ متأسفانه در نمایش منوی بازی‌ها خطایی رخ داد!',
           ephemeral: true
         });
       } else {
         await interaction.reply({
-          content: 'Sorry, there was an error displaying the games menu!',
+          content: '❌ متأسفانه در نمایش منوی بازی‌ها خطایی رخ داد!',
           ephemeral: true
         });
       }

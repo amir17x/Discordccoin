@@ -21,7 +21,7 @@ export async function economyMenu(
     
     if (!user) {
       await interaction.reply({
-        content: 'You need to create an account first. Use the /menu command.',
+        content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.',
         ephemeral: true
       });
       return;
@@ -45,7 +45,7 @@ export async function economyMenu(
         { name: '📈 سود بانکی', value: `2% ماهانه`, inline: true },
         { name: '💸 کارمزد انتقال', value: '1%', inline: true }
       )
-      .setFooter({ text: `${interaction.user.username} | Daily Streak: ${user.dailyStreak} day(s)` })
+      .setFooter({ text: `${interaction.user.username} | رکورد روزانه: ${user.dailyStreak} روز` })
       .setTimestamp();
     
     // Daily reward button
@@ -183,12 +183,12 @@ export async function economyMenu(
     try {
       if (followUp) {
         await interaction.followUp({
-          content: 'Sorry, there was an error displaying the economy menu!',
+          content: '❌ متأسفانه در نمایش منوی اقتصاد خطایی رخ داد!',
           ephemeral: true
         });
       } else {
         await interaction.reply({
-          content: 'Sorry, there was an error displaying the economy menu!',
+          content: '❌ متأسفانه در نمایش منوی اقتصاد خطایی رخ داد!',
           ephemeral: true
         });
       }

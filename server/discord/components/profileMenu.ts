@@ -19,7 +19,7 @@ export async function profileMenu(
     
     if (!user) {
       await interaction.reply({
-        content: 'You need to create an account first. Use the /menu command.',
+        content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.',
         ephemeral: true
       });
       return;
@@ -227,12 +227,12 @@ export async function profileMenu(
     try {
       if (followUp) {
         await interaction.followUp({
-          content: 'Sorry, there was an error displaying the profile menu!',
+          content: '❌ متأسفانه در نمایش منوی پروفایل خطایی رخ داد!',
           ephemeral: true
         });
       } else {
         await interaction.reply({
-          content: 'Sorry, there was an error displaying the profile menu!',
+          content: '❌ متأسفانه در نمایش منوی پروفایل خطایی رخ داد!',
           ephemeral: true
         });
       }

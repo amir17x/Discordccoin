@@ -24,7 +24,7 @@ export async function handleCoinFlip(
     
     if (!user) {
       await interaction.reply({
-        content: 'You need to create an account first. Use the /menu command.',
+        content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.',
         ephemeral: true
       });
       return;
@@ -35,7 +35,7 @@ export async function handleCoinFlip(
       // Check if user has enough Ccoin
       if (user.wallet < BET_AMOUNT) {
         await interaction.reply({
-          content: `You don't have enough Ccoin to play. You need ${BET_AMOUNT} Ccoin but you have ${user.wallet} Ccoin.`,
+          content: `❌ شما سکه کافی برای بازی ندارید. شما به ${BET_AMOUNT} سکه نیاز دارید اما فقط ${user.wallet} سکه دارید.`,
           ephemeral: true
         });
         return;
@@ -92,7 +92,7 @@ export async function handleCoinFlip(
     // Check if user has enough Ccoin
     if (user.wallet < BET_AMOUNT) {
       await interaction.reply({
-        content: `You don't have enough Ccoin to play. You need ${BET_AMOUNT} Ccoin but you have ${user.wallet} Ccoin.`,
+        content: `❌ شما سکه کافی برای بازی ندارید. شما به ${BET_AMOUNT} سکه نیاز دارید اما فقط ${user.wallet} سکه دارید.`,
         ephemeral: true
       });
       return;
@@ -180,7 +180,7 @@ export async function handleCoinFlip(
     
     try {
       await interaction.reply({
-        content: 'Sorry, there was an error processing the game!',
+        content: '❌ متأسفانه در اجرای بازی خطایی رخ داد!',
         ephemeral: true
       });
     } catch (e) {

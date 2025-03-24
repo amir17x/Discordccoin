@@ -1,0 +1,3446 @@
+const { Client, GatewayIntentBits, SlashCommandBuilder, REST, Routes, EmbedBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const fs = require('fs');
+const { execSync } = require('child_process');
+const http = require('http');
+
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
+
+// راه‌اندازی سرور HTTP ساده برای Uptime Robot
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('Bot is online!');
+});
+
+server.listen(8080, '0.0.0.0', () => {
+  console.log('Server started for uptime monitoring on port 8080');
+});
+
+// استفاده از متغیرهای محیطی
+const TOKEN = process.env.DISCORD_TOKEN || process.env.TOKEN; // استفاده از DISCORD_TOKEN یا TOKEN
+const CLIENT_ID = process.env.CLIENT_ID || '1346003808270024704';
+const GUILD_ID = process.env.GUILD_ID || '1343951143625293867';
+
+// بررسی وجود توکن
+if (!TOKEN) {
+    console.error('❌ خطا: توکن دیسکورد یافت نشد! لطفاً آن را در بخش Secrets با کلید DISCORD_TOKEN تنظیم کنید.');
+    process.exit(1);
+}
+const COIN_NAME = 'Holi Coin'; // نام سکه
+const DATA_FILE = 'data.json'; // فایل ذخیره داده‌ها
+const INVESTMENT_RATE = 0.05; // نرخ سود سرمایه‌گذاری (5%)
+const ADMIN_ROLE_ID = '1343981256949497988'; // آیدی رول مدیر
+let allowedChannels = []; // کانال‌های مجاز برای استفاده از ربات
+
+// متغیرهای مربوط به سیستم جیب‌زنی
+const STEAL_WINDOW_DURATION = 15 * 60 * 1000; // پنجره زمانی جیب‌زنی (15 دقیقه به میلی‌ثانیه)
+const NEW_USER_PROTECTION_DAYS = 5; // محافظت از کاربران جدید (5 روز)
+const MAX_DAILY_STEALS = 5; // حداکثر تعداد دزدی‌های روزانه
+const MAX_STEAL_PERCENTAGE = 0.2; // حداکثر مقدار دزدی (20 درصد)
+let stealWindowStart = null; // شروع پنجره زمانی جیب‌زنی
+
+let users = {};
+// آیتم‌های فروشگاه
+let shopItems = [
+    { id: 'role_vip', name: 'رول VIP', price: 1000, description: 'یک رول ویژه با دسترسی‌های اضافی' },
+    { id: 'custom_color', name: 'رنگ سفارشی', price: 500, description: 'تغییر رنگ نام شما در سرور' },
+    { id: 'lootbox', name: 'جعبه شانس', price: 300, description: 'یک جعبه با جوایز تصادفی' }
+];
+
+// بارگذاری داده‌های کاربران
+if (fs.existsSync(DATA_FILE)) {
+    const data = JSON.parse(fs.readFileSync(DATA_FILE));
+    users = data.users || {};
+    if (data.shopItems) {
+        shopItems = data.shopItems;
+    }
+}
+
+// ذخیره داده‌ها
+function saveData() {
+    const data = {
+        users: users,
+        shopItems: shopItems
+    };
+    try {
+        fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+        console.log('✅ داده‌ها با موفقیت ذخیره شدند');
+    } catch (error) {
+        console.error('❌ خطا در ذخیره داده‌ها:', error);
+        // تلاش مجدد بعد از 5 ثانیه
+        setTimeout(() => {
+            try {
+                fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+                console.log('✅ ذخیره مجدد داده‌ها با موفقیت انجام شد');
+            } catch (retryError) {
+                console.error('❌ خطای مجدد در ذخیره داده‌ها:', retryError);
+            }
+        }, 5000);
+    }
+}
+
+// تابع گردونه
+function spinWheel() {
+    const rewards = [0, 10, 20, 50, 100]; // جوایز ممکن
+    return rewards[Math.floor(Math.random() * rewards.length)];
+}
+
+// دریافت یا ایجاد کاربر
+function getUser(userId) {
+    if (!users[userId]) {
+        users[userId] = { 
+            balance: 0, 
+            lastSpin: 0, 
+            lastDaily: 0, 
+            lastWeekly: 0, 
+            bank: 0, 
+            investment: 0, 
+            inventory: [],
+            level: 0,
+            xp: 0,
+            joinTime: Date.now(),
+            initialClaimed: false,
+            transferHistory: [],
+            dailyTransferTotal: 0,
+            dailyTransferReset: 0,
+            // فیلدهای مربوط به سیستم جیب‌زنی
+            lastStealAttempts: [], // آخرین تلاش‌های دزدی
+            dailySteals: 0, // تعداد دزدی‌های روزانه
+            dailyStealsReset: 0, // زمان ریست تعداد دزدی‌های روزانه
+            stolenFrom: {}, // لیست کاربرانی که از آنها دزدی شده
+            lastTimeStolen: 0 // آخرین باری که از این کاربر دزدی شده
+        };
+    }
+    return users[userId];
+}
+
+// بررسی پنجره زمانی جیب‌زنی
+function checkStealWindow() {
+    const now = Date.now();
+    
+    // اگر پنجره زمانی تنظیم نشده یا به پایان رسیده باشد
+    if (!stealWindowStart || now > stealWindowStart + STEAL_WINDOW_DURATION) {
+        // تنظیم یک زمان تصادفی برای شروع پنجره زمانی جدید در طول 24 ساعت آینده
+        const oneDayMs = 24 * 60 * 60 * 1000; // 24 ساعت به میلی‌ثانیه
+        const randomOffset = Math.floor(Math.random() * (oneDayMs - STEAL_WINDOW_DURATION));
+        stealWindowStart = now + randomOffset;
+        
+        console.log(`🕒 پنجره زمانی جیب‌زنی جدید تنظیم شد: ${new Date(stealWindowStart).toLocaleString()}`);
+        return false;
+    }
+    
+    // بررسی اینکه آیا در حال حاضر در پنجره زمانی جیب‌زنی هستیم
+    return now >= stealWindowStart && now < (stealWindowStart + STEAL_WINDOW_DURATION);
+}
+
+// بررسی امکان جیب‌زنی
+function canSteal(stealerId, targetId) {
+    const now = Date.now();
+    const stealer = getUser(stealerId);
+    const target = getUser(targetId);
+    
+    // بررسی پنجره زمانی جیب‌زنی
+    const isStealWindowActive = checkStealWindow();
+    if (!isStealWindowActive) {
+        return { allowed: false, reason: '❌ جیب‌زنی فقط در زمان‌های خاصی از روز فعال است! الان زمان جیب‌زنی نیست.' };
+    }
+    
+    // بررسی محافظت کاربران جدید (5 روز)
+    const fiveDaysMs = NEW_USER_PROTECTION_DAYS * 24 * 60 * 60 * 1000;
+    if (now - target.joinTime < fiveDaysMs) {
+        return { allowed: false, reason: '❌ این کاربر تازه به سرور پیوسته و فعلاً محافظت شده است!' };
+    }
+    
+    // بررسی محدودیت دزدی‌های روزانه
+    const oneDayMs = 24 * 60 * 60 * 1000;
+    if (now - stealer.dailyStealsReset > oneDayMs) {
+        stealer.dailySteals = 0;
+        stealer.dailyStealsReset = now;
+        stealer.stolenFrom = {}; // ریست لیست کاربرانی که از آنها دزدی شده
+    }
+    
+    if (stealer.dailySteals >= MAX_DAILY_STEALS) {
+        return { allowed: false, reason: `❌ شما به سقف دزدی‌های روزانه (${MAX_DAILY_STEALS} بار) رسیده‌اید! فردا دوباره تلاش کنید.` };
+    }
+    
+    // بررسی دزدی از یک کاربر خاص بیش از 1 بار در روز
+    if (stealer.stolenFrom[targetId] && (now - stealer.stolenFrom[targetId]) < oneDayMs) {
+        return { allowed: false, reason: '❌ شما امروز قبلاً از این کاربر دزدی کرده‌اید! فردا دوباره امتحان کنید.' };
+    }
+    
+    // بررسی محافظت کاربر هدف (اگر در 24 ساعت اخیر از او دزدی شده باشد)
+    if (target.lastTimeStolen && (now - target.lastTimeStolen) < oneDayMs) {
+        // شانس 50-50 برای موفقیت دزدی
+        if (Math.random() < 0.5) {
+            return { allowed: false, reason: '❌ این کاربر اخیراً مورد دزدی قرار گرفته و هوشیار است! دزدی ناموفق بود.' };
+        }
+    }
+    
+    // بررسی موجودی کاربر هدف
+    if (target.balance <= 0) {
+        return { allowed: false, reason: '❌ این کاربر هیچ سکه‌ای در جیب خود ندارد!' };
+    }
+    
+    return { allowed: true };
+}
+
+// افزودن XP به کاربر و بررسی لول آپ
+function addXP(userId, amount) {
+    const userData = getUser(userId);
+    userData.xp += amount;
+
+    // بررسی لول آپ - هر 100 XP یک لول افزایش می‌یابد
+    const newLevel = Math.floor(userData.xp / 100);
+    if (newLevel > userData.level) {
+        userData.level = newLevel;
+        return true; // لول آپ شد
+    }
+    return false; // لول آپ نشد
+}
+
+// بررسی اینکه آیا کاربر می‌تواند سکه انتقال دهد
+function canTransferCoins(userId, targetId, amount) {
+    const userData = getUser(userId);
+    const now = Date.now();
+
+    // بررسی سطح کاربر - باید حداقل لول 5 باشد
+    if (userData.level < 5) {
+        return { allowed: false, reason: `❌ شما باید حداقل لول 5 باشید تا بتوانید سکه انتقال دهید (لول فعلی: ${userData.level})` };
+    }
+
+    // بررسی سقف روزانه انتقال (500 سکه)
+    const MAX_DAILY_TRANSFER = 500;
+
+    // اگر روز جدیدی شروع شده، مقدار انتقال روزانه را ریست کنیم
+    const oneDayMs = 86400000;
+    if (now - userData.dailyTransferReset > oneDayMs) {
+        userData.dailyTransferTotal = 0;
+        userData.dailyTransferReset = now;
+    }
+
+    if (userData.dailyTransferTotal + amount > MAX_DAILY_TRANSFER) {
+        return { allowed: false, reason: `❌ شما نمی‌توانید بیش از ${MAX_DAILY_TRANSFER} ${COIN_NAME} در روز انتقال دهید (${userData.dailyTransferTotal} استفاده شده)` };
+    }
+
+    // بررسی تعداد انتقال‌های متوالی به یک کاربر خاص
+    // فیلتر کردن 3 انتقال آخر
+    const recentTransfers = userData.transferHistory
+        .filter(t => t.targetId === targetId)
+        .slice(-3);
+
+    // اگر 3 انتقال متوالی به یک کاربر انجام شده باشد، بلاک می‌شود
+    if (recentTransfers.length >= 3) {
+        const lastTransferTime = recentTransfers[recentTransfers.length - 1].time;
+        // بررسی اینکه آیا 24 ساعت از آخرین انتقال گذشته است
+        if (now - lastTransferTime < oneDayMs) {
+            return { allowed: false, reason: `❌ شما بیش از حد مجاز به این کاربر سکه انتقال داده‌اید! لطفاً 24 ساعت صبر کنید.` };
+        }
+    }
+
+    return { allowed: true };
+}
+
+// ثبت انتقال سکه
+function recordTransfer(userId, targetId, amount) {
+    const userData = getUser(userId);
+    const now = Date.now();
+
+    // ثبت انتقال در تاریخچه
+    userData.transferHistory.push({
+        targetId: targetId,
+        amount: amount,
+        time: now
+    });
+
+    // بروزرسانی مجموع انتقال روزانه
+    userData.dailyTransferTotal += amount;
+
+    // اگر این اولین انتقال روز است، زمان ریست را تنظیم کنیم
+    if (userData.dailyTransferReset === 0) {
+        userData.dailyTransferReset = now;
+    }
+
+    saveData();
+}
+
+// تابع برای تبدیل عدد تاس به ایموجی
+function getDiceEmoji(roll) {
+    switch (roll) {
+        case 1: return ':one:';
+        case 2: return ':two:';
+        case 3: return ':three:';
+        case 4: return ':four:';
+        case 5: return ':five:';
+        case 6: return ':six:';
+        default: return '';
+    }
+}
+
+// تابع بررسی دسترسی مدیر
+function hasAdminRole(member) {
+    return member.roles.cache.has(ADMIN_ROLE_ID) || member.permissions.has(PermissionFlagsBits.Administrator);
+}
+
+
+// تعریف دستورات اسلش
+const commands = [
+    new SlashCommandBuilder().setName('balance').setDescription('نمایش موجودی شما'),
+    new SlashCommandBuilder().setName('spin').setDescription('چرخاندن گردونه و دریافت جایزه'),
+    new SlashCommandBuilder().setName('leaderboard').setDescription('مشاهده لیست برترین کاربران'),
+    new SlashCommandBuilder().setName('ping').setDescription('بررسی آنلاین بودن ربات'),
+    new SlashCommandBuilder().setName('claim').setDescription('دریافت سکه‌های اولیه (فقط یکبار)'),
+    new SlashCommandBuilder().setName('level').setDescription('نمایش سطح و تجربه شما'),
+
+    // دستور جیب‌زنی
+    new SlashCommandBuilder()
+        .setName('steal')
+        .setDescription('دزدی از جیب کاربران دیگر')
+        .addUserOption(option => option.setName('user').setDescription('کاربر مورد نظر').setRequired(true)),
+
+    // دستورات جدید
+    new SlashCommandBuilder()
+        .setName('transfer')
+        .setDescription('انتقال سکه به کاربر دیگر')
+        .addUserOption(option => option.setName('user').setDescription('کاربر مورد نظر').setRequired(true))
+        .addIntegerOption(option => option.setName('amount').setDescription('مقدار سکه').setRequired(true)),
+
+    new SlashCommandBuilder()
+        .setName('daily')
+        .setDescription('دریافت سکه روزانه'),
+
+    new SlashCommandBuilder()
+        .setName('bankdeposit')
+        .setDescription('واریز سکه به حساب بانکی')
+        .addIntegerOption(option => option.setName('amount').setDescription('مقدار سکه').setRequired(true)),
+
+    new SlashCommandBuilder()
+        .setName('bankwithdraw')
+        .setDescription('برداشت سکه از حساب بانکی')
+        .addIntegerOption(option => option.setName('amount').setDescription('مقدار سکه').setRequired(true)),
+
+    new SlashCommandBuilder()
+        .setName('invest')
+        .setDescription('سرمایه‌گذاری سکه با نرخ سود ماهانه')
+        .addIntegerOption(option => option.setName('amount').setDescription('مقدار سکه').setRequired(true)),
+
+    new SlashCommandBuilder()
+        .setName('profile')
+        .setDescription('مشاهده پروفایل خود یا کاربر دیگر')
+        .addUserOption(option => option.setName('user').setDescription('کاربر مورد نظر').setRequired(false)),
+
+    new SlashCommandBuilder()
+        .setName('menu')
+        .setDescription('نمایش منوی اصلی ربات'),
+
+    // دستور راه‌اندازی مجدد (فقط برای مدیران)
+    new SlashCommandBuilder()
+        .setName('restart')
+        .setDescription('راه‌اندازی مجدد ربات (فقط مدیران)')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+    // دستور مخصوص ادمین‌ها
+    new SlashCommandBuilder()
+        .setName('setchannel')
+        .setDescription('تنظیم کانال‌های مجاز برای استفاده از ربات (فقط ادمین)')
+        .addChannelOption(option => option.setName('channel').setDescription('کانال مورد نظر').setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+    new SlashCommandBuilder()
+        .setName('addcoins')
+        .setDescription('اضافه کردن سکه به کاربر (فقط ادمین)')
+        .addUserOption(option => option.setName('user').setDescription('کاربر مورد نظر').setRequired(true))
+        .addIntegerOption(option => option.setName('amount').setDescription('مقدار سکه').setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+    new SlashCommandBuilder()
+        .setName('shop')
+        .setDescription('فروشگاه آیتم‌ها و خرید محصولات'),
+
+    new SlashCommandBuilder()
+        .setName('dice')
+        .setDescription('بازی تاس')
+        .addIntegerOption(option => option.setName('bet').setDescription('مبلغ شرط').setRequired(true)),
+
+    // دستور پنل مدیریت
+    new SlashCommandBuilder()
+        .setName('adminpanel')
+        .setDescription('پنل مدیریت ربات (فقط مدیران)')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+    // دستورات مدیریتی جدید
+    new SlashCommandBuilder()
+        .setName('setcoin')
+        .setDescription('تنظیم موجودی سکه کاربر (فقط مدیران)')
+        .addUserOption(option => option.setName('user').setDescription('کاربر مورد نظر').setRequired(true))
+        .addIntegerOption(option => option.setName('amount').setDescription('مقدار جدید سکه').setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+    new SlashCommandBuilder()
+        .setName('additem')
+        .setDescription('اضافه کردن آیتم به فروشگاه (فقط مدیران)')
+        .addStringOption(option => option.setName('name').setDescription('نام آیتم').setRequired(true))
+        .addIntegerOption(option => option.setName('price').setDescription('قیمت آیتم').setRequired(true))
+        .addStringOption(option => option.setName('description').setDescription('توضیحات آیتم').setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+    new SlashCommandBuilder()
+        .setName('removeitem')
+        .setDescription('حذف آیتم از فروشگاه (فقط مدیران)')
+        .addStringOption(option => option.setName('id').setDescription('شناسه آیتم').setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+    new SlashCommandBuilder()
+        .setName('resetdata')
+        .setDescription('بازنشانی داده‌های کاربر (فقط مدیران)')
+        .addUserOption(option => option.setName('user').setDescription('کاربر مورد نظر').setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+];
+
+// اطمینان از معتبر بودن توکن قبل از استفاده
+console.log('توکن دریافت شده:', TOKEN ? `${TOKEN.substring(0, 5)}...` : 'undefined');
+if (!TOKEN || TOKEN === 'undefined') {
+    console.error('❌ خطا: توکن معتبر نیست! لطفاً آن را در بخش Secrets با کلید DISCORD_TOKEN تنظیم کنید.');
+    process.exit(1);
+}
+const rest = new REST({ version: '10' }).setToken(TOKEN);
+
+// ثبت دستورات به صورت جهانی
+(async () => {
+    try {
+        console.log('🔄 در حال ثبت دستورات اسلش...');
+        await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
+        console.log('✅ دستورات اسلش با موفقیت ثبت شدند!');
+    } catch (error) {
+        console.error('❌ خطا در ثبت دستورات:', error);
+    }
+})();
+
+client.on('interactionCreate', async (interaction) => {
+    if (!interaction.isCommand() && !interaction.isButton()) return;
+
+    // بررسی محدودیت کانال (اگر تنظیم شده باشد)
+    if (allowedChannels.length > 0 && !allowedChannels.includes(interaction.channelId) && interaction.isCommand()) {
+        return await interaction.reply({ content: '❌ این دستور فقط در کانال‌های مجاز قابل استفاده است!', ephemeral: true });
+    }
+
+    // تعریف دکمه برگشت برای استفاده در بخش‌های مختلف
+    const backButton = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('back_to_menu')
+                .setLabel('🔙 بازگشت به منوی اصلی')
+                .setStyle(ButtonStyle.Secondary)
+        );
+
+    // پردازش دستورات
+    if (interaction.isCommand()) {
+        const { commandName, user } = interaction;
+        const userData = getUser(user.id);
+
+        try {
+            switch(commandName) {
+                case 'balance':
+                    await interaction.reply(`💰 موجودی شما:
+                    **کیف پول**: ${userData.balance} ${COIN_NAME}
+                    **حساب بانکی**: ${userData.bank || 0} ${COIN_NAME}
+                    **سرمایه‌گذاری**: ${userData.investment || 0} ${COIN_NAME}`);
+                    break;
+
+                case 'spin':
+                    let lastSpin = userData.lastSpin || 0;
+                    let currentTime = Date.now();
+
+                    if (currentTime - lastSpin < 86400000) { // یک روز به میلی‌ثانیه
+                        // محاسبه زمان باقی‌مانده
+                        const remainingTime = 86400000 - (currentTime - lastSpin);
+                        const hours = Math.floor(remainingTime / 3600000);
+                        const minutes = Math.floor((remainingTime % 3600000) / 60000);
+                        const seconds = Math.floor((remainingTime % 60000) / 1000);
+
+                        return await interaction.reply(`⏳ شما امروز گردونه را چرخاندید! زمان باقی‌مانده تا چرخش بعدی: **${hours} ساعت و ${minutes} دقیقه و ${seconds} ثانیه**`);
+                    }
+
+                    let reward = spinWheel();
+                    userData.balance += reward;
+                    userData.lastSpin = currentTime;
+
+                    // افزودن XP برای چرخاندن گردونه
+                    const spinLeveledUp = addXP(user.id, 5);
+                    let spinLevelUpMessage = '';
+                    if (spinLeveledUp) {
+                        spinLevelUpMessage = `\n🎉 تبریک! شما به سطح ${userData.level} ارتقا یافتید!`;
+                    }
+
+                    saveData();
+
+                    // ایجاد امبد برای نمایش بهتر نتیجه
+                    const spinEmbed = new EmbedBuilder()
+                        .setTitle('🎡 گردونه شانس')
+                        .setColor(reward > 0 ? '#00FF00' : '#FF0000')
+                        .setDescription(reward > 0 
+                            ? `تبریک! شما **${reward} ${COIN_NAME}** برنده شدید!${spinLevelUpMessage}` 
+                            : `متأسفانه این بار چیزی برنده نشدید! 😢${spinLevelUpMessage}`)
+                        .setFooter({ text: 'می‌توانید فردا دوباره شانس خود را امتحان کنید!' });
+
+                    await interaction.reply({ embeds: [spinEmbed] });
+                    break;
+
+                case 'leaderboard':
+                    let sortedUsers = Object.entries(users).sort((a, b) => 
+                        (b[1].balance + (b[1].bank || 0) + (b[1].investment || 0)) - 
+                        (a[1].balance + (a[1].bank || 0) + (a[1].investment || 0))
+                    );
+                    let leaderboard = sortedUsers.slice(0, 10).map((u, i) => {
+                        const total = u[1].balance + (u[1].bank || 0) + (u[1].investment || 0);
+                        return `${i + 1}. <@${u[0]}> - ${total} ${COIN_NAME}`;
+                    }).join('\n');
+
+                    await interaction.reply({ 
+                        embeds: [
+                            new EmbedBuilder()
+                                .setTitle('🏆 لیست برترین کاربران')
+                                .setDescription(leaderboard)
+                                .setColor('#FFD700')
+                        ] 
+                    });
+                    break;
+
+                case 'ping':
+                    const ping = client.ws.ping;
+                    await interaction.reply(`🏓 پینگ! تاخیر: ${ping}ms`);
+                    break;
+
+                case 'claim':
+                    // دریافت سکه‌های اولیه
+                    const claimUserData = getUser(interaction.user.id);
+
+                    // اگر قبلاً دریافت کرده است
+                    if (claimUserData.initialClaimed) {
+                        return await interaction.reply(`❌ شما قبلاً سکه‌های اولیه خود را دریافت کرده‌اید!`);
+                    }
+
+                    // بررسی زمان عضویت - باید حداقل 10 دقیقه گذشته باشد
+                    // اگر زمان عضویت ثبت نشده، آن را الان ثبت می‌کنیم
+                    if (!claimUserData.joinTime) {
+                        claimUserData.joinTime = Date.now();
+                        saveData();
+                        return await interaction.reply(`⏳ شما تازه ثبت‌نام کرده‌اید! برای دریافت سکه‌های اولیه باید حداقل 10 دقیقه صبر کنید.`);
+                    }
+
+                    const joinTime = claimUserData.joinTime;
+                    const now = Date.now();
+                    const tenMinutesMs = 600000; // 10 دقیقه به میلی‌ثانیه
+
+                    if (now - joinTime < tenMinutesMs) {
+                        const remainingTime = tenMinutesMs - (now - joinTime);
+                        const minutes = Math.floor(remainingTime / 60000);
+                        const seconds = Math.floor((remainingTime % 60000) / 1000);
+
+                        return await interaction.reply(`⏳ برای دریافت سکه‌های اولیه باید حداقل 10 دقیقه از زمان عضویت شما گذشته باشد. لطفاً ${minutes} دقیقه و ${seconds} ثانیه دیگر صبر کنید.`);
+                    }
+
+                    // اعطای سکه‌های اولیه
+                    claimUserData.balance += 100;
+                    claimUserData.initialClaimed = true;
+                    saveData();
+
+                    await interaction.reply({
+                        embeds: [
+                            new EmbedBuilder()
+                                .setTitle('🎉 پاداش اولیه دریافت شد!')
+                                .setColor('#00FF00')
+                                .setDescription(`شما 100 ${COIN_NAME} به عنوان پاداش اولیه دریافت کردید!`)
+                                .setFooter({ text: 'به ربات اقتصادی ما خوش آمدید!' })
+                        ]
+                    });
+                    break;
+
+                case 'level':
+                    // نمایش سطح و تجربه کاربر
+                    const levelUserData = getUser(interaction.user.id);
+                    const nextLevelXP = (levelUserData.level + 1) * 100;
+
+                    const levelEmbed = new EmbedBuilder()
+                        .setTitle(`🏆 پروفایل سطح ${interaction.user.username}`)
+                        .setColor('#00FFFF')
+                        .setThumbnail(interaction.user.displayAvatarURL())
+                        .addFields(
+                            { name: '📊 سطح فعلی', value: `${levelUserData.level}`, inline: true },
+                            { name: '✨ تجربه', value: `${levelUserData.xp}/${nextLevelXP} XP`, inline: true },
+                            { name: '💡 نکته', value: `شما برای رسیدن به سطح بعدی به ${nextLevelXP - levelUserData.xp} XP نیاز دارید.` }
+                        )
+                        .setFooter({ text: 'با فعالیت در سرور، تجربه و سطح شما افزایش می‌یابد.' });
+
+                    await interaction.reply({ embeds: [levelEmbed] });
+                    break;
+                    
+                case 'steal':
+                    // دزدی از جیب کاربران دیگر
+                    const targetUserSteal = interaction.options.getUser('user');
+                    
+                    // بررسی خودکشی!
+                    if (targetUserSteal.id === interaction.user.id) {
+                        return await interaction.reply('❌ شما نمی‌توانید از خودتان دزدی کنید!');
+                    }
+                    
+                    // بررسی دزدی از ربات
+                    if (targetUserSteal.bot) {
+                        return await interaction.reply('❌ ربات‌ها چیزی برای دزدیده شدن ندارند!');
+                    }
+                    
+                    // بررسی امکان دزدی
+                    const stealCheck = canSteal(interaction.user.id, targetUserSteal.id);
+                    if (!stealCheck.allowed) {
+                        return await interaction.reply(stealCheck.reason);
+                    }
+                    
+                    // محاسبه مقدار قابل دزدی
+                    const stealerData = getUser(interaction.user.id);
+                    const targetData = getUser(targetUserSteal.id);
+                    
+                    // حداکثر 20% از موجودی جیب کاربر هدف
+                    const maxStealAmount = Math.floor(targetData.balance * MAX_STEAL_PERCENTAGE);
+                    let stolenAmount = Math.floor(Math.random() * maxStealAmount) + 1;
+                    
+                    // کاربر ممکن است موجودی کمتری داشته باشد
+                    stolenAmount = Math.min(stolenAmount, targetData.balance);
+                    
+                    // بررسی شانس موفقیت (70% موفقیت)
+                    const stealSuccess = Math.random() < 0.7;
+                    
+                    if (stealSuccess) {
+                        // دزدی موفق
+                        stealerData.balance += stolenAmount;
+                        targetData.balance -= stolenAmount;
+                        
+                        // به‌روزرسانی آمار دزدی
+                        stealerData.dailySteals++;
+                        stealerData.stolenFrom[targetUserSteal.id] = Date.now();
+                        targetData.lastTimeStolen = Date.now();
+                        
+                        // افزودن XP برای دزدی موفق
+                        const stealLeveledUp = addXP(interaction.user.id, 5);
+                        let stealLevelUpMessage = '';
+                        if (stealLeveledUp) {
+                            stealLevelUpMessage = `\n🎉 تبریک! شما به سطح ${stealerData.level} ارتقا یافتید!`;
+                        }
+                        
+                        saveData();
+                        
+                        const stealEmbed = new EmbedBuilder()
+                            .setTitle('🥷 جیب‌زنی موفق!')
+                            .setColor('#00FF00')
+                            .setDescription(`شما با موفقیت **${stolenAmount} ${COIN_NAME}** از جیب ${targetUserSteal.username} دزدیدید!${stealLevelUpMessage}`)
+                            .setFooter({ text: `هوشیار باشید! ممکن است کاربران دیگر هم از شما دزدی کنند!` });
+                        
+                        await interaction.reply({ embeds: [stealEmbed] });
+                    } else {
+                        // دزدی ناموفق
+                        // جریمه برای دزدی ناموفق (10% از مبلغی که می‌خواستید بدزدید)
+                        const penalty = Math.floor(stolenAmount * 0.1);
+                        stealerData.balance -= penalty;
+                        
+                        // به‌روزرسانی آمار دزدی
+                        stealerData.dailySteals++;
+                        stealerData.stolenFrom[targetUserSteal.id] = Date.now();
+                        
+                        saveData();
+                        
+                        const failEmbed = new EmbedBuilder()
+                            .setTitle('🚫 جیب‌زنی ناموفق!')
+                            .setColor('#FF0000')
+                            .setDescription(`مچ شما هنگام دزدی از ${targetUserSteal.username} گرفته شد! شما **${penalty} ${COIN_NAME}** به عنوان جریمه پرداخت کردید.`)
+                            .setFooter({ text: `بهتر است دزدی نکنید!` });
+                        
+                        await interaction.reply({ embeds: [failEmbed] });
+                    }
+                    break;
+
+                case 'transfer':
+                    const targetUser = interaction.options.getUser('user');
+                    const amount = interaction.options.getInteger('amount');
+
+                    // بررسی‌های اولیه
+                    if (targetUser.id === user.id) {
+                        return await interaction.reply('❌ شما نمی‌توانید به خودتان سکه ارسال کنید!');
+                    }
+
+                    if (targetUser.bot) {
+                        return await interaction.reply('❌ شما نمی‌توانید به ربات‌ها سکه ارسال کنید!');
+                    }
+
+                    if (amount <= 0) {
+                        return await interaction.reply('❌ مقدار باید بیشتر از صفر باشد!');
+                    }
+
+                    if (userData.balance < amount) {
+                        return await interaction.reply(`❌ موجودی شما کافی نیست! (موجودی فعلی: ${userData.balance} ${COIN_NAME})`);
+                    }
+
+                    // بررسی محدودیت‌های انتقال
+                    const transferCheck = canTransferCoins(user.id, targetUser.id, amount);
+                    if (!transferCheck.allowed) {
+                        return await interaction.reply(transferCheck.reason);
+                    }
+
+                    // ایجاد دکمه تأیید
+                    const confirmRow = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId(`confirm_transfer_${targetUser.id}_${amount}`)
+                                .setLabel('تأیید انتقال')
+                                .setStyle(ButtonStyle.Success),
+                            new ButtonBuilder()
+                                .setCustomId('cancel_transfer')
+                                .setLabel('لغو')
+                                .setStyle(ButtonStyle.Danger)
+                        );
+
+                    await interaction.reply({
+                        content: `آیا از انتقال ${amount} ${COIN_NAME} به ${targetUser.username} اطمینان دارید؟`,
+                        components: [confirmRow],
+                        ephemeral: true
+                    });
+                    break;
+
+                case 'daily':
+                    let lastDaily = userData.lastDaily || 0;
+                    const dailyCurrentTime = Date.now();
+
+                    if (dailyCurrentTime - lastDaily < 86400000) { // یک روز به میلی‌ثانیه
+                        const remainingTime = 86400000 - (dailyCurrentTime - lastDaily);
+                        const hours = Math.floor(remainingTime / 3600000);
+                        const minutes = Math.floor((remainingTime % 3600000) / 60000);
+                        return await interaction.reply(`⏳ شما قبلاً جایزه روزانه خود را دریافت کرده‌اید! ${hours} ساعت و ${minutes} دقیقه دیگر می‌توانید دوباره جایزه بگیرید.`);
+                    }
+
+                    const dailyReward = 50;
+                    userData.balance += dailyReward;
+                    userData.lastDaily = dailyCurrentTime;
+
+                    // افزودن XP برای دریافت جایزه روزانه
+                    const dailyLeveledUp = addXP(user.id, 10);
+                    let dailyLevelUpMessage = '';
+                    if (dailyLeveledUp) {
+                        dailyLevelUpMessage = `\n🎉 تبریک! شما به سطح ${userData.level} ارتقا یافتید!`;
+                    }
+
+                    saveData();
+
+                    await interaction.reply(`✅ شما جایزه روزانه خود را دریافت کردید: ${dailyReward} ${COIN_NAME}!${dailyLevelUpMessage}`);
+                    break;
+
+                case 'bankdeposit':
+                    const depositAmount = interaction.options.getInteger('amount');
+
+                    if (depositAmount <= 0) {
+                        return await interaction.reply('❌ مقدار باید بیشتر از صفر باشد!');
+                    }
+
+                    if (userData.balance < depositAmount) {
+                        return await interaction.reply('❌ موجودی کیف پول شما کافی نیست!');
+                    }
+
+                    userData.balance -= depositAmount;
+                    userData.bank = (userData.bank || 0) + depositAmount;
+                    saveData();
+
+                    await interaction.reply(`✅ مبلغ ${depositAmount} ${COIN_NAME} به حساب بانکی شما واریز شد.`);
+                    break;
+
+                case 'bankwithdraw':
+                    const withdrawAmount = interaction.options.getInteger('amount');
+
+                    if (withdrawAmount <= 0) {
+                        return await interaction.reply('❌ مقدار باید بیشتر از صفر باشد!');
+                    }
+
+                    if (!userData.bank || userData.bank < withdrawAmount) {
+                        return await interaction.reply('❌ موجودی حساب بانکی شما کافی نیست!');
+                    }
+
+                    userData.bank -= withdrawAmount;
+                    userData.balance += withdrawAmount;
+                    saveData();
+
+                    await interaction.reply(`✅ مبلغ ${withdrawAmount} ${COIN_NAME} از حساب بانکی شما برداشت شد.`);
+                    break;
+
+                case 'invest':
+                    const investAmount = interaction.options.getInteger('amount');
+
+                    if (investAmount <= 0) {
+                        return await interaction.reply('❌ مقدار باید بیشتر از صفر باشد!');
+                    }
+
+                    if (userData.balance < investAmount) {
+                        return await interaction.reply('❌ موجودی کیف پول شما کافی نیست!');
+                    }
+
+                    userData.balance -= investAmount;
+                    userData.investment = (userData.investment || 0) + investAmount;
+                    saveData();
+
+                    await interaction.reply(`✅ شما ${investAmount} ${COIN_NAME} را سرمایه‌گذاری کردید! سود ماهانه ${INVESTMENT_RATE * 100}% خواهد بود.`);
+                    break;
+
+                case 'profile':
+                    const targetUserProfile = interaction.options.getUser('user') || user;
+                    const targetUserData = getUser(targetUserProfile.id);
+                    const totalBalance = targetUserData.balance + (targetUserData.bank || 0) + (targetUserData.investment || 0);
+
+                    // محاسبه اطلاعات لول
+                    const profileNextLevelXP = (targetUserData.level + 1) * 100;
+                    const levelProgress = Math.floor((targetUserData.xp / profileNextLevelXP) * 100);
+
+                    const profileEmbed = new EmbedBuilder()
+                        .setTitle(`پروفایل ${targetUserProfile.username}`)
+                        .setThumbnail(targetUserProfile.displayAvatarURL())
+                        .addFields(
+                            { name: '💰 کیف پول', value: `${targetUserData.balance} ${COIN_NAME}`, inline: true },
+                            { name: '🏦 حساب بانکی', value: `${targetUserData.bank || 0} ${COIN_NAME}`, inline: true },
+                            { name: '📈 سرمایه‌گذاری', value: `${targetUserData.investment || 0} ${COIN_NAME} (سود ماهانه: ${INVESTMENT_RATE * 100}%)`, inline: true },
+                            { name: '📊 مجموع دارایی', value: `${totalBalance} ${COIN_NAME}`, inline: false },
+                            { name: '🏆 سطح', value: `${targetUserData.level} (${targetUserData.xp}/${profileNextLevelXP} XP - ${levelProgress}%)`, inline: false },
+                            { name: '🥷 نکته امنیتی', value: `برای محافظت از سکه‌های خود در برابر جیب‌زنی، آنها را در بانک نگهداری کنید! سکه‌های داخل جیب (کیف پول) می‌توانند دزدیده شوند.`, inline: false }
+                        )
+                        .setColor('#00FFFF')
+                        .setFooter({ text: 'Holi Economy Bot', iconURL: client.user.displayAvatarURL() });
+
+                    await interaction.reply({ embeds: [profileEmbed] });
+                    break;
+
+                case 'menu':
+                    const menuEmbed = new EmbedBuilder()
+                        .setColor('#0099ff')
+                        .setTitle('🎮 منوی اصلی')
+                        .setDescription('لطفا یکی از گزینه‌ها را انتخاب کنید:')
+                        .setThumbnail(client.user.displayAvatarURL())
+                        .setFooter({ text: 'این منو فقط برای شما قابل مشاهده است', iconURL: interaction.user.displayAvatarURL() });
+
+                    const row1 = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('economy')
+                                .setLabel('💰 اقتصاد')
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId('games')
+                                .setLabel('🎲 بازی‌ها')
+                                .setStyle(ButtonStyle.Success),
+                            new ButtonBuilder()
+                                .setCustomId('shop')
+                                .setLabel('🛒 فروشگاه')
+                                .setStyle(ButtonStyle.Danger)
+                        );
+
+                    const row2 = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('quests')
+                                .setLabel('📜 کوئست‌ها')
+                                .setStyle(ButtonStyle.Secondary),
+                            new ButtonBuilder()
+                                .setCustomId('inventory')
+                                .setLabel('🎒 کوله‌پشتی')
+                                .setStyle(ButtonStyle.Secondary),
+                            new ButtonBuilder()
+                                .setCustomId('help')
+                                .setLabel('❓ راهنما')
+                                .setStyle(ButtonStyle.Secondary)
+                        );
+
+                    await interaction.reply({ embeds: [menuEmbed], components: [row1, row2], ephemeral: true });
+                    break;
+
+                case 'setchannel':
+                    const channel = interaction.options.getChannel('channel');
+                    if (!allowedChannels.includes(channel.id)) {
+                        allowedChannels.push(channel.id);
+                    }
+                    await interaction.reply(`✅ کانال ${channel} به لیست کانال‌های مجاز اضافه شد.`);
+                    break;
+
+                case 'addcoins':
+                    const userToAddCoins = interaction.options.getUser('user');
+                    const coinsAmount = interaction.options.getInteger('amount');
+
+                    if (coinsAmount <= 0) {
+                        return await interaction.reply('❌ مقدار باید بیشتر از صفر باشد!');
+                    }
+
+                    const userDataToAddCoins = getUser(userToAddCoins.id);
+                    userDataToAddCoins.balance += coinsAmount;
+                    saveData();
+
+                    await interaction.reply(`✅ مقدار ${coinsAmount} ${COIN_NAME} به کاربر ${userToAddCoins.username} اضافه شد.`);
+                    break;
+
+                case 'shop':
+                    const shopEmbed = new EmbedBuilder()
+                        .setTitle('🛒 فروشگاه')
+                        .setColor('#FF00FF')
+                        .setDescription('برای خرید، بر روی دکمه مورد نظر کلیک کنید:');
+
+                    // اضافه کردن آیتم‌ها به امبد
+                    shopItems.forEach(item => {
+                        shopEmbed.addFields({ 
+                            name: `${item.name} - ${item.price} ${COIN_NAME}`, 
+                            value: item.description,
+                            inline: true 
+                        });
+                    });
+
+                    // ایجاد دکمه‌ها برای خرید (حداکثر 5 دکمه در هر ردیف)
+                    const shopRow = new ActionRowBuilder();
+
+                    // اضافه کردن دکمه‌ها بر اساس آیتم‌های موجود (حداکثر 5 دکمه)
+                    const maxButtonsToShow = Math.min(shopItems.length, 5);
+                    for (let i = 0; i < maxButtonsToShow; i++) {
+                        shopRow.addComponents(
+                            new ButtonBuilder()
+                                .setCustomId(`buy_${shopItems[i].id}`)
+                                .setLabel(`خرید ${shopItems[i].name}`)
+                                .setStyle(ButtonStyle.Primary)
+                        );
+                    }
+
+                    await interaction.reply({ embeds: [shopEmbed], components: [shopRow] });
+                    break;
+                case 'dice':
+                    const betAmount = interaction.options.getInteger('bet');
+                    const userData = getUser(interaction.user.id);
+
+                    if (userData.balance < betAmount) {
+                        return await interaction.reply({
+                            content: `❌ موجودی شما برای شرط بندی ${betAmount} ${COIN_NAME} کافی نیست!`,
+                            ephemeral: true
+                        });
+                    }
+
+                    // تاس انداختن کاربر
+                    const userRoll = Math.floor(Math.random() * 6) + 1;
+                    // تاس انداختن ربات
+                    const botRoll = Math.floor(Math.random() * 6) + 1;
+
+                    // تعیین برنده
+                    let result = '';
+                    if (userRoll > botRoll) {
+                        // کاربر برنده شد
+                        userData.balance += betAmount;
+                        result = `🎉 تبریک! شما برنده شدید و ${betAmount} ${COIN_NAME} دریافت کردید!`;
+                    } else if (userRoll < botRoll) {
+                        // ربات برنده شد
+                        userData.balance -= betAmount;
+                        result = `😢 متأسفانه باختید و ${betAmount} ${COIN_NAME} از دست دادید!`;
+                    } else {
+                        // مساوی
+                        result = `😐 مساوی شد! هیچ سکه‌ای رد و بدل نشد.`;
+                    }
+
+                    saveData();
+
+                    // ایجاد امبد برای نمایش نتیجه
+                    const diceEmbed = new EmbedBuilder()
+                        .setTitle('🎲 بازی تاس')
+                        .setColor(userRoll > botRoll ? '#00FF00' : (userRoll < botRoll ? '#FF0000' : '#FFFF00'))
+                        .setDescription(`
+**تاس شما**: ${getDiceEmoji(userRoll)} (${userRoll})
+**تاس ربات**: ${getDiceEmoji(botRoll)} (${botRoll})
+
+${result}
+
+موجودی فعلی: **${userData.balance} ${COIN_NAME}**`)
+                        .setFooter({ text: 'می‌توانید دوباره امتحان کنید!' });
+
+                    // دکمه‌ها برای بازی مجدد
+                    const diceButtons = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId(`dice_again_${betAmount}`)
+                                .setLabel(`🎲 بازی مجدد (${betAmount} سکه)`)
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId(`dice_again_${betAmount * 2}`)
+                                .setLabel(`🎲 دو برابر (${betAmount * 2} سکه)`)
+                                .setStyle(ButtonStyle.Danger),
+                            new ButtonBuilder()
+                                .setCustomId('games')
+                                .setLabel('🔙 بازگشت به بازی‌ها')
+                                .setStyle(ButtonStyle.Secondary)
+                        );
+
+                    await interaction.reply({ embeds: [diceEmbed], components: [diceButtons] });
+                    break;
+            }
+        } catch (error) {
+            console.error(`❌ خطا در دستور ${commandName}:`, error);
+            await interaction.reply({ content: '❌ خطایی رخ داده است! لطفا دوباره امتحان کنید.', ephemeral: true });
+        }
+    }
+
+    // پردازش دکمه‌ها
+    if (interaction.isButton()) {
+        try {
+            // بررسی دکمه‌های تأیید انتقال
+            if (interaction.customId.startsWith('confirm_transfer_')) {
+                const parts = interaction.customId.split('_');
+                const targetId = parts[2];
+                const amount = parseInt(parts[3]);
+
+                const userData = getUser(interaction.user.id);
+
+                // بررسی دوباره موجودی (ممکن است در زمان تأیید تغییر کرده باشد)
+                if (userData.balance < amount) {
+                    return await interaction.update({
+                        content: '❌ موجودی شما کافی نیست!',
+                        components: []
+                    });
+                }
+
+                // بررسی مجدد محدودیت‌های انتقال
+                const transferCheck = canTransferCoins(interaction.user.id, targetId, amount);
+                if (!transferCheck.allowed) {
+                    return await interaction.update({
+                        content: transferCheck.reason,
+                        components: []
+                    });
+                }
+
+                const targetData = getUser(targetId);
+                userData.balance -= amount;
+                targetData.balance += amount;
+
+                // ثبت انتقال در تاریخچه
+                recordTransfer(interaction.user.id, targetId, amount);
+
+                // افزودن XP بابت انتقال سکه
+                const leveledUp = addXP(interaction.user.id, 5);
+                let levelUpMessage = '';
+                if (leveledUp) {
+                    levelUpMessage = `\n🎉 تبریک! شما به سطح ${userData.level} ارتقا یافتید!`;
+                }
+
+                saveData();
+
+                await interaction.update({
+                    content: `✅ انتقال ${amount} ${COIN_NAME} با موفقیت انجام شد!${levelUpMessage}`,
+                    components: []
+                });
+
+                return;
+            }
+
+            if (interaction.customId === 'cancel_transfer') {
+                await interaction.update({
+                    content: '❌ انتقال لغو شد.',
+                    components: []
+                });
+                return;
+            }
+
+            switch(interaction.customId) {
+                case 'economy':
+                    const economyEmbed = new EmbedBuilder()
+                        .setColor('#0099ff')
+                        .setTitle('💰 سیستم اقتصادی')
+                        .setDescription('دستورات اقتصادی:')
+                        .addFields(
+                            { name: '/balance', value: 'مشاهده موجودی شما', inline: true },
+                            { name: '/spin', value: 'چرخاندن گردونه و دریافت جایزه', inline: true },
+                            { name: '/daily', value: 'دریافت سکه روزانه', inline: true },
+                            { name: '/transfer', value: 'انتقال سکه به کاربر دیگر', inline: true },
+                            { name: '/bankdeposit', value: 'واریز سکه به حساب بانکی', inline: true },
+                            { name: '/bankwithdraw', value: 'برداشت سکه از حساب بانکی', inline: true },
+                            { name: '/invest', value: 'سرمایه‌گذاری سکه با نرخ سود ماهانه', inline: true },
+                            { name: '/leaderboard', value: 'مشاهده لیست برترین کاربران', inline: true }
+                        );
+
+                    // دکمه‌های دسترسی سریع (ردیف اول)
+                    const economyButtons1 = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('quick_balance')
+                                .setLabel('💰 موجودی')
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId('quick_daily')
+                                .setLabel('🌞 جایزه روزانه')
+                                .setStyle(ButtonStyle.Success),
+                            new ButtonBuilder()
+                                .setCustomId('quick_spin')
+                                .setLabel('🎡 گردونه شانس')
+                                .setStyle(ButtonStyle.Primary)
+                        );
+
+                    // دکمه‌های دسترسی سریع (ردیف دوم)
+                    const economyButtons2 = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('quick_bankdeposit')
+                                .setLabel('💳 واریز به بانک')
+                                .setStyle(ButtonStyle.Secondary),
+                            new ButtonBuilder()
+                                .setCustomId('quick_bankwithdraw')
+                                .setLabel('💵 برداشت از بانک')
+                                .setStyle(ButtonStyle.Secondary),
+                            new ButtonBuilder()
+                                .setCustomId('quick_leaderboard')
+                                .setLabel('🏆 برترین‌ها')
+                                .setStyle(ButtonStyle.Secondary)
+                        );
+
+                    // دکمه‌های دسترسی سریع (ردیف سوم)
+                    const economyButtons3 = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('quick_transfer')
+                                .setLabel('🔄 انتقال سکه')
+                                .setStyle(ButtonStyle.Danger),
+                            new ButtonBuilder()
+                                .setCustomId('quick_invest')
+                                .setLabel('📈 سرمایه‌گذاری')
+                                .setStyle(ButtonStyle.Danger),
+                            new ButtonBuilder()
+                                .setCustomId('back_to_menu')
+                                .setLabel('🔙 بازگشت')
+                                .setStyle(ButtonStyle.Secondary)
+                        );
+
+                    await interaction.update({ embeds: [economyEmbed], components: [economyButtons1, economyButtons2, economyButtons3] });
+                    break;
+
+                case 'games':
+                    const gamesEmbed = new EmbedBuilder()
+                        .setColor('#00ff00')
+                        .setTitle('🎲 بازی‌ها')
+                        .setDescription('بازی‌های موجود:')
+                        .addFields(
+                            { name: '🎡 گردونه شانس', value: 'چرخاندن گردونه و دریافت جایزه تصادفی', inline: true },
+                            { name: '🎯 شیر یا خط', value: 'شانس خود را با پرتاب سکه امتحان کنید', inline: true },
+                            { name: '🎲 تاس', value: 'تاس بیندازید با انیمیشن چرخش تاس', inline: true },
+                            { name: '⚔️ سنگ کاغذ قیچی', value: 'بازی کلاسیک سنگ کاغذ قیچی با ربات یا دوستان', inline: true },
+                            { name: '🔢 حدس عدد', value: 'عدد مخفی بین 1 تا 100 را حدس بزنید', inline: true },
+                            { name: '🏆 دوئل', value: 'با دوستان خود دوئل کنید و برنده شوید', inline: true },
+                            { name: '🥷 جیب‌زنی', value: 'دزدی از جیب کاربران دیگر در پنجره زمانی خاص', inline: true }
+                        );
+
+                    const gameButtons1 = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('play_wheel')
+                                .setLabel('🎡 گردونه شانس')
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId('play_coinflip')
+                                .setLabel('🎯 شیر یا خط')
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId('play_dice')
+                                .setLabel('🎲 بازی تاس')
+                                .setStyle(ButtonStyle.Primary)
+                        );
+                        
+                    const gameButtonsSteal = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('play_steal')
+                                .setLabel('🥷 جیب‌زنی')
+                                .setStyle(ButtonStyle.Danger),
+                            new ButtonBuilder()
+                                .setCustomId('steal_info')
+                                .setLabel('ℹ️ راهنمای جیب‌زنی')
+                                .setStyle(ButtonStyle.Secondary)
+                        );
+
+                    const gameButtons2 = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('play_rps')
+                                .setLabel('⚔️ سنگ کاغذ قیچی')
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId('play_numguess')
+                                .setLabel('🔢 حدس عدد')
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId('play_duel')
+                                .setLabel('🏆 دوئل')
+                                .setStyle(ButtonStyle.Primary)
+                        );
+
+                    const gameButtons3 = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('back_to_menu')
+                                .setLabel('🔙 بازگشت')
+                                .setStyle(ButtonStyle.Secondary)
+                        );
+
+                    await interaction.update({ embeds: [gamesEmbed], components: [gameButtons1, gameButtons2, gameButtonsSteal, gameButtons3] });
+                    break;
+
+                // دکمه‌های دسترسی سریع
+                case 'quick_balance':
+                    // نمایش موجودی کاربر
+                    const userDataBalance = getUser(interaction.user.id);
+
+                    await interaction.reply({
+                        content: `💰 موجودی شما:
+                        **کیف پول**: ${userDataBalance.balance} ${COIN_NAME}
+                        **حساب بانکی**: ${userDataBalance.bank || 0} ${COIN_NAME}
+                        **سرمایه‌گذاری**: ${userDataBalance.investment || 0} ${COIN_NAME}`,
+                        ephemeral: true
+                    });
+                    break;
+
+                case 'quick_daily':
+                    // اجرای همان کد دستور daily
+                    const userDailyData = getUser(interaction.user.id);
+                    const userLastDaily = userDailyData.lastDaily || 0;
+                    let nowDaily = Date.now();
+
+                    if (nowDaily - userLastDaily < 86400000) { // یک روز به میلی‌ثانیه
+                        const remainingTime = 86400000 - (nowDaily - userLastDaily);
+                        const hours = Math.floor(remainingTime / 3600000);
+                        const minutes = Math.floor((remainingTime % 3600000) / 60000);
+
+                        return await interaction.reply({
+                            content: `⏳ شما قبلاً جایزه روزانه خود را دریافت کرده‌اید! ${hours} ساعت و ${minutes} دقیقه دیگر می‌توانید دوباره جایزه بگیرید.`,
+                            ephemeral: true
+                        });
+                    }
+
+                    const quickDailyReward = 50;
+                    userDailyData.balance += quickDailyReward;
+                    userDailyData.lastDaily = nowDaily;
+                    saveData();
+
+                    await interaction.reply({
+                        content: `✅ شما جایزه روزانه خود را دریافت کردید: ${quickDailyReward} ${COIN_NAME}!`,
+                        ephemeral: true
+                    });
+                    break;
+
+                case 'quick_spin':
+                    // اجرای همان کد دستور spin
+                    const userSpinData = getUser(interaction.user.id);
+                    const userLastSpin = userSpinData.lastSpin || 0;
+                    let nowSpin = Date.now();
+
+                    if (nowSpin - userLastSpin < 86400000) { // یک روز به میلی‌ثانیه
+                        const remainingTime = 86400000 - (nowSpin - userLastSpin);
+                        const hours = Math.floor(remainingTime / 3600000);
+                        const minutes = Math.floor((remainingTime % 3600000) / 60000);
+
+                        return await interaction.reply({
+                            content: `⏳ شما امروز گردونه را چرخاندید! زمان باقی‌مانده تا چرخش بعدی: **${hours} ساعت و ${minutes} دقیقه**`,
+                            ephemeral: true
+                        });
+                    }
+
+                    let spinReward = spinWheel();
+                    userSpinData.balance += spinReward;
+                    userSpinData.lastSpin = nowSpin;
+                    saveData();
+
+                    // ایجاد امبد برای نمایش بهتر نتیجه
+                    const quickSpinEmbed = new EmbedBuilder()
+                        .setTitle('🎡 گردونه شانس')
+                        .setColor(spinReward > 0 ? '#00FF00' : '#FF0000')
+                        .setDescription(spinReward > 0 
+                            ? `تبریک! شما **${spinReward} ${COIN_NAME}** برنده شدید!` 
+                            : 'متأسفانه این بار چیزی برنده نشدید! 😢')
+                        .setFooter({ text: 'می‌توانید فردا دوباره شانس خود را امتحان کنید!' });
+
+                    await interaction.reply({ embeds: [quickSpinEmbed], ephemeral: true });
+                    break;
+
+                case 'quick_bankdeposit':
+                    // نمایش فرم واریز به بانک
+                    const bankDepositEmbed = new EmbedBuilder()
+                        .setColor('#0099ff')
+                        .setTitle('💳 واریز به حساب بانکی')
+                        .setDescription('لطفاً مبلغ واریز به حساب بانکی را از طریق دکمه‌های زیر انتخاب کنید:')
+                        .addFields(
+                            { name: 'موجودی کیف پول شما', value: `${getUser(interaction.user.id).balance} ${COIN_NAME}`, inline: true },
+                            { name: 'موجودی حساب بانکی شما', value: `${getUser(interaction.user.id).bank || 0} ${COIN_NAME}`, inline: true }
+                        );
+
+                    const depositButtons = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('deposit_10')
+                                .setLabel('10 سکه')
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId('deposit_50')
+                                .setLabel('50 سکه')
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId('deposit_100')
+                                .setLabel('100 سکه')
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId('deposit_all')
+                                .setLabel('همه سکه‌ها')
+                                .setStyle(ButtonStyle.Danger)
+                        );
+
+                    await interaction.reply({ embeds: [bankDepositEmbed], components: [depositButtons], ephemeral: true });
+                    break;
+
+                case 'quick_bankwithdraw':
+                    // نمایش فرم برداشت از بانک
+                    const bankWithdrawEmbed = new EmbedBuilder()
+                        .setColor('#0099ff')
+                        .setTitle('💵 برداشت از حساب بانکی')
+                        .setDescription('لطفاً مبلغ برداشت از حساب بانکی را از طریق دکمه‌های زیر انتخاب کنید:')
+                        .addFields(
+                            { name: 'موجودی حساب بانکی شما', value: `${getUser(interaction.user.id).bank || 0} ${COIN_NAME}`, inline: true },
+                            { name: 'موجودی کیف پول شما', value: `${getUser(interaction.user.id).balance} ${COIN_NAME}`, inline: true }
+                        );
+
+                    const withdrawButtons = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('withdraw_10')
+                                .setLabel('10 سکه')
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId('withdraw_50')
+                                .setLabel('50 سکه')
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId('withdraw_100')
+                                .setLabel('100 سکه')
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId('withdraw_all')
+                                .setLabel('همه سکه‌ها')
+                                .setStyle(ButtonStyle.Danger)
+                        );
+
+                    await interaction.reply({ embeds: [bankWithdrawEmbed], components: [withdrawButtons], ephemeral: true });
+                    break;
+
+                case 'quick_leaderboard':
+                    // نمایش لیست برترین کاربران
+                    let quickSortedUsers = Object.entries(users).sort((a, b) => 
+                        (b[1].balance + (b[1].bank || 0) + (b[1].investment || 0)) - 
+                        (a[1].balance + (a[1].bank || 0) + (a[1].investment || 0))
+                    );
+                    let quickLeaderboard = quickSortedUsers.slice(0, 10).map((u, i) => {
+                        const total = u[1].balance + (u[1].bank || 0) + (u[1].investment || 0);
+                        return `${i + 1}. <@${u[0]}> - ${total} ${COIN_NAME}`;
+                    }).join('\n');
+
+                    await interaction.reply({ 
+                        embeds: [
+                            new EmbedBuilder()
+                                .setTitle('🏆 لیست برترین کاربران')
+                                .setDescription(quickLeaderboard)
+                                .setColor('#FFD700')
+                        ],
+                        ephemeral: true
+                    });
+                    break;
+
+                case 'quick_transfer':
+                    // نمایش فرم انتقال سکه
+                    const transferEmbed = new EmbedBuilder()
+                        .setColor('#FF5733')
+                        .setTitle('🔄 انتقال سکه به کاربر دیگر')
+                        .setDescription('برای انتقال سکه به کاربر دیگر، لطفاً از دستور `/transfer` استفاده کنید.\n\nمثال: `/transfer user:@username amount:100`')
+                        .addFields(
+                            { name: 'موجودی شما', value: `${getUser(interaction.user.id).balance} ${COIN_NAME}`, inline: true }
+                        );
+
+                    await interaction.reply({ embeds: [transferEmbed], ephemeral: true });
+                    break;
+
+                case 'quick_invest':
+                    // نمایش فرم سرمایه‌گذاری
+                    const investEmbed = new EmbedBuilder()
+                        .setColor('#00FF00')
+                        .setTitle('📈 سرمایه‌گذاری سکه')
+                        .setDescription(`با سرمایه‌گذاری سکه، ماهانه ${INVESTMENT_RATE * 100}% سود دریافت خواهید کرد! مبلغ مورد نظر را انتخاب کنید:`)
+                        .addFields(
+                            { name: 'موجودی کیف پول شما', value: `${getUser(interaction.user.id).balance} ${COIN_NAME}`, inline: true },
+                            { name: 'سرمایه‌گذاری فعلی شما', value: `${getUser(interaction.user.id).investment || 0} ${COIN_NAME}`, inline: true }
+                        );
+
+                    const investButtons = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('invest_100')
+                                .setLabel('100 سکه')
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId('invest_500')
+                                .setLabel('500 سکه')
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId('invest_1000')
+                                .setLabel('1000 سکه')
+                                .setStyle(ButtonStyle.Danger)
+                        );
+
+                    await interaction.reply({ embeds: [investEmbed], components: [investButtons], ephemeral: true });
+                    break;
+
+                case 'play_wheel':
+                    // مشابه quick_spin اما با پیام متفاوت
+                    const playWheelUserData = getUser(interaction.user.id);
+                    const playWheelLastSpin = playWheelUserData.lastSpin || 0;
+                    const playWheelNowSpin = Date.now();
+
+                    if (playWheelNowSpin - playWheelLastSpin < 86400000) {
+                        const remainingTime = 86400000 - (playWheelNowSpin - playWheelLastSpin);
+                        const hours = Math.floor(remainingTime / 3600000);
+                        const minutes = Math.floor((remainingTime % 3600000) / 60000);
+
+                        return await interaction.reply({
+                            content: `⏳ شما امروز گردونه را چرخاندید! زمان باقی‌مانده تا چرخش بعدی: **${hours} ساعت و ${minutes} دقیقه**`,
+                            ephemeral: true
+                        });
+                    }
+
+                    const playWheelReward = spinWheel();
+                    playWheelUserData.balance += playWheelReward;
+                    playWheelUserData.lastSpin = playWheelNowSpin;
+                    saveData();
+
+                    const wheelEmbed = new EmbedBuilder()
+                        .setTitle('🎡 گردونه شانس')
+                        .setColor(playWheelReward > 0 ? '#00FF00' : '#FF0000')
+                        .setDescription(playWheelReward > 0 
+                            ? `گردونه می‌چرخد... و متوقف می‌شود!\n\n🎉 تبریک! شما **${playWheelReward} ${COIN_NAME}** برنده شدید!` 
+                            : 'گردونه می‌چرخد... و متوقف می‌شود!\n\n😢 متأسفانه این بار چیزی برنده نشدید!')
+                        .setFooter({ text: 'می‌توانید فردا دوباره شانس خود را امتحان کنید!' });
+
+                    const backToGamesButton = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('games')
+                                .setLabel('🔙 بازگشت به بازی‌ها')
+                                .setStyle(ButtonStyle.Secondary)
+                        );
+
+                    await interaction.reply({ embeds: [wheelEmbed], components: [backToGamesButton], ephemeral: true });
+                    break;
+
+                case 'play_coinflip':
+                    // بازی شیر یا خط
+                    const coinflipEmbed = new EmbedBuilder()
+                        .setTitle('🎯 شیر یا خط')
+                        .setColor('#1ABC9C')
+                        .setDescription('شیر یا خط؟ شانس خود را امتحان کنید و شرط ببندید!\n\nبرای شروع، شیر یا خط را انتخاب کنید و مبلغ شرط خود را مشخص کنید:');
+
+                    const coinflipButtons = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('coinflip_heads_10')
+                                .setLabel('شیر - 10 سکه')
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId('coinflip_tails_10')
+                                .setLabel('خط - 10 سکه')
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId('games')
+                                .setLabel('🔙 بازگشت')
+                                .setStyle(ButtonStyle.Secondary)
+                        );
+
+                    const coinflipButtons2 = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('coinflip_heads_50')
+                                .setLabel('شیر - 50 سکه')
+                                .setStyle(ButtonStyle.Danger),
+                            new ButtonBuilder()
+                                .setCustomId('coinflip_tails_50')
+                                .setLabel('خط - 50 سکه')
+                                .setStyle(ButtonStyle.Danger)
+                        );
+
+                    await interaction.reply({ embeds: [coinflipEmbed], components: [coinflipButtons, coinflipButtons2], ephemeral: true });
+                    break;
+
+                case 'play_dice':
+                    // ایجاد امبد برای بازی تاس
+                    const diceGameEmbed = new EmbedBuilder()
+                        .setTitle('🎲 بازی تاس')
+                        .setColor('#6642A9')
+                        .setDescription('به بازی تاس خوش آمدید! مبلغ شرط خود را انتخاب کنید و نحوه بازی را مشخص کنید:');
+
+                    const diceBetButtons1 = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('dice_game_10_bot')
+                                .setLabel('🤖 بازی با ربات (10 سکه)')
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId('dice_game_50_bot')
+                                .setLabel('🤖 بازی با ربات (50 سکه)')
+                                .setStyle(ButtonStyle.Danger)
+                        );
+
+                    const diceBetButtons2 = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('dice_game_10_player')
+                                .setLabel('👥 بازی با دوستان (10 سکه)')
+                                .setStyle(ButtonStyle.Success),
+                            new ButtonBuilder()
+                                .setCustomId('dice_game_50_player')
+                                .setLabel('👥 بازی با دوستان (50 سکه)')
+                                .setStyle(ButtonStyle.Success)
+                        );
+
+                    const diceBetButtons3 = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('games')
+                                .setLabel('🔙 بازگشت')
+                                .setStyle(ButtonStyle.Secondary)
+                        );
+
+                    await interaction.reply({ embeds: [diceGameEmbed], components: [diceBetButtons1, diceBetButtons2, diceBetButtons3], ephemeral: true });
+                    break;
+
+                case 'help':
+                    const helpEmbed = new EmbedBuilder()
+                        .setColor('#ffff00')
+                        .setTitle('❓ راهنما')
+                        .setDescription('لیست دستورات ربات:')
+                        .addFields(
+                            { name: 'دستورات اقتصادی', value: '/balance, /spin, /daily, /transfer, /bankdeposit, /bankwithdraw, /invest, /leaderboard, /steal', inline: false },
+                            { name: 'دستورات عمومی', value: '/ping, /profile, /menu', inline: false },
+                            { name: 'دستورات مدیریتی', value: '/setchannel, /addcoins (فقط ادمین‌ها)', inline: false }
+                        );
+
+                    // دکمه برگشت به منوی اصلی
+                    const backButton = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('back_to_menu')
+                                .setLabel('🔙 بازگشت به منوی اصلی')
+                                .setStyle(ButtonStyle.Secondary)
+                        );
+
+                    await interaction.update({ embeds: [helpEmbed], components: [backButton] });
+                    break;
+
+                case 'quests':
+                    const questsEmbed = new EmbedBuilder()
+                        .setColor('#9B59B6')
+                        .setTitle('📜 کوئست‌ها')
+                        .setDescription('ماموریت‌های فعال:')
+                        .addFields(
+                            { name: '🌞 کوئست روزانه', value: 'ورود به بازی و دریافت جایزه روزانه - پاداش: 50 سکه', inline: false },
+                            { name: '🎡 گردونه شانس', value: 'یکبار در روز گردونه را بچرخانید - پاداش: جایزه تصادفی', inline: false },
+                            { name: '💰 سرمایه‌گذار', value: 'حداقل 500 سکه سرمایه‌گذاری کنید - پاداش: 100 سکه اضافی', inline: false }
+                        );
+
+                    // دکمه برگشت به منوی اصلی
+                    const questsBackButton = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('back_to_menu')
+                                .setLabel('🔙 بازگشت به منوی اصلی')
+                                .setStyle(ButtonStyle.Secondary)
+                        );
+
+                    await interaction.update({ embeds: [questsEmbed], components: [questsBackButton] });
+                    break;
+
+                case 'inventory':
+                    const userData = getUser(interaction.user.id);
+
+                    // بررسی اینکه آیا کاربر آیتمی در کوله‌پشتی دارد
+                    const inventoryItems = userData.inventory || [];
+
+                    const inventoryEmbed = new EmbedBuilder()
+                        .setColor('#F1C40F')
+                        .setTitle('🎒 کوله‌پشتی شما')
+                        .setThumbnail(interaction.user.displayAvatarURL());
+
+                    if (inventoryItems.length === 0) {
+                        inventoryEmbed.setDescription('شما هیچ آیتمی در کوله‌پشتی خود ندارید! می‌توانید از فروشگاه آیتم‌هایی خریداری کنید.');
+                    } else {
+                        inventoryEmbed.setDescription('آیتم‌های موجود در کوله‌پشتی شما:');
+                        inventoryItems.forEach(item => {
+                            inventoryEmbed.addFields({ name: item.name, value: item.description, inline: true });
+                        });
+                    }
+
+                    // دکمه برگشت به منوی اصلی
+                    const inventoryBackButton = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('back_to_menu')
+                                .setLabel('🔙 بازگشت به منوی اصلی')
+                                .setStyle(ButtonStyle.Secondary)
+                        );
+
+                    await interaction.update({ embeds: [inventoryEmbed], components: [inventoryBackButton] });
+                    break;
+
+                case 'admin_coins':
+                    // بررسی دسترسی مدیر
+                    if (!hasAdminRole(interaction.member)) {
+                        return await interaction.reply({
+                            content: '❌ شما دسترسی لازم برای این بخش را ندارید!',
+                            ephemeral: true
+                        });
+                    }
+
+                    const coinManagementEmbed = new EmbedBuilder()
+                        .setTitle('💰 مدیریت سکه')
+                        .setColor('#FFD700')
+                        .setDescription('از این بخش می‌توانید موجودی سکه کاربران را مدیریت کنید.')
+                        .addFields(
+                            { name: '/setcoin', value: 'تنظیم دقیق مقدار سکه کاربر', inline: true },
+                            { name: '/addcoins', value: 'اضافه کردن سکه به کاربر', inline: true }
+                        );
+
+                    const backToAdminButton = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('back_to_admin')
+                                .setLabel('🔙 بازگشت به پنل مدیریت')
+                                .setStyle(ButtonStyle.Secondary)
+                        );
+
+                    await interaction.update({ embeds: [coinManagementEmbed], components: [backToAdminButton] });
+                    break;
+
+                case 'admin_shop':
+                    // بررسی دسترسی مدیر
+                    if (!hasAdminRole(interaction.member)) {
+                        return await interaction.reply({
+                            content: '❌ شما دسترسی لازم برای این بخش را ندارید!',
+                            ephemeral: true
+                        });
+                    }
+
+                    // نمایش لیست آیتم‌های فروشگاه
+                    let shopItemList = '';
+                    shopItems.forEach(item => {
+                        shopItemList += `**شناسه**: \`${item.id}\`\n**نام**: ${item.name}\n**قیمت**: ${item.price} ${COIN_NAME}\n**توضیحات**: ${item.description}\n\n`;
+                    });
+
+                    const shopManagementEmbed = new EmbedBuilder()
+                        .setTitle('🛒 مدیریت فروشگاه')
+                        .setColor('#FF00FF')
+                        .setDescription('از این بخش می‌توانید آیتم‌های فروشگاه را مدیریت کنید.')
+                        .addFields(
+                            { name: '/additem', value: 'اضافه کردن آیتم جدید به فروشگاه', inline: true },
+                            { name: '/removeitem', value: 'حذف آیتم از فروشگاه', inline: true },
+                            { name: '📋 لیست آیتم‌های فعلی', value: shopItemList || 'هیچ آیتمی در فروشگاه وجود ندارد!', inline: false }
+                        );
+
+                    await interaction.update({ embeds: [shopManagementEmbed], components: [backToAdminButton] });
+                    break;
+
+                case 'admin_data':
+                    // بررسی دسترسی مدیر
+                    if (!hasAdminRole(interaction.member)) {
+                        return await interaction.reply({
+                            content: '❌ شما دسترسی لازم برای این بخش را ندارید!',
+                            ephemeral: true
+                        });
+                    }
+
+                    const dataManagementEmbed = new EmbedBuilder()
+                        .setTitle('📋 مدیریت داده‌ها')
+                        .setColor('#1ABC9C')
+                        .setDescription('از این بخش می‌توانید داده‌های کاربران را مدیریت کنید.')
+                        .addFields(
+                            { name: '/resetdata', value: 'بازنشانی داده‌های یک کاربر', inline: true },
+                            { name: 'تعداد کاربران ثبت شده', value: `${Object.keys(users).length} کاربر`, inline: true }
+                        );
+
+                    // دکمه‌های مدیریت داده
+                    const dataManagementButtons = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('export_data')
+                                .setLabel('📤 دریافت فایل داده‌ها')
+                                .setStyle(ButtonStyle.Primary),
+                            backToAdminButton.components[0]
+                        );
+
+                    await interaction.update({ embeds: [dataManagementEmbed], components: [dataManagementButtons] });
+                    break;
+
+                case 'back_to_admin':
+                    // بازگشت به پنل مدیریت
+                    const adminPanelEmbedReturn = new EmbedBuilder()
+                        .setTitle('🛠️ پنل مدیریت')
+                        .setColor('#FF0000')
+                        .setDescription('خوش آمدید مدیر گرامی! از این پنل می‌توانید ربات را مدیریت کنید.')
+                        .addFields(
+                            { name: '📊 آمار', value: `تعداد کاربران: ${Object.keys(users).length}\nتعداد آیتم‌های فروشگاه: ${shopItems.length}`, inline: false },
+                            { name: '💰 مدیریت سکه', value: 'تنظیم یا اضافه کردن سکه به کاربران', inline: true },
+                            { name: '🛒 مدیریت فروشگاه', value: 'اضافه یا حذف کردن آیتم‌های فروشگاه', inline: true },
+                            { name: '📋 مدیریت داده‌ها', value: 'بازنشانی یا مدیریت داده‌های کاربران', inline: true }
+                        )
+                        .setFooter({ text: 'دسترسی فقط برای مدیران مجاز' });
+
+                    // دکمه‌های پنل مدیریت
+                    const adminPanelRow1Return = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('admin_coins')
+                                .setLabel('💰 مدیریت سکه')
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId('admin_shop')
+                                .setLabel('🛒 مدیریت فروشگاه')
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId('admin_data')
+                                .setLabel('📋 مدیریت داده‌ها')
+                                .setStyle(ButtonStyle.Primary)
+                        );
+
+                    await interaction.update({ embeds: [adminPanelEmbedReturn], components: [adminPanelRow1Return] });
+                    break;
+
+                case 'export_data':
+                    // بررسی دسترسی مدیر
+                    if (!hasAdminRole(interaction.member)) {
+                        return await interaction.reply({
+                            content: '❌ شما دسترسی لازم برای این عملیات را ندارید!',
+                            ephemeral: true
+                        });
+                    }
+
+                    await interaction.reply({
+                        content: '📤 فایل داده‌های ربات:',
+                        files: [DATA_FILE],
+                        ephemeral: true
+                    });
+                    break;
+
+                case 'back_to_menu':
+                    // بازگشت به منوی اصلی
+                    const mainMenuEmbed = new EmbedBuilder()
+                        .setColor('#0099ff')
+                        .setTitle('🎮 منوی اصلی')
+                        .setDescription('لطفا یکی از گزینه‌ها را انتخاب کنید:')
+                        .setThumbnail(client.user.displayAvatarURL())
+                        .setFooter({ text: 'این منو فقط برای شما قابل مشاهده است', iconURL: interaction.user.displayAvatarURL() });
+
+                    const mainRow1 = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('economy')
+                                .setLabel('💰 اقتصاد')
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId('games')
+                                .setLabel('🎲 بازی‌ها')
+                                .setStyle(ButtonStyle.Success),
+                            new ButtonBuilder()
+                                .setCustomId('shop')
+                                .setLabel('🛒 فروشگاه')
+                                .setStyle(ButtonStyle.Danger)
+                        );
+
+                    const mainRow2 = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('quests')
+                                .setLabel('📜 کوئست‌ها')
+                                .setStyle(ButtonStyle.Secondary),
+                            new ButtonBuilder()
+                                .setCustomId('inventory')
+                                .setLabel('🎒 کوله‌پشتی')
+                                .setStyle(ButtonStyle.Secondary),
+                            new ButtonBuilder()
+                                .setCustomId('help')
+                                .setLabel('❓ راهنما')
+                                .setStyle(ButtonStyle.Secondary)
+                        );
+
+                    await interaction.update({ embeds: [mainMenuEmbed], components: [mainRow1, mainRow2] });
+                    break;
+
+                // منوی فروشگاه
+                case 'shop':
+                    const shopEmbed = new EmbedBuilder()
+                        .setTitle('🛒 فروشگاه')
+                        .setColor('#FF00FF')
+                        .setDescription('برای خرید، بر روی دکمه مورد نظر کلیک کنید:');
+
+                    // اضافه کردن آیتم‌ها به امبد
+                    shopItems.forEach(item => {
+                        shopEmbed.addFields({ 
+                            name: `${item.name} - ${item.price} ${COIN_NAME}`, 
+                            value: item.description,
+                            inline: true 
+                        });
+                    });
+
+                    // ایجاد دکمه‌ها برای خرید (حداکثر 5 دکمه در هر ردیف)
+                    const shopRow = new ActionRowBuilder();
+
+                    // اضافه کردن دکمه‌ها بر اساس آیتم‌های موجود (حداکثر 5 دکمه)
+                    const maxButtonsToShow = Math.min(shopItems.length, 5);
+                    for (let i = 0; i < maxButtonsToShow; i++) {
+                        shopRow.addComponents(
+                            new ButtonBuilder()
+                                .setCustomId(`buy_${shopItems[i].id}`)
+                                .setLabel(`خرید ${shopItems[i].name}`)
+                                .setStyle(ButtonStyle.Primary)
+                        );
+                    }
+
+                    const shopBackRow = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('back_to_menu')
+                                .setLabel('🔙 بازگشت به منوی اصلی')
+                                .setStyle(ButtonStyle.Secondary)
+                        );
+
+                    await interaction.update({ embeds: [shopEmbed], components: [shopRow, shopBackRow] });
+                    break;
+
+                // بازی شیر یا خط
+                case 'coinflip_heads_10':
+                case 'coinflip_tails_10':
+                case 'coinflip_heads_50':
+                case 'coinflip_tails_50':
+                    const parts = interaction.customId.split('_');
+                    const choice = parts[1]; // heads یا tails
+                    const betAmount = parseInt(parts[2]); // 10 یا 50
+
+                    if (getUser(interaction.user.id).balance < betAmount) {
+                        await interaction.reply({ 
+                            content: `❌ موجودی شما کافی نیست! شما به ${betAmount - getUser(interaction.user.id).balance} ${COIN_NAME} بیشتر نیاز دارید.`, 
+                            ephemeral: true 
+                        });
+                        return;
+                    }
+
+                    // تعیین نتیجه تصادفی (شیر یا خط)
+                    const result = Math.random() < 0.5 ? 'heads' : 'tails';
+                    const won = choice === result;
+
+                    // بروزرسانی موجودی
+                    if (won) {
+                        getUser(interaction.user.id).balance += betAmount;
+                    } else {
+                        getUser(interaction.user.id).balance -= betAmount;
+                    }
+                    saveData();
+
+                    // ایجاد امبد برای نمایش نتیجه
+                    const coinflipResultEmbed = new EmbedBuilder()
+                        .setTitle('🎯 نتیجه شیر یا خط')
+                        .setColor(won ? '#00FF00' : '#FF0000')
+                        .setDescription(`سکه به هوا پرتاب شد و نتیجه...
+
+${result === 'heads' ? '**شیر** آمد!' : '**خط** آمد!'}
+
+${won ? `🎉 تبریک! شما برنده شدید و **${betAmount} ${COIN_NAME}** برنده شدید!` : `😢 متأسفانه باختید و **${betAmount} ${COIN_NAME}** از دست دادید!`}
+
+موجودی فعلی: **${getUser(interaction.user.id).balance} ${COIN_NAME}**`);
+
+                    const playAgainRow = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('play_coinflip')
+                                .setLabel('🔄 بازی دوباره')
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId('games')
+                                .setLabel('🔙 بازگشت به بازی‌ها')
+                                .setStyle(ButtonStyle.Secondary)
+                        );
+
+                    await interaction.update({ embeds: [coinflipResultEmbed], components: [playAgainRow] });
+                    break;
+
+                // پردازش دکمه‌های فروشگاه
+                case 'buy_role_vip':
+                case 'buy_custom_color':
+                case 'buy_lootbox':
+                default:
+                    // پردازش دکمه‌های واریز به بانک
+                    if (interaction.customId.startsWith('deposit_')) {
+                        const option = interaction.customId.split('_')[1];
+                        const depositUserData = getUser(interaction.user.id);
+                        let depositAmount = 0;
+
+                        if (option === 'all') {
+                            // واریز تمام سکه‌ها
+                            depositAmount = depositUserData.balance;
+                        } else {
+                            // واریز مقدار مشخص
+                            depositAmount = parseInt(option);
+                        }
+
+                        if (depositAmount <= 0) {
+                            await interaction.update({
+                                content: '❌ مقدار باید بیشتر از صفر باشد!',
+                                embeds: [],
+                                components: [],
+                                ephemeral: true
+                            });
+                            return;
+                        }
+
+                        if (depositUserData.balance < depositAmount) {
+                            await interaction.update({
+                                content: '❌ موجودی کیف پول شما کافی نیست!',
+                                embeds: [],
+                                components: [],
+                                ephemeral: true
+                            });
+                            return;
+                        }
+
+                        depositUserData.balance -= depositAmount;
+                        depositUserData.bank = (depositUserData.bank || 0) + depositAmount;
+                        saveData();
+
+                        await interaction.update({
+                            content: `✅ مبلغ ${depositAmount} ${COIN_NAME} به حساب بانکی شما واریز شد.\n\n**موجودی کیف پول**: ${depositUserData.balance} ${COIN_NAME}\n**موجودی حساب بانکی**: ${depositUserData.bank} ${COIN_NAME}`,
+                            embeds: [],
+                            components: [],
+                            ephemeral: true
+                        });
+                        return;
+                    }
+
+                    // پردازش دکمه‌های برداشت از بانک
+                    if (interaction.customId.startsWith('withdraw_')) {
+                        const option = interaction.customId.split('_')[1];
+                        const withdrawUserData = getUser(interaction.user.id);
+                        let withdrawAmount = 0;
+
+                        if (option === 'all') {
+                            // برداشت تمام سکه‌ها
+                            withdrawAmount = withdrawUserData.bank || 0;
+                        } else {
+                            // برداشت مقدار مشخص
+                            withdrawAmount = parseInt(option);
+                        }
+
+                        if (withdrawAmount <= 0) {
+                            await interaction.update({
+                                content: '❌ مقدار باید بیشتر از صفر باشد!',
+                                embeds: [],
+                                components: [],
+                                ephemeral: true
+                            });
+                            return;
+                        }
+
+                        if (!withdrawUserData.bank || withdrawUserData.bank < withdrawAmount) {
+                            await interaction.update({
+                                content: '❌ موجودی حساب بانکی شما کافی نیست!',
+                                embeds: [],
+                                components: [],
+                                ephemeral: true
+                            });
+                            return;
+                        }
+
+                        withdrawUserData.bank -= withdrawAmount;
+                        withdrawUserData.balance += withdrawAmount;
+                        saveData();
+
+                        await interaction.update({
+                            content: `✅ مبلغ ${withdrawAmount} ${COIN_NAME} از حساب بانکی شما برداشت شد.\n\n**موجودی کیف پول**: ${withdrawUserData.balance} ${COIN_NAME}\n**موجودی حساب بانکی**: ${withdrawUserData.bank} ${COIN_NAME}`,
+                            embeds: [],
+                            components: [],
+                            ephemeral: true
+                        });
+                        return;
+                    }
+
+                    // پردازش دکمه‌های سرمایه‌گذاری
+                    if (interaction.customId.startsWith('invest_')) {
+                        const investAmount = parseInt(interaction.customId.split('_')[1]);
+                        const investUserData = getUser(interaction.user.id);
+
+                        if (investUserData.balance < investAmount) {
+                            await interaction.update({
+                                content: '❌ موجودی کیف پول شما کافی نیست!',
+                                embeds: [],
+                                components: [],
+                                ephemeral: true
+                            });
+                            return;
+                        }
+
+                        investUserData.balance -= investAmount;
+                        investUserData.investment = (investUserData.investment || 0) + investAmount;
+                        saveData();
+
+                        await interaction.update({
+                            content: `✅ شما ${investAmount} ${COIN_NAME} را سرمایه‌گذاری کردید! سود ماهانه ${INVESTMENT_RATE * 100}% خواهد بود.\n\n**موجودی کیف پول**: ${investUserData.balance} ${COIN_NAME}\n**سرمایه‌گذاری فعلی**: ${investUserData.investment} ${COIN_NAME}`,
+                            embeds: [],
+                            components: [],
+                            ephemeral: true
+                        });
+                        return;
+                    }
+
+                    // اگر دکمه خرید آیتم باشد
+                    if (interaction.customId.startsWith('buy_')) {
+                        const itemId = interaction.customId.replace('buy_', '');
+                        const item = shopItems.find(i => i.id === itemId);
+
+                        if (!item) {
+                            await interaction.reply({ 
+                                content: '❌ این آیتم در فروشگاه موجود نیست!', 
+                                ephemeral: true 
+                            });
+                            return;
+                        }
+
+                        const buyerData = getUser(interaction.user.id);
+
+                        if (buyerData.balance < item.price) {
+                            await interaction.reply({ 
+                                content: `❌ موجودی شما کافی نیست! شما به ${item.price - buyerData.balance} ${COIN_NAME} بیشتر نیاز دارید.`, 
+                                ephemeral: true 
+                            });
+                            return;
+                        }
+
+                        buyerData.balance -= item.price;
+
+                        // اضافه کردن آیتم به کوله‌پشتی کاربر
+                        if (!buyerData.inventory) {
+                            buyerData.inventory = [];
+                        }
+
+                        buyerData.inventory.push({
+                            id: item.id,
+                            name: item.name,
+                            description: item.description,
+                            purchaseDate: Date.now()
+                        });
+
+                        saveData();
+
+                        // اقدامات خاص برای آیتم‌های مختلف
+                        if (item.id === 'role_vip') {
+                            // اعطای رول VIP (اگر در محیط سرور باشیم)
+                            try {
+                                // می‌توان در آینده کد اعطای رول را اینجا اضافه کرد
+                                // await interaction.member.roles.add('ROLE_ID_FOR_VIP');
+                            } catch (error) {
+                                console.error('خطا در اعطای رول:', error);
+                            }
+                        } else if (item.id === 'lootbox') {
+                            // جوایز تصادفی جعبه شانس
+                            const prizes = [
+                                { type: 'coins', amount: 100, chance: 40 },
+                                { type: 'coins', amount: 500, chance: 20 },
+                                { type: 'coins', amount: 1000, chance: 5 },
+                                { type: 'nothing', chance: 35 }
+                            ];
+
+                            // انتخاب جایزه بر اساس شانس
+                            let totalChance = 0;
+                            const roll = Math.random() * 100;
+                            let prize = null;
+
+                            for (const p of prizes) {
+                                totalChance += p.chance;
+                                if (roll <= totalChance) {
+                                    prize = p;
+                                    break;
+                                }
+                            }
+
+                            // اعمال جایزه
+                            if (prize.type === 'coins') {
+                                buyerData.balance += prize.amount;
+                                saveData();
+                                await interaction.reply({ 
+                                    content: `✅ شما ${item.name} را خریدید و باز کردید!\n🎉 تبریک! شما از جعبه شانس **${prize.amount} ${COIN_NAME}** برنده شدید!`, 
+                                    ephemeral: true 
+                                });
+                                return;
+                            } else {
+                                await interaction.reply({ 
+                                    content: `✅ شما ${item.name} را خریدید و باز کردید!\n😔 متأسفانه این بار شانس با شما یار نبود و چیزی از جعبه شانس بدست نیاوردید.`, 
+                                    ephemeral: true 
+                                });
+                                return;
+                            }
+                        }
+
+                        await interaction.reply({ 
+                            content: `✅ شما با موفقیت ${item.name} را به قیمت ${item.price} ${COIN_NAME} خریداری کردید!`, 
+                            ephemeral: true 
+                        });
+                        return;
+                    }
+                    break;
+
+                    
+                case 'dice_again_10':
+                case 'dice_again_20':
+                case 'dice_again_50':
+                case 'dice_again_100':
+                    const bet = parseInt(interaction.customId.split('_')[2]);
+                    const userDataDiceAgain = getUser(interaction.user.id);
+                    // اطمینان از به‌روزرسانی پروفایل کاربر
+                    saveData();
+                    if (userDataDiceAgain.balance < bet) {
+                        await interaction.reply({
+                            content: `❌ موجودی شما برای شرط بندی ${bet} ${COIN_NAME} کافی نیست!`,
+                            ephemeral: true
+                        });
+                        return;
+                    }
+                    const userRollAgain = Math.floor(Math.random() * 6) + 1;
+                    const botRollAgain = Math.floor(Math.random() * 6) + 1;
+
+                    let resultAgain = '';
+                    if (userRollAgain > botRollAgain) {
+                        userDataDiceAgain.balance += bet;
+                        resultAgain = `🎉 تبریک! شما برنده شدید و ${bet} ${COIN_NAME} دریافت کردید!`;
+                    } else if (userRollAgain < botRollAgain) {
+                        userDataDiceAgain.balance -= bet;
+                        resultAgain = `😢 متأسفانه باختید و ${bet} ${COIN_NAME} از دست دادید!`;
+                    } else {
+                        resultAgain = `😐 مساوی شد! هیچ سکه‌ای رد و بدل نشد.`;
+                    }
+                    saveData();
+                    const diceEmbedAgain = new EmbedBuilder()
+                        .setTitle('🎲 بازی تاس')
+                        .setColor(userRollAgain > botRollAgain ? '#00FF00' : (userRollAgain < botRollAgain ? '#FF0000' : '#FFFF00'))
+                        .setDescription(`
+**تاس شما**: ${getDiceEmoji(userRollAgain)} (${userRollAgain})
+**تاس ربات**: ${getDiceEmoji(botRollAgain)} (${botRollAgain})
+
+${resultAgain}
+
+موجودی فعلی: **${userDataDiceAgain.balance} ${COIN_NAME}**`)
+                        .setFooter({ text: 'می‌توانید دوباره امتحان کنید!' });
+
+                    const diceButtonsAgain = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId(`dice_again_${bet}`)
+                                .setLabel(`🎲 بازی مجدد (${bet} سکه)`)
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId(`dice_again_${bet * 2}`)
+                                .setLabel(`🎲 دو برابر (${bet * 2} سکه)`)
+                                .setStyle(ButtonStyle.Danger),
+                            new ButtonBuilder()
+                                .setCustomId('games')
+                                .setLabel('🔙 بازگشت به بازی‌ها')
+                                .setStyle(ButtonStyle.Secondary)
+                        );
+                    await interaction.update({ embeds: [diceEmbedAgain], components: [diceButtonsAgain] });
+                    break;
+
+                case 'dice_game_10_bot':
+                case 'dice_game_50_bot':
+                    const betAmountDice = interaction.customId === 'dice_game_10_bot' ? 10 : 50;
+                    const userDataDice = getUser(interaction.user.id);
+
+                    if (userDataDice.balance < betAmountDice) {
+                        await interaction.reply({
+                            content: `❌ موجودی شما برای شرط بندی ${betAmountDice} ${COIN_NAME} کافی نیست!`,
+                            ephemeral: true
+                        });
+                        return;
+                    }
+
+                    // ایجاد امبد اولیه برای نمایش انیمیشن تاس
+                    const rollingDiceEmbed = new EmbedBuilder()
+                        .setTitle('🎲 بازی تاس')
+                        .setColor('#6642A9')
+                        .setDescription('تاس در حال چرخش است...')
+                        .setImage('https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbHR6c3Bqc2h3NGRzcWprMHhudnMyZmhsMnNtbHcyZ3ZzdnBxdjRrbiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/tG7vpy33b8QV9J1zHu/giphy.gif');
+
+                    // ارسال پیام اولیه با انیمیشن
+                    const diceMessage = await interaction.reply({ 
+                        embeds: [rollingDiceEmbed], 
+                        fetchReply: true 
+                    });
+
+                    // تأخیر برای نمایش انیمیشن (3 ثانیه)
+                    setTimeout(async () => {
+                        const userRollDice = Math.floor(Math.random() * 6) + 1;
+                        const botRollDice = Math.floor(Math.random() * 6) + 1;
+
+                        let resultDice = '';
+                        if (userRollDice > botRollDice) {
+                            userDataDice.balance += betAmountDice;
+                            resultDice = `🎉 تبریک! شما برنده شدید و ${betAmountDice} ${COIN_NAME} دریافت کردید!`;
+                        } else if (userRollDice < botRollDice) {
+                            userDataDice.balance -= betAmountDice;
+                            resultDice = `😢 متأسفانه باختید و ${betAmountDice} ${COIN_NAME} از دست دادید!`;
+                        } else {
+                            resultDice = `😐 مساوی شد! هیچ سکه‌ای رد و بدل نشد.`;
+                        }
+
+                        saveData();
+
+                        const diceResultEmbed = new EmbedBuilder()
+                            .setTitle('🎲 بازی تاس')
+                            .setColor(userRollDice > botRollDice ? '#00FF00' : (userRollDice < botRollDice ? '#FF0000' : '#FFFF00'))
+                            .setDescription(`
+**تاس شما**: ${getDiceEmoji(userRollDice)} (${userRollDice})
+**تاس ربات**: ${getDiceEmoji(botRollDice)} (${botRollDice})
+
+${resultDice}
+
+موجودی فعلی: **${userDataDice.balance} ${COIN_NAME}**`)
+                            .setFooter({ text: 'می‌توانید دوباره امتحان کنید!' });
+
+                        const diceGameButtons = new ActionRowBuilder()
+                            .addComponents(
+                                new ButtonBuilder()
+                                    .setCustomId(`dice_again_${betAmountDice}`)
+                                    .setLabel(`🎲 بازی مجدد (${betAmountDice} سکه)`)
+                                    .setStyle(ButtonStyle.Primary),
+                                new ButtonBuilder()
+                                    .setCustomId(`dice_again_${betAmountDice * 2}`)
+                                    .setLabel(`🎲 دو برابر (${betAmountDice * 2} سکه)`)
+                                    .setStyle(ButtonStyle.Danger),
+                                new ButtonBuilder()
+                                    .setCustomId('games')
+                                    .setLabel('🔙 بازگشت به بازی‌ها')
+                                    .setStyle(ButtonStyle.Secondary)
+                            );
+
+                        await interaction.editReply({ embeds: [diceResultEmbed], components: [diceGameButtons] });
+                    }, 3000);
+                    break;
+
+                case 'dice_game_10_player':
+                case 'dice_game_50_player':
+                    const betAmountMulti = interaction.customId === 'dice_game_10_player' ? 10 : 50;
+                    const userDataMulti = getUser(interaction.user.id);
+
+                    if (userDataMulti.balance < betAmountMulti) {
+                        await interaction.reply({
+                            content: `❌ موجودی شما برای شرط بندی ${betAmountMulti} ${COIN_NAME} کافی نیست!`,
+                            ephemeral: true
+                        });
+                        return;
+                    }
+
+                    const challengeEmbed = new EmbedBuilder()
+                        .setTitle('🎲 دعوت به بازی تاس')
+                        .setColor('#6642A9')
+                        .setDescription(`${interaction.user} شما را به یک دوئل تاس با شرط ${betAmountMulti} ${COIN_NAME} دعوت کرده است!\n\nبرای پذیرفتن این چالش، دکمه قبول را فشار دهید.`)
+                        .setFooter({ text: 'این درخواست پس از 60 ثانیه منقضی می‌شود' });
+
+                    const challengeButtons = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId(`dice_accept_${interaction.user.id}_${betAmountMulti}`)
+                                .setLabel('✅ قبول چالش')
+                                .setStyle(ButtonStyle.Success),
+                            new ButtonBuilder()
+                                .setCustomId('dice_reject')
+                                .setLabel('❌ رد کردن')
+                                .setStyle(ButtonStyle.Danger)
+                        );
+
+                    await interaction.reply({ 
+                        content: 'لطفاً کاربری که می‌خواهید با او بازی کنید را منشن کنید:',
+                        ephemeral: true 
+                    });
+
+                    // منتظر پاسخ کاربر برای منشن کردن رقیب
+                    const filter = m => m.author.id === interaction.user.id && m.mentions.users.size > 0;
+                    const channel = interaction.channel;
+
+                    try {
+                        const collected = await channel.awaitMessages({ filter, max: 1, time: 30000, errors: ['time'] });
+                        const targetUser = collected.first().mentions.users.first();
+
+                        // حذف پیام منشن
+                        await collected.first().delete().catch(console.error);
+
+                        if (targetUser.id === interaction.user.id) {
+                            await interaction.followUp({
+                                content: '❌ شما نمی‌توانید با خودتان بازی کنید!',
+                                ephemeral: true
+                            });
+                            return;
+                        }
+
+                        // بررسی موجودی کاربر هدف
+                        const targetUserData = getUser(targetUser.id);
+                        if (targetUserData.balance < betAmountMulti) {
+                            await interaction.followUp({
+                                content: `❌ کاربر ${targetUser.username} موجودی کافی برای این بازی ندارد!`,
+                                ephemeral: true
+                            });
+                            return;
+                        }
+
+                        const challengeMessage = await interaction.followUp({ 
+                            content: `${targetUser}`,
+                            embeds: [challengeEmbed], 
+                            components: [challengeButtons] 
+                        });
+
+                        // منتظر پاسخ کاربر دوم می‌مانیم
+                        const buttonFilter = i => 
+                            (i.customId === `dice_accept_${interaction.user.id}_${betAmountMulti}` || 
+                             i.customId === 'dice_reject') && 
+                            i.user.id === targetUser.id;
+
+                        const buttonCollector = interaction.channel.createMessageComponentCollector({ 
+                            filter: buttonFilter, 
+                            time: 60000 
+                        });
+
+                        buttonCollector.on('collect', async i => {
+                            if (i.customId === 'dice_reject') {
+                                await i.update({ 
+                                    content: `${targetUser.username} چالش را رد کرد!`, 
+                                    embeds: [], 
+                                    components: [] 
+                                });
+                                buttonCollector.stop();
+                                return;
+                            }
+
+                            // کاربر چالش را پذیرفت - شروع بازی
+                            await i.update({ 
+                                content: `${targetUser.username} چالش را پذیرفت! بازی شروع می‌شود...`,
+                                embeds: [],
+                                components: []
+                            });
+
+                            // ایجاد امبد اولیه برای نمایش انیمیشن تاس
+                            const multiRollingEmbed = new EmbedBuilder()
+                                .setTitle('🎲 دوئل تاس')
+                                .setColor('#6642A9')
+                                .setDescription(`**${interaction.user.username}** vs **${targetUser.username}**\n\nتاس‌ها در حال چرخش هستند...`)
+                                .setImage('https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbHR6c3Bqc2h3NGRzcWprMHhudnMyZmhsMnNtbHcyZ3ZzdnBxdjRrbiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/tG7vpy33b8QV9J1zHu/giphy.gif');
+
+                            await i.editReply({ 
+                                content: '',
+                                embeds: [multiRollingEmbed], 
+                                components: [] 
+                            });
+
+                            // تأخیر برای نمایش انیمیشن (3 ثانیه)
+                            setTimeout(async () => {
+                                const player1Roll = Math.floor(Math.random() * 6) + 1;
+                                const player2Roll = Math.floor(Math.random() * 6) + 1;
+
+                                let resultText = '';
+                                if (player1Roll > player2Roll) {
+                                    // کاربر اول برنده شد
+                                    userDataMulti.balance += betAmountMulti;
+                                    targetUserData.balance -= betAmountMulti;
+                                    resultText = `🎉 **${interaction.user.username}** برنده شد و ${betAmountMulti} ${COIN_NAME} دریافت کرد!`;
+                                } else if (player1Roll < player2Roll) {
+                                    // کاربر دوم برنده شد
+                                    userDataMulti.balance -= betAmountMulti;
+                                    targetUserData.balance += betAmountMulti;
+                                    resultText = `🎉 **${targetUser.username}** برنده شد و ${betAmountMulti} ${COIN_NAME} دریافت کرد!`;
+                                } else {
+                                    // مساوی
+                                    resultText = `😐 بازی مساوی شد! هیچ سکه‌ای رد و بدل نشد.`;
+                                }
+
+                                saveData();
+
+                                const duelResultEmbed = new EmbedBuilder()
+                                    .setTitle('🎲 نتیجه دوئل تاس')
+                                    .setColor(player1Roll > player2Roll ? '#00FF00' : (player1Roll < player2Roll ? '#FF0000' : '#FFFF00'))
+                                    .setDescription(`
+**${interaction.user.username}**: ${getDiceEmoji(player1Roll)} (${player1Roll})
+**${targetUser.username}**: ${getDiceEmoji(player2Roll)} (${player2Roll})
+
+${resultText}`)
+                                    .setFooter({ text: 'بازی به پایان رسید' });
+
+                                const rematchButton = new ActionRowBuilder()
+                                    .addComponents(
+                                        new ButtonBuilder()
+                                            .setCustomId(`dice_rematch_${interaction.user.id}_${targetUser.id}_${betAmountMulti}`)
+                                            .setLabel('🔄 بازی مجدد')
+                                            .setStyle(ButtonStyle.Primary)
+                                    );
+
+                                await i.editReply({ 
+                                    embeds: [duelResultEmbed], 
+                                    components: [rematchButton] 
+                                });
+                            }, 3000);
+                        });
+
+                        buttonCollector.on('end', collected => {
+                            if (collected.size === 0) {
+                                interaction.followUp({ 
+                                    content: '⏱️ زمان انتظار برای پاسخ به چالش به پایان رسید!',
+                                    ephemeral: true
+                                });
+                            }
+                        });
+                    } catch (err) {
+                        console.error(err);
+                        await interaction.followUp({
+                            content: '❌ شما هیچ کاربری را منشن نکردید یا زمان انتظار به پایان رسید!',
+                            ephemeral: true
+                        });
+                    }
+                    break;
+
+                case 'play_steal':
+                    // پنجره جیب‌زنی
+                    const isStealActive = checkStealWindow();
+                    
+                    if (!isStealActive) {
+                        await interaction.reply({
+                            content: '❌ جیب‌زنی فقط در زمان‌های خاصی از روز فعال است! الان زمان جیب‌زنی نیست.',
+                            ephemeral: true
+                        });
+                        return;
+                    }
+                    
+                    const stealEmbed = new EmbedBuilder()
+                        .setTitle('🥷 جیب‌زنی')
+                        .setColor('#FF5555')
+                        .setDescription('پنجره جیب‌زنی فعال است! برای دزدی از جیب کاربران دیگر، از دستور `/steal` استفاده کنید.\n\nمثال: `/steal user:@username`\n\n**نکته**: فقط سکه‌های موجود در جیب (کیف پول) قابل دزدی هستند. برای محافظت از سکه‌های خود، آنها را در بانک نگهداری کنید!')
+                        .addFields(
+                            { name: '⚠️ هشدار', value: 'امکان ناموفق بودن جیب‌زنی وجود دارد که منجر به جریمه شما خواهد شد!' },
+                            { name: '📝 محدودیت‌ها', value: `- حداکثر ${MAX_DAILY_STEALS} بار جیب‌زنی در روز\n- حداکثر 1 بار دزدی از هر کاربر در روز\n- حداکثر ${MAX_STEAL_PERCENTAGE * 100}% از موجودی جیب کاربر قابل سرقت است` }
+                        );
+                    
+                    await interaction.reply({ embeds: [stealEmbed], ephemeral: true });
+                    break;
+                    
+                case 'steal_info':
+                    // راهنمای جیب‌زنی
+                    const stealInfoEmbed = new EmbedBuilder()
+                        .setTitle('ℹ️ راهنمای سیستم جیب‌زنی')
+                        .setColor('#3498DB')
+                        .setDescription('سیستم جیب‌زنی به شما امکان دزدی از سکه‌های کاربران دیگر را می‌دهد، اما با محدودیت‌هایی همراه است:')
+                        .addFields(
+                            { name: '⏰ پنجره زمانی', value: 'جیب‌زنی فقط در یک بازه زمانی 15 دقیقه‌ای در روز فعال است. این بازه زمانی به صورت تصادفی تعیین می‌شود.' },
+                            { name: '🛡️ محافظت کاربران جدید', value: `کاربران جدید تا ${NEW_USER_PROTECTION_DAYS} روز اول از سرقت محافظت می‌شوند.` },
+                            { name: '🔒 امنیت', value: 'فقط سکه‌های موجود در جیب (کیف پول) قابل دزدی هستند. سکه‌های داخل بانک ایمن هستند.' },
+                            { name: '⚖️ محدودیت‌ها', value: `- حداکثر ${MAX_DAILY_STEALS} بار جیب‌زنی در روز\n- حداکثر 1 بار دزدی از هر کاربر در روز\n- حداکثر ${MAX_STEAL_PERCENTAGE * 100}% از موجودی جیب کاربر قابل سرقت است\n- کاربرانی که اخیراً از آنها دزدی شده، شانس بیشتری برای مقاومت دارند` },
+                            { name: '⚠️ ریسک', value: 'در صورت ناموفق بودن دزدی، شما جریمه خواهید شد!' }
+                        )
+                        .setFooter({ text: 'برای محافظت از سکه‌های خود، آنها را در بانک نگهداری کنید!' });
+                    
+                    await interaction.reply({ embeds: [stealInfoEmbed], ephemeral: true });
+                    break;
+                    
+                case 'dice_rematch':
+                    // پردازش درخواست بازی مجدد
+                    const rematchParts = interaction.customId.split('_');
+                    const player1Id = rematchParts[2];
+                    const player2Id = rematchParts[3];
+                    const rematchBet = parseInt(rematchParts[4]);
+
+                    // بررسی اینکه کدام بازیکن دکمه را فشار داده است
+                    if (interaction.user.id !== player1Id && interaction.user.id !== player2Id) {
+                        await interaction.reply({
+                            content: '❌ شما جزو بازیکنان این بازی نیستید!',
+                            ephemeral: true
+                        });
+                        return;
+                    }
+
+                    const opponent = interaction.user.id === player1Id ? player2Id : player1Id;
+
+                    // ایجاد دکمه‌های قبول یا رد بازی مجدد
+                    const rematchEmbed = new EmbedBuilder()
+                        .setTitle('🎲 درخواست بازی مجدد')
+                        .setColor('#6642A9')
+                        .setDescription(`${interaction.user} درخواست بازی مجدد با شرط ${rematchBet} ${COIN_NAME} داده است!`)
+                        .setFooter({ text: 'این درخواست پس از 30 ثانیه منقضی می‌شود' });
+
+                    const rematchButtons = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId(`dice_accept_rematch_${player1Id}_${player2Id}_${rematchBet}`)
+                                .setLabel('✅ قبول')
+                                .setStyle(ButtonStyle.Success),
+                            new ButtonBuilder()
+                                .setCustomId('dice_reject_rematch')
+                                .setLabel('❌ رد کردن')
+                                .setStyle(ButtonStyle.Danger)
+                        );
+
+                    await interaction.update({ 
+                        embeds: [rematchEmbed], 
+                        components: [rematchButtons] 
+                    });
+
+                    // منتظر پاسخ حریف می‌مانیم
+                    const rematchFilter = i => 
+                        (i.customId === `dice_accept_rematch_${player1Id}_${player2Id}_${rematchBet}` || 
+                         i.customId === 'dice_reject_rematch') && 
+                        i.user.id === opponent;
+
+                    const rematchCollector = interaction.channel.createMessageComponentCollector({ 
+                        filter: rematchFilter, 
+                        time: 30000 
+                    });
+
+                    rematchCollector.on('collect', async i => {
+                        if (i.customId === 'dice_reject_rematch') {
+                            await i.update({ 
+                                content: `<@${opponent}> درخواست بازی مجدد را رد کرد!`, 
+                                embeds: [], 
+                                components: [] 
+                            });
+                            rematchCollector.stop();
+                            return;
+                        }
+
+                        // بررسی موجودی هر دو بازیکن
+                        const player1Data = getUser(player1Id);
+                        const player2Data = getUser(player2Id);
+
+                        if (player1Data.balance < rematchBet || player2Data.balance < rematchBet) {
+                            await i.update({
+                                content: '❌ یکی از بازیکنان موجودی کافی ندارد!',
+                                embeds: [],
+                                components: []
+                            });
+                            return;
+                        }
+
+                        // شروع بازی مجدد
+                        await i.update({ 
+                            content: `<@${opponent}> درخواست را پذیرفت! بازی مجدد شروع می‌شود...`,
+                            embeds: [],
+                            components: []
+                        });
+
+                        // مشابه کد بازی قبلی...
+                        const rematchRollingEmbed = new EmbedBuilder()
+                            .setTitle('🎲 دوئل تاس (بازی مجدد)')
+                            .setColor('#6642A9')
+                            .setDescription(`**<@${player1Id}>** vs **<@${player2Id}>**\n\nتاس‌ها در حال چرخش هستند...`)
+                            .setImage('https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbHR6c3Bqc2h3NGRzcWprMHhudnMyZmhsMnNtbHcyZ3ZzdnBxdjRrbiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/tG7vpy33b8QV9J1zHu/giphy.gif');
+
+                        await i.editReply({ 
+                            content: '',
+                            embeds: [rematchRollingEmbed], 
+                            components: [] 
+                        });
+
+                        // تأخیر برای نمایش انیمیشن (3 ثانیه)
+                        setTimeout(async () => {
+                            const player1Roll = Math.floor(Math.random() * 6) + 1;
+                            const player2Roll = Math.floor(Math.random() * 6) + 1;
+
+                            let resultText = '';
+                            if (player1Roll > player2Roll) {
+                                // کاربر اول برنده شد
+                                player1Data.balance += rematchBet;
+                                player2Data.balance -= rematchBet;
+                                resultText = `🎉 **<@${player1Id}>** برنده شد و ${rematchBet} ${COIN_NAME} دریافت کرد!`;
+                            } else if (player1Roll < player2Roll) {
+                                // کاربر دوم برنده شد
+                                player1Data.balance -= rematchBet;
+                                player2Data.balance += rematchBet;
+                                resultText = `🎉 **<@${player2Id}>** برنده شد و ${rematchBet} ${COIN_NAME} دریافت کرد!`;
+                            } else {
+                                // مساوی
+                                resultText = `😐 بازی مساوی شد! هیچ سکه‌ای رد و بدل نشد.`;
+                            }
+
+                            saveData();
+
+                            const rematchResultEmbed = new EmbedBuilder()
+                                .setTitle('🎲 نتیجه دوئل تاس')
+                                .setColor(player1Roll > player2Roll ? '#00FF00' : (player1Roll < player2Roll ? '#FF0000' : '#FFFF00'))
+                                .setDescription(`
+**<@${player1Id}>**: ${getDiceEmoji(player1Roll)} (${player1Roll})
+**<@${player2Id}>**: ${getDiceEmoji(player2Roll)} (${player2Roll})
+
+${resultText}`)
+                                .setFooter({ text: 'بازی به پایان رسید' });
+
+                            const rematchButtonAgain = new ActionRowBuilder()
+                                .addComponents(
+                                    new ButtonBuilder()
+                                        .setCustomId(`dice_rematch_${player1Id}_${player2Id}_${rematchBet}`)
+                                        .setLabel('🔄 بازی مجدد')
+                                        .setStyle(ButtonStyle.Primary)
+                                );
+
+                            await i.editReply({ 
+                                embeds: [rematchResultEmbed], 
+                                components: [rematchButtonAgain] 
+                            });
+                        }, 3000);
+                    });
+
+                    rematchCollector.on('end', collected => {
+                        if (collected.size === 0) {
+                            interaction.editReply({ 
+                                content: '⏱️ زمان انتظار برای پاسخ به بازی مجدد به پایان رسید!',
+                                embeds: [],
+                                components: []
+                            });
+                        }
+                    });
+                    break;
+
+                case 'adminpanel':
+                    // بررسی دسترسی مدیر
+                    if (!hasAdminRole(interaction.member)) {
+                        return await interaction.reply({
+                            content: '❌ شما دسترسی لازم برای استفاده از پنل مدیریت را ندارید!',
+                            ephemeral: true
+                        });
+                    }
+
+                    // ایجاد پنل مدیریت
+                    const adminPanelEmbed = new EmbedBuilder()
+                        .setTitle('🛠️ پنل مدیریت')
+                        .setColor('#FF0000')
+                        .setDescription('خوش آمدید مدیر گرامی! از این پنل می‌توانید ربات را مدیریت کنید.')
+                        .addFields(
+                            { name: '📊 آمار', value: `تعداد کاربران: ${Object.keys(users).length}\nتعداد آیتم‌های فروشگاه: ${shopItems.length}`, inline: false },
+                            { name: '💰 مدیریت سکه', value: 'تنظیم یا اضافه کردن سکه به کاربران', inline: true },
+                            { name: '🛒 مدیریت فروشگاه', value: 'اضافه یا حذف کردن آیتم‌های فروشگاه', inline: true },
+                            { name: '📋 مدیریت داده‌ها', value: 'بازنشانی یا مدیریت داده‌های کاربران', inline: true }
+                        )
+                        .setFooter({ text: 'دسترسی فقط برای مدیران مجاز' });
+
+                    // دکمه‌های پنل مدیریت
+                    const adminPanelRow1 = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('admin_coins')
+                                .setLabel('💰 مدیریت سکه')
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId('admin_shop')
+                                .setLabel('🛒 مدیریت فروشگاه')
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId('admin_data')
+                                .setLabel('📋 مدیریت داده‌ها')
+                                .setStyle(ButtonStyle.Primary)
+                        );
+
+                    await interaction.reply({ embeds: [adminPanelEmbed], components: [adminPanelRow1], ephemeral: true });
+                    break;
+
+                case 'setcoin':
+                    // بررسی دسترسی مدیر
+                    if (!hasAdminRole(interaction.member)) {
+                        return await interaction.reply({
+                            content: '❌ شما دسترسی لازم برای این دستور را ندارید!',
+                            ephemeral: true
+                        });
+                    }
+
+                    const targetUserCoin = interaction.options.getUser('user');
+                    const newAmount = interaction.options.getInteger('amount');
+
+                    if (newAmount < 0) {
+                        return await interaction.reply({
+                            content: '❌ مقدار سکه نمی‌تواند منفی باشد!',
+                            ephemeral: true
+                        });
+                    }
+
+                    const targetUserData = getUser(targetUserCoin.id);
+                    const oldAmount = targetUserData.balance;
+                    targetUserData.balance = newAmount;
+                    saveData();
+
+                    await interaction.reply({
+                        content: `✅ موجودی سکه کاربر ${targetUserCoin.username} از ${oldAmount} به ${newAmount} ${COIN_NAME} تغییر کرد.`,
+                        ephemeral: true
+                    });
+                    break;
+
+                case 'restart':
+                    // بررسی دسترسی مدیر
+                    if (!hasAdminRole(interaction.member)) {
+                        return await interaction.reply({
+                            content: '❌ شما دسترسی لازم برای راه‌اندازی مجدد ربات را ندارید!',
+                            ephemeral: true
+                        });
+                    }
+
+                    await interaction.reply({
+                        content: '🔄 در حال راه‌اندازی مجدد ربات... لطفاً صبر کنید.'
+                    });
+
+                    // ذخیره داده‌ها قبل از راه‌اندازی مجدد
+                    saveData();
+
+                    try {
+                        // ثبت دوباره دستورات و راه‌اندازی مجدد ربات
+                        await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
+
+                        // اعلام تکمیل راه‌اندازی مجدد
+                        await interaction.editReply({
+                            content: '✅ ربات با موفقیت راه‌اندازی مجدد شد و دستورات به‌روزرسانی شدند!'
+                        });
+                    } catch (error) {
+                        console.error('❌ خطا در راه‌اندازی مجدد:', error);
+                        await interaction.editReply({
+                            content: '❌ خطا در راه‌اندازی مجدد ربات! لطفاً دوباره تلاش کنید یا با توسعه‌دهنده تماس بگیرید.'
+                        });
+                    }
+                    break;
+
+                case 'additem':
+                    // بررسی دسترسی مدیر
+                    if (!hasAdminRole(interaction.member)) {
+                        return await interaction.reply({
+                            content: '❌ شما دسترسی لازم برای این دستور را ندارید!',
+                            ephemeral: true
+                        });
+                    }
+
+                    const itemName = interaction.options.getString('name');
+                    const itemPrice = interaction.options.getInteger('price');
+                    const itemDesc = interaction.options.getString('description');
+
+                    if (itemPrice < 0) {
+                        return await interaction.reply({
+                            content: '❌ قیمت آیتم نمی‌تواند منفی باشد!',
+                            ephemeral: true
+                        });
+                    }
+
+                    // ایجاد شناسه منحصر به فرد برای آیتم
+                    const itemId = 'item_' + Date.now();
+
+                    // اضافه کردن آیتم جدید
+                    shopItems.push({
+                        id: itemId,
+                        name: itemName,
+                        price: itemPrice,
+                        description: itemDesc
+                    });
+
+                    saveData();
+
+                    await interaction.reply({
+                        content: `✅ آیتم جدید "${itemName}" با قیمت ${itemPrice} ${COIN_NAME} به فروشگاه اضافه شد.`,
+                        ephemeral: true
+                    });
+                    break;
+
+                case 'removeitem':
+                    // بررسی دسترسی مدیر
+                    if (!hasAdminRole(interaction.member)) {
+                        return await interaction.reply({
+                            content: '❌ شما دسترسی لازم برای این دستور را ندارید!',
+                            ephemeral: true
+                        });
+                    }
+
+                    const itemIdToRemove = interaction.options.getString('id');
+                    const itemIndex = shopItems.findIndex(item => item.id === itemIdToRemove);
+
+                    if (itemIndex === -1) {
+                        return await interaction.reply({
+                            content: '❌ آیتم با شناسه مورد نظر یافت نشد!',
+                            ephemeral: true
+                        });
+                    }
+
+                    const removedItem = shopItems.splice(itemIndex, 1)[0];
+                    saveData();
+
+                    await interaction.reply({
+                        content: `✅ آیتم "${removedItem.name}" با موفقیت از فروشگاه حذف شد.`,
+                        ephemeral: true
+                    });
+                    break;
+
+                case 'resetdata':
+                    // بررسی دسترسی مدیر
+                    if (!hasAdminRole(interaction.member)) {
+                        return await interaction.reply({
+                            content: '❌ شما دسترسی لازم برای این دستور را ندارید!',
+                            ephemeral: true
+                        });
+                    }
+
+                    const userToReset = interaction.options.getUser('user');
+
+                    if (users[userToReset.id]) {
+                        delete users[userToReset.id];
+                        saveData();
+                        await interaction.reply({
+                            content: `✅ داده‌های کاربر ${userToReset.username} با موفقیت بازنشانی شد.`,
+                            ephemeral: true
+                        });
+                    } else {
+                        await interaction.reply({
+                            content: `❓ کاربر ${userToReset.username} داده‌ای در سیستم ندارد.`,
+                            ephemeral: true
+                        });
+                    }
+                    break;
+
+                case 'play_rps':
+                    // بازی سنگ کاغذ قیچی
+                    const rpsEmbed = new EmbedBuilder()
+                        .setTitle('⚔️ سنگ کاغذ قیچی')
+                        .setColor('#1ABC9C')
+                        .setDescription('با ربات یا با دوستان خود بازی کنید:\n\n🪨 سنگ\n📄 کاغذ\n✂️ قیچی');
+
+                    const rpsButtons1 = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('rps_bot_10')
+                                .setLabel('🤖 بازی با ربات (10 سکه)')
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId('rps_bot_50')
+                                .setLabel('🤖 بازی با ربات (50 سکه)')
+                                .setStyle(ButtonStyle.Danger)
+                        );
+
+                    const rpsButtons2 = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('rps_player_10')
+                                .setLabel('👥 بازی با دوستان (10 سکه)')
+                                .setStyle(ButtonStyle.Success),
+                            new ButtonBuilder()
+                                .setCustomId('rps_player_50')
+                                .setLabel('👥 بازی با دوستان (50 سکه)')
+                                .setStyle(ButtonStyle.Success)
+                        );
+
+                    const rpsButtons3 = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('games')
+                                .setLabel('🔙 بازگشت به بازی‌ها')
+                                .setStyle(ButtonStyle.Secondary)
+                        );
+
+                    await interaction.reply({ embeds: [rpsEmbed], components: [rpsButtons1, rpsButtons2, rpsButtons3], ephemeral: true });
+                    break;
+
+                case 'rps_bot_10':
+                case 'rps_bot_50':
+                    const rpsBetAmount = interaction.customId === 'rps_bot_10' ? 10 : 50;
+                    const rpsUserData = getUser(interaction.user.id);
+
+                    if (rpsUserData.balance < rpsBetAmount) {
+                        await interaction.reply({
+                            content: `❌ موجودی شما برای شرط بندی ${rpsBetAmount} ${COIN_NAME} کافی نیست!`,
+                            ephemeral: true
+                        });
+                        return;
+                    }
+
+                    const rpsChoiceEmbed = new EmbedBuilder()
+                        .setTitle('⚔️ سنگ کاغذ قیچی')
+                        .setColor('#1ABC9C')
+                        .setDescription(`شما در حال بازی با ربات هستید (شرط: ${rpsBetAmount} ${COIN_NAME})\n\nانتخاب خود را انجام دهید:`);
+
+                    const rpsChoiceButtons = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId(`rps_choice_rock_${rpsBetAmount}`)
+                                .setLabel('🪨 سنگ')
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId(`rps_choice_paper_${rpsBetAmount}`)
+                                .setLabel('📄 کاغذ')
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId(`rps_choice_scissors_${rpsBetAmount}`)
+                                .setLabel('✂️ قیچی')
+                                .setStyle(ButtonStyle.Primary)
+                        );
+
+                    await interaction.reply({ embeds: [rpsChoiceEmbed], components: [rpsChoiceButtons], ephemeral: true });
+                    break;
+
+                case 'rps_choice_rock_10':
+                case 'rps_choice_rock_50':
+                case 'rps_choice_paper_10':
+                case 'rps_choice_paper_50':
+                case 'rps_choice_scissors_10':
+                case 'rps_choice_scissors_50':
+                    // پردازش انتخاب بازیکن در بازی سنگ کاغذ قیچی
+                    const rpsParts = interaction.customId.split('_');
+                    const userChoice = rpsParts[2]; // rock, paper, scissors
+                    const rpsBet = parseInt(rpsParts[3]); // 10 یا 50
+
+                    const rpsUser = getUser(interaction.user.id);
+
+                    if (rpsUser.balance < rpsBet) {
+                        await interaction.reply({
+                            content: `❌ موجودی شما برای شرط بندی ${rpsBet} ${COIN_NAME} کافی نیست!`,
+                            ephemeral: true
+                        });
+                        return;
+                    }
+
+                    // انتخاب تصادفی ربات
+                    const choices = ['rock', 'paper', 'scissors'];
+                    const botChoice = choices[Math.floor(Math.random() * choices.length)];
+
+                    // تعیین برنده
+                    let rpsResult = '';
+                    let resultColor = '#FFFF00'; // زرد برای مساوی
+
+                    if (userChoice === botChoice) {
+                        // مساوی
+                        rpsResult = '😐 مساوی! هیچ سکه‌ای رد و بدل نشد.';
+                    } else if (
+                        (userChoice === 'rock' && botChoice === 'scissors') ||
+                        (userChoice === 'paper' && botChoice === 'rock') ||
+                        (userChoice === 'scissors' && botChoice === 'paper')
+                    ) {
+                        // کاربر برنده شد
+                        rpsUser.balance += rpsBet;
+                        rpsResult = `🎉 تبریک! شما برنده شدید و ${rpsBet} ${COIN_NAME} دریافت کردید!`;
+                        resultColor = '#00FF00'; // سبز برای برد
+                    } else {
+                        // ربات برنده شد
+                        rpsUser.balance -= rpsBet;
+                        rpsResult = `😢 متأسفانه باختید و ${rpsBet} ${COIN_NAME} از دست دادید!`;
+                        resultColor = '#FF0000'; // قرمز برای باخت
+                    }
+
+                    saveData();
+
+                    // تبدیل انتخاب‌ها به ایموجی
+                    const choiceToEmoji = {
+                        'rock': '🪨 سنگ',
+                        'paper': '📄 کاغذ',
+                        'scissors': '✂️ قیچی'
+                    };
+
+                    const rpsResultEmbed = new EmbedBuilder()
+                        .setTitle('⚔️ نتیجه بازی سنگ کاغذ قیچی')
+                        .setColor(resultColor)
+                        .setDescription(`
+**انتخاب شما**: ${choiceToEmoji[userChoice]}
+**انتخاب ربات**: ${choiceToEmoji[botChoice]}
+
+${rpsResult}
+
+موجودی فعلی: **${rpsUser.balance} ${COIN_NAME}**`)
+                        .setFooter({ text: 'می‌توانید دوباره بازی کنید' });
+
+                    const rpsPlayAgainButtons = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId(`rps_bot_${rpsBet}`)
+                                .setLabel(`🔄 بازی مجدد (${rpsBet} سکه)`)
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId('play_rps')
+                                .setLabel('🔙 بازگشت به منوی بازی')
+                                .setStyle(ButtonStyle.Secondary)
+                        );
+
+                    await interaction.update({ embeds: [rpsResultEmbed], components: [rpsPlayAgainButtons] });
+                    break;
+
+                case 'play_numguess':
+                    // بازی حدس عدد
+                    const numGuessEmbed = new EmbedBuilder()
+                        .setTitle('🔢 بازی حدس عدد')
+                        .setColor('#E67E22')
+                        .setDescription('من یک عدد بین 1 تا 100 انتخاب می‌کنم و شما باید آن را حدس بزنید!\n\nهر بازی 20 سکه هزینه دارد، اما اگر برنده شوید جایزه بیشتری دریافت می‌کنید. هر چه زودتر حدس بزنید، جایزه بیشتری می‌گیرید!');
+
+                    const numGuessButtons = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('numguess_start')
+                                .setLabel('🎮 شروع بازی (20 سکه)')
+                                .setStyle(ButtonStyle.Success),
+                            new ButtonBuilder()
+                                .setCustomId('games')
+                                .setLabel('🔙 بازگشت')
+                                .setStyle(ButtonStyle.Secondary)
+                        );
+
+                    await interaction.reply({ embeds: [numGuessEmbed], components: [numGuessButtons], ephemeral: true });
+                    break;
+
+                case 'numguess_start':
+                    const numGuessUser = getUser(interaction.user.id);
+                    const numGuessCost = 20;
+
+                    if (numGuessUser.balance < numGuessCost) {
+                        await interaction.reply({
+                            content: `❌ موجودی شما برای این بازی کافی نیست! شما به ${numGuessCost - numGuessUser.balance} ${COIN_NAME} بیشتر نیاز دارید.`,
+                            ephemeral: true
+                        });
+                        return;
+                    }
+
+                    // کم کردن هزینه بازی
+                    numGuessUser.balance -= numGuessCost;
+                    saveData();
+
+                    // استفاده از Map برای ذخیره اطلاعات بازی هر کاربر
+                    if (!client.numGuessGames) client.numGuessGames = new Map();
+
+                    // انتخاب یک عدد تصادفی بین 1 تا 100
+                    const secretNumber = Math.floor(Math.random() * 100) + 1;
+
+                    // ذخیره اطلاعات بازی در یک آبجکت موقت
+                    const gameData = {
+                        number: secretNumber,
+                        attempts: 0,
+                        maxAttempts: 10,
+                        startTime: Date.now()
+                    };
+
+                    const startGameEmbed = new EmbedBuilder()
+                        .setTitle('🔢 بازی حدس عدد')
+                        .setColor('#E67E22')
+                        .setDescription(`من یک عدد بین 1 تا 100 انتخاب کرده‌ام! شما ${gameData.maxAttempts} فرصت دارید تا آن را حدس بزنید.\n\nیک عدد را در چت بنویسید (عدد بین 1 تا 100).`)
+                        .setFooter({ text: `تلاش 0/${gameData.maxAttempts} | موجودی فعلی: ${numGuessUser.balance} ${COIN_NAME}` });
+
+                    await interaction.reply({ embeds: [startGameEmbed] });
+
+                    // منتظر ورودی کاربر می‌مانیم
+                    const numGuessFilter = m => m.author.id === interaction.user.id && !isNaN(m.content) && parseInt(m.content) >= 1 && parseInt(m.content) <= 100;
+
+                    const numGuessCollector = interaction.channel.createMessageCollector({
+                        filter: numGuessFilter,
+                        time: 300000, // 5 دقیقه
+                        max: gameData.maxAttempts
+                    });
+
+                    numGuessCollector.on('collect', async message => {
+                        // حذف پیام کاربر
+                        await message.delete().catch(console.error);
+
+                        const guess = parseInt(message.content);
+                        gameData.attempts++;
+
+                        let resultMessage = '';
+
+                        if (guess === gameData.number) {
+                            // کاربر برنده شد!
+                            numGuessCollector.stop('win');
+
+                            // محاسبه جایزه بر اساس تعداد تلاش
+                            const baseReward = 100;
+                            const attemptFactor = 1 - (gameData.attempts / gameData.maxAttempts) * 0.5; // بین 0.5 تا 1
+                            const timeFactor = Math.max(0.5, 1 - (Date.now() - gameData.startTime) / 300000); // حداکثر 1، حداقل 0.5
+                            const reward = Math.round(baseReward * attemptFactor * timeFactor);
+
+                            numGuessUser.balance += reward;
+                            saveData();
+
+                            resultMessage = `🎉 تبریک! شما با ${gameData.attempts} تلاش برنده شدید!\n\n**جایزه شما**: ${reward} ${COIN_NAME}`;
+
+                            const winEmbed = new EmbedBuilder()
+                                .setTitle('🔢 بازی حدس عدد - برنده شدید!')
+                                .setColor('#00FF00')
+                                .setDescription(`عدد مخفی **${gameData.number}** بود!\n\n${resultMessage}\n\nموجودی فعلی: **${numGuessUser.balance} ${COIN_NAME}**`)
+                                .setFooter({ text: `تلاش ${gameData.attempts}/${gameData.maxAttempts}` });
+
+                            const playAgainButton = new ActionRowBuilder()
+                                .addComponents(
+                                    new ButtonBuilder()
+                                        .setCustomId('numguess_start')
+                                        .setLabel('🔄 بازی مجدد')
+                                        .setStyle(ButtonStyle.Primary),
+                                    new ButtonBuilder()
+                                        .setCustomId('games')
+                                        .setLabel('🔙 بازگشت به بازی‌ها')
+                                        .setStyle(ButtonStyle.Secondary)
+                                );
+
+                            await interaction.followUp({ embeds: [winEmbed], components: [playAgainButton] });
+                            return;
+                        }
+
+                        if (guess < gameData.number) {
+                            resultMessage = `📈 عدد بزرگتر است (${guess} < ?)`;
+                        } else {
+                            resultMessage = `📉 عدد کوچکتر است (${guess} > ?)`;
+                        }
+
+                        if (gameData.attempts >= gameData.maxAttempts) {
+                            // تلاش‌ها تمام شد
+                            numGuessCollector.stop('lose');
+                            return;
+                        }
+
+                        const guessEmbed = new EmbedBuilder()
+                            .setTitle('🔢 بازی حدس عدد')
+                            .setColor('#E67E22')
+                            .setDescription(`${resultMessage}\n\nیک عدد دیگر را حدس بزنید.`)
+                            .setFooter({ text: `تلاش ${gameData.attempts}/${gameData.maxAttempts}` });
+
+                        await interaction.followUp({ embeds: [guessEmbed] });
+                    });
+
+                    numGuessCollector.on('end', async (collected, reason) => {
+                        if (reason === 'win') {
+                            // قبلاً پیام برنده شدن نمایش داده شده است
+                            return;
+                        }
+
+                        if (reason === 'time') {
+                            await interaction.followUp({
+                                content: `⏱️ زمان به پایان رسید! عدد مخفی **${gameData.number}** بود.`,
+                                ephemeral: true
+                            });
+                        } else if (reason === 'lose') {
+                            const loseEmbed = new EmbedBuilder()
+                                .setTitle('🔢 بازی حدس عدد - باختید!')
+                                .setColor('#FF0000')
+                                .setDescription(`متأسفانه فرصت‌های شما تمام شد! عدد مخفی **${gameData.number}** بود.\n\nموجودی فعلی: **${numGuessUser.balance} ${COIN_NAME}**`)
+                                .setFooter({ text: `تلاش ${gameData.attempts}/${gameData.maxAttempts}` });
+
+                            const playAgainButton = new ActionRowBuilder()
+                                .addComponents(
+                                    new ButtonBuilder()
+                                        .setCustomId('numguess_start')
+                                        .setLabel('🔄 بازی مجدد')
+                                        .setStyle(ButtonStyle.Primary),
+                                    new ButtonBuilder()
+                                        .setCustomId('games')
+                                        .setLabel('🔙 بازگشت به بازی‌ها')
+                                        .setStyle(ButtonStyle.Secondary)
+                                );
+
+                            await interaction.followUp({ embeds: [loseEmbed], components: [playAgainButton] });
+                        }
+                    });
+                    break;
+
+                case 'play_duel':
+                    // بازی دوئل - مبارزه با کاربران دیگر
+                    const duelEmbed = new EmbedBuilder()
+                        .setTitle('🏆 دوئل')
+                        .setColor('#8E44AD')
+                        .setDescription('با دوستان خود به دوئل بپردازید و برنده شوید!\n\nشما می‌توانید یک کاربر را به دوئل دعوت کنید و با شانس و مهارت برنده مشخص می‌شود.');
+
+                    const duelButtons = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('duel_start_50')
+                                .setLabel('🏆 دوئل 50 سکه')
+                                .setStyle(ButtonStyle.Primary),
+                            new ButtonBuilder()
+                                .setCustomId('duel_start_100')
+                                .setLabel('🏆 دوئل 100 سکه')
+                                .setStyle(ButtonStyle.Danger),
+                            new ButtonBuilder()
+                                .setCustomId('games')
+                                .setLabel('🔙 بازگشت')
+                                .setStyle(ButtonStyle.Secondary)
+                        );
+
+                    await interaction.reply({ embeds: [duelEmbed], components: [duelButtons], ephemeral: true });
+                    break;
+
+                case 'duel_start_50':
+                case 'duel_start_100':
+                    const duelBet = interaction.customId === 'duel_start_50' ? 50 : 100;
+                    const duelUserData = getUser(interaction.user.id);
+
+                    if (duelUserData.balance < duelBet) {
+                        await interaction.reply({
+                            content: `❌ موجودی شما برای این دوئل کافی نیست! شما به ${duelBet - duelUserData.balance} ${COIN_NAME} بیشتر نیاز دارید.`,
+                            ephemeral: true
+                        });
+                        return;
+                    }
+
+                    await interaction.reply({ 
+                        content: 'لطفاً کاربری که می‌خواهید با او دوئل کنید را منشن کنید:',
+                        ephemeral: true 
+                    });
+
+                    // منتظر پاسخ کاربر برای منشن کردن رقیب
+                    const duelFilter = m => m.author.id === interaction.user.id && m.mentions.users.size > 0;
+                    const duelChannel = interaction.channel;
+
+                    try {
+                        const duelCollected = await duelChannel.awaitMessages({ filter: duelFilter, max: 1, time: 30000, errors: ['time'] });
+                        const duelTarget = duelCollected.first().mentions.users.first();
+
+                        // حذف پیام منشن
+                        await duelCollected.first().delete().catch(console.error);
+
+                        if (duelTarget.id === interaction.user.id) {
+                            await interaction.followUp({
+                                content: '❌ شما نمی‌توانید با خودتان دوئل کنید!',
+                                ephemeral: true
+                            });
+                            return;
+                        }
+
+                        if (duelTarget.bot) {
+                            await interaction.followUp({
+                                content: '❌ شما نمی‌توانید با ربات‌ها دوئل کنید!',
+                                ephemeral: true
+                            });
+                            return;
+                        }
+
+                        // بررسی موجودی کاربر هدف
+                        const duelTargetData = getUser(duelTarget.id);
+                        if (duelTargetData.balance < duelBet) {
+                            await interaction.followUp({
+                                content: `❌ کاربر ${duelTarget.username} موجودی کافی برای این دوئل ندارد!`,
+                                ephemeral: true
+                            });
+                            return;
+                        }
+
+                        const duelChallengeEmbed = new EmbedBuilder()
+                            .setTitle('🏆 دعوت به دوئل')
+                            .setColor('#8E44AD')
+                            .setDescription(`${interaction.user} شما را به یک دوئل با شرط ${duelBet} ${COIN_NAME} دعوت کرده است!\n\nبرای پذیرفتن این چالش، دکمه قبول را فشار دهید.`)
+                            .setFooter({ text: 'این درخواست پس از 60 ثانیه منقضی می‌شود' });
+
+                        const duelChallengeButtons = new ActionRowBuilder()
+                            .addComponents(
+                                new ButtonBuilder()
+                                    .setCustomId(`duel_accept_${interaction.user.id}_${duelBet}`)
+                                    .setLabel('✅ قبول دوئل')
+                                    .setStyle(ButtonStyle.Success),
+                                new ButtonBuilder()
+                                    .setCustomId('duel_reject')
+                                    .setLabel('❌ رد کردن')
+                                    .setStyle(ButtonStyle.Danger)
+                            );
+
+                        const duelMessage = await interaction.followUp({ 
+                            content: `${duelTarget}`,
+                            embeds: [duelChallengeEmbed], 
+                            components: [duelChallengeButtons] 
+                        });
+
+                        // منتظر پاسخ کاربر دوم می‌مانیم
+                        const duelButtonFilter = i => 
+                            (i.customId === `duel_accept_${interaction.user.id}_${duelBet}` || 
+                             i.customId === 'duel_reject') && 
+                            i.user.id === duelTarget.id;
+
+                        const duelButtonCollector = interaction.channel.createMessageComponentCollector({ 
+                            filter: duelButtonFilter, 
+                            time: 60000 
+                        });
+
+                        duelButtonCollector.on('collect', async i => {
+                            if (i.customId === 'duel_reject') {
+                                await i.update({ 
+                                    content: `${duelTarget.username} دوئل را رد کرد!`, 
+                                    embeds: [], 
+                                    components: [] 
+                                });
+                                duelButtonCollector.stop();
+                                return;
+                            }
+
+                            // کاربر دوئل را پذیرفت
+                            await i.update({ 
+                                content: `${duelTarget.username} دوئل را پذیرفت! نبرد آغاز می‌شود...`,
+                                embeds: [],
+                                components: []
+                            });
+
+                            // انیمیشن دوئل
+                            const duelAnimation = [
+                                '⚔️ آماده شوید...',
+                                '🔥 3...',
+                                '🔥 2...',
+                                '🔥 1...',
+                                '⚡ نبرد آغاز شد!'
+                            ];
+
+                            const duelAnimationEmbed = new EmbedBuilder()
+                                .setTitle('🏆 دوئل')
+                                .setColor('#8E44AD')
+                                .setDescription(`**${interaction.user.username}** vs **${duelTarget.username}**\n\n${duelAnimation[0]}`)
+                                .setImage('https://media.giphy.com/media/l2JhIUyUs8KDCCf3W/giphy.gif');
+
+                            await i.editReply({ 
+                                content: '',
+                                embeds: [duelAnimationEmbed], 
+                                components: [] 
+                            });
+
+                            // نمایش انیمیشن شمارش معکوس
+                            for (let j = 1; j < duelAnimation.length; j++) {
+                                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                                const updatedEmbed = new EmbedBuilder()
+                                    .setTitle('🏆 دوئل')
+                                    .setColor('#8E44AD')
+                                    .setDescription(`**${interaction.user.username}** vs **${duelTarget.username}**\n\n${duelAnimation[j]}`)
+                                    .setImage('https://media.giphy.com/media/l2JhIUyUs8KDCCf3W/giphy.gif');
+
+                                await i.editReply({ embeds: [updatedEmbed] });
+                            }
+
+                            // محاسبه نتیجه دوئل (ترکیبی از شانس و تجربه)
+                            // امتیاز اول: شانس (0-50)
+                            const player1Luck = Math.floor(Math.random() * 51);
+                            const player2Luck = Math.floor(Math.random() * 51);
+
+                            // امتیاز دوم: تجربه - بر اساس موجودی کل کاربر (0-30)
+                            const player1Total = duelUserData.balance + (duelUserData.bank || 0) + (duelUserData.investment || 0);
+                            const player2Total = duelTargetData.balance + (duelTargetData.bank || 0) + (duelTargetData.investment || 0);
+
+                            const player1Exp = Math.min(30, Math.floor(player1Total / 100));
+                            const player2Exp = Math.min(30, Math.floor(player2Total / 100));
+
+                            // امتیاز سوم: تصادفی (0-20)
+                            const player1Random = Math.floor(Math.random() * 21);
+                            const player2Random = Math.floor(Math.random() * 21);
+
+                            // محاسبه امتیاز نهایی
+                            const player1Score = player1Luck + player1Exp + player1Random;
+                            const player2Score = player2Luck + player2Exp + player2Random;
+
+                            // تعیین برنده
+                            let duelResultText = '';
+                            if (player1Score > player2Score) {
+                                // کاربر اول برنده شد
+                                duelUserData.balance += duelBet;
+                                duelTargetData.balance -= duelBet;
+                                duelResultText = `🏆 **${interaction.user.username}** با امتیاز **${player1Score}** در مقابل **${player2Score}** پیروز شد و ${duelBet} ${COIN_NAME} دریافت کرد!`;
+                            } else if (player1Score < player2Score) {
+                                // کاربر دوم برنده شد
+                                duelUserData.balance -= duelBet;
+                                duelTargetData.balance += duelBet;
+                                duelResultText = `🏆 **${duelTarget.username}** با امتیاز **${player2Score}** در مقابل **${player1Score}** پیروز شد و ${duelBet} ${COIN_NAME} دریافت کرد!`;
+                            } else {
+                                // مساوی - نادر
+                                duelResultText = `😮 باورنکردنی! مبارزه با نتیجه **${player1Score}-${player2Score}** مساوی شد! هیچ سکه‌ای رد و بدل نشد.`;
+                            }
+
+                            saveData();
+
+                            // نمایش نتیجه دوئل
+                            const duelResultEmbed = new EmbedBuilder()
+                                .setTitle('🏆 نتیجه دوئل')
+                                .setColor('#8E44AD')
+                                .setDescription(`**${interaction.user.username}** (${player1Score}) vs **${duelTarget.username}** (${player2Score})\n\n${duelResultText}\n\n**جزئیات امتیازات**:\n${interaction.user.username}: شانس ${player1Luck} + تجربه ${player1Exp} + تصادفی ${player1Random} = ${player1Score}\n${duelTarget.username}: شانس ${player2Luck} + تجربه ${player2Exp} + تصادفی ${player2Random} = ${player2Score}`)
+                                .setFooter({ text: 'دوئل به پایان رسید' });
+
+                            const duelRematchButton = new ActionRowBuilder()
+                                .addComponents(
+                                    new ButtonBuilder()
+                                        .setCustomId(`duel_rematch_${interaction.user.id}_${duelTarget.id}_${duelBet}`)
+                                        .setLabel('🔄 دوئل مجدد')
+                                        .setStyle(ButtonStyle.Primary)
+                                );
+
+                            await i.editReply({ 
+                                embeds: [duelResultEmbed], 
+                                components: [duelRematchButton] 
+                            });
+                        });
+
+                        duelButtonCollector.on('end', collected => {
+                            if (collected.size === 0) {
+                                interaction.followUp({ 
+                                    content: '⏱️ زمان انتظار برای پاسخ به دوئل به پایان رسید!',
+                                    ephemeral: true
+                                });
+                            }
+                        });
+                    } catch (err) {
+                        console.error(err);
+                        await interaction.followUp({
+                            content: '❌ شما هیچ کاربری را منشن نکردید یا زمان انتظار به پایان رسید!',
+                            ephemeral: true
+                        });
+                    }
+                    break;
+            }
+        } catch (error) {
+            console.error('❌ خطا در پردازش دکمه:', error);
+            await interaction.reply({ content: '❌ خطایی رخ داده است! لطفا دوباره امتحان کنید.', ephemeral: true });
+        }
+    }
+});
+
+// تنظیم فواصل زمانی
+const ONE_MINUTE_MS = 60000; // 1 دقیقه به میلی‌ثانیه
+const ONE_DAY_MS = 86400000; // 24 ساعت به میلی‌ثانیه
+let lastInvestmentUpdate = Date.now();
+let lastAutoSave = Date.now();
+let lastStealWindowCheck = Date.now();
+
+// ذخیره خودکار داده‌ها هر 10 دقیقه
+setInterval(() => {
+    const now = Date.now();
+    if (now - lastAutoSave >= 10 * ONE_MINUTE_MS) {
+        saveData();
+        lastAutoSave = now;
+        console.log('💾 ذخیره خودکار داده‌ها انجام شد.');
+    }
+    
+    // بررسی پنجره زمانی جیب‌زنی هر یک ساعت
+    if (now - lastStealWindowCheck >= 60 * ONE_MINUTE_MS) {
+        const isStealActive = checkStealWindow();
+        lastStealWindowCheck = now;
+        
+        if (isStealActive) {
+            console.log('🔔 پنجره زمانی جیب‌زنی فعال است!');
+        }
+    }
+}, ONE_MINUTE_MS);
+
+// بررسی سود سرمایه‌گذاری هر روز
+setInterval(() => {
+    const now = Date.now();
+    // بررسی اینکه آیا 30 روز گذشته است
+    if (now - lastInvestmentUpdate >= 30 * ONE_DAY_MS) {
+        let updated = false;
+
+        for (const userId in users) {
+            if (users[userId].investment && users[userId].investment > 0) {
+                const profit = Math.floor(users[userId].investment * INVESTMENT_RATE);
+                users[userId].balance += profit;
+                updated = true;
+            }
+        }
+
+        if (updated) {
+            console.log('💹 سود سرمایه‌گذاری ماهانه پرداخت شد!');
+            saveData();
+            lastInvestmentUpdate = now;
+        }
+    }
+}, ONE_DAY_MS); // هر روز بررسی می‌کنیم
+
+client.once('ready', () => {
+    console.log(`✅ ${client.user.tag} آنلاین شد!`);
+});
+
+// ورود ربات با توکن
+client.login(TOKEN).catch(error => {
+    console.error('❌ خطا در ورود به دیسکورد:', error);
+    console.error('لطفاً توکن صحیح را در بخش Secrets با کلید DISCORD_TOKEN تنظیم کنید');
+    process.exit(1);
+});

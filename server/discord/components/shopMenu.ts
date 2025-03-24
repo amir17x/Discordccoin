@@ -19,7 +19,7 @@ export async function shopMenu(
     
     if (!user) {
       await interaction.reply({
-        content: 'You need to create an account first. Use the /menu command.',
+        content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.',
         ephemeral: true
       });
       return;
@@ -84,8 +84,8 @@ export async function shopMenu(
             .setLabel(`خرید ${item.name}`)
             .setStyle(ButtonStyle.Success)
             .setDisabled(
-              (item.price && user.wallet < item.price) || 
-              (item.crystalPrice && user.crystals < item.crystalPrice)
+              (typeof item.price === 'number' && user.wallet < item.price) || 
+              (typeof item.crystalPrice === 'number' && user.crystals < item.crystalPrice)
             )
         );
       
@@ -127,12 +127,12 @@ export async function shopMenu(
     try {
       if (followUp) {
         await interaction.followUp({
-          content: 'Sorry, there was an error displaying the shop menu!',
+          content: '❌ متأسفانه در نمایش منوی فروشگاه خطایی رخ داد!',
           ephemeral: true
         });
       } else {
         await interaction.reply({
-          content: 'Sorry, there was an error displaying the shop menu!',
+          content: '❌ متأسفانه در نمایش منوی فروشگاه خطایی رخ داد!',
           ephemeral: true
         });
       }

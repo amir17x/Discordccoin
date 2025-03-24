@@ -1,13 +1,13 @@
 import { SlashCommandBuilder, Collection, Client, PermissionFlagsBits } from 'discord.js';
 import { storage } from '../storage';
 import { mainMenu } from './components/mainMenu';
-import { adminMenu } from './components/adminMenu';
+import { adminMenu } from '../discord/components/adminMenu';
 
 // Command to display the main menu
 const menu = {
   data: new SlashCommandBuilder()
     .setName('menu')
-    .setDescription('Open the gaming bot main menu'),
+    .setDescription('باز کردن منوی اصلی ربات بازی'),
   
   async execute(interaction: any) {
     await mainMenu(interaction);
@@ -18,7 +18,7 @@ const menu = {
 const balance = {
   data: new SlashCommandBuilder()
     .setName('balance')
-    .setDescription('Check your current balance'),
+    .setDescription('بررسی موجودی حساب شما'),
   
   async execute(interaction: any) {
     try {
@@ -32,19 +32,19 @@ const balance = {
         });
         
         await interaction.reply({
-          content: `Welcome! Your starting balance is ${newUser.wallet} Ccoin in wallet and ${newUser.bank} Ccoin in bank.`,
+          content: `🎉 خوش آمدید! موجودی اولیه شما ${newUser.wallet} سکه در کیف پول و ${newUser.bank} سکه در بانک است.`,
           ephemeral: true
         });
       } else {
         await interaction.reply({
-          content: `Your balance: ${user.wallet} Ccoin in wallet, ${user.bank} Ccoin in bank, and ${user.crystals} crystals 💎`,
+          content: `💰 موجودی شما: ${user.wallet} سکه در کیف پول، ${user.bank} سکه در بانک، و ${user.crystals} کریستال 💎`,
           ephemeral: true
         });
       }
     } catch (error) {
       console.error('Error in balance command:', error);
       await interaction.reply({
-        content: 'Sorry, there was an error checking your balance!',
+        content: '❌ متأسفانه در بررسی موجودی شما خطایی رخ داد!',
         ephemeral: true
       });
     }
@@ -55,7 +55,7 @@ const balance = {
 const daily = {
   data: new SlashCommandBuilder()
     .setName('daily')
-    .setDescription('Claim your daily reward'),
+    .setDescription('دریافت پاداش روزانه'),
   
   async execute(interaction: any) {
     try {
@@ -73,7 +73,7 @@ const daily = {
         await storage.updateUser(newUser.id, { lastDaily: new Date(), dailyStreak: 1 });
         
         await interaction.reply({
-          content: `Welcome! You claimed your first daily reward of 50 Ccoin!`,
+          content: `🎉 خوش آمدید! شما اولین پاداش روزانه خود به مقدار 50 سکه را دریافت کردید!`,
           ephemeral: true
         });
       } else {
@@ -87,7 +87,7 @@ const daily = {
           const minutes = Math.floor(((nextReset.getTime() - now.getTime()) % (60 * 60 * 1000)) / (60 * 1000));
           
           await interaction.reply({
-            content: `You already claimed your daily reward! Next reward available in ${hours}h ${minutes}m.`,
+            content: `⏳ شما قبلاً پاداش روزانه خود را دریافت کرده‌اید! پاداش بعدی در ${hours} ساعت و ${minutes} دقیقه دیگر قابل دریافت است.`,
             ephemeral: true
           });
           return;
@@ -134,14 +134,14 @@ const daily = {
         await storage.addToWallet(user.id, reward);
         await storage.updateUser(user.id, { lastDaily: now, dailyStreak: streak });
         
-        let message = `You claimed your daily reward of ${reward} Ccoin!`;
+        let message = `🎁 شما پاداش روزانه خود به مقدار ${reward} سکه را دریافت کردید!`;
         if (bonusMultiplier > 1.0) {
-          message += ` (Includes bonus from active items)`;
+          message += ` (شامل امتیاز اضافی از آیتم‌های فعال)`;
         }
         if (streak >= 7) {
-          message += ` (Includes 7-day streak bonus of 200 Ccoin!)`;
+          message += ` (شامل پاداش ویژه 200 سکه‌ای برای 7 روز متوالی!)`;
         } else if (streak > 1) {
-          message += ` Your current streak: ${streak} days.`;
+          message += ` روزهای متوالی فعالیت شما: ${streak} روز.`;
         }
         
         await interaction.reply({
@@ -152,7 +152,7 @@ const daily = {
     } catch (error) {
       console.error('Error in daily command:', error);
       await interaction.reply({
-        content: 'Sorry, there was an error claiming your daily reward!',
+        content: '❌ متأسفانه در دریافت پاداش روزانه شما خطایی رخ داد!',
         ephemeral: true
       });
     }
@@ -163,20 +163,20 @@ const daily = {
 const help = {
   data: new SlashCommandBuilder()
     .setName('help')
-    .setDescription('Get help with bot commands'),
+    .setDescription('نمایش راهنمای دستورات ربات'),
   
   async execute(interaction: any) {
     await interaction.reply({
       content: `
-**Gaming Bot Commands**
+**🤖 دستورات ربات سی‌کوین**
 
-**/menu** - Open the main menu with all bot features
-**/balance** - Check your current balance
-**/daily** - Claim your daily reward
-**/help** - Show this help message
-**/admin** - Admin control panel (for administrators only)
+**/menu** - باز کردن منوی اصلی با تمام امکانات ربات
+**/balance** - بررسی موجودی حساب شما
+**/daily** - دریافت پاداش روزانه
+**/help** - نمایش این پیام راهنما
+**/admin** - پنل مدیریت (فقط برای مدیران)
 
-Most features are accessible through the menu system using buttons.
+اکثر امکانات از طریق سیستم منو با استفاده از دکمه‌ها قابل دسترسی هستند.
       `,
       ephemeral: true
     });
@@ -187,7 +187,7 @@ Most features are accessible through the menu system using buttons.
 const admin = {
   data: new SlashCommandBuilder()
     .setName('admin')
-    .setDescription('Open admin control panel')
+    .setDescription('باز کردن پنل مدیریت ادمین')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator), // Requires administrator permission
   
   async execute(interaction: any) {

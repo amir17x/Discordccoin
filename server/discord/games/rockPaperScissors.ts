@@ -24,7 +24,7 @@ export async function handleRockPaperScissors(
     
     if (!user) {
       await interaction.reply({
-        content: 'You need to create an account first. Use the /menu command.',
+        content: 'شما ابتدا باید یک حساب کاربری ایجاد کنید. از دستور /menu استفاده کنید.',
         ephemeral: true
       });
       return;
@@ -95,7 +95,7 @@ export async function handleRockPaperScissors(
     // Check if user has enough Ccoin
     if (user.wallet < BET_AMOUNT) {
       await interaction.reply({
-        content: `You don't have enough Ccoin to play. You need ${BET_AMOUNT} Ccoin but you have ${user.wallet} Ccoin.`,
+        content: `💰 سکه‌های شما برای بازی کافی نیست. شما به ${BET_AMOUNT} سکه نیاز دارید اما ${user.wallet} سکه در کیف پول خود دارید.`,
         ephemeral: true
       });
       return;
@@ -231,7 +231,7 @@ export async function handleRockPaperScissors(
     
     try {
       await interaction.reply({
-        content: 'Sorry, there was an error processing the game!',
+        content: '❌ متأسفانه در پردازش بازی خطایی رخ داد!',
         ephemeral: true
       });
     } catch (e) {
