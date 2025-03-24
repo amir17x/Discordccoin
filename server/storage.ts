@@ -938,6 +938,460 @@ export class MemStorage implements IStorage {
     userAchievement.updatedAt = new Date();
     return true;
   }
+
+  // Stock market operations
+  async getAllStocks(): Promise<StockData[]> {
+    return Array.from(this.stocks.values());
+  }
+
+  async getStock(id: number): Promise<StockData | undefined> {
+    return this.stocks.get(id);
+  }
+
+  async createStock(insertStock: InsertStock): Promise<StockData> {
+    const id = this.currentStockId++;
+    const now = new Date();
+    
+    const stock: StockData = {
+      id,
+      symbol: insertStock.symbol,
+      name: insertStock.name,
+      description: insertStock.description,
+      currentPrice: insertStock.currentPrice,
+      previousPrice: insertStock.previousPrice,
+      priceHistory: [{
+        timestamp: now.toISOString(),
+        price: insertStock.currentPrice
+      }],
+      volatility: insertStock.volatility,
+      trend: insertStock.trend,
+      sector: insertStock.sector,
+      totalShares: insertStock.totalShares,
+      availableShares: insertStock.availableShares,
+      updatedAt: now
+    };
+    
+    this.stocks.set(id, stock);
+    return stock;
+  }
+  
+  async updateStock(id: number, updates: Partial<StockData>): Promise<StockData | undefined> {
+    const stock = this.stocks.get(id);
+    if (!stock) return undefined;
+    
+    // If price is being updated, record it in price history
+    if (updates.currentPrice && updates.currentPrice !== stock.currentPrice) {
+      if (!stock.priceHistory) stock.priceHistory = [];
+      stock.priceHistory.push({
+        timestamp: new Date().toISOString(),
+        price: updates.currentPrice
+      });
+      
+      // Keep only last 30 price records
+      if (stock.priceHistory.length > 30) {
+        stock.priceHistory = stock.priceHistory.slice(-30);
+      }
+      
+      // Update previous price
+      updates.previousPrice = stock.currentPrice;
+    }
+    
+    const updatedStock = { ...stock, ...updates, updatedAt: new Date() };
+    this.stocks.set(id, updatedStock);
+    return updatedStock;
+  }
+  
+  async getUserStocks(userId: number): Promise<UserStockData[]> {
+    const userStockList = this.userStocks.get(userId) || [];
+    return userStockList;
+  }
+  
+  async buyStock(userId: number, stockId: number, quantity: number): Promise<boolean> {
+    const user = this.users.get(userId);
+    const stock = this.stocks.get(stockId);
+    
+    // Validate all parameters
+    if (!user || !stock || quantity <= 0 || isNaN(quantity)) return false;
+    
+    // Check if enough shares are available
+    if (stock.availableShares < quantity) return false;
+    
+    // Calculate total cost
+    const totalCost = Math.ceil(stock.currentPrice * quantity);
+    
+    // Check if user has enough money
+    if (user.wallet < totalCost) return false;
+    
+    // Create user stock record
+    const userStockId = this.currentUserStockId++;
+    const now = new Date();
+    
+    const userStock: UserStockData = {
+      id: userStockId,
+      userId,
+      stockId,
+      quantity,
+      purchasePrice: stock.currentPrice,
+      purchaseDate: now
+    };
+    
+    // Get existing user stocks
+    if (!this.userStocks.has(userId)) {
+      this.userStocks.set(userId, []);
+    }
+    
+    // Add to user stocks
+    const userStocks = this.userStocks.get(userId)!;
+    userStocks.push(userStock);
+    
+    // Update user's stocks array in user object
+    if (!user.stocks) user.stocks = [];
+    user.stocks.push({
+      stockId: stockId.toString(),
+      quantity,
+      purchasePrice: stock.currentPrice,
+      purchaseDate: now.toISOString()
+    });
+    
+    // Update stock available shares
+    stock.availableShares -= quantity;
+    
+    // Deduct money from wallet
+    user.wallet -= totalCost;
+    
+    // Record transaction
+    if (!user.transactions) user.transactions = [];
+    user.transactions.push({
+      type: 'stock_buy',
+      amount: totalCost,
+      fee: 0,
+      timestamp: now,
+      stockId,
+      stockSymbol: stock.symbol,
+      quantity
+    });
+    
+    return true;
+  }
+  
+  async sellStock(userId: number, stockId: number, quantity: number): Promise<boolean> {
+    const user = this.users.get(userId);
+    const stock = this.stocks.get(stockId);
+    
+    // Validate all parameters
+    if (!user || !stock || quantity <= 0 || isNaN(quantity)) return false;
+    
+    // Get user's stocks
+    const userStocks = user.stocks || [];
+    
+    // Find the stock in user's portfolio
+    const userStockIndex = userStocks.findIndex(s => s.stockId === stockId.toString());
+    if (userStockIndex === -1 || userStocks[userStockIndex].quantity < quantity) {
+      return false; // User doesn't have enough of this stock
+    }
+    
+    // Calculate total sale value
+    const totalValue = Math.floor(stock.currentPrice * quantity);
+    
+    // Update user's wallet
+    user.wallet += totalValue;
+    
+    // Update user's stocks
+    if (userStocks[userStockIndex].quantity === quantity) {
+      // Remove if selling all
+      userStocks.splice(userStockIndex, 1);
+    } else {
+      // Reduce quantity
+      userStocks[userStockIndex].quantity -= quantity;
+    }
+    
+    // Update stock available shares
+    stock.availableShares += quantity;
+    
+    // Update userStocks Map
+    const userStockList = this.userStocks.get(userId) || [];
+    const stockEntryIndex = userStockList.findIndex(s => s.stockId === stockId);
+    
+    if (stockEntryIndex !== -1) {
+      if (userStockList[stockEntryIndex].quantity === quantity) {
+        userStockList.splice(stockEntryIndex, 1);
+      } else {
+        userStockList[stockEntryIndex].quantity -= quantity;
+      }
+    }
+    
+    // Record transaction
+    const now = new Date();
+    if (!user.transactions) user.transactions = [];
+    user.transactions.push({
+      type: 'stock_sell',
+      amount: totalValue,
+      fee: 0,
+      timestamp: now,
+      stockId,
+      stockSymbol: stock.symbol,
+      quantity
+    });
+    
+    return true;
+  }
+  
+  async updateStockPrices(): Promise<void> {
+    const now = new Date();
+    
+    for (const stock of this.stocks.values()) {
+      // Calculate price change percent based on volatility and trend
+      // Volatility 1-10, trend -5 to +5
+      const volatilityFactor = stock.volatility / 10; // 0.1 to 1
+      const trendInfluence = stock.trend / 10; // -0.5 to +0.5
+      
+      // Random factor -1 to +1
+      const randomFactor = (Math.random() * 2) - 1;
+      
+      // Max percent change (weighted by volatility)
+      const maxPercentChange = 0.05 * volatilityFactor; // 0.5% to 5%
+      
+      // Calculate percent change (random with trend bias)
+      const percentChange = ((randomFactor + trendInfluence) * maxPercentChange);
+      
+      // Calculate new price
+      let newPrice = stock.currentPrice * (1 + percentChange);
+      
+      // Ensure minimum price is 0.01
+      newPrice = Math.max(0.01, newPrice);
+      
+      // Round to 2 decimal places
+      newPrice = Math.round(newPrice * 100) / 100;
+      
+      // Update stock
+      this.updateStock(stock.id, {
+        previousPrice: stock.currentPrice,
+        currentPrice: newPrice
+      });
+    }
+  }
+  
+  async payDividends(): Promise<void> {
+    const now = new Date();
+    
+    // Only pay dividends to 'finance' sector stocks with positive trend
+    const eligibleStocks = Array.from(this.stocks.values())
+      .filter(stock => stock.sector === 'finance' && stock.trend > 0);
+    
+    if (eligibleStocks.length === 0) return;
+    
+    // Get all users who own stocks
+    for (const [userId, userStockList] of this.userStocks.entries()) {
+      const user = this.users.get(userId);
+      if (!user) continue;
+      
+      let totalDividends = 0;
+      
+      // Calculate dividends for each eligible stock
+      for (const userStock of userStockList) {
+        const stock = this.stocks.get(userStock.stockId);
+        
+        if (!stock || !eligibleStocks.includes(stock)) continue;
+        
+        // Calculate dividend as 0.5% to 2% of stock value based on trend
+        const dividendRate = 0.005 + (stock.trend / 100); // 0.5% to 2%
+        const stockValue = stock.currentPrice * userStock.quantity;
+        const dividend = Math.floor(stockValue * dividendRate);
+        
+        if (dividend <= 0) continue;
+        
+        totalDividends += dividend;
+        
+        // Record individual stock transaction
+        if (!user.transactions) user.transactions = [];
+        user.transactions.push({
+          type: 'stock_dividend',
+          amount: dividend,
+          fee: 0,
+          timestamp: now,
+          stockId: stock.id,
+          stockSymbol: stock.symbol
+        });
+      }
+      
+      // Add dividends to user's bank account
+      if (totalDividends > 0) {
+        user.bank += totalDividends;
+        user.lastDividendPayout = now;
+      }
+    }
+  }
+  
+  // Lottery operations
+  async getAllLotteries(): Promise<LotteryData[]> {
+    return Array.from(this.lotteries.values());
+  }
+  
+  async getLottery(id: number): Promise<LotteryData | undefined> {
+    return this.lotteries.get(id);
+  }
+  
+  async createLottery(insertLottery: InsertLottery): Promise<LotteryData> {
+    const id = this.currentLotteryId++;
+    
+    const lottery: LotteryData = {
+      id,
+      name: insertLottery.name,
+      description: insertLottery.description,
+      ticketPrice: insertLottery.ticketPrice,
+      jackpot: insertLottery.jackpot,
+      startTime: insertLottery.startTime,
+      endTime: insertLottery.endTime,
+      winnerId: null,
+      status: 'active',
+      participants: []
+    };
+    
+    this.lotteries.set(id, lottery);
+    return lottery;
+  }
+  
+  async buyLotteryTicket(userId: number, lotteryId: number, quantity: number): Promise<boolean> {
+    const user = this.users.get(userId);
+    const lottery = this.lotteries.get(lotteryId);
+    
+    // Validate parameters
+    if (!user || !lottery || quantity <= 0 || isNaN(quantity)) return false;
+    
+    // Check if lottery is active and not expired
+    if (lottery.status !== 'active' || new Date(lottery.endTime) < new Date()) {
+      return false;
+    }
+    
+    // Calculate total cost
+    const totalCost = lottery.ticketPrice * quantity;
+    
+    // Check if user has enough money
+    if (user.wallet < totalCost) return false;
+    
+    // Update user's wallet
+    user.wallet -= totalCost;
+    
+    // Add to jackpot
+    lottery.jackpot += Math.floor(totalCost * 0.8); // 80% goes to jackpot
+    
+    // Check if user already has tickets
+    const participantIndex = lottery.participants.findIndex(p => p.userId === userId);
+    if (participantIndex !== -1) {
+      // Add to existing tickets
+      lottery.participants[participantIndex].ticketCount += quantity;
+    } else {
+      // Add new participant
+      lottery.participants.push({
+        userId,
+        ticketCount: quantity
+      });
+    }
+    
+    // Add to user's lottery tickets
+    if (!user.lotteryTickets) user.lotteryTickets = [];
+    
+    const existingTicketIndex = user.lotteryTickets.findIndex(t => t.lotteryId === lotteryId.toString());
+    if (existingTicketIndex !== -1) {
+      // Add to existing tickets
+      user.lotteryTickets[existingTicketIndex].tickets += quantity;
+    } else {
+      // Add new lottery entry
+      user.lotteryTickets.push({
+        lotteryId: lotteryId.toString(),
+        tickets: quantity,
+        purchaseDate: new Date().toISOString()
+      });
+    }
+    
+    // Record transaction
+    const now = new Date();
+    if (!user.transactions) user.transactions = [];
+    user.transactions.push({
+      type: 'lottery_ticket',
+      amount: totalCost,
+      fee: 0,
+      timestamp: now,
+      lotteryId,
+      lotteryName: lottery.name,
+      quantity
+    });
+    
+    return true;
+  }
+  
+  async drawLotteryWinner(lotteryId: number): Promise<number | undefined> {
+    const lottery = this.lotteries.get(lotteryId);
+    
+    // Validate lottery exists and is active
+    if (!lottery || lottery.status !== 'active') return undefined;
+    
+    // Check if lottery has participants
+    if (lottery.participants.length === 0) return undefined;
+    
+    // Calculate total tickets
+    let totalTickets = 0;
+    for (const participant of lottery.participants) {
+      totalTickets += participant.ticketCount;
+    }
+    
+    // Generate random ticket number
+    const winningTicket = Math.floor(Math.random() * totalTickets) + 1;
+    
+    // Find which participant has the winning ticket
+    let ticketCounter = 0;
+    for (const participant of lottery.participants) {
+      ticketCounter += participant.ticketCount;
+      if (ticketCounter >= winningTicket) {
+        // Found winner
+        lottery.winnerId = participant.userId;
+        return participant.userId;
+      }
+    }
+    
+    return undefined; // Should never reach here
+  }
+  
+  async finishLottery(lotteryId: number): Promise<boolean> {
+    const lottery = this.lotteries.get(lotteryId);
+    
+    // Validate lottery exists and is active
+    if (!lottery || lottery.status !== 'active') return false;
+    
+    // If no winner drawn yet, draw one
+    if (!lottery.winnerId) {
+      const winnerId = await this.drawLotteryWinner(lotteryId);
+      if (!winnerId) {
+        // No participants, no winner
+        lottery.status = 'completed';
+        return true;
+      }
+    }
+    
+    // Get winner
+    const winner = this.users.get(lottery.winnerId!);
+    if (!winner) return false;
+    
+    // Award jackpot to winner
+    winner.wallet += lottery.jackpot;
+    
+    // Record transaction
+    const now = new Date();
+    if (!winner.transactions) winner.transactions = [];
+    winner.transactions.push({
+      type: 'lottery_win',
+      amount: lottery.jackpot,
+      fee: 0,
+      timestamp: now,
+      lotteryId,
+      lotteryName: lottery.name
+    });
+    
+    // Mark lottery as completed
+    lottery.status = 'completed';
+    
+    return true;
+  }
 }
 
 export const storage = new MemStorage();

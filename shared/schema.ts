@@ -2,96 +2,6 @@ import { pgTable, text, serial, integer, boolean, timestamp, jsonb, real } from 
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// تعریف ساختمان‌های کلن
-export interface ClanBuilding {
-  id: string;
-  type: 'headquarters' | 'bank' | 'training_camp' | 'market' | 'laboratory' | 'barracks' | 'wall' | 'tower';
-  name: string;
-  level: number;
-  upgradeProgress: number;
-  upgradeTarget: number;
-  completionTime?: string;
-  effects: {
-    bankBonus?: number;
-    memberCapacityBonus?: number;
-    attackBonus?: number;
-    defenseBonus?: number;
-    productionBonus?: number;
-    researchBonus?: number;
-  };
-}
-
-// تعریف پروژه‌های کلن
-export interface ClanProject {
-  id: string;
-  name: string;
-  description: string;
-  resourcesRequired: {
-    coins: number;
-    materials: number;
-    labor: number;
-  };
-  resourcesContributed: {
-    coins: number;
-    materials: number;
-    labor: number;
-  };
-  progress: number;
-  rewards: {
-    experience: number;
-    perkPoints: number;
-    buildingId?: string;
-  };
-  deadline?: string;
-  completionTime?: string;
-  status: 'active' | 'completed' | 'failed';
-}
-
-// تعریف قابلیت‌های کلن
-export interface ClanPerk {
-  id: string;
-  name: string;
-  description: string;
-  level: number;
-  maxLevel: number;
-  effects: {
-    bankInterestBonus?: number;
-    memberCapacity?: number;
-    dailyRewardBonus?: number;
-    shopDiscountBonus?: number;
-    combatBonus?: number;
-    resourceProductionBonus?: number;
-  };
-  activationTime: string;
-  expirationTime?: string; // اگر مقدار نداشته باشد، دائمی است
-  active: boolean;
-}
-
-// تعریف ماموریت‌های کلن
-export interface ClanMission {
-  id: string;
-  title: string;
-  description: string;
-  type: 'daily' | 'weekly' | 'season';
-  requirement: {
-    type: 'win_games' | 'deposit_coins' | 'collect_items' | 'upgrade_buildings' | 'win_wars';
-    targetAmount: number;
-  };
-  progress: number;
-  rewards: {
-    coins: number;
-    experience: number;
-    materials?: number;
-    specialItem?: {
-      id: number;
-      name: string;
-    };
-  };
-  startTime: string;
-  endTime: string;
-  status: 'active' | 'completed' | 'failed';
-}
-
 // Users table
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -132,6 +42,12 @@ export const users = pgTable("users", {
     labor: 0,
     lastCollected: new Date(0).toISOString()
   }),
+  // سهام کاربر
+  stocks: jsonb("stocks").$type<UserStock[]>().default([]),
+  // لاتاری کاربر
+  lotteryTickets: jsonb("lottery_tickets").$type<UserLottery[]>().default([]),
+  // تاریخ آخرین پرداخت سود سهام
+  lastDividendPayout: timestamp("last_dividend_payout"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -229,6 +145,53 @@ export const games = pgTable("games", {
   playedAt: timestamp("played_at").defaultNow(),
 });
 
+// Stocks table
+export const stocks = pgTable("stocks", {
+  id: serial("id").primaryKey(),
+  symbol: text("symbol").notNull().unique(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  currentPrice: real("current_price").notNull(),
+  previousPrice: real("previous_price").notNull(),
+  priceHistory: jsonb("price_history").$type<{
+    timestamp: string;
+    price: number;
+  }[]>().default([]),
+  volatility: integer("volatility").notNull(), // میزان نوسان (از 1 تا 10)
+  trend: integer("trend").notNull(), // روند قیمت (-5 تا +5)
+  sector: text("sector").notNull(),
+  totalShares: integer("total_shares").notNull(),
+  availableShares: integer("available_shares").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// User Stocks table
+export const userStocks = pgTable("user_stocks", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  stockId: integer("stock_id").notNull(),
+  quantity: integer("quantity").notNull(),
+  purchasePrice: real("purchase_price").notNull(),
+  purchaseDate: timestamp("purchase_date").defaultNow(),
+});
+
+// Lottery table
+export const lotteries = pgTable("lotteries", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  ticketPrice: integer("ticket_price").notNull(),
+  jackpot: integer("jackpot").notNull(),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time").notNull(),
+  winnerId: integer("winner_id"),
+  status: text("status").notNull().default("active"),
+  participants: jsonb("participants").$type<{
+    userId: number;
+    ticketCount: number;
+  }[]>().default([]),
+});
+
 // Define insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   discordId: true,
@@ -262,6 +225,28 @@ export const insertItemSchema = createInsertSchema(items).pick({
   effects: true,
 });
 
+export const insertStockSchema = createInsertSchema(stocks).pick({
+  symbol: true,
+  name: true,
+  description: true,
+  currentPrice: true,
+  previousPrice: true,
+  volatility: true,
+  trend: true,
+  sector: true,
+  totalShares: true,
+  availableShares: true,
+});
+
+export const insertLotterySchema = createInsertSchema(lotteries).pick({
+  name: true,
+  description: true,
+  ticketPrice: true,
+  jackpot: true,
+  startTime: true,
+  endTime: true,
+});
+
 // Define types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -279,6 +264,13 @@ export type Game = typeof games.$inferSelect;
 export type UserQuest = typeof userQuests.$inferSelect;
 export type Achievement = typeof achievements.$inferSelect;
 export type UserAchievement = typeof userAchievements.$inferSelect;
+
+export type InsertStock = z.infer<typeof insertStockSchema>;
+export type StockData = typeof stocks.$inferSelect;
+
+export type InsertLottery = z.infer<typeof insertLotterySchema>;
+export type LotteryData = typeof lotteries.$inferSelect;
+export type UserStockData = typeof userStocks.$inferSelect;
 
 // Define game types
 export type GameType = "coinflip" | "rps" | "numberguess";
@@ -302,7 +294,8 @@ export interface ItemEffects {
 // Define Transaction
 export interface Transaction {
   type: 'deposit' | 'withdraw' | 'transfer_in' | 'transfer_out' | 'game_win' | 'game_loss' | 'quest_reward' | 
-        'steal_success' | 'steal_victim' | 'steal_failed' | 'item_purchase' | 'item_purchase_crystal' | 'welcome_bonus';
+        'steal_success' | 'steal_victim' | 'steal_failed' | 'item_purchase' | 'item_purchase_crystal' | 'welcome_bonus' |
+        'stock_buy' | 'stock_sell' | 'stock_dividend' | 'lottery_ticket' | 'lottery_win' | 'bank_interest';
   amount: number;
   fee: number;
   timestamp: Date;
@@ -314,6 +307,11 @@ export interface Transaction {
   questId?: number;      // برای پاداش‌های کوئست
   itemId?: number;       // شناسه آیتم خریداری شده
   itemName?: string;     // نام آیتم خریداری شده
+  stockId?: number;      // شناسه سهام
+  stockSymbol?: string;  // نماد سهام 
+  quantity?: number;     // تعداد سهام یا بلیط لاتاری
+  lotteryId?: number;    // شناسه لاتاری
+  lotteryName?: string;  // نام لاتاری
 }
 
 // Define Transfer Statistics
@@ -333,6 +331,55 @@ export interface Investment {
   endDate: string;
   riskRate: number;
   status: 'active' | 'completed' | 'failed';
+}
+
+// تعریف سیستم سهام
+export interface Stock {
+  id: string;
+  symbol: string;
+  name: string;
+  description: string;
+  currentPrice: number;
+  previousPrice: number;
+  priceHistory: {
+    timestamp: string;
+    price: number;
+  }[];
+  volatility: number; // میزان نوسان (از 1 تا 10)
+  trend: number; // روند قیمت (-5 تا +5)
+  sector: 'tech' | 'finance' | 'energy' | 'consumer' | 'industrial';
+  totalShares: number;
+  availableShares: number;
+}
+
+export interface UserStock {
+  stockId: string;
+  quantity: number;
+  purchasePrice: number;
+  purchaseDate: string;
+}
+
+// تعریف سیستم لاتاری
+export interface Lottery {
+  id: string;
+  name: string;
+  description: string;
+  ticketPrice: number;
+  jackpot: number;
+  startTime: string;
+  endTime: string;
+  winnerId?: number;
+  status: 'active' | 'completed';
+  participants: {
+    userId: number;
+    ticketCount: number;
+  }[];
+}
+
+export interface UserLottery {
+  lotteryId: string;
+  tickets: number;
+  purchaseDate: string;
 }
 
 // تعریف ساختمان‌های کلن

@@ -3,6 +3,7 @@ import { deployCommands } from './deploy-commands';
 import { loadCommands } from './commands';
 import { handleButtonInteraction } from './handlers/buttonHandler';
 import { handleSelectMenuInteraction } from './handlers/menuHandler';
+import { handleModalSubmit } from './handlers/modalHandler';
 import { log } from '../vite';
 import { storage } from '../storage';
 import { getLogger, LogType } from './utils/logger';
@@ -161,141 +162,14 @@ export async function initDiscordBot() {
         } else if (interaction.isStringSelectMenu()) {
           await handleSelectMenuInteraction(interaction);
         } else if (interaction.isModalSubmit()) {
-          // Handle modal submissions
-          const customId = interaction.customId;
-          
-          // Handle number guess game modal
-          if (customId === 'guess_number_modal') {
+          // Handle special case for number guess to maintain backward compatibility
+          if (interaction.customId === 'guess_number_modal') {
             const { handleNumberGuessModalSubmit } = await import('./games/numberGuess');
             await handleNumberGuessModalSubmit(interaction);
-            return;
           }
-          
-          // Check if this is a log channel setting modal
-          else if (customId.startsWith('set_log_channel_')) {
-            const logType = customId.replace('set_log_channel_', '') as LogType;
-            const channelId = interaction.fields.getTextInputValue('channelId');
-            
-            // Validate channel ID (basic check)
-            if (!channelId || channelId.trim() === '') {
-              await interaction.reply({
-                content: 'شناسه کانال نمی‌تواند خالی باشد!',
-                ephemeral: true
-              });
-              return;
-            }
-            
-            // Check if channel exists and is a text channel
-            const channel = interaction.client.channels.cache.get(channelId);
-            if (!channel) {
-              await interaction.reply({
-                content: 'کانالی با این شناسه یافت نشد!',
-                ephemeral: true
-              });
-              return;
-            }
-            
-            // Set the channel for the specified log type
-            botConfig.setLogChannel(logType, channelId);
-            
-            // Update logger with new channel
-            const logger = getLogger(interaction.client);
-            logger.setChannels({
-              [logType]: channelId
-            });
-            
-            await interaction.reply({
-              content: `کانال لاگ ${logType} با موفقیت تنظیم شد!`,
-              ephemeral: true
-            });
-            
-            // Log the action to admin log if it exists
-            if (logType !== LogType.ADMIN && 
-                (botConfig.getConfig().logChannels[LogType.ADMIN] || botConfig.getConfig().logChannels.default)) {
-              logger.logAdminAction(
-                interaction.user.id,
-                interaction.user.username,
-                'تنظیم کانال لاگ',
-                channelId,
-                `کانال <#${channelId}>`,
-                `کانال لاگ نوع ${logType} را تنظیم کرد`
-              );
-            }
-            
-            // Return to logs settings menu after a delay
-            setTimeout(async () => {
-              try {
-                if (interaction.replied || interaction.deferred) {
-                  const { adminMenu } = await import('./components/adminMenu');
-                  const buttonLikeInteraction = createButtonLikeInteraction(interaction);
-                  await adminMenu(buttonLikeInteraction, 'logs_settings');
-                }
-              } catch (error) {
-                console.error('Error returning to logs menu:', error);
-              }
-            }, 1500);
-          }
-          
-          // Check if this is the default log channel setting modal
-          else if (customId === 'set_default_log_channel') {
-            const channelId = interaction.fields.getTextInputValue('channelId');
-            
-            // Validate channel ID (basic check)
-            if (!channelId || channelId.trim() === '') {
-              await interaction.reply({
-                content: 'شناسه کانال نمی‌تواند خالی باشد!',
-                ephemeral: true
-              });
-              return;
-            }
-            
-            // Check if channel exists and is a text channel
-            const channel = interaction.client.channels.cache.get(channelId);
-            if (!channel) {
-              await interaction.reply({
-                content: 'کانالی با این شناسه یافت نشد!',
-                ephemeral: true
-              });
-              return;
-            }
-            
-            // Set the default channel
-            botConfig.setDefaultLogChannel(channelId);
-            
-            // Update logger with new default channel
-            const logger = getLogger(interaction.client);
-            logger.setDefaultChannel(channelId);
-            
-            await interaction.reply({
-              content: `کانال پیش‌فرض لاگ‌ها با موفقیت تنظیم شد!`,
-              ephemeral: true
-            });
-            
-            // Log the action to admin log if it exists
-            const config = botConfig.getConfig();
-            if (config.logChannels[LogType.ADMIN]) {
-              logger.logAdminAction(
-                interaction.user.id,
-                interaction.user.username,
-                'تنظیم کانال پیش‌فرض لاگ',
-                channelId,
-                `کانال <#${channelId}>`,
-                `کانال پیش‌فرض لاگ را تنظیم کرد`
-              );
-            }
-            
-            // Return to logs settings menu after a delay
-            setTimeout(async () => {
-              try {
-                if (interaction.replied || interaction.deferred) {
-                  const { adminMenu } = await import('./components/adminMenu');
-                  const buttonLikeInteraction = createButtonLikeInteraction(interaction);
-                  await adminMenu(buttonLikeInteraction, 'logs_settings');
-                }
-              } catch (error) {
-                console.error('Error returning to logs menu:', error);
-              }
-            }, 1500);
+          // Use the dedicated modal handler for all other cases
+          else {
+            await handleModalSubmit(interaction);
           }
         }
       } catch (error) {

@@ -12,6 +12,8 @@ import { wheelOfFortuneMenu, spinWheel } from '../components/wheelOfFortuneMenu'
 import { robberyMenu } from '../components/robberyMenu';
 import { adminMenu } from '../components/adminMenu';
 import { investmentMenu, processInvestment } from '../components/investmentMenu';
+import { stocksMenu, processBuyStock, processSellStock } from '../components/stocksMenu';
+import { lotteryMenu, processBuyLotteryTicket } from '../components/lotteryMenu';
 import { handleCoinFlip } from '../games/coinFlip';
 import { handleRockPaperScissors } from '../games/rockPaperScissors';
 import { handleNumberGuess } from '../games/numberGuess';
@@ -198,6 +200,52 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     
     if (action === 'exchange_50') {
       await handleExchange(interaction, 50);
+      return;
+    }
+    
+    // Handle stocks menu
+    if (action === 'stocks') {
+      const subMenu = params[0] || 'main';
+      await stocksMenu(interaction, subMenu);
+      return;
+    }
+    
+    // Handle stocks menu actions
+    if (action === 'stocks_market') {
+      await stocksMenu(interaction, 'market');
+      return;
+    }
+    
+    if (action === 'stocks_portfolio') {
+      await stocksMenu(interaction, 'portfolio');
+      return;
+    }
+    
+    if (action === 'stocks_info') {
+      await stocksMenu(interaction, 'info');
+      return;
+    }
+    
+    // Handle lottery menu
+    if (action === 'lottery') {
+      const subMenu = params[0] || 'main';
+      await lotteryMenu(interaction, subMenu);
+      return;
+    }
+    
+    // Handle lottery menu actions
+    if (action === 'lottery_active') {
+      await lotteryMenu(interaction, 'active');
+      return;
+    }
+    
+    if (action === 'lottery_history') {
+      await lotteryMenu(interaction, 'history');
+      return;
+    }
+    
+    if (action === 'lottery_info') {
+      await lotteryMenu(interaction, 'info');
       return;
     }
     

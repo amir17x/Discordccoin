@@ -1,10 +1,12 @@
-import { StringSelectMenuInteraction } from 'discord.js';
+import { StringSelectMenuInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } from 'discord.js';
 import { storage } from '../../storage';
 import { handleCoinFlip } from '../games/coinFlip';
 import { handleRockPaperScissors } from '../games/rockPaperScissors';
 import { handleNumberGuess } from '../games/numberGuess';
 import { handleRobbery } from '../components/robberyMenu';
 import { processInvestment } from '../components/investmentMenu';
+import { processBuyStock, processSellStock } from '../components/stocksMenu';
+import { processBuyLotteryTicket } from '../components/lotteryMenu';
 
 // Select menu handler function
 export async function handleSelectMenuInteraction(interaction: StringSelectMenuInteraction) {
@@ -74,6 +76,89 @@ export async function handleSelectMenuInteraction(interaction: StringSelectMenuI
         await processInvestment(interaction, 'high_risk', amount);
         return;
       }
+    }
+    
+    // Handle stock market operations
+    if (customId === 'stocks_select_buy') {
+      // Selected value format: buy_stock_{stockId}
+      const stockId = parseInt(selectedValue.split('_')[2]);
+      
+      // Create a modal for quantity input
+      const modal = new ModalBuilder()
+        .setCustomId(`buy_stock_${stockId}_modal`)
+        .setTitle('خرید سهام');
+        
+      const quantityInput = new TextInputBuilder()
+        .setCustomId('stock_quantity')
+        .setLabel('تعداد سهام')
+        .setStyle(TextInputStyle.Short)
+        .setPlaceholder('مثال: 10')
+        .setRequired(true)
+        .setMinLength(1)
+        .setMaxLength(6);
+        
+      const actionRow = new ActionRowBuilder<TextInputBuilder>()
+        .addComponents(quantityInput);
+        
+      modal.addComponents(actionRow);
+      
+      await interaction.showModal(modal);
+      return;
+    }
+    
+    if (customId === 'stocks_select_sell') {
+      // Selected value format: sell_stock_{stockId}
+      const stockId = parseInt(selectedValue.split('_')[2]);
+      
+      // Create a modal for quantity input
+      const modal = new ModalBuilder()
+        .setCustomId(`sell_stock_${stockId}_modal`)
+        .setTitle('فروش سهام');
+        
+      const quantityInput = new TextInputBuilder()
+        .setCustomId('stock_quantity')
+        .setLabel('تعداد سهام')
+        .setStyle(TextInputStyle.Short)
+        .setPlaceholder('مثال: 5')
+        .setRequired(true)
+        .setMinLength(1)
+        .setMaxLength(6);
+        
+      const actionRow = new ActionRowBuilder<TextInputBuilder>()
+        .addComponents(quantityInput);
+        
+      modal.addComponents(actionRow);
+      
+      await interaction.showModal(modal);
+      return;
+    }
+    
+    // Handle lottery operations
+    if (customId === 'lottery_select_buy') {
+      // Selected value format: buy_lottery_{lotteryId}
+      const lotteryId = parseInt(selectedValue.split('_')[2]);
+      
+      // Create a modal for quantity input
+      const modal = new ModalBuilder()
+        .setCustomId(`buy_lottery_${lotteryId}_modal`)
+        .setTitle('خرید بلیط لاتاری');
+        
+      const quantityInput = new TextInputBuilder()
+        .setCustomId('lottery_quantity')
+        .setLabel('تعداد بلیط')
+        .setStyle(TextInputStyle.Short)
+        .setPlaceholder('مثال: 5')
+        .setRequired(true)
+        .setMinLength(1)
+        .setMaxLength(3);
+        
+      const actionRow = new ActionRowBuilder<TextInputBuilder>()
+        .addComponents(quantityInput);
+        
+      modal.addComponents(actionRow);
+      
+      await interaction.showModal(modal);
+      return;
     }
 
     // If no handler matched, reply with an error
