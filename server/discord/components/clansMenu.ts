@@ -438,13 +438,13 @@ export async function clansMenu(
           .setFooter({ text: 'این بخش در حال توسعه است' })
           .setTimestamp();
         
-        // Back button
+        // Back button with color
         const backRow = new ActionRowBuilder<ButtonBuilder>()
           .addComponents(
             new ButtonBuilder()
               .setCustomId('clans')
               .setLabel('🔙 بازگشت')
-              .setStyle(ButtonStyle.Secondary)
+              .setStyle(ButtonStyle.Danger)
           );
         
         await interaction.update({ embeds: [missionsEmbed], components: [backRow] });
