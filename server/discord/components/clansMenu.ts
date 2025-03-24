@@ -66,7 +66,7 @@ export async function clansMenu(
     const rows: ActionRowBuilder<ButtonBuilder>[] = [];
     
     if (userClan) {
-      // User is in a clan
+      // User is in a clan - colorful buttons
       const row1 = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
           new ButtonBuilder()
@@ -76,11 +76,11 @@ export async function clansMenu(
           new ButtonBuilder()
             .setCustomId('clan_bank')
             .setLabel('🏦 بانک کلن')
-            .setStyle(ButtonStyle.Primary),
+            .setStyle(ButtonStyle.Success),
           new ButtonBuilder()
             .setCustomId('clan_missions')
             .setLabel('🎯 ماموریت کلن')
-            .setStyle(ButtonStyle.Primary)
+            .setStyle(ButtonStyle.Secondary)
         );
       
       rows.push(row1);
@@ -107,7 +107,7 @@ export async function clansMenu(
       
       rows.push(row2);
       
-      // Leave clan button
+      // Leave clan button with colorful back button
       const row3 = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
           new ButtonBuilder()
@@ -117,7 +117,7 @@ export async function clansMenu(
           new ButtonBuilder()
             .setCustomId('menu')
             .setLabel('🔙 بازگشت')
-            .setStyle(ButtonStyle.Secondary)
+            .setStyle(ButtonStyle.Danger)
         );
       
       rows.push(row3);
@@ -138,13 +138,13 @@ export async function clansMenu(
       
       rows.push(row1);
       
-      // Back button
+      // Back button with color
       const row2 = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
           new ButtonBuilder()
             .setCustomId('menu')
             .setLabel('🔙 بازگشت')
-            .setStyle(ButtonStyle.Secondary)
+            .setStyle(ButtonStyle.Danger)
         );
       
       rows.push(row2);
@@ -241,13 +241,13 @@ export async function clansMenu(
           joinRows.push(row);
         }
         
-        // Add back button
+        // Add back button with color
         const backRow = new ActionRowBuilder<ButtonBuilder>()
           .addComponents(
             new ButtonBuilder()
               .setCustomId('clans')
               .setLabel('🔙 بازگشت')
-              .setStyle(ButtonStyle.Secondary)
+              .setStyle(ButtonStyle.Danger)
           );
         
         joinRows.push(backRow);
@@ -403,13 +403,13 @@ export async function clansMenu(
               .setDisabled(user.wallet < 1000)
           );
         
-        // Back button
+        // Back button with color
         const backRow = new ActionRowBuilder<ButtonBuilder>()
           .addComponents(
             new ButtonBuilder()
               .setCustomId('clans')
               .setLabel('🔙 بازگشت')
-              .setStyle(ButtonStyle.Secondary)
+              .setStyle(ButtonStyle.Danger)
           );
         
         await interaction.update({ embeds: [bankEmbed], components: [depositRow, backRow] });
