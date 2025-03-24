@@ -14,6 +14,7 @@ export const users = pgTable("users", {
   lastDaily: timestamp("last_daily"),
   lastRob: timestamp("last_rob"),
   lastWheelSpin: timestamp("last_wheel_spin"),
+  lastBankInterest: timestamp("last_bank_interest"), // تاریخ آخرین پرداخت سود بانکی
   inventory: jsonb("inventory").notNull().default({}),
   dailyStreak: integer("daily_streak").notNull().default(0),
   totalGamesPlayed: integer("total_games_played").notNull().default(0),
@@ -21,12 +22,16 @@ export const users = pgTable("users", {
   clanId: integer("clan_id"),
   // سوابق تراکنش‌های کاربر (واریز، برداشت، انتقال)
   transactions: jsonb("transactions").$type<Transaction[]>().default([]),
+  // سرمایه‌گذاری‌های کاربر
+  investments: jsonb("investments").$type<Investment[]>().default([]),
   // آمار انتقال سکه به کاربران دیگر
   transferStats: jsonb("transfer_stats").$type<TransferStats>().default({
     dailyAmount: 0,
     lastReset: new Date(),
     recipients: {}
   }),
+  // سطح حساب بانکی (عادی، نقره‌ای، طلایی)
+  bankLevel: text("bank_level").notNull().default("normal"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -201,4 +206,16 @@ export interface TransferStats {
   dailyAmount: number;
   lastReset: Date;
   recipients: Record<string, number>; // مقدار انتقال به هر کاربر
+}
+
+// Define Investment
+export interface Investment {
+  id: string;
+  type: 'low_risk' | 'medium_risk' | 'high_risk';
+  amount: number;
+  expectedReturn: number;
+  startDate: string;
+  endDate: string;
+  riskRate: number;
+  status: 'active' | 'completed' | 'failed';
 }

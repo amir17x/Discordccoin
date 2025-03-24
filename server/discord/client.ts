@@ -144,6 +144,19 @@ export async function initDiscordBot() {
             }
           }
         } else if (interaction.isButton()) {
+          // Handle log detail buttons
+          if (interaction.customId.startsWith('log_details_')) {
+            const logId = interaction.customId.replace('log_details_', '');
+            
+            // Create a message with more detailed information
+            await interaction.reply({
+              content: `🔍 **نمایش جزئیات بیشتر**\nشناسه لاگ: \`${logId}\`\n\nایمنی داده‌ها را در نظر بگیرید. این اطلاعات فقط برای شما قابل مشاهده است.`,
+              ephemeral: true
+            });
+            return;
+          }
+          
+          // Handle regular button interactions
           await handleButtonInteraction(interaction);
         } else if (interaction.isStringSelectMenu()) {
           await handleSelectMenuInteraction(interaction);
@@ -151,8 +164,15 @@ export async function initDiscordBot() {
           // Handle modal submissions
           const customId = interaction.customId;
           
+          // Handle number guess game modal
+          if (customId === 'guess_number_modal') {
+            const { handleNumberGuessModalSubmit } = await import('./games/numberGuess');
+            await handleNumberGuessModalSubmit(interaction);
+            return;
+          }
+          
           // Check if this is a log channel setting modal
-          if (customId.startsWith('set_log_channel_')) {
+          else if (customId.startsWith('set_log_channel_')) {
             const logType = customId.replace('set_log_channel_', '') as LogType;
             const channelId = interaction.fields.getTextInputValue('channelId');
             

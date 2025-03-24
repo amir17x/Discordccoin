@@ -11,6 +11,7 @@ import { profileMenu } from '../components/profileMenu';
 import { wheelOfFortuneMenu, spinWheel } from '../components/wheelOfFortuneMenu';
 import { robberyMenu } from '../components/robberyMenu';
 import { adminMenu } from '../components/adminMenu';
+import { investmentMenu, processInvestment } from '../components/investmentMenu';
 import { handleCoinFlip } from '../games/coinFlip';
 import { handleRockPaperScissors } from '../games/rockPaperScissors';
 import { handleNumberGuess } from '../games/numberGuess';
@@ -168,6 +169,35 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     if (action === 'claim') {
       const questId = parseInt(params[0]);
       await handleClaimQuest(interaction, questId);
+      return;
+    }
+    
+    // Handle investment menu
+    if (action === 'investment_menu') {
+      await investmentMenu(interaction);
+      return;
+    }
+    
+    // Handle investment actions
+    if (action === 'invest_low' || action === 'invest_medium' || action === 'invest_high') {
+      await investmentMenu(interaction);
+      return;
+    }
+    
+    // Handle bank menu
+    if (action === 'bank_menu') {
+      await economyMenu(interaction);
+      return;
+    }
+    
+    // Handle exchange actions
+    if (action === 'exchange_10') {
+      await handleExchange(interaction, 10);
+      return;
+    }
+    
+    if (action === 'exchange_50') {
+      await handleExchange(interaction, 50);
       return;
     }
     
@@ -533,6 +563,84 @@ async function handleSellItem(interaction: ButtonInteraction, itemId: number) {
     content: 'Selling items will be available in a future update!',
     ephemeral: true
   });
+}
+
+// Handler for exchanging Ccoin to crystals
+async function handleExchange(interaction: ButtonInteraction, crystalAmount: number) {
+  try {
+    // Get user data
+    const user = await storage.getUserByDiscordId(interaction.user.id);
+    
+    if (!user) {
+      await interaction.reply({
+        content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Calculate Ccoin cost with 5% fee
+    const ccoinPerCrystal = 100; // 100 Ccoin = 1 Crystal
+    const baseCost = crystalAmount * ccoinPerCrystal;
+    const fee = Math.ceil(baseCost * 0.05); // 5% fee
+    const totalCost = baseCost + fee;
+    
+    // Check if user has enough Ccoin
+    if (user.wallet < totalCost) {
+      await interaction.reply({
+        content: `❌ موجودی کیف پول شما کافی نیست! برای دریافت ${crystalAmount} کریستال به ${totalCost} سکه نیاز دارید (شامل 5% کارمزد).`,
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Deduct Ccoin from wallet
+    user.wallet -= totalCost;
+    
+    // Add crystals
+    user.crystals += crystalAmount;
+    
+    // Update user data
+    await storage.updateUser(user.id, {
+      wallet: user.wallet,
+      crystals: user.crystals
+    });
+    
+    // Log the transaction
+    const logger = getLogger(interaction.client);
+    logger.logTransaction(
+      interaction.user.id,
+      interaction.user.username,
+      'exchange_crystal',
+      -totalCost,
+      `سکه به کریستال تبدیل کرد`,
+      [
+        { name: '💎 کریستال دریافتی', value: `${crystalAmount}`, inline: true },
+        { name: '💰 سکه پرداختی', value: `${baseCost}`, inline: true },
+        { name: '💸 کارمزد', value: `${fee}`, inline: true }
+      ]
+    );
+    
+    // Reply with success message
+    await interaction.reply({
+      content: `✅ تبدیل سکه به کریستال با موفقیت انجام شد!\n\n💰 سکه پرداخت شده: ${totalCost} (شامل ${fee} کارمزد)\n💎 کریستال دریافتی: ${crystalAmount}\n\nاکنون شما ${user.crystals} کریستال دارید!`,
+      ephemeral: true
+    });
+    
+    // Refresh economy menu after 2 seconds
+    setTimeout(async () => {
+      if (interaction.replied || interaction.deferred) {
+        await economyMenu(interaction, true);
+      }
+    }, 2000);
+    
+  } catch (error) {
+    console.error('Error in exchange handler:', error);
+    await interaction.reply({
+      content: '❌ متأسفانه در فرآیند تبدیل سکه به کریستال خطایی رخ داد!',
+      ephemeral: true
+    });
+  }
 }
 
 // Handler for setting log channels

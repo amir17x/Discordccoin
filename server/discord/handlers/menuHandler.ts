@@ -4,6 +4,7 @@ import { handleCoinFlip } from '../games/coinFlip';
 import { handleRockPaperScissors } from '../games/rockPaperScissors';
 import { handleNumberGuess } from '../games/numberGuess';
 import { handleRobbery } from '../components/robberyMenu';
+import { processInvestment } from '../components/investmentMenu';
 
 // Select menu handler function
 export async function handleSelectMenuInteraction(interaction: StringSelectMenuInteraction) {
@@ -55,6 +56,22 @@ export async function handleSelectMenuInteraction(interaction: StringSelectMenuI
         // Handle robbery target selection
         const targetId = parseInt(selectedValue);
         await handleRobbery(interaction, targetId);
+        return;
+      }
+    }
+    
+    if (prefix === 'invest') {
+      // Handle investment selections
+      const amount = parseInt(selectedValue);
+      
+      if (type === 'low_risk') {
+        await processInvestment(interaction, 'low_risk', amount);
+        return;
+      } else if (type === 'medium_risk') {
+        await processInvestment(interaction, 'medium_risk', amount);
+        return;
+      } else if (type === 'high_risk') {
+        await processInvestment(interaction, 'high_risk', amount);
         return;
       }
     }
