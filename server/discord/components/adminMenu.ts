@@ -8,6 +8,7 @@ import {
   Message,
   ChatInputCommandInteraction,
   MessageComponentInteraction,
+  ModalSubmitInteraction,
   PermissionFlagsBits,
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
@@ -18,7 +19,7 @@ import { storage } from '../../storage';
 
 // Admin Panel Menu
 export async function adminMenu(
-  interaction: CommandInteraction | ButtonInteraction | MessageComponentInteraction,
+  interaction: CommandInteraction | ButtonInteraction | MessageComponentInteraction | ModalSubmitInteraction,
   category: string = 'main'
 ) {
   try {
@@ -290,6 +291,102 @@ export async function adminMenu(
         );
         
       components = [row1, row2];
+    } else if (category === 'settings') {
+      // Settings menu
+      embed.setTitle('⚙️ تنظیمات')
+        .setDescription('در این بخش می‌توانید تنظیمات ربات را مدیریت کنید');
+      
+      const row1 = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('admin_logs_settings')
+            .setLabel('📝 تنظیمات لاگ‌ها')
+            .setStyle(ButtonStyle.Primary),
+          new ButtonBuilder()
+            .setCustomId('admin_bot_settings')
+            .setLabel('🤖 تنظیمات ربات')
+            .setStyle(ButtonStyle.Success),
+          new ButtonBuilder()
+            .setCustomId('admin_economy_settings')
+            .setLabel('💰 تنظیمات اقتصادی')
+            .setStyle(ButtonStyle.Danger),
+        );
+        
+      const row2 = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('admin_permissions')
+            .setLabel('🔒 دسترسی‌ها')
+            .setStyle(ButtonStyle.Primary),
+          new ButtonBuilder()
+            .setCustomId('admin_menu')
+            .setLabel('🔙 بازگشت')
+            .setStyle(ButtonStyle.Secondary),
+        );
+        
+      components = [row1, row2];
+    } else if (category === 'logs_settings') {
+      // Logs settings menu
+      embed.setTitle('📝 تنظیمات لاگ‌ها')
+        .setDescription('در این بخش می‌توانید کانال‌های مختلف لاگ را تنظیم کنید')
+        .addFields(
+          { name: '💰 لاگ تراکنش‌ها', value: 'مشاهده تمام تراکنش‌های مالی کاربران', inline: true },
+          { name: '🎮 لاگ بازی‌ها', value: 'مشاهده تمام بازی‌های انجام شده', inline: true },
+          { name: '👤 لاگ کاربران', value: 'فعالیت‌های کاربران (ورود، خروج، و غیره)', inline: true },
+          { name: '⚙️ لاگ ادمین', value: 'عملیات‌های انجام شده توسط مدیران', inline: true },
+          { name: '🔒 لاگ امنیتی', value: 'هشدارهای امنیتی و فعالیت‌های مشکوک', inline: true },
+          { name: '⚠️ لاگ خطاها', value: 'خطاهای سیستمی ربات', inline: true }
+        );
+      
+      const row1 = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('admin_set_transaction_log')
+            .setLabel('💰 تنظیم لاگ تراکنش‌ها')
+            .setStyle(ButtonStyle.Primary),
+          new ButtonBuilder()
+            .setCustomId('admin_set_game_log')
+            .setLabel('🎮 تنظیم لاگ بازی‌ها')
+            .setStyle(ButtonStyle.Primary),
+          new ButtonBuilder()
+            .setCustomId('admin_set_user_log')
+            .setLabel('👤 تنظیم لاگ کاربران')
+            .setStyle(ButtonStyle.Primary),
+        );
+        
+      const row2 = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('admin_set_admin_log')
+            .setLabel('⚙️ تنظیم لاگ ادمین')
+            .setStyle(ButtonStyle.Primary),
+          new ButtonBuilder()
+            .setCustomId('admin_set_security_log')
+            .setLabel('🔒 تنظیم لاگ امنیتی')
+            .setStyle(ButtonStyle.Primary),
+          new ButtonBuilder()
+            .setCustomId('admin_set_error_log')
+            .setLabel('⚠️ تنظیم لاگ خطاها')
+            .setStyle(ButtonStyle.Primary),
+        );
+        
+      const row3 = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('admin_set_default_log')
+            .setLabel('📌 تنظیم کانال پیش‌فرض')
+            .setStyle(ButtonStyle.Primary),
+          new ButtonBuilder()
+            .setCustomId('admin_test_logs')
+            .setLabel('🧪 تست لاگ‌ها')
+            .setStyle(ButtonStyle.Success),
+          new ButtonBuilder()
+            .setCustomId('admin_settings')
+            .setLabel('🔙 بازگشت')
+            .setStyle(ButtonStyle.Secondary),
+        );
+        
+      components = [row1, row2, row3];
     } else {
       // Default to main menu if category not recognized
       return adminMenu(interaction, 'main');

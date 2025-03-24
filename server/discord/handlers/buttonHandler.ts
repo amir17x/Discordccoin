@@ -1,4 +1,4 @@
-import { ButtonInteraction } from 'discord.js';
+import { ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } from 'discord.js';
 import { storage } from '../../storage';
 import { mainMenu } from '../components/mainMenu';
 import { economyMenu } from '../components/economyMenu';
@@ -14,6 +14,8 @@ import { adminMenu } from '../components/adminMenu';
 import { handleCoinFlip } from '../games/coinFlip';
 import { handleRockPaperScissors } from '../games/rockPaperScissors';
 import { handleNumberGuess } from '../games/numberGuess';
+import { getLogger, LogType } from '../utils/logger';
+import { botConfig } from '../utils/config';
 
 // Button handler function
 export async function handleButtonInteraction(interaction: ButtonInteraction) {
@@ -166,6 +168,37 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     if (action === 'claim') {
       const questId = parseInt(params[0]);
       await handleClaimQuest(interaction, questId);
+      return;
+    }
+    
+    // Handle admin actions
+    if (action === 'admin') {
+      const category = params[0];
+      if (category) {
+        await adminMenu(interaction, category);
+      } else {
+        await adminMenu(interaction);
+      }
+      return;
+    }
+    
+    // Handle log settings
+    if (action.startsWith('admin_set_') && action.endsWith('_log')) {
+      // Extract the log type from the button ID (e.g., admin_set_transaction_log -> transaction)
+      const logType = action.replace('admin_set_', '').replace('_log', '') as LogType;
+      await handleSetLogChannel(interaction, logType);
+      return;
+    }
+    
+    // Handle default log channel setting
+    if (action === 'admin_set_default_log') {
+      await handleSetDefaultLogChannel(interaction);
+      return;
+    }
+    
+    // Test logs
+    if (action === 'admin_test_logs') {
+      await handleTestLogs(interaction);
       return;
     }
 
@@ -502,7 +535,254 @@ async function handleSellItem(interaction: ButtonInteraction, itemId: number) {
   });
 }
 
-// Handler for claiming quest rewards
+// Handler for setting log channels
+export async function handleSetLogChannel(interaction: ButtonInteraction, logType: LogType) {
+  try {
+    // Check if user has admin permissions
+    const member = interaction.guild?.members.cache.get(interaction.user.id);
+    const adminRoleId = botConfig.getConfig().general.adminRoleId;
+    
+    if (!member?.roles.cache.has(adminRoleId)) {
+      await interaction.reply({
+        content: 'شما دسترسی لازم برای این عملیات را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Create a modal for channel ID input
+    const modal = new ModalBuilder()
+      .setCustomId(`set_log_channel_${logType}`)
+      .setTitle(`تنظیم کانال لاگ ${logType}`);
+    
+    // Add components to modal
+    const channelIdInput = new TextInputBuilder()
+      .setCustomId('channelId')
+      .setLabel('آی‌دی کانال را وارد کنید')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('مثال: 1234567890123456789')
+      .setRequired(true);
+    
+    // Add action row and components to modal
+    const firstRow = new ActionRowBuilder<TextInputBuilder>().addComponents(channelIdInput);
+    modal.addComponents(firstRow);
+    
+    // Show the modal
+    await interaction.showModal(modal);
+  } catch (error) {
+    console.error(`Error in set log channel for ${logType}:`, error);
+    await interaction.reply({
+      content: 'متاسفانه در تنظیم کانال لاگ خطایی رخ داد!',
+      ephemeral: true
+    });
+  }
+}
+
+// Handler for setting default log channel
+export async function handleSetDefaultLogChannel(interaction: ButtonInteraction) {
+  try {
+    // Check if user has admin permissions
+    const member = interaction.guild?.members.cache.get(interaction.user.id);
+    const adminRoleId = botConfig.getConfig().general.adminRoleId;
+    
+    if (!member?.roles.cache.has(adminRoleId)) {
+      await interaction.reply({
+        content: 'شما دسترسی لازم برای این عملیات را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Create a modal for channel ID input
+    const modal = new ModalBuilder()
+      .setCustomId('set_default_log_channel')
+      .setTitle('تنظیم کانال پیش‌فرض لاگ‌ها');
+    
+    // Add components to modal
+    const channelIdInput = new TextInputBuilder()
+      .setCustomId('channelId')
+      .setLabel('آی‌دی کانال را وارد کنید')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('مثال: 1234567890123456789')
+      .setRequired(true);
+    
+    // Add action row and components to modal
+    const firstRow = new ActionRowBuilder<TextInputBuilder>().addComponents(channelIdInput);
+    modal.addComponents(firstRow);
+    
+    // Show the modal
+    await interaction.showModal(modal);
+  } catch (error) {
+    console.error('Error in set default log channel:', error);
+    await interaction.reply({
+      content: 'متاسفانه در تنظیم کانال پیش‌فرض لاگ خطایی رخ داد!',
+      ephemeral: true
+    });
+  }
+}
+
+// Handler for testing logs
+async function handleTestLogs(interaction: ButtonInteraction) {
+  try {
+    // Check if user has admin permissions
+    const member = interaction.guild?.members.cache.get(interaction.user.id);
+    const adminRoleId = botConfig.getConfig().general.adminRoleId;
+    
+    if (!member?.roles.cache.has(adminRoleId)) {
+      await interaction.reply({
+        content: 'شما دسترسی لازم برای این عملیات را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Get logger instance
+    const logger = getLogger(interaction.client);
+    
+    // Test all configured log types
+    const config = botConfig.getConfig();
+    let successCount = 0;
+    let failures: string[] = [];
+    
+    // Test transaction log
+    if (config.logChannels[LogType.TRANSACTION]) {
+      try {
+        await logger.logTransaction(
+          interaction.user.id,
+          interaction.user.username,
+          'تست',
+          100,
+          'یک تراکنش تستی انجام داد'
+        );
+        successCount++;
+      } catch (e) {
+        failures.push('تراکنش');
+      }
+    }
+    
+    // Test game log
+    if (config.logChannels[LogType.GAME]) {
+      try {
+        await logger.logGame(
+          interaction.user.id,
+          interaction.user.username,
+          'شیر یا خط',
+          'برد',
+          50,
+          100
+        );
+        successCount++;
+      } catch (e) {
+        failures.push('بازی');
+      }
+    }
+    
+    // Test user log
+    if (config.logChannels[LogType.USER]) {
+      try {
+        await logger.logUserActivity(
+          interaction.user.id,
+          interaction.user.username,
+          'تست',
+          'یک فعالیت تستی انجام داد'
+        );
+        successCount++;
+      } catch (e) {
+        failures.push('کاربر');
+      }
+    }
+    
+    // Test admin log
+    if (config.logChannels[LogType.ADMIN]) {
+      try {
+        await logger.logAdminAction(
+          interaction.user.id,
+          interaction.user.username,
+          'تست',
+          interaction.user.id,
+          interaction.user.username,
+          'یک عملیات تستی انجام داد'
+        );
+        successCount++;
+      } catch (e) {
+        failures.push('ادمین');
+      }
+    }
+    
+    // Test security log
+    if (config.logChannels[LogType.SECURITY]) {
+      try {
+        await logger.logSecurity(
+          interaction.user.id,
+          interaction.user.username,
+          'تست',
+          'کم',
+          'یک هشدار امنیتی تستی'
+        );
+        successCount++;
+      } catch (e) {
+        failures.push('امنیتی');
+      }
+    }
+    
+    // Test error log
+    if (config.logChannels[LogType.ERROR]) {
+      try {
+        await logger.logError(
+          'این یک خطای تستی است',
+          'سیستم تست',
+          interaction.user.id,
+          interaction.user.username
+        );
+        successCount++;
+      } catch (e) {
+        failures.push('خطا');
+      }
+    }
+    
+    // Test system log
+    if (config.logChannels[LogType.SYSTEM]) {
+      try {
+        await logger.logSystem(
+          'تست',
+          'یک رویداد سیستمی تستی',
+          [{ name: 'آزمایش کننده', value: interaction.user.username, inline: true }]
+        );
+        successCount++;
+      } catch (e) {
+        failures.push('سیستم');
+      }
+    }
+    
+    // Report results
+    let responseMessage = `تست لاگ‌ها انجام شد. ${successCount} لاگ با موفقیت ارسال شد.`;
+    if (failures.length > 0) {
+      responseMessage += `\nلاگ‌های با خطا: ${failures.join('، ')}`;
+    }
+    if (successCount === 0) {
+      responseMessage = 'هیچ کانال لاگی تنظیم نشده است یا با خطا مواجه شد.';
+    }
+    
+    await interaction.reply({
+      content: responseMessage,
+      ephemeral: true
+    });
+    
+    // Return to logs settings menu
+    setTimeout(async () => {
+      if (interaction.replied || interaction.deferred) {
+        await adminMenu(interaction, 'logs_settings');
+      }
+    }, 2000);
+  } catch (error) {
+    console.error('Error in test logs:', error);
+    await interaction.reply({
+      content: 'متاسفانه در تست لاگ‌ها خطایی رخ داد!',
+      ephemeral: true
+    });
+  }
+}
+
 async function handleClaimQuest(interaction: ButtonInteraction, questId: number) {
   try {
     const user = await storage.getUserByDiscordId(interaction.user.id);
