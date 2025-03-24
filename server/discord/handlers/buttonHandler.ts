@@ -231,6 +231,35 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       await handleTestLogs(interaction);
       return;
     }
+    
+    // Clan resource gathering
+    if (action === 'clan_gather') {
+      const resourceType = params[0]; // 'materials' or 'labor'
+      await handleClanGatherResources(interaction, resourceType);
+      return;
+    }
+    
+    // Clan building upgrade
+    if (action === 'clan_upgrade_building') {
+      const buildingId = params[0]; // 'hq', 'bank', 'barracks', etc.
+      await handleClanBuildingUpgrade(interaction, buildingId);
+      return;
+    }
+    
+    // Clan start project
+    if (action === 'clan_start_project') {
+      const projectId = params[0]; // 'training_grounds', 'resource_center', etc.
+      await handleClanStartProject(interaction, projectId);
+      return;
+    }
+    
+    // Clan contribute to project
+    if (action === 'clan_contribute') {
+      const projectId = params[0];
+      const resourceType = params[1]; // 'coins', 'materials', 'labor'
+      await handleClanContributeToProject(interaction, projectId, resourceType);
+      return;
+    }
 
     // If no handler matched, reply with an error
     await interaction.reply({
@@ -946,6 +975,625 @@ async function handleClaimQuest(interaction: ButtonInteraction, questId: number)
     console.error('Error in claim quest handler:', error);
     await interaction.reply({
       content: 'Sorry, there was an error claiming your quest reward!',
+      ephemeral: true
+    });
+  }
+}
+
+// Handler for clan resource gathering
+async function handleClanGatherResources(interaction: ButtonInteraction, resourceType: string) {
+  try {
+    const user = await storage.getUserByDiscordId(interaction.user.id);
+    
+    if (!user) {
+      await interaction.reply({
+        content: 'شما باید اول یک حساب کاربری ایجاد کنید. از دستور /menu استفاده کنید.',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    if (!user.clanId) {
+      await interaction.reply({
+        content: 'شما عضو هیچ کلنی نیستید.',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Get user's clan
+    const clan = await storage.getClan(user.clanId);
+    
+    if (!clan) {
+      await interaction.reply({
+        content: 'کلن شما دیگر وجود ندارد.',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Get user's resources
+    const resources = (user as any).clanResources || {
+      materials: 0,
+      labor: 0,
+      lastCollected: new Date(0).toISOString()
+    };
+    
+    // Check cooldown (6 hours)
+    const now = new Date();
+    const lastCollected = new Date(resources.lastCollected);
+    const hoursSinceLastCollection = Math.floor((now.getTime() - lastCollected.getTime()) / (1000 * 60 * 60));
+    const cooldownHours = 6;
+    
+    if (hoursSinceLastCollection < cooldownHours) {
+      const hoursRemaining = cooldownHours - hoursSinceLastCollection;
+      await interaction.reply({
+        content: `شما باید ${hoursRemaining} ساعت دیگر صبر کنید تا بتوانید مجدداً منابع جمع‌آوری کنید.`,
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Calculate resource amount (can be affected by clan buildings in the future)
+    let amount = 10;
+    
+    // Check if clan has production buildings that increase resource gathering
+    const buildings = clan.buildings || [];
+    const marketBuilding = buildings.find(b => b.type === 'market');
+    
+    // Market gives bonus to resource production
+    if (marketBuilding && marketBuilding.level > 0) {
+      amount += marketBuilding.level * 2; // +2 resources per market level
+    }
+    
+    // Update user's resources based on the type
+    if (resourceType === 'materials') {
+      resources.materials += amount;
+      await interaction.reply({
+        content: `شما ${amount} واحد مواد جمع‌آوری کردید! مواد فعلی: ${resources.materials}`,
+        ephemeral: true
+      });
+    } else if (resourceType === 'labor') {
+      resources.labor += amount;
+      await interaction.reply({
+        content: `شما ${amount} واحد نیروی کار جمع‌آوری کردید! نیروی کار فعلی: ${resources.labor}`,
+        ephemeral: true
+      });
+    }
+    
+    // Update last collection time
+    resources.lastCollected = now.toISOString();
+    
+    // Update user's resources in database
+    await storage.updateUser(user.id, { clanResources: resources });
+    
+    // After a short delay, refresh the clan resources menu
+    setTimeout(async () => {
+      if (interaction.replied || interaction.deferred) {
+        await clansMenu(interaction, true);
+      }
+    }, 1500);
+    
+  } catch (error) {
+    console.error('Error in clan resource gathering handler:', error);
+    await interaction.reply({
+      content: 'متأسفانه خطایی در جمع‌آوری منابع رخ داد!',
+      ephemeral: true
+    });
+  }
+}
+
+// Handler for clan building upgrade
+async function handleClanBuildingUpgrade(interaction: ButtonInteraction, buildingId: string) {
+  try {
+    const user = await storage.getUserByDiscordId(interaction.user.id);
+    
+    if (!user) {
+      await interaction.reply({
+        content: 'شما باید اول یک حساب کاربری ایجاد کنید. از دستور /menu استفاده کنید.',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    if (!user.clanId) {
+      await interaction.reply({
+        content: 'شما عضو هیچ کلنی نیستید.',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Get user's clan
+    const clan = await storage.getClan(user.clanId);
+    
+    if (!clan) {
+      await interaction.reply({
+        content: 'کلن شما دیگر وجود ندارد.',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Check if user is clan leader or officer (only they can upgrade buildings)
+    if (user.discordId !== clan.ownerId) {
+      await interaction.reply({
+        content: 'فقط رهبر کلن می‌تواند ساختمان‌ها را ارتقا دهد.',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Default building types and their upgrade prices
+    const defaultBuildings = [
+      { id: 'hq', type: 'headquarters', name: 'ساختمان مرکزی', level: 1, upgradePrice: 5000 },
+      { id: 'bank', type: 'bank', name: 'بانک', level: 0, upgradePrice: 2000 },
+      { id: 'barracks', type: 'barracks', name: 'سربازخانه', level: 0, upgradePrice: 3000 },
+      { id: 'market', type: 'market', name: 'بازار', level: 0, upgradePrice: 2500 }
+    ];
+    
+    // Find the building to upgrade
+    const buildings = clan.buildings || [];
+    const defaultBuilding = defaultBuildings.find(b => b.id === buildingId);
+    
+    if (!defaultBuilding) {
+      await interaction.reply({
+        content: 'این ساختمان وجود ندارد.',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Find existing building or use default
+    const existingBuilding = buildings.find(b => b.type === defaultBuilding.type);
+    const buildingLevel = existingBuilding ? existingBuilding.level : defaultBuilding.level;
+    const buildingName = existingBuilding ? existingBuilding.name : defaultBuilding.name;
+    const upgradePrice = defaultBuilding.upgradePrice;
+    
+    // Check if clan has enough money
+    if (clan.bank < upgradePrice) {
+      await interaction.reply({
+        content: `موجودی بانک کلن کافی نیست. شما نیاز به ${upgradePrice} Ccoin برای ${buildingLevel > 0 ? 'ارتقای' : 'ساخت'} ${buildingName} دارید.`,
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Create or update building
+    let updatedBuildings = [...buildings];
+    
+    if (existingBuilding) {
+      // Update existing building
+      updatedBuildings = buildings.map(b => {
+        if (b.type === defaultBuilding.type) {
+          return {
+            ...b,
+            level: b.level + 1,
+            upgradeProgress: 0,
+            upgradeTarget: 100
+          };
+        }
+        return b;
+      });
+    } else {
+      // Add new building
+      updatedBuildings.push({
+        id: defaultBuilding.id,
+        type: defaultBuilding.type as 'headquarters' | 'bank' | 'training_camp' | 'market' | 'laboratory' | 'barracks' | 'wall' | 'tower',
+        name: defaultBuilding.name,
+        level: 1,
+        upgradeProgress: 0,
+        upgradeTarget: 100,
+        effects: {}
+      });
+    }
+    
+    // Update clan bank balance and buildings
+    const newBank = clan.bank - upgradePrice;
+    await storage.updateClan(clan.id, {
+      bank: newBank,
+      buildings: updatedBuildings
+    });
+    
+    const newLevel = existingBuilding ? existingBuilding.level + 1 : 1;
+    
+    await interaction.reply({
+      content: `${buildingLevel > 0 ? 'ارتقای' : 'ساخت'} ${buildingName} با موفقیت انجام شد! سطح فعلی: ${newLevel}`,
+      ephemeral: true
+    });
+    
+    // After a short delay, refresh the clan buildings menu
+    setTimeout(async () => {
+      if (interaction.replied || interaction.deferred) {
+        await clansMenu(interaction, true);
+      }
+    }, 1500);
+    
+  } catch (error) {
+    console.error('Error in clan building upgrade handler:', error);
+    await interaction.reply({
+      content: 'متأسفانه خطایی در ارتقای ساختمان رخ داد!',
+      ephemeral: true
+    });
+  }
+}
+
+// Handler for starting clan projects
+// Handler for contributing to clan projects
+async function handleClanContributeToProject(interaction: ButtonInteraction, projectId: string, resourceType: string) {
+  try {
+    const user = await storage.getUserByDiscordId(interaction.user.id);
+    
+    if (!user) {
+      await interaction.reply({
+        content: 'شما باید اول یک حساب کاربری ایجاد کنید. از دستور /menu استفاده کنید.',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    if (!user.clanId) {
+      await interaction.reply({
+        content: 'شما عضو هیچ کلنی نیستید.',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Get user's clan
+    const clan = await storage.getClan(user.clanId);
+    
+    if (!clan) {
+      await interaction.reply({
+        content: 'کلن شما دیگر وجود ندارد.',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Get active projects
+    const activeProjects = clan.activeProjects || [];
+    const project = activeProjects.find(p => p.id === projectId);
+    
+    if (!project) {
+      await interaction.reply({
+        content: 'این پروژه وجود ندارد یا پایان یافته است.',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Initialize default contribution amount
+    let contributionAmount = 10;
+    let remainingNeeded = 0;
+    
+    // Check contribution type and amount
+    if (resourceType === 'coins') {
+      // For coins, we contribute a larger amount
+      contributionAmount = 500;
+      remainingNeeded = project.resourcesRequired.coins - project.resourcesContributed.coins;
+      
+      // Check if user has enough coins
+      if (user.wallet < contributionAmount) {
+        await interaction.reply({
+          content: `شما به اندازه کافی سکه در کیف پول خود ندارید. شما نیاز به حداقل ${contributionAmount} Ccoin دارید.`,
+          ephemeral: true
+        });
+        return;
+      }
+      
+      // Adjust contribution to not exceed what's needed
+      if (remainingNeeded < contributionAmount) {
+        contributionAmount = remainingNeeded;
+      }
+      
+      // Don't allow contribution if nothing more is needed
+      if (remainingNeeded <= 0) {
+        await interaction.reply({
+          content: 'این پروژه دیگر به سکه نیاز ندارد!',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      // Update user's wallet
+      await storage.addToWallet(user.id, -contributionAmount);
+      
+      // Update project's contribution
+      project.resourcesContributed.coins += contributionAmount;
+      
+    } else if (resourceType === 'materials') {
+      // Get user's resources
+      const resources = (user as any).clanResources || { materials: 0, labor: 0 };
+      remainingNeeded = project.resourcesRequired.materials - project.resourcesContributed.materials;
+      
+      // Check if user has enough materials
+      if (resources.materials < contributionAmount) {
+        await interaction.reply({
+          content: `شما به اندازه کافی مواد ندارید. شما نیاز به حداقل ${contributionAmount} واحد مواد دارید.`,
+          ephemeral: true
+        });
+        return;
+      }
+      
+      // Adjust contribution to not exceed what's needed
+      if (remainingNeeded < contributionAmount) {
+        contributionAmount = remainingNeeded;
+      }
+      
+      // Don't allow contribution if nothing more is needed
+      if (remainingNeeded <= 0) {
+        await interaction.reply({
+          content: 'این پروژه دیگر به مواد نیاز ندارد!',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      // Update user's resources
+      resources.materials -= contributionAmount;
+      await storage.updateUser(user.id, { clanResources: resources });
+      
+      // Update project's contribution
+      project.resourcesContributed.materials += contributionAmount;
+      
+    } else if (resourceType === 'labor') {
+      // Get user's resources
+      const resources = (user as any).clanResources || { materials: 0, labor: 0 };
+      remainingNeeded = project.resourcesRequired.labor - project.resourcesContributed.labor;
+      
+      // Check if user has enough labor
+      if (resources.labor < contributionAmount) {
+        await interaction.reply({
+          content: `شما به اندازه کافی نیروی کار ندارید. شما نیاز به حداقل ${contributionAmount} واحد نیروی کار دارید.`,
+          ephemeral: true
+        });
+        return;
+      }
+      
+      // Adjust contribution to not exceed what's needed
+      if (remainingNeeded < contributionAmount) {
+        contributionAmount = remainingNeeded;
+      }
+      
+      // Don't allow contribution if nothing more is needed
+      if (remainingNeeded <= 0) {
+        await interaction.reply({
+          content: 'این پروژه دیگر به نیروی کار نیاز ندارد!',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      // Update user's resources
+      resources.labor -= contributionAmount;
+      await storage.updateUser(user.id, { clanResources: resources });
+      
+      // Update project's contribution
+      project.resourcesContributed.labor += contributionAmount;
+    }
+    
+    // Calculate new progress
+    const totalRequired = 
+      project.resourcesRequired.coins + 
+      project.resourcesRequired.materials + 
+      project.resourcesRequired.labor;
+      
+    const totalContributed = 
+      project.resourcesContributed.coins + 
+      project.resourcesContributed.materials + 
+      project.resourcesContributed.labor;
+      
+    project.progress = Math.min(100, (totalContributed / totalRequired) * 100);
+    
+    // Check if project is completed
+    if (project.progress >= 100) {
+      project.status = 'completed';
+      project.completionTime = new Date().toISOString();
+      
+      // Update clan with completed project rewards (will be implemented in a separate function)
+      // For now, just update the project status
+    }
+    
+    // Update the clan's active projects
+    const updatedProjects = activeProjects.map(p => 
+      p.id === projectId ? project : p
+    );
+    
+    // Update clan with the new projects
+    await storage.updateClan(clan.id, {
+      activeProjects: updatedProjects
+    } as Partial<typeof clan>);
+    
+    // Send response to user
+    await interaction.reply({
+      content: `شما با موفقیت ${contributionAmount} واحد ${
+        resourceType === 'coins' ? 'سکه' : 
+        resourceType === 'materials' ? 'مواد' : 'نیروی کار'
+      } به پروژه "${project.name}" اضافه کردید! پیشرفت فعلی: ${project.progress.toFixed(1)}%`,
+      ephemeral: true
+    });
+    
+    // After a short delay, refresh the clan projects menu
+    setTimeout(async () => {
+      if (interaction.replied || interaction.deferred) {
+        await clansMenu(interaction, true);
+      }
+    }, 1500);
+    
+  } catch (error) {
+    console.error('Error in clan contribute to project handler:', error);
+    await interaction.reply({
+      content: 'متأسفانه خطایی در کمک به پروژه رخ داد!',
+      ephemeral: true
+    });
+  }
+}
+
+async function handleClanStartProject(interaction: ButtonInteraction, projectId: string) {
+  try {
+    const user = await storage.getUserByDiscordId(interaction.user.id);
+    
+    if (!user) {
+      await interaction.reply({
+        content: 'شما باید اول یک حساب کاربری ایجاد کنید. از دستور /menu استفاده کنید.',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    if (!user.clanId) {
+      await interaction.reply({
+        content: 'شما عضو هیچ کلنی نیستید.',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Get user's clan
+    const clan = await storage.getClan(user.clanId);
+    
+    if (!clan) {
+      await interaction.reply({
+        content: 'کلن شما دیگر وجود ندارد.',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Check if user is clan leader (only they can start projects)
+    if (user.discordId !== clan.ownerId) {
+      await interaction.reply({
+        content: 'فقط رهبر کلن می‌تواند پروژه‌های جدید را آغاز کند.',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Get active projects
+    const activeProjects = clan.activeProjects || [];
+    
+    // Check maximum simultaneous projects (2)
+    if (activeProjects.length >= 2) {
+      await interaction.reply({
+        content: 'کلن شما در حال حاضر دو پروژه فعال دارد. ابتدا باید یکی از آن‌ها را تکمیل کنید.',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Available projects
+    const availableProjects = [
+      {
+        id: 'training_grounds',
+        name: 'زمین تمرین',
+        description: 'افزایش ظرفیت اعضای کلن و افزایش قدرت در جنگ‌های کلن',
+        cost: 5000,
+        resourcesRequired: {
+          coins: 5000,
+          materials: 50,
+          labor: 30
+        },
+        rewards: {
+          experience: 500,
+          perkPoints: 1
+        }
+      },
+      {
+        id: 'resource_center',
+        name: 'مرکز منابع',
+        description: 'افزایش تولید منابع و کاهش زمان جمع‌آوری',
+        cost: 3000,
+        resourcesRequired: {
+          coins: 3000,
+          materials: 30,
+          labor: 20
+        },
+        rewards: {
+          experience: 300,
+          perkPoints: 1
+        }
+      }
+    ];
+    
+    // Find the project to start
+    const projectConfig = availableProjects.find(p => p.id === projectId);
+    
+    if (!projectConfig) {
+      await interaction.reply({
+        content: 'این پروژه وجود ندارد.',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Check if clan has enough coins
+    if (clan.bank < projectConfig.cost) {
+      await interaction.reply({
+        content: `موجودی بانک کلن کافی نیست. شما نیاز به ${projectConfig.cost} Ccoin برای شروع این پروژه دارید.`,
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Create new project
+    const now = new Date();
+    const deadlineDate = new Date(now);
+    deadlineDate.setDate(deadlineDate.getDate() + 7); // 7 days deadline
+    
+    const newProject = {
+      id: projectConfig.id,
+      name: projectConfig.name,
+      description: projectConfig.description,
+      resourcesRequired: projectConfig.resourcesRequired,
+      resourcesContributed: {
+        coins: 0,
+        materials: 0,
+        labor: 0
+      },
+      progress: 0,
+      rewards: projectConfig.rewards,
+      deadline: deadlineDate.toISOString(),
+      status: 'active' as const
+    };
+    
+    // Withdraw project cost from clan bank
+    const newBank = clan.bank - projectConfig.cost;
+    
+    // Initialize resource contribution with bank amount
+    newProject.resourcesContributed.coins = projectConfig.cost;
+    
+    // Calculate initial progress
+    const totalResources = 
+      projectConfig.resourcesRequired.coins + 
+      projectConfig.resourcesRequired.materials + 
+      projectConfig.resourcesRequired.labor;
+      
+    newProject.progress = (projectConfig.cost / totalResources) * 100;
+    
+    // Update clan with new project and bank balance
+    const updatedProjects = [...activeProjects, newProject];
+    await storage.updateClan(clan.id, {
+      bank: newBank,
+      activeProjects: updatedProjects
+    } as Partial<typeof clan>);
+    
+    await interaction.reply({
+      content: `پروژه "${projectConfig.name}" با موفقیت آغاز شد! هزینه اولیه ${projectConfig.cost} Ccoin از بانک کلن کسر شد.`,
+      ephemeral: true
+    });
+    
+    // After a short delay, refresh the clan projects menu
+    setTimeout(async () => {
+      if (interaction.replied || interaction.deferred) {
+        await clansMenu(interaction, true);
+      }
+    }, 1500);
+    
+  } catch (error) {
+    console.error('Error in clan start project handler:', error);
+    await interaction.reply({
+      content: 'متأسفانه خطایی در شروع پروژه رخ داد!',
       ephemeral: true
     });
   }

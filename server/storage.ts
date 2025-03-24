@@ -56,6 +56,7 @@ export interface IStorage {
   getAllClans(): Promise<Clan[]>;
   getClan(id: number): Promise<Clan | undefined>;
   createClan(clan: InsertClan): Promise<Clan>;
+  updateClan(id: number, updates: Partial<Clan>): Promise<Clan | undefined>;
   getClanByName(name: string): Promise<Clan | undefined>;
   addUserToClan(userId: number, clanId: number): Promise<boolean>;
   removeUserFromClan(userId: number): Promise<boolean>;
@@ -833,6 +834,17 @@ export class MemStorage implements IStorage {
     
     user.clanId = null;
     return true;
+  }
+  
+  async updateClan(id: number, updates: Partial<Clan>): Promise<Clan | undefined> {
+    const clan = this.clans.get(id);
+    if (!clan) return undefined;
+    
+    // Update the clan with the provided updates
+    const updatedClan = { ...clan, ...updates };
+    this.clans.set(id, updatedClan);
+    
+    return updatedClan;
   }
 
   // Achievement operations

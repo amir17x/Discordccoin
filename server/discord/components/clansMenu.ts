@@ -92,12 +92,12 @@ export async function clansMenu(
             .setCustomId('clan_war')
             .setLabel('⚔️ وار کلن')
             .setStyle(ButtonStyle.Danger)
-            .setDisabled(true), // Not implemented yet
+            .setDisabled(userClan.level < 3), // Available for level 3+ clans
           new ButtonBuilder()
             .setCustomId('clan_island')
             .setLabel('🏝️ جزیره کلن')
             .setStyle(ButtonStyle.Secondary)
-            .setDisabled(true), // Not implemented yet
+            .setDisabled(userClan.level < 2), // Available for level 2+ clans
           new ButtonBuilder()
             .setCustomId('clan_settings')
             .setLabel('⚙️ تنظیمات کلن')
@@ -448,6 +448,533 @@ export async function clansMenu(
           );
         
         await interaction.update({ embeds: [missionsEmbed], components: [backRow] });
+        return;
+      }
+      
+      // Handle clan island
+      if (customId === 'clan_island') {
+        if (!userClan) {
+          await interaction.reply({
+            content: 'شما عضو هیچ کلنی نیستید.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // Check clan level
+        if (userClan.level < 2) {
+          await interaction.reply({
+            content: 'برای دسترسی به جزیره کلن، سطح کلن باید حداقل 2 باشد.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // Create island embed
+        const islandEmbed = new EmbedBuilder()
+          .setColor('#4ECDC4')
+          .setTitle(`🏝️ جزیره کلن ${userClan.name}`)
+          .setDescription(`به جزیره اختصاصی کلن **${userClan.name}** خوش آمدید! در اینجا می‌توانید ساختمان‌های کلن را مشاهده و ارتقا دهید، پروژه‌های جدید را آغاز کنید و منابع گردآوری کنید.`)
+          .addFields(
+            { name: '🏛️ سطح جزیره', value: `${userClan.islandLevel || 1}`, inline: true },
+            { name: '💰 بانک کلن', value: `${userClan.bank} Ccoin`, inline: true },
+            { name: '👥 ظرفیت اعضا', value: `${userClan.memberCount}/${10 * userClan.level}`, inline: true }
+          )
+          .setFooter({ text: 'با ارتقای ساختمان‌ها و تکمیل پروژه‌ها، جزیره کلن خود را توسعه دهید' })
+          .setTimestamp();
+        
+        // Create building row
+        const buildings = userClan.buildings || [];
+        // Add default buildings if none exist
+        if (buildings.length === 0) {
+          islandEmbed.addFields({ 
+            name: '🏗️ ساختمان‌های موجود', 
+            value: 'تنها ساختمان مرکزی (سطح 1) وجود دارد. از دکمه‌های زیر برای ساخت ساختمان‌های جدید استفاده کنید.', 
+            inline: false 
+          });
+        } else {
+          const buildingList = buildings.map(b => `**${b.name}** (سطح ${b.level})`).join('\n');
+          islandEmbed.addFields({ 
+            name: '🏗️ ساختمان‌های موجود', 
+            value: buildingList, 
+            inline: false 
+          });
+        }
+        
+        // Create buildings button row
+        const buildingRow = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('clan_buildings')
+              .setLabel('🏛️ ساختمان‌ها و ارتقا')
+              .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
+              .setCustomId('clan_projects')
+              .setLabel('📋 پروژه‌های کلن')
+              .setStyle(ButtonStyle.Success)
+          );
+          
+        // Create resources button row
+        const resourceRow = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('clan_gather_resources')
+              .setLabel('⛏️ جمع‌آوری منابع')
+              .setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder()
+              .setCustomId('clan_shop')
+              .setLabel('🛒 فروشگاه کلن')
+              .setStyle(ButtonStyle.Success)
+          );
+        
+        // Back button row
+        const backRow = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('clans')
+              .setLabel('🔙 بازگشت')
+              .setStyle(ButtonStyle.Danger)
+          );
+        
+        await interaction.update({ embeds: [islandEmbed], components: [buildingRow, resourceRow, backRow] });
+        return;
+      }
+      
+      // Handle clan buildings
+      if (customId === 'clan_buildings') {
+        if (!userClan) {
+          await interaction.reply({
+            content: 'شما عضو هیچ کلنی نیستید.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // Create buildings embed
+        const buildingsEmbed = new EmbedBuilder()
+          .setColor('#4ECDC4')
+          .setTitle(`🏛️ ساختمان‌های کلن ${userClan.name}`)
+          .setDescription('ساختمان‌های موجود در جزیره کلن شما. برای ارتقای هر ساختمان، روی دکمه مربوطه کلیک کنید.')
+          .setFooter({ text: `سکه کلن: ${userClan.bank} Ccoin` })
+          .setTimestamp();
+          
+        // Add buildings info
+        const defaultBuildings = [
+          { id: 'hq', type: 'headquarters', name: 'ساختمان مرکزی', level: 1, upgradePrice: 5000 },
+          { id: 'bank', type: 'bank', name: 'بانک', level: 0, upgradePrice: 2000 },
+          { id: 'barracks', type: 'barracks', name: 'سربازخانه', level: 0, upgradePrice: 3000 },
+          { id: 'market', type: 'market', name: 'بازار', level: 0, upgradePrice: 2500 }
+        ];
+        
+        // Merge with existing buildings
+        const buildings = userClan.buildings || [];
+        
+        // Add each building to embed
+        defaultBuildings.forEach(building => {
+          // Find existing building of this type
+          const existingBuilding = buildings.find(b => b.type === building.type);
+          const currentLevel = existingBuilding ? existingBuilding.level : building.level;
+          const buildingName = existingBuilding ? existingBuilding.name : building.name;
+          
+          buildingsEmbed.addFields({
+            name: `${buildingName} (سطح ${currentLevel})`,
+            value: currentLevel > 0 
+              ? `ارتقا به سطح ${currentLevel + 1}: ${building.upgradePrice} Ccoin`
+              : `ساخت: ${building.upgradePrice} Ccoin`,
+            inline: false
+          });
+        });
+        
+        // Create upgrade buttons
+        const upgradeRows: ActionRowBuilder<ButtonBuilder>[] = [];
+        
+        // Create rows with max 2 buttons each
+        for (let i = 0; i < defaultBuildings.length; i += 2) {
+          const row = new ActionRowBuilder<ButtonBuilder>();
+          const rowBuildings = defaultBuildings.slice(i, i + 2);
+          
+          rowBuildings.forEach((building) => {
+            row.addComponents(
+              new ButtonBuilder()
+                .setCustomId(`clan_upgrade:${building.id}`)
+                .setLabel(`${building.level > 0 ? 'ارتقای' : 'ساخت'} ${building.name}`)
+                .setStyle(building.level > 0 ? ButtonStyle.Primary : ButtonStyle.Success)
+                .setDisabled(userClan.bank < building.upgradePrice)
+            );
+          });
+          
+          upgradeRows.push(row);
+        }
+        
+        // Back button row
+        const backRow = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('clan_island')
+              .setLabel('🔙 بازگشت به جزیره')
+              .setStyle(ButtonStyle.Danger)
+          );
+        
+        upgradeRows.push(backRow);
+        
+        await interaction.update({ embeds: [buildingsEmbed], components: upgradeRows });
+        return;
+      }
+      
+      // Handle clan projects
+      if (customId === 'clan_projects') {
+        if (!userClan) {
+          await interaction.reply({
+            content: 'شما عضو هیچ کلنی نیستید.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // Create projects embed
+        const projectsEmbed = new EmbedBuilder()
+          .setColor('#4ECDC4')
+          .setTitle(`📋 پروژه‌های کلن ${userClan.name}`)
+          .setDescription('پروژه‌های فعال و در دسترس کلن شما. با مشارکت اعضا در تکمیل پروژه‌ها، کلن خود را توسعه دهید.')
+          .setFooter({ text: `سکه کلن: ${userClan.bank} Ccoin` })
+          .setTimestamp();
+        
+        // Get active projects
+        const activeProjects = userClan.activeProjects || [];
+        
+        // Check if there are active projects
+        if (activeProjects.length === 0) {
+          projectsEmbed.addFields({
+            name: '🚧 پروژه‌های فعال',
+            value: 'در حال حاضر هیچ پروژه فعالی وجود ندارد. می‌توانید از دکمه‌های زیر برای شروع پروژه‌های جدید استفاده کنید.',
+            inline: false
+          });
+        } else {
+          // Add each active project to embed
+          activeProjects.forEach(project => {
+            projectsEmbed.addFields({
+              name: `${project.name} (${Math.floor(project.progress)}%)`,
+              value: `${project.description}\n` +
+                `**منابع مورد نیاز:**\n` +
+                `سکه: ${project.resourcesContributed.coins}/${project.resourcesRequired.coins} Ccoin\n` +
+                `مواد: ${project.resourcesContributed.materials}/${project.resourcesRequired.materials} واحد\n` +
+                `نیروی کار: ${project.resourcesContributed.labor}/${project.resourcesRequired.labor} واحد\n` +
+                `**جایزه:** ${project.rewards.experience} تجربه`,
+              inline: false
+            });
+          });
+        }
+        
+        // Available projects
+        const availableProjects = [
+          {
+            id: 'training_grounds',
+            name: 'زمین تمرین',
+            description: 'افزایش ظرفیت اعضای کلن و افزایش قدرت در جنگ‌های کلن',
+            cost: 5000,
+            disabled: userClan.bank < 5000 || activeProjects.length >= 2
+          },
+          {
+            id: 'resource_center',
+            name: 'مرکز منابع',
+            description: 'افزایش تولید منابع و کاهش زمان جمع‌آوری',
+            cost: 3000,
+            disabled: userClan.bank < 3000 || activeProjects.length >= 2
+          }
+        ];
+        
+        // Add available projects section if no projects are active or fewer than 2
+        if (activeProjects.length < 2) {
+          projectsEmbed.addFields({
+            name: '📝 پروژه‌های در دسترس',
+            value: 'پروژه‌های زیر را می‌توانید آغاز کنید (حداکثر 2 پروژه همزمان):',
+            inline: false
+          });
+        }
+        
+        // Create project buttons
+        const projectRows: ActionRowBuilder<ButtonBuilder>[] = [];
+        
+        // Contribute buttons for active projects
+        if (activeProjects.length > 0) {
+          const contributeRow = new ActionRowBuilder<ButtonBuilder>();
+          activeProjects.forEach((project, index) => {
+            contributeRow.addComponents(
+              new ButtonBuilder()
+                .setCustomId(`clan_contribute:${index}`)
+                .setLabel(`مشارکت در ${project.name}`)
+                .setStyle(ButtonStyle.Primary)
+            );
+          });
+          projectRows.push(contributeRow);
+        }
+        
+        // Start new project buttons
+        if (activeProjects.length < 2) {
+          const newProjectsRow = new ActionRowBuilder<ButtonBuilder>();
+          availableProjects.forEach(project => {
+            newProjectsRow.addComponents(
+              new ButtonBuilder()
+                .setCustomId(`clan_start_project:${project.id}`)
+                .setLabel(`شروع ${project.name} (${project.cost} Ccoin)`)
+                .setStyle(ButtonStyle.Success)
+                .setDisabled(project.disabled)
+            );
+          });
+          projectRows.push(newProjectsRow);
+        }
+        
+        // Back button row
+        const backRow = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('clan_island')
+              .setLabel('🔙 بازگشت به جزیره')
+              .setStyle(ButtonStyle.Danger)
+          );
+        
+        projectRows.push(backRow);
+        
+        await interaction.update({ embeds: [projectsEmbed], components: projectRows });
+        return;
+      }
+      
+      // Handle clan resource gathering
+      if (customId === 'clan_gather_resources') {
+        if (!userClan) {
+          await interaction.reply({
+            content: 'شما عضو هیچ کلنی نیستید.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // Get user's resources
+        const resources = (user as any).clanResources || {
+          materials: 0,
+          labor: 0,
+          lastCollected: new Date(0).toISOString()
+        };
+        
+        // Check cooldown (6 hours)
+        const now = new Date();
+        const lastCollected = new Date((resources as any).lastCollected);
+        const hoursSinceLastCollection = Math.floor((now.getTime() - lastCollected.getTime()) / (1000 * 60 * 60));
+        const cooldownHours = 6;
+        
+        // Create resources embed
+        const resourcesEmbed = new EmbedBuilder()
+          .setColor('#4ECDC4')
+          .setTitle(`⛏️ جمع‌آوری منابع کلن ${userClan.name}`)
+          .setDescription('منابع کلن برای ساخت و ارتقای ساختمان‌ها و تکمیل پروژه‌های کلن استفاده می‌شوند.')
+          .addFields(
+            { name: '🧱 مواد شما', value: `${(resources as any).materials} واحد`, inline: true },
+            { name: '👷 نیروی کار شما', value: `${(resources as any).labor} واحد`, inline: true }
+          )
+          .setFooter({ text: 'هر 6 ساعت یکبار می‌توانید منابع جمع‌آوری کنید' })
+          .setTimestamp();
+        
+        // Add cooldown info
+        if (hoursSinceLastCollection < cooldownHours) {
+          const hoursRemaining = cooldownHours - hoursSinceLastCollection;
+          resourcesEmbed.addFields({ 
+            name: '⏰ زمان انتظار', 
+            value: `شما باید ${hoursRemaining} ساعت دیگر صبر کنید تا بتوانید مجدداً منابع جمع‌آوری کنید.`, 
+            inline: false 
+          });
+        } else {
+          resourcesEmbed.addFields({ 
+            name: '✅ آماده برای جمع‌آوری', 
+            value: 'شما می‌توانید منابع جدید جمع‌آوری کنید!', 
+            inline: false 
+          });
+        }
+        
+        // Create gather buttons
+        const gatherRow = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('clan_gather_materials')
+              .setLabel('جمع‌آوری مواد')
+              .setStyle(ButtonStyle.Success)
+              .setDisabled(hoursSinceLastCollection < cooldownHours),
+            new ButtonBuilder()
+              .setCustomId('clan_gather_labor')
+              .setLabel('جمع‌آوری نیروی کار')
+              .setStyle(ButtonStyle.Success)
+              .setDisabled(hoursSinceLastCollection < cooldownHours)
+          );
+          
+        // Contribute to project buttons
+        const contributeRow = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('clan_contribute_materials')
+              .setLabel('اهدای مواد به پروژه')
+              .setStyle(ButtonStyle.Primary)
+              .setDisabled((resources as any).materials <= 0 || (userClan.activeProjects || []).length === 0),
+            new ButtonBuilder()
+              .setCustomId('clan_contribute_labor')
+              .setLabel('اهدای نیروی کار به پروژه')
+              .setStyle(ButtonStyle.Primary)
+              .setDisabled((resources as any).labor <= 0 || (userClan.activeProjects || []).length === 0)
+          );
+          
+        // Back button row
+        const backRow = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('clan_island')
+              .setLabel('🔙 بازگشت به جزیره')
+              .setStyle(ButtonStyle.Danger)
+          );
+        
+        await interaction.update({ embeds: [resourcesEmbed], components: [gatherRow, contributeRow, backRow] });
+        return;
+      }
+      
+      // Handle clan shop
+      if (customId === 'clan_shop') {
+        if (!userClan) {
+          await interaction.reply({
+            content: 'شما عضو هیچ کلنی نیستید.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // Create shop embed
+        const shopEmbed = new EmbedBuilder()
+          .setColor('#4ECDC4')
+          .setTitle(`🛒 فروشگاه کلن ${userClan.name}`)
+          .setDescription('در فروشگاه کلن می‌توانید آیتم‌های ویژه‌ای برای کلن خود خریداری کنید. این آیتم‌ها به افزایش سرعت پیشرفت پروژه‌ها و بهبود عملکرد ساختمان‌های کلن کمک می‌کنند.')
+          .setFooter({ text: `موجودی بانک کلن: ${userClan.bank} Ccoin` })
+          .setTimestamp();
+          
+        // Shop items
+        const shopItems = [
+          {
+            id: 'blueprint',
+            name: 'نقشه ساختمان',
+            description: 'با استفاده از این آیتم، زمان ارتقای یکی از ساختمان‌های کلن به نصف کاهش می‌یابد.',
+            price: 1500,
+            disabled: userClan.bank < 1500
+          },
+          {
+            id: 'resource_boost',
+            name: 'تقویت منابع',
+            description: 'تولید منابع کلن را به مدت 24 ساعت دو برابر می‌کند.',
+            price: 2000,
+            disabled: userClan.bank < 2000
+          },
+          {
+            id: 'clan_banner',
+            name: 'پرچم کلن',
+            description: 'یک بنر زیبا برای کلن شما که تجربه دریافتی از فعالیت‌های کلن را 10% افزایش می‌دهد.',
+            price: 5000,
+            disabled: userClan.bank < 5000
+          }
+        ];
+        
+        // Add items to embed
+        shopItems.forEach(item => {
+          shopEmbed.addFields({
+            name: `${item.name} - ${item.price} Ccoin`,
+            value: item.description,
+            inline: false
+          });
+        });
+        
+        // Create purchase buttons
+        const shopRows: ActionRowBuilder<ButtonBuilder>[] = [];
+        
+        // Split items into rows
+        for (let i = 0; i < shopItems.length; i += 2) {
+          const row = new ActionRowBuilder<ButtonBuilder>();
+          const rowItems = shopItems.slice(i, i + 2);
+          
+          rowItems.forEach(item => {
+            row.addComponents(
+              new ButtonBuilder()
+                .setCustomId(`clan_shop_buy:${item.id}`)
+                .setLabel(`خرید ${item.name}`)
+                .setStyle(ButtonStyle.Success)
+                .setDisabled(item.disabled)
+            );
+          });
+          
+          shopRows.push(row);
+        }
+        
+        // Back button row
+        const backRow = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('clan_island')
+              .setLabel('🔙 بازگشت به جزیره')
+              .setStyle(ButtonStyle.Danger)
+          );
+        
+        shopRows.push(backRow);
+        
+        await interaction.update({ embeds: [shopEmbed], components: shopRows });
+        return;
+      }
+      
+      // Handle clan war
+      if (customId === 'clan_war') {
+        if (!userClan) {
+          await interaction.reply({
+            content: 'شما عضو هیچ کلنی نیستید.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // Check clan level
+        if (userClan.level < 3) {
+          await interaction.reply({
+            content: 'برای دسترسی به وار کلن، سطح کلن باید حداقل 3 باشد.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // Create war embed
+        const warEmbed = new EmbedBuilder()
+          .setColor('#FF6B6B')
+          .setTitle(`⚔️ وار کلن ${userClan.name}`)
+          .setDescription('در این بخش می‌توانید با سایر کلن‌ها به جنگ بپردازید. هر پیروزی در جنگ کلن‌ها، جوایز ارزشمندی به همراه دارد و تجربه کلن شما را افزایش می‌دهد.')
+          .addFields(
+            { name: '🏆 آمار جنگ‌ها', value: `پیروزی‌ها: ${userClan.warWins || 0}\nشکست‌ها: ${userClan.warLosses || 0}`, inline: false },
+            { name: '⚡ وضعیت فعلی', value: 'هیچ جنگی در جریان نیست.', inline: false }
+          )
+          .setFooter({ text: 'برای جنگ با کلن‌های دیگر، از دکمه‌های زیر استفاده کنید' })
+          .setTimestamp();
+        
+        // Create war buttons
+        const warRow = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('clan_find_opponents')
+              .setLabel('🔍 یافتن حریف')
+              .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
+              .setCustomId('clan_war_history')
+              .setLabel('📜 تاریخچه جنگ‌ها')
+              .setStyle(ButtonStyle.Secondary)
+          );
+        
+        // Back button row
+        const backRow = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('clans')
+              .setLabel('🔙 بازگشت')
+              .setStyle(ButtonStyle.Danger)
+          );
+        
+        await interaction.update({ embeds: [warEmbed], components: [warRow, backRow] });
         return;
       }
     }

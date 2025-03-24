@@ -2,6 +2,96 @@ import { pgTable, text, serial, integer, boolean, timestamp, jsonb, real } from 
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// تعریف ساختمان‌های کلن
+export interface ClanBuilding {
+  id: string;
+  type: 'headquarters' | 'bank' | 'training_camp' | 'market' | 'laboratory' | 'barracks' | 'wall' | 'tower';
+  name: string;
+  level: number;
+  upgradeProgress: number;
+  upgradeTarget: number;
+  completionTime?: string;
+  effects: {
+    bankBonus?: number;
+    memberCapacityBonus?: number;
+    attackBonus?: number;
+    defenseBonus?: number;
+    productionBonus?: number;
+    researchBonus?: number;
+  };
+}
+
+// تعریف پروژه‌های کلن
+export interface ClanProject {
+  id: string;
+  name: string;
+  description: string;
+  resourcesRequired: {
+    coins: number;
+    materials: number;
+    labor: number;
+  };
+  resourcesContributed: {
+    coins: number;
+    materials: number;
+    labor: number;
+  };
+  progress: number;
+  rewards: {
+    experience: number;
+    perkPoints: number;
+    buildingId?: string;
+  };
+  deadline?: string;
+  completionTime?: string;
+  status: 'active' | 'completed' | 'failed';
+}
+
+// تعریف قابلیت‌های کلن
+export interface ClanPerk {
+  id: string;
+  name: string;
+  description: string;
+  level: number;
+  maxLevel: number;
+  effects: {
+    bankInterestBonus?: number;
+    memberCapacity?: number;
+    dailyRewardBonus?: number;
+    shopDiscountBonus?: number;
+    combatBonus?: number;
+    resourceProductionBonus?: number;
+  };
+  activationTime: string;
+  expirationTime?: string; // اگر مقدار نداشته باشد، دائمی است
+  active: boolean;
+}
+
+// تعریف ماموریت‌های کلن
+export interface ClanMission {
+  id: string;
+  title: string;
+  description: string;
+  type: 'daily' | 'weekly' | 'season';
+  requirement: {
+    type: 'win_games' | 'deposit_coins' | 'collect_items' | 'upgrade_buildings' | 'win_wars';
+    targetAmount: number;
+  };
+  progress: number;
+  rewards: {
+    coins: number;
+    experience: number;
+    materials?: number;
+    specialItem?: {
+      id: number;
+      name: string;
+    };
+  };
+  startTime: string;
+  endTime: string;
+  status: 'active' | 'completed' | 'failed';
+}
+
 // Users table
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -32,6 +122,16 @@ export const users = pgTable("users", {
   }),
   // سطح حساب بانکی (عادی، نقره‌ای، طلایی)
   bankLevel: text("bank_level").notNull().default("normal"),
+  // منابع کلن برای کاربر
+  clanResources: jsonb("clan_resources").$type<{
+    materials: number,
+    labor: number,
+    lastCollected: string
+  }>().default({
+    materials: 0,
+    labor: 0,
+    lastCollected: new Date(0).toISOString()
+  }),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -58,6 +158,21 @@ export const clans = pgTable("clans", {
   bank: integer("bank").notNull().default(0),
   level: integer("level").notNull().default(1),
   memberCount: integer("member_count").notNull().default(1),
+  experience: integer("experience").notNull().default(0),
+  // آمار جنگ کلن‌ها
+  warWins: integer("war_wins").notNull().default(0),
+  warLosses: integer("war_losses").notNull().default(0),
+  // ویژگی‌های جزیره کلن
+  islandLevel: integer("island_level").notNull().default(0),
+  buildings: jsonb("buildings").$type<ClanBuilding[]>().default([]),
+  // پروژه‌های فعلی
+  activeProjects: jsonb("active_projects").$type<ClanProject[]>().default([]),
+  // امکانات و قابلیت‌های فعال
+  perks: jsonb("perks").$type<ClanPerk[]>().default([]),
+  // ماموریت‌های کلن
+  missions: jsonb("missions").$type<ClanMission[]>().default([]),
+  // پرچم و آواتار کلن
+  banner: text("banner"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -217,5 +332,95 @@ export interface Investment {
   startDate: string;
   endDate: string;
   riskRate: number;
+  status: 'active' | 'completed' | 'failed';
+}
+
+// تعریف ساختمان‌های کلن
+export interface ClanBuilding {
+  id: string;
+  type: 'headquarters' | 'bank' | 'training_camp' | 'market' | 'laboratory' | 'barracks' | 'wall' | 'tower';
+  name: string;
+  level: number;
+  upgradeProgress: number;
+  upgradeTarget: number;
+  completionTime?: string;
+  effects: {
+    bankBonus?: number;
+    memberCapacityBonus?: number;
+    attackBonus?: number;
+    defenseBonus?: number;
+    productionBonus?: number;
+    researchBonus?: number;
+  };
+}
+
+// تعریف پروژه‌های کلن
+export interface ClanProject {
+  id: string;
+  name: string;
+  description: string;
+  resourcesRequired: {
+    coins: number;
+    materials: number;
+    labor: number;
+  };
+  resourcesContributed: {
+    coins: number;
+    materials: number;
+    labor: number;
+  };
+  progress: number;
+  rewards: {
+    experience: number;
+    perkPoints: number;
+    buildingId?: string;
+  };
+  deadline?: string;
+  completionTime?: string;
+  status: 'active' | 'completed' | 'failed';
+}
+
+// تعریف قابلیت‌های کلن
+export interface ClanPerk {
+  id: string;
+  name: string;
+  description: string;
+  level: number;
+  maxLevel: number;
+  effects: {
+    bankInterestBonus?: number;
+    memberCapacity?: number;
+    dailyRewardBonus?: number;
+    shopDiscountBonus?: number;
+    combatBonus?: number;
+    resourceProductionBonus?: number;
+  };
+  activationTime: string;
+  expirationTime?: string; // اگر مقدار نداشته باشد، دائمی است
+  active: boolean;
+}
+
+// تعریف ماموریت‌های کلن
+export interface ClanMission {
+  id: string;
+  title: string;
+  description: string;
+  type: 'daily' | 'weekly' | 'season';
+  requirement: {
+    type: 'win_games' | 'deposit_coins' | 'collect_items' | 'upgrade_buildings' | 'win_wars';
+    targetAmount: number;
+  };
+  progress: number;
+  rewards: {
+    coins: number;
+    experience: number;
+    materials?: number;
+    specialItem?: {
+      id: number;
+      name: string;
+    };
+  };
+  startTime: string;
+  endTime: string;
   status: 'active' | 'completed' | 'failed';
 }
