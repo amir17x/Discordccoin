@@ -16,7 +16,7 @@ const REWARD_AMOUNT = 40;
 // Function to handle the rock paper scissors game
 export async function handleRockPaperScissors(
   interaction: MessageComponentInteraction,
-  action: 'start' | 'rock' | 'paper' | 'scissors'
+  action: string
 ) {
   try {
     // Get user data

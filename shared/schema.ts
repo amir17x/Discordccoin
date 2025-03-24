@@ -13,6 +13,7 @@ export const users = pgTable("users", {
   economyLevel: integer("economy_level").notNull().default(1),
   lastDaily: timestamp("last_daily"),
   lastRob: timestamp("last_rob"),
+  lastWheelSpin: timestamp("last_wheel_spin"),
   inventory: jsonb("inventory").notNull().default({}),
   dailyStreak: integer("daily_streak").notNull().default(0),
   totalGamesPlayed: integer("total_games_played").notNull().default(0),

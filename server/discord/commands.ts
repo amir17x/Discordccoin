@@ -1,6 +1,7 @@
-import { SlashCommandBuilder, Collection, Client } from 'discord.js';
+import { SlashCommandBuilder, Collection, Client, PermissionFlagsBits } from 'discord.js';
 import { storage } from '../storage';
 import { mainMenu } from './components/mainMenu';
+import { adminMenu } from './components/adminMenu';
 
 // Command to display the main menu
 const menu = {
@@ -173,11 +174,33 @@ const help = {
 **/balance** - Check your current balance
 **/daily** - Claim your daily reward
 **/help** - Show this help message
+**/admin** - Admin control panel (for administrators only)
 
 Most features are accessible through the menu system using buttons.
       `,
       ephemeral: true
     });
+  }
+};
+
+// Command for admin panel
+const admin = {
+  data: new SlashCommandBuilder()
+    .setName('admin')
+    .setDescription('Open admin control panel')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator), // Requires administrator permission
+  
+  async execute(interaction: any) {
+    // Check if user has permission
+    if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+      await interaction.reply({
+        content: '⛔ شما دسترسی لازم برای استفاده از پنل ادمین را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    await adminMenu(interaction);
   }
 };
 
@@ -188,6 +211,7 @@ export async function loadCommands(client: Client) {
   client.commands.set(balance.data.name, balance);
   client.commands.set(daily.data.name, daily);
   client.commands.set(help.data.name, help);
+  client.commands.set(admin.data.name, admin);
 }
 
 // Export the command data for deployment
@@ -195,5 +219,6 @@ export const commands = [
   menu.data.toJSON(),
   balance.data.toJSON(),
   daily.data.toJSON(),
-  help.data.toJSON()
+  help.data.toJSON(),
+  admin.data.toJSON()
 ];

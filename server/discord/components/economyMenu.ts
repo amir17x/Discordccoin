@@ -72,9 +72,13 @@ export async function economyMenu(
     const row2 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
+          .setCustomId('robbery')
+          .setLabel('🕵️‍♂️ سرقت')
+          .setStyle(ButtonStyle.Danger),
+        new ButtonBuilder()
           .setCustomId('menu')
           .setLabel('🔙 بازگشت')
-          .setStyle(ButtonStyle.Danger)
+          .setStyle(ButtonStyle.Secondary)
       );
     
     // Create deposit options menu

@@ -3,6 +3,7 @@ import { storage } from '../../storage';
 import { handleCoinFlip } from '../games/coinFlip';
 import { handleRockPaperScissors } from '../games/rockPaperScissors';
 import { handleNumberGuess } from '../games/numberGuess';
+import { handleRobbery } from '../components/robberyMenu';
 
 // Select menu handler function
 export async function handleSelectMenuInteraction(interaction: StringSelectMenuInteraction) {
@@ -47,6 +48,13 @@ export async function handleSelectMenuInteraction(interaction: StringSelectMenuI
         // Handle withdraw amount selection
         const amount = parseInt(selectedValue);
         await handleWithdraw(interaction, amount);
+        return;
+      }
+      
+      if (customId === 'target_select') {
+        // Handle robbery target selection
+        const targetId = parseInt(selectedValue);
+        await handleRobbery(interaction, targetId);
         return;
       }
     }

@@ -8,6 +8,9 @@ import { inventoryMenu } from '../components/inventoryMenu';
 import { questsMenu } from '../components/questsMenu';
 import { clansMenu } from '../components/clansMenu';
 import { profileMenu } from '../components/profileMenu';
+import { wheelOfFortuneMenu, spinWheel } from '../components/wheelOfFortuneMenu';
+import { robberyMenu } from '../components/robberyMenu';
+import { adminMenu } from '../components/adminMenu';
 import { handleCoinFlip } from '../games/coinFlip';
 import { handleRockPaperScissors } from '../games/rockPaperScissors';
 import { handleNumberGuess } from '../games/numberGuess';
@@ -24,6 +27,11 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     // Handle navigation buttons
     if (action === 'menu') {
       await mainMenu(interaction);
+      return;
+    }
+    
+    if (action === 'other_options') {
+      await mainMenu(interaction, true);
       return;
     }
 
@@ -61,6 +69,21 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       await profileMenu(interaction);
       return;
     }
+    
+    if (action === 'wheel') {
+      await wheelOfFortuneMenu(interaction);
+      return;
+    }
+    
+    if (action === 'wheel_spin') {
+      await spinWheel(interaction);
+      return;
+    }
+    
+    if (action === 'robbery') {
+      await robberyMenu(interaction);
+      return;
+    }
 
     // Handle game buttons
     if (action === 'game') {
@@ -69,8 +92,10 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       if (gameType === 'coinflip') {
         if (params[1] === 'start') {
           await handleCoinFlip(interaction, 'start');
-        } else if (params[1] === 'heads' || params[1] === 'tails') {
-          await handleCoinFlip(interaction, params[1]);
+        } else if (params[1] === 'heads') {
+          await handleCoinFlip(interaction, 'heads');
+        } else if (params[1] === 'tails') {
+          await handleCoinFlip(interaction, 'tails');
         }
         return;
       }
@@ -78,8 +103,12 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       if (gameType === 'rps') {
         if (params[1] === 'start') {
           await handleRockPaperScissors(interaction, 'start');
-        } else if (['rock', 'paper', 'scissors'].includes(params[1])) {
-          await handleRockPaperScissors(interaction, params[1]);
+        } else if (params[1] === 'rock') {
+          await handleRockPaperScissors(interaction, 'rock');
+        } else if (params[1] === 'paper') {
+          await handleRockPaperScissors(interaction, 'paper');
+        } else if (params[1] === 'scissors') {
+          await handleRockPaperScissors(interaction, 'scissors');
         }
         return;
       }

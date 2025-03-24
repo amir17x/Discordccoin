@@ -16,7 +16,7 @@ const REWARD_AMOUNT = 40;
 // Function to handle the coin flip game
 export async function handleCoinFlip(
   interaction: MessageComponentInteraction,
-  action: 'start' | 'heads' | 'tails'
+  action: string
 ) {
   try {
     // Get user data
