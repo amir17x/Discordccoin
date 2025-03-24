@@ -38,11 +38,11 @@ export async function gamesMenu(
       return;
     }
     
-    // Create the games embed
+    // Create the games embed - با رنگ نارنجی برای بخش اصلی بازی‌ها
     const embed = new EmbedBuilder()
-      .setColor('#3498DB')
+      .setColor('#FF9933') // رنگ نارنجی برای بخش اصلی بازی‌ها - جذاب و پر انرژی
       .setTitle('🎮 بخش بازی‌ها')
-      .setDescription('بازی‌های تک‌نفره، رقابتی و گروهی')
+      .setDescription('✨ به دنیای هیجان‌انگیز بازی‌ها خوش آمدید! ✨')
       .addFields(
         { name: '👤 آمار بازی‌های شما', value: `بازی‌های انجام شده: ${user.totalGamesPlayed}\nبازی‌های برنده شده: ${user.totalGamesWon}`, inline: false },
         { name: '💵 موجودی', value: `${user.wallet} Ccoin`, inline: true },
@@ -51,21 +51,21 @@ export async function gamesMenu(
       .setFooter({ text: `${interaction.user.username} | نرخ برد: ${user.totalGamesPlayed > 0 ? Math.round((user.totalGamesWon / user.totalGamesPlayed) * 100) : 0}%` })
       .setTimestamp();
     
-    // Create button rows
+    // Create button rows - با منطق رنگی مشخص برای منوی اصلی
     const row1 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
           .setCustomId('solo_games')
-          .setLabel('🎲 بازی‌های تک‌نفره')
-          .setStyle(ButtonStyle.Primary),
+          .setLabel('🎮 بازی‌های تک‌نفره')
+          .setStyle(ButtonStyle.Success), // سبز برای بازی‌های تک‌نفره (مناسب برای شروع)
         new ButtonBuilder()
           .setCustomId('competitive_games')
           .setLabel('🏆 بازی‌های رقابتی')
-          .setStyle(ButtonStyle.Danger),
+          .setStyle(ButtonStyle.Primary), // آبی برای بازی‌های رقابتی (هیجان‌انگیز)
         new ButtonBuilder()
           .setCustomId('group_games')
           .setLabel('👥 بازی‌های گروهی')
-          .setStyle(ButtonStyle.Secondary)
+          .setStyle(ButtonStyle.Secondary) // خاکستری برای بخش‌های در حال توسعه
           .setDisabled(true) // Not implemented yet
       );
     
@@ -77,17 +77,17 @@ export async function gamesMenu(
           .setStyle(ButtonStyle.Secondary)
       );
     
-    // Create solo games buttons (matching the UI in the screenshots)
+    // Create solo games buttons - با منطق رنگی برای بازی‌های تک‌نفره
     const soloGameRow1 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
           .setCustomId('game:coinflip:start')
           .setLabel('🪙 شیر یا خط')
-          .setStyle(ButtonStyle.Primary),
+          .setStyle(ButtonStyle.Primary), // آبی برای بازی‌های ساده و کلاسیک
         new ButtonBuilder()
           .setCustomId('game:rps:start')
           .setLabel('✂️ سنگ کاغذ قیچی')
-          .setStyle(ButtonStyle.Success)
+          .setStyle(ButtonStyle.Success) // سبز برای بازی‌های استراتژیک
       );
       
     const soloGameRow2 = new ActionRowBuilder<ButtonBuilder>()
@@ -95,11 +95,11 @@ export async function gamesMenu(
         new ButtonBuilder()
           .setCustomId('game:numberguess:start')
           .setLabel('🔢 حدس عدد')
-          .setStyle(ButtonStyle.Danger),
+          .setStyle(ButtonStyle.Primary), // آبی برای بازی‌های منطقی
         new ButtonBuilder()
           .setCustomId('game:wheel:start')
           .setLabel('🎡 گردونه شانس')
-          .setStyle(ButtonStyle.Secondary)
+          .setStyle(ButtonStyle.Secondary) // خاکستری برای بخش‌های در حال توسعه
           .setDisabled(true) // Not implemented yet
       );
       
@@ -126,6 +126,11 @@ export async function gamesMenu(
     
     // Send the appropriate menu based on the state
     if (state === 'solo') {
+      // تغییر رنگ و توضیحات منوی بازی‌های تک‌نفره
+      embed.setColor('#27AE60') // رنگ سبز برای بازی‌های تک‌نفره (ساده و سرگرم‌کننده)
+        .setTitle('🎮 بازی‌های تک‌نفره')
+        .setDescription('🌟 سرگرمی و هیجان بدون نیاز به رقیب! بازی کنید و Ccoin به دست آورید 🎲');
+
       if (interaction.deferred) {
         await interaction.editReply({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3] });
       } else if (followUp) {
@@ -148,31 +153,32 @@ export async function gamesMenu(
         }
       }
     } else if (state === 'competitive') {
-      // Create competitive games menu
-      embed.setTitle('🏆 بازی‌های رقابتی')
-        .setDescription('با دوستان خود رقابت کنید و Ccoin بیشتری ببرید! ⚔️')
+      // Create competitive games menu - با رنگ قرمز برای بازی‌های رقابتی (هیجان و چالش)
+      embed.setColor('#E74C3C') // رنگ قرمز روشن برای نشان دادن هیجان رقابت
+        .setTitle('🏆 بازی‌های رقابتی')
+        .setDescription('🔥 با دوستان خود رقابت کنید و در چالش‌های هیجان‌انگیز شرکت کنید! ⚔️')
         .setFields(
           { name: '📝 توضیحات', value: 'بازی‌های رقابتی به صورت دو نفره قابل انجام است. هر بازیکن باید مقدار مشخصی Ccoin را شرط‌بندی کند تا در بازی شرکت کند.', inline: false },
           { name: '💰 موجودی', value: `${user.wallet} Ccoin`, inline: true },
           { name: '💎 کریستال', value: `${user.crystals}`, inline: true }
         );
       
-      // Create competitive games buttons - 3 columns layout (3-4 buttons per row)
+      // Create competitive games buttons - با منطق رنگی برای بازی‌های رقابتی
       // Row 1 (first set of 3 games)
       const competitiveGameRow1 = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
           new ButtonBuilder()
             .setCustomId('game:dice_duel:start')
             .setLabel('🎲 تاس دو نفره')
-            .setStyle(ButtonStyle.Primary),
+            .setStyle(ButtonStyle.Primary), // آبی برای بازی‌های شانسی کلاسیک
           new ButtonBuilder()
             .setCustomId('game:duel:start')
             .setLabel('⚔️ دوئل')
-            .setStyle(ButtonStyle.Danger),
+            .setStyle(ButtonStyle.Danger), // قرمز برای بازی‌های مبارزه‌ای
           new ButtonBuilder()
             .setCustomId('game:quick_poker:start')
             .setLabel('🃏 پوکر سریع')
-            .setStyle(ButtonStyle.Secondary)
+            .setStyle(ButtonStyle.Primary) // آبی برای بازی‌های کارتی
         );
         
       // Row 2 (second set of 3 games)
@@ -181,15 +187,15 @@ export async function gamesMenu(
           new ButtonBuilder()
             .setCustomId('game:type_race:start')
             .setLabel('⌨️ مسابقه سرعت تایپ')
-            .setStyle(ButtonStyle.Success),
+            .setStyle(ButtonStyle.Success), // سبز برای بازی‌های مهارتی
           new ButtonBuilder()
             .setCustomId('game:dart:start')
             .setLabel('🎯 دارت رقابتی')
-            .setStyle(ButtonStyle.Primary),
+            .setStyle(ButtonStyle.Success), // سبز برای بازی‌های دقت و مهارت
           new ButtonBuilder()
             .setCustomId('game:mafia:start')
             .setLabel('🕵️‍♂️ مافیا (جدید)')
-            .setStyle(ButtonStyle.Secondary)
+            .setStyle(ButtonStyle.Danger) // قرمز برای بازی‌های استراتژیک و مخفی‌کاری
         );
 
       // Row 3 (third set of 3 games)
@@ -198,15 +204,15 @@ export async function gamesMenu(
           new ButtonBuilder()
             .setCustomId('game:bomb:start')
             .setLabel('💣 بمب زمان‌دار (جدید)')
-            .setStyle(ButtonStyle.Danger),
+            .setStyle(ButtonStyle.Danger), // قرمز برای بازی‌های پرهیجان
           new ButtonBuilder()
             .setCustomId('game:penalty:start')
             .setLabel('⚽ پنالتی شانس (جدید)')
-            .setStyle(ButtonStyle.Success),
+            .setStyle(ButtonStyle.Primary), // آبی برای بازی‌های ورزشی
           new ButtonBuilder()
             .setCustomId('game:archery:start')
             .setLabel('🏹 تیراندازی هدف (جدید)')
-            .setStyle(ButtonStyle.Primary)
+            .setStyle(ButtonStyle.Success) // سبز برای بازی‌های دقت
         );
       
       // Row 4 (rankings and back button)
