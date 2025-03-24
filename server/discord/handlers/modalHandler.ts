@@ -3,6 +3,7 @@ import { storage } from '../../storage';
 import { processBuyStock, processSellStock } from '../components/stocksMenu';
 import { processBuyLotteryTicket } from '../components/lotteryMenu';
 import { buyGiveawayTickets } from '../components/giveawayBridge';
+import { processTransfer } from '../components/economyMenu';
 import { LogType, getLogger } from '../utils/logger';
 import { botConfig } from '../utils/config';
 
@@ -82,6 +83,25 @@ export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
       }
       
       await buyGiveawayTickets(interaction, quantity);
+      return;
+    }
+    
+    // Handle coin transfer modal
+    if (customId === 'transfer_modal') {
+      const receiverId = interaction.fields.getTextInputValue('receiver_id');
+      const amountInput = interaction.fields.getTextInputValue('amount');
+      const message = interaction.fields.getTextInputValue('message');
+      const amount = parseInt(amountInput);
+      
+      if (isNaN(amount) || amount <= 0) {
+        await interaction.reply({
+          content: '❌ لطفاً یک عدد مثبت برای مقدار سکه وارد کنید.',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      await processTransfer(interaction, receiverId, amount, message);
       return;
     }
     

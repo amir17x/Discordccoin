@@ -230,6 +230,48 @@ const admin = {
   }
 };
 
+// Command for ping with fancy embed
+const ping = {
+  data: new SlashCommandBuilder()
+    .setName('ping')
+    .setDescription('🏓 پینگ پونگ! سرعت اتصال ربات را نشان می‌دهد'),
+  
+  async execute(interaction: any) {
+    try {
+      // Calculate ping by measuring the time it takes to defer and then edit
+      const start = Date.now();
+      await interaction.deferReply({ ephemeral: true });
+      const end = Date.now();
+      
+      // Calculate latency
+      const latency = end - start;
+      
+      // Create a fancy embedded message
+      const embed = {
+        title: '🏓 پونگ!',
+        description: `🚀 **زمان پاسخگویی:** ${latency}ms\n🔌 **وضعیت API:** عالی\n⏱️ **زمان آنلاین ربات:** ${Math.floor(interaction.client.uptime / 3600000)} ساعت و ${Math.floor((interaction.client.uptime % 3600000) / 60000)} دقیقه`,
+        color: 0x00FFFF, // آبی فیروزه‌ای برای ظاهر شیک
+        thumbnail: {
+          url: 'https://cdn-icons-png.flaticon.com/512/2097/2097276.png' // آیکون پینگ پونگ
+        },
+        footer: {
+          text: '🎮 ربات Ccoin | طراحی شده با ❤️',
+          icon_url: interaction.client.user.displayAvatarURL()
+        },
+        timestamp: new Date().toISOString()
+      };
+      
+      await interaction.editReply({ embeds: [embed] });
+    } catch (error) {
+      console.error('Error in ping command:', error);
+      await interaction.reply({
+        content: '❌ متأسفانه در اجرای دستور پینگ خطایی رخ داد!',
+        ephemeral: true
+      });
+    }
+  }
+};
+
 // Export function to load commands
 export async function loadCommands(client: Client) {
   // Add commands to the collection
@@ -238,6 +280,7 @@ export async function loadCommands(client: Client) {
   client.commands.set(daily.data.name, daily);
   client.commands.set(help.data.name, help);
   client.commands.set(admin.data.name, admin);
+  client.commands.set(ping.data.name, ping);
 }
 
 // Export the command data for deployment
@@ -246,5 +289,6 @@ export const commands = [
   balance.data.toJSON(),
   daily.data.toJSON(),
   help.data.toJSON(),
-  admin.data.toJSON()
+  admin.data.toJSON(),
+  ping.data.toJSON()
 ];

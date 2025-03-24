@@ -6,11 +6,185 @@ import {
   EmbedBuilder,
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
-  MessageComponentInteraction
+  MessageComponentInteraction,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle
 } from 'discord.js';
 import { storage } from '../../storage';
 
 // Function to create and send the economy menu
+// تابع نمایش مودال انتقال سکه به کاربران دیگر
+export async function transferUser(interaction: ButtonInteraction) {
+  try {
+    // Check if user exists
+    const user = await storage.getUserByDiscordId(interaction.user.id);
+    
+    if (!user) {
+      await interaction.reply({
+        content: '⚠️ حساب کاربری شما یافت نشد!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // اگر کاربر سکه کافی در کیف پول ندارد
+    if (user.wallet <= 0) {
+      await interaction.reply({
+        content: '❌ شما سکه کافی در کیف پول خود ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // ایجاد مودال انتقال سکه
+    const modal = new ModalBuilder()
+      .setCustomId('transfer_modal')
+      .setTitle('💸 انتقال سکه به کاربر دیگر');
+    
+    // فیلد وارد کردن آی‌دی دیسکورد کاربر مقصد
+    const receiverIdInput = new TextInputBuilder()
+      .setCustomId('receiver_id')
+      .setLabel('آی‌دی دیسکورد کاربر مقصد')
+      .setPlaceholder('مثال: 123456789012345678')
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true)
+      .setMinLength(5)
+      .setMaxLength(20);
+    
+    // فیلد وارد کردن مقدار سکه
+    const amountInput = new TextInputBuilder()
+      .setCustomId('amount')
+      .setLabel('مقدار سکه (حداکثر 5000 سکه)')
+      .setPlaceholder(`حداکثر ${Math.min(user.wallet, 5000)} سکه`)
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true)
+      .setMinLength(1)
+      .setMaxLength(5);
+    
+    // فیلد اختیاری پیام
+    const messageInput = new TextInputBuilder()
+      .setCustomId('message')
+      .setLabel('پیام به گیرنده (اختیاری)')
+      .setPlaceholder('پیام خود را به کاربر مقصد وارد کنید')
+      .setStyle(TextInputStyle.Paragraph)
+      .setRequired(false)
+      .setMaxLength(100);
+    
+    // اضافه کردن فیلدها به مودال
+    const firstRow = new ActionRowBuilder<TextInputBuilder>().addComponents(receiverIdInput);
+    const secondRow = new ActionRowBuilder<TextInputBuilder>().addComponents(amountInput);
+    const thirdRow = new ActionRowBuilder<TextInputBuilder>().addComponents(messageInput);
+    
+    modal.addComponents(firstRow, secondRow, thirdRow);
+    
+    // نمایش مودال به کاربر
+    await interaction.showModal(modal);
+    
+  } catch (error) {
+    console.error('Error in transfer user modal:', error);
+    await interaction.reply({
+      content: '❌ متأسفانه در نمایش فرم انتقال سکه خطایی رخ داد!',
+      ephemeral: true
+    });
+  }
+}
+
+// تابع پردازش انتقال سکه پس از تکمیل مودال
+export async function processTransfer(
+  interaction: any,
+  receiverId: string,
+  amount: number,
+  message: string
+) {
+  try {
+    // Check if user exists
+    const sender = await storage.getUserByDiscordId(interaction.user.id);
+    
+    if (!sender) {
+      await interaction.reply({
+        content: '⚠️ حساب کاربری شما یافت نشد!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // بررسی اینکه کاربر مقصد وجود دارد یا خیر
+    const receiver = await storage.getUserByDiscordId(receiverId);
+    
+    if (!receiver) {
+      await interaction.reply({
+        content: '❌ کاربر مقصد یافت نشد! لطفاً آی‌دی دیسکورد را به درستی وارد کنید.',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // بررسی اینکه کاربر به خودش انتقال نمی‌دهد
+    if (sender.id === receiver.id) {
+      await interaction.reply({
+        content: '❌ شما نمی‌توانید به حساب خودتان سکه انتقال دهید!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // بررسی اینکه مقدار وارد شده معتبر است
+    if (isNaN(amount) || amount <= 0) {
+      await interaction.reply({
+        content: '❌ لطفاً یک مقدار عددی معتبر وارد کنید!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // بررسی محدودیت روزانه (5000 سکه)
+    if (amount > 5000) {
+      await interaction.reply({
+        content: '❌ محدودیت روزانه انتقال سکه 5000 Ccoin است!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // بررسی اینکه کاربر به اندازه کافی سکه دارد
+    if (sender.wallet < amount) {
+      await interaction.reply({
+        content: `❌ موجودی کیف پول شما کافی نیست! موجودی فعلی: ${sender.wallet} Ccoin`,
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // محاسبه کارمزد (1%)
+    const fee = Math.ceil(amount * 0.01);
+    const transferAmount = amount - fee;
+    
+    // انجام انتقال
+    await storage.transferCoin(sender.id, receiver.id, amount);
+    
+    // ارسال پاسخ به فرستنده
+    await interaction.reply({
+      content: `✅ مبلغ ${transferAmount} سکه با موفقیت به ${receiver.username} منتقل شد!\n💸 کارمزد: ${fee} سکه\n📝 پیام: ${message || '-'}`,
+      ephemeral: true
+    });
+    
+    // به‌روزرسانی منوی اقتصاد پس از چند ثانیه
+    setTimeout(async () => {
+      if (interaction.replied || interaction.deferred) {
+        await economyMenu(interaction, true);
+      }
+    }, 2000);
+    
+  } catch (error) {
+    console.error('Error processing transfer:', error);
+    await interaction.reply({
+      content: '❌ متأسفانه در انتقال سکه خطایی رخ داد! لطفاً دوباره تلاش کنید.',
+      ephemeral: true
+    });
+  }
+}
+
 export async function economyMenu(
   interaction: ButtonInteraction | MessageComponentInteraction,
   followUp: boolean = false
