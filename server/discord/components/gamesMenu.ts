@@ -18,7 +18,7 @@ export async function gamesMenu(
   try {
     // راه‌اندازی پاسخ با تاخیر (defer) تا از خطای تایم‌اوت جلوگیری شود
     if (!interaction.deferred && !interaction.replied) {
-      await interaction.deferReply();
+      await interaction.deferReply({ ephemeral: true }); // همیشه پیام‌ها را به صورت خصوصی ارسال می‌کنیم
     }
     
     // Check if user exists
@@ -135,16 +135,16 @@ export async function gamesMenu(
           await interaction.update({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3] });
         } catch (e) {
           if (!interaction.replied && !interaction.deferred) {
-            await interaction.reply({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3], ephemeral: false });
+            await interaction.reply({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3], ephemeral: true });
           } else {
-            await interaction.followUp({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3], ephemeral: false });
+            await interaction.followUp({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3], ephemeral: true });
           }
         }
       } else {
         if (!interaction.replied && !interaction.deferred) {
-          await interaction.reply({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3], ephemeral: false });
+          await interaction.reply({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3], ephemeral: true });
         } else {
-          await interaction.followUp({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3], ephemeral: false });
+          await interaction.followUp({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3], ephemeral: true });
         }
       }
     } else if (state === 'competitive') {
@@ -232,16 +232,16 @@ export async function gamesMenu(
           await interaction.update({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3, competitiveGameRow4] });
         } catch (e) {
           if (!interaction.replied && !interaction.deferred) {
-            await interaction.reply({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3, competitiveGameRow4], ephemeral: false });
+            await interaction.reply({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3, competitiveGameRow4], ephemeral: true });
           } else {
-            await interaction.followUp({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3, competitiveGameRow4], ephemeral: false });
+            await interaction.followUp({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3, competitiveGameRow4], ephemeral: true });
           }
         }
       } else {
         if (!interaction.replied && !interaction.deferred) {
-          await interaction.reply({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3, competitiveGameRow4], ephemeral: false });
+          await interaction.reply({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3, competitiveGameRow4], ephemeral: true });
         } else {
-          await interaction.followUp({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3, competitiveGameRow4], ephemeral: false });
+          await interaction.followUp({ embeds: [embed], components: [competitiveGameRow1, competitiveGameRow2, competitiveGameRow3, competitiveGameRow4], ephemeral: true });
         }
       }
     } else if (state === 'group') {
@@ -281,16 +281,16 @@ export async function gamesMenu(
           await interaction.update({ embeds: [embed], components: [row1, row2] });
         } catch (e) {
           if (!interaction.replied && !interaction.deferred) {
-            await interaction.reply({ embeds: [embed], components: [row1, row2], ephemeral: false });
+            await interaction.reply({ embeds: [embed], components: [row1, row2], ephemeral: true });
           } else {
-            await interaction.followUp({ embeds: [embed], components: [row1, row2], ephemeral: false });
+            await interaction.followUp({ embeds: [embed], components: [row1, row2], ephemeral: true });
           }
         }
       } else {
         if (!interaction.replied && !interaction.deferred) {
-          await interaction.reply({ embeds: [embed], components: [row1, row2], ephemeral: false });
+          await interaction.reply({ embeds: [embed], components: [row1, row2], ephemeral: true });
         } else {
-          await interaction.followUp({ embeds: [embed], components: [row1, row2], ephemeral: false });
+          await interaction.followUp({ embeds: [embed], components: [row1, row2], ephemeral: true });
         }
       }
     }
