@@ -2,6 +2,7 @@ import { ModalSubmitInteraction } from 'discord.js';
 import { storage } from '../../storage';
 import { processBuyStock, processSellStock } from '../components/stocksMenu';
 import { processBuyLotteryTicket } from '../components/lotteryMenu';
+import { buyGiveawayTickets } from '../components/giveawayBridge';
 import { LogType, getLogger } from '../utils/logger';
 import { botConfig } from '../utils/config';
 
@@ -64,6 +65,23 @@ export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
       }
       
       await processBuyLotteryTicket(interaction, lotteryId, quantity);
+      return;
+    }
+    
+    // Handle giveaway ticket purchasing modal
+    if (customId === 'buy_giveaway_tickets') {
+      const quantityInput = interaction.fields.getTextInputValue('ticket_quantity');
+      const quantity = parseInt(quantityInput);
+      
+      if (isNaN(quantity) || quantity <= 0) {
+        await interaction.reply({
+          content: '❌ لطفاً یک عدد مثبت برای تعداد بلیط وارد کنید.',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      await buyGiveawayTickets(interaction, quantity);
       return;
     }
     

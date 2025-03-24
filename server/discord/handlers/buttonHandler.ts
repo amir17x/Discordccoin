@@ -14,6 +14,7 @@ import { adminMenu } from '../components/adminMenu';
 import { investmentMenu, processInvestment } from '../components/investmentMenu';
 import { stocksMenu, processBuyStock, processSellStock } from '../components/stocksMenu';
 import { lotteryMenu, processBuyLotteryTicket } from '../components/lotteryMenu';
+import { giveawayBridgeMenu, buyGiveawayTickets, checkGiveawayBalance } from '../components/giveawayBridge';
 import { handleCoinFlip } from '../games/coinFlip';
 import { handleRockPaperScissors } from '../games/rockPaperScissors';
 import { handleNumberGuess } from '../games/numberGuess';
@@ -246,6 +247,40 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     
     if (action === 'lottery_info') {
       await lotteryMenu(interaction, 'info');
+      return;
+    }
+    
+    // Handle giveaway bridge menu
+    if (action === 'giveaway_bridge') {
+      await giveawayBridgeMenu(interaction);
+      return;
+    }
+    
+    // Handle giveaway bridge actions
+    if (action === 'giveaway_buy_tickets') {
+      // Show modal for ticket purchase
+      const modal = new ModalBuilder()
+        .setCustomId('buy_giveaway_tickets')
+        .setTitle('خرید بلیط قرعه‌کشی');
+      
+      const ticketQuantityInput = new TextInputBuilder()
+        .setCustomId('ticket_quantity')
+        .setLabel('تعداد بلیط')
+        .setPlaceholder('تعداد بلیط مورد نظر را وارد کنید')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true)
+        .setMinLength(1)
+        .setMaxLength(3);
+      
+      const row = new ActionRowBuilder<TextInputBuilder>().addComponents(ticketQuantityInput);
+      modal.addComponents(row);
+      
+      await interaction.showModal(modal);
+      return;
+    }
+    
+    if (action === 'giveaway_check_balance') {
+      await checkGiveawayBalance(interaction);
       return;
     }
     

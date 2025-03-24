@@ -1,0 +1,10 @@
+{
+  "apiUrl": "http://localhost:3000/api",
+  "apiKey": "default_secure_key_change_this",
+  "ticketPrice": 100,
+  "inviteRatio": {
+    "invites": 5,
+    "tickets": 1
+  },
+  "enabled": true
+}

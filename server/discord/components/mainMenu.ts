@@ -154,8 +154,8 @@ export async function mainMenu(
             .setLabel('🎟️ قرعه‌کشی')
             .setStyle(ButtonStyle.Secondary),
           new ButtonBuilder()
-            .setCustomId('pets')
-            .setLabel('🐾 حیوانات خانگی')
+            .setCustomId('giveaway_bridge')
+            .setLabel('🎮 قرعه‌کشی گیواوی')
             .setStyle(ButtonStyle.Primary),
         );
       
