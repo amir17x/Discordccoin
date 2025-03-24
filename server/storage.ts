@@ -12,6 +12,8 @@ import {
   InsertItem,
   Game,
   InventoryItem,
+  Transaction,
+  TransferStats,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -248,11 +250,25 @@ export class MemStorage implements IStorage {
       economyLevel: 1,
       lastDaily: null,
       lastRob: null,
+      lastWheelSpin: null,
       inventory: {},
       dailyStreak: 0,
       totalGamesPlayed: 0,
       totalGamesWon: 0,
       clanId: null,
+      // فیلدهای جدید برای ثبت تراکنش و آمار انتقال
+      transactions: [{
+        type: 'deposit',
+        amount: 500,
+        fee: 0,
+        timestamp: now,
+        gameType: 'welcome_bonus'
+      }],
+      transferStats: {
+        dailyAmount: 0,
+        lastReset: now,
+        recipients: {}
+      },
       createdAt: now,
     };
 
@@ -274,37 +290,87 @@ export class MemStorage implements IStorage {
   }
 
   // Economy operations
-  async addToWallet(userId: number, amount: number): Promise<User | undefined> {
+  async addToWallet(userId: number, amount: number, transactionType: string = 'deposit', metadata: any = {}): Promise<User | undefined> {
     const user = this.users.get(userId);
     if (!user) return undefined;
 
     user.wallet += amount;
+    
+    // Record transaction
+    if (!user.transactions) user.transactions = [];
+    user.transactions.push({
+      type: transactionType,
+      amount: amount,
+      fee: 0,
+      timestamp: new Date(),
+      ...metadata
+    });
+    
     return user;
   }
 
-  async addToBank(userId: number, amount: number): Promise<User | undefined> {
+  async addToBank(userId: number, amount: number, transactionType: string = 'deposit', metadata: any = {}): Promise<User | undefined> {
     const user = this.users.get(userId);
     if (!user) return undefined;
 
     user.bank += amount;
+    
+    // Record transaction
+    if (!user.transactions) user.transactions = [];
+    user.transactions.push({
+      type: transactionType,
+      amount: amount,
+      fee: 0,
+      timestamp: new Date(),
+      ...metadata
+    });
+    
     return user;
   }
 
   async transferToBank(userId: number, amount: number): Promise<User | undefined> {
     const user = this.users.get(userId);
-    if (!user || user.wallet < amount) return undefined;
+    // امنیت بیشتر: بررسی اینکه مقدار معتبر است
+    if (!user || user.wallet < amount || amount <= 0 || isNaN(amount)) return undefined;
 
+    // محاسبه کارمزد
+    const fee = Math.ceil(amount * 0.01); // 1% fee
+    const depositAmount = amount - fee;
+
+    // اعمال تغییرات
     user.wallet -= amount;
-    user.bank += Math.floor(amount * 0.99); // 1% fee
+    user.bank += depositAmount;
+    
+    // ثبت تراکنش
+    if (!user.transactions) user.transactions = [];
+    user.transactions.push({
+      type: 'deposit',
+      amount: amount,
+      fee: fee,
+      timestamp: new Date()
+    });
+    
     return user;
   }
 
   async transferToWallet(userId: number, amount: number): Promise<User | undefined> {
     const user = this.users.get(userId);
-    if (!user || user.bank < amount) return undefined;
+    // امنیت بیشتر: بررسی اینکه مقدار معتبر است
+    if (!user || user.bank < amount || amount <= 0 || isNaN(amount)) return undefined;
 
+    // اعمال تغییرات
     user.bank -= amount;
     user.wallet += amount;
+    
+    // ثبت تراکنش
+    if (!user.transactions) user.transactions = [];
+    user.transactions.push({
+      type: 'withdraw',
+      amount: amount,
+      fee: 0, // برداشت از بانک کارمزد ندارد
+      timestamp: new Date()
+    });
+    
     return user;
   }
 
@@ -320,10 +386,72 @@ export class MemStorage implements IStorage {
     const fromUser = this.users.get(fromUserId);
     const toUser = this.users.get(toUserId);
     
-    if (!fromUser || !toUser || fromUser.wallet < amount) return false;
+    // امنیت بیشتر: بررسی معتبر بودن مقدار و کاربران
+    if (!fromUser || !toUser || fromUser.wallet < amount || amount <= 0 || isNaN(amount)) return false;
     
+    // بررسی انتقال به خود
+    if (fromUserId === toUserId) return false;
+    
+    // محدودیت انتقال روزانه
+    const now = new Date();
+    const DAILY_TRANSFER_LIMIT = 5000; // محدودیت 5000 سکه در روز
+    
+    if (!fromUser.transferStats) {
+      fromUser.transferStats = {
+        dailyAmount: 0,
+        lastReset: now,
+        recipients: {}
+      };
+    }
+    
+    // اگر روز جدیدی شروع شده، ریست کنیم
+    if (now.getTime() - fromUser.transferStats.lastReset.getTime() > 24 * 60 * 60 * 1000) {
+      fromUser.transferStats.dailyAmount = 0;
+      fromUser.transferStats.lastReset = now;
+      fromUser.transferStats.recipients = {};
+    }
+    
+    // بررسی محدودیت روزانه
+    if (fromUser.transferStats.dailyAmount + amount > DAILY_TRANSFER_LIMIT) {
+      return false;
+    }
+    
+    // بررسی انتقال مکرر به یک کاربر (محدودیت 2000 سکه به هر کاربر در روز)
+    const toUserIdStr = toUserId.toString();
+    if (!fromUser.transferStats.recipients[toUserIdStr]) {
+      fromUser.transferStats.recipients[toUserIdStr] = 0;
+    }
+    
+    if (fromUser.transferStats.recipients[toUserIdStr] + amount > 2000) {
+      return false;
+    }
+    
+    // اعمال تغییرات و به‌روزرسانی آمار
     fromUser.wallet -= amount;
     toUser.wallet += amount;
+    
+    fromUser.transferStats.dailyAmount += amount;
+    fromUser.transferStats.recipients[toUserIdStr] += amount;
+    
+    // ثبت تراکنش
+    if (!fromUser.transactions) fromUser.transactions = [];
+    fromUser.transactions.push({
+      type: 'transfer_out',
+      amount: amount,
+      fee: 0,
+      targetId: toUserId,
+      timestamp: now
+    });
+    
+    if (!toUser.transactions) toUser.transactions = [];
+    toUser.transactions.push({
+      type: 'transfer_in',
+      amount: amount,
+      fee: 0,
+      sourceId: fromUserId,
+      timestamp: now
+    });
+    
     return true;
   }
 
@@ -361,11 +489,35 @@ export class MemStorage implements IStorage {
     
     if (!user || !item) return false;
     
+    // Record transaction
+    if (!user.transactions) user.transactions = [];
+    const now = new Date();
+    
     // Check if item can be purchased with coins or crystals
     if (item.price && user.wallet >= item.price) {
       user.wallet -= item.price;
+      
+      // Record coin transaction
+      user.transactions.push({
+        type: 'item_purchase',
+        amount: item.price,
+        fee: 0,
+        timestamp: now,
+        itemId: item.id,
+        itemName: item.name
+      });
     } else if (item.crystalPrice && user.crystals >= item.crystalPrice) {
       user.crystals -= item.crystalPrice;
+      
+      // Record crystal transaction
+      user.transactions.push({
+        type: 'item_purchase_crystal',
+        amount: item.crystalPrice,
+        fee: 0,
+        timestamp: now,
+        itemId: item.id,
+        itemName: item.name
+      });
     } else {
       return false; // Not enough currency
     }
@@ -450,6 +602,7 @@ export class MemStorage implements IStorage {
 
   // Game operations
   async recordGame(userId: number, type: string, bet: number, won: boolean, reward: number): Promise<Game> {
+    const now = new Date();
     const id = this.currentGameId++;
     const game: Game = {
       id,
@@ -458,7 +611,7 @@ export class MemStorage implements IStorage {
       bet,
       won,
       reward,
-      playedAt: new Date(),
+      playedAt: now,
     };
     
     this.games.push(game);
@@ -467,8 +620,31 @@ export class MemStorage implements IStorage {
     const user = this.users.get(userId);
     if (user) {
       user.totalGamesPlayed += 1;
+      
+      // ثبت تراکنش برای بازی
+      if (!user.transactions) user.transactions = [];
+      
       if (won) {
         user.totalGamesWon += 1;
+        user.wallet += reward;
+        
+        // ثبت برد در بازی
+        user.transactions.push({
+          type: 'game_win',
+          amount: reward,
+          fee: 0,
+          timestamp: now,
+          gameType: type
+        });
+      } else {
+        // ثبت باخت در بازی
+        user.transactions.push({
+          type: 'game_loss',
+          amount: bet,
+          fee: 0,
+          timestamp: now,
+          gameType: type
+        });
       }
     }
     
@@ -575,6 +751,16 @@ export class MemStorage implements IStorage {
       const user = this.users.get(userId);
       if (user) {
         user.wallet += quest.reward;
+        
+        // ثبت پاداش کوئست در تراکنش‌ها
+        if (!user.transactions) user.transactions = [];
+        user.transactions.push({
+          type: 'quest_reward',
+          amount: quest.reward,
+          fee: 0,
+          timestamp: new Date(),
+          questId: questId
+        });
       }
     }
     
@@ -724,6 +910,16 @@ export class MemStorage implements IStorage {
       const user = this.users.get(userId);
       if (user) {
         user.wallet += achievement.reward;
+        
+        // ثبت پاداش دستاورد در تراکنش‌ها
+        if (!user.transactions) user.transactions = [];
+        user.transactions.push({
+          type: 'quest_reward', // استفاده از همان نوع کوئست
+          amount: achievement.reward,
+          fee: 0,
+          timestamp: new Date(),
+          questId: achievementId // استفاده از شناسه دستاورد
+        });
       }
     }
     

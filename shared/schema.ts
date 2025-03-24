@@ -19,6 +19,14 @@ export const users = pgTable("users", {
   totalGamesPlayed: integer("total_games_played").notNull().default(0),
   totalGamesWon: integer("total_games_won").notNull().default(0),
   clanId: integer("clan_id"),
+  // سوابق تراکنش‌های کاربر (واریز، برداشت، انتقال)
+  transactions: jsonb("transactions").$type<Transaction[]>().default([]),
+  // آمار انتقال سکه به کاربران دیگر
+  transferStats: jsonb("transfer_stats").$type<TransferStats>().default({
+    dailyAmount: 0,
+    lastReset: new Date(),
+    recipients: {}
+  }),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -169,4 +177,23 @@ export interface ItemEffects {
   shopDiscount?: number;
   dailyBonus?: number;
   wheelChance?: number;
+}
+
+// Define Transaction
+export interface Transaction {
+  type: 'deposit' | 'withdraw' | 'transfer_in' | 'transfer_out' | 'game_win' | 'game_loss' | 'quest_reward';
+  amount: number;
+  fee: number;
+  timestamp: Date;
+  sourceId?: number;  // برای انتقال دریافتی
+  targetId?: number;  // برای انتقال خروجی
+  gameType?: string;  // برای تراکنش‌های بازی
+  questId?: number;   // برای پاداش‌های کوئست
+}
+
+// Define Transfer Statistics
+export interface TransferStats {
+  dailyAmount: number;
+  lastReset: Date;
+  recipients: Record<string, number>; // مقدار انتقال به هر کاربر
 }

@@ -55,6 +55,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     res.status(200).json(user);
   });
+  
+  // Get user transaction history
+  app.get(`${apiPrefix}/users/:id/transactions`, async (req: Request, res: Response) => {
+    const userId = parseInt(req.params.id);
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: "Invalid user ID" });
+    }
+
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    
+    // Get transactions with optional filtering
+    const type = req.query.type as string | undefined;
+    const limit = parseInt(req.query.limit as string || '50');
+    
+    // Get transactions from user
+    const transactions = user.transactions || [];
+    
+    // Apply filters if provided
+    let filteredTransactions = [...transactions];
+    if (type) {
+      filteredTransactions = filteredTransactions.filter((t) => t.type === type);
+    }
+    
+    // Sort by newest first and limit results
+    const result = filteredTransactions
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, limit);
+      
+    res.status(200).json(result);
+  });
 
   // Create user
   app.post(`${apiPrefix}/users`, async (req: Request, res: Response) => {

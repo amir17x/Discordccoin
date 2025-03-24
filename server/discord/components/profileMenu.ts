@@ -103,9 +103,13 @@ export async function profileMenu(
           .setLabel('🎒 آیتم‌ها')
           .setStyle(ButtonStyle.Danger)
       );
-    
+      
     const row2 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
+        new ButtonBuilder()
+          .setCustomId('profile_transactions')
+          .setLabel('📝 تاریخچه تراکنش‌ها')
+          .setStyle(ButtonStyle.Secondary),
         new ButtonBuilder()
           .setCustomId('menu')
           .setLabel('🔙 بازگشت')
@@ -210,6 +214,101 @@ export async function profileMenu(
         // This will redirect to inventory menu
         const inventoryCommand = await import('./inventoryMenu');
         await inventoryCommand.inventoryMenu(interaction);
+        return;
+      }
+      
+      // Handle transaction history
+      if (customId === 'profile_transactions') {
+        // Get transaction history
+        const transactions = user.transactions || [];
+        
+        // Sort by newest first and limit to 10 most recent
+        const recentTransactions = [...transactions]
+          .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+          .slice(0, 10);
+        
+        const transactionsEmbed = new EmbedBuilder()
+          .setColor('#5865F2')
+          .setTitle('📝 تاریخچه تراکنش‌های شما')
+          .setDescription(`**${interaction.user.username}**\n\nآخرین تراکنش‌های شما (10 مورد اخیر)`)
+          .setFooter({ text: `ID: ${interaction.user.id}` })
+          .setTimestamp();
+        
+        if (recentTransactions.length === 0) {
+          transactionsEmbed.addFields({
+            name: '❌ بدون تراکنش',
+            value: 'هیچ تراکنشی در تاریخچه شما ثبت نشده است.'
+          });
+        } else {
+          recentTransactions.forEach((transaction, index) => {
+            const date = new Date(transaction.timestamp).toLocaleString();
+            
+            let typeDisplay = '';
+            switch (transaction.type) {
+              case 'deposit':
+                typeDisplay = '💳 واریز به بانک';
+                break;
+              case 'withdraw':
+                typeDisplay = '💸 برداشت از بانک';
+                break;
+              case 'transfer_in':
+                typeDisplay = '📥 دریافت از کاربر';
+                break;
+              case 'transfer_out':
+                typeDisplay = '📤 ارسال به کاربر';
+                break;
+              case 'game_win':
+                typeDisplay = '🎮 برد بازی';
+                break;
+              case 'game_loss':
+                typeDisplay = '🎮 باخت بازی';
+                break;
+              case 'quest_reward':
+                typeDisplay = '🎯 جایزه کوئست';
+                break;
+              default:
+                typeDisplay = transaction.type;
+            }
+            
+            let transactionDetails = `**مقدار:** ${transaction.amount} Ccoin`;
+            
+            if (transaction.fee > 0) {
+              transactionDetails += `\n**کارمزد:** ${transaction.fee} Ccoin`;
+            }
+            
+            if (transaction.sourceId) {
+              transactionDetails += `\n**فرستنده:** <@${transaction.sourceId}>`;
+            }
+            
+            if (transaction.targetId) {
+              transactionDetails += `\n**گیرنده:** <@${transaction.targetId}>`;
+            }
+            
+            if (transaction.gameType) {
+              const gameName = transaction.gameType === 'coinflip' ? 'شیر یا خط' :
+                               transaction.gameType === 'rps' ? 'سنگ کاغذ قیچی' :
+                               transaction.gameType === 'numberguess' ? 'حدس عدد' : transaction.gameType;
+              transactionDetails += `\n**بازی:** ${gameName}`;
+            }
+            
+            transactionsEmbed.addFields({
+              name: `${index + 1}. ${typeDisplay} | ${date}`,
+              value: transactionDetails,
+              inline: false
+            });
+          });
+        }
+        
+        // Add navigation buttons for transactions
+        const buttonRow = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('profile')
+              .setLabel('🔙 بازگشت')
+              .setStyle(ButtonStyle.Danger)
+          );
+        
+        await interaction.update({ embeds: [transactionsEmbed], components: [buttonRow] });
         return;
       }
     }
