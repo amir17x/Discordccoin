@@ -7,6 +7,9 @@ import flash from 'connect-flash';
 import expressLayouts from 'express-ejs-layouts';
 import { Transaction, User, Item, Clan, Friend, BlockedUser, PrivateChat, Quest } from '@shared/schema';
 
+// توابع کمکی برای قالب‌
+import formatters from '../admin-panel/helpers/formatters.js';
+
 // تنظیمات دسترسی به توابع دیتابیس برای پنل ادمین
 const db = {
   // توابع مربوط به ماموریت‌ها
@@ -168,7 +171,7 @@ export function setupAdminPanel(app: Express) {
   app.set('layout', 'layouts/main');
   
   // فایل‌های استاتیک
-  app.use('/admin/static', express.static(path.join(process.cwd(), 'admin-panel', 'public')));
+  app.use(express.static(path.join(process.cwd(), 'admin-panel', 'public')));
   
   // میدلویر global variables
   app.use((req: Request, res: Response, next: NextFunction) => {
@@ -555,13 +558,15 @@ function registerAdminRoutes(app: Express) {
       
       res.render('dashboard/index', {
         title: 'داشبورد مدیریت',
+        helpers: formatters,
         stats: {
-          userCount,
+          totalUsers: userCount,
           activeUsers,
           totalCcoin,
           totalCrystals,
           totalClans,
-          totalItems
+          totalItems,
+          newUsers24h: 0  // مقدار موقت برای رفع خطا
         },
         activityData,
         activityLabels: Array(7).fill(0).map((_, i) => {
@@ -570,25 +575,35 @@ function registerAdminRoutes(app: Express) {
           return d.toLocaleDateString('fa-IR', { weekday: 'short' });
         }),
         latestTransactions,
-        recentEvents
+        recentEvents,
+        activeUsersHistory: [{date: '1402/01/01', count: 0}], // مقدار موقت برای رفع خطا
+        gameStats: {coinflip: 0, rps: 0, numberguess: 0, dice: 0}, // مقدار موقت برای رفع خطا
+        botStatus: {status: 'online', version: '1.0.0', uptime: '0 دقیقه'}, // مقدار موقت برای رفع خطا
+        recentUsers: []  // مقدار موقت برای رفع خطا
       });
     } catch (error) {
       console.error('خطا در بارگیری داشبورد:', error);
       req.flash('error', 'خطا در بارگیری اطلاعات داشبورد');
       res.render('dashboard/index', { 
         title: 'داشبورد مدیریت',
+        helpers: formatters,
         stats: {
-          userCount: 0,
+          totalUsers: 0,
           activeUsers: 0,
           totalCcoin: 0,
           totalCrystals: 0,
           totalClans: 0,
-          totalItems: 0
+          totalItems: 0,
+          newUsers24h: 0  // مقدار موقت برای رفع خطا
         },
         activityData: [0, 0, 0, 0, 0, 0, 0],
         activityLabels: ['', '', '', '', '', '', ''],
         latestTransactions: [],
-        recentEvents: []
+        recentEvents: [],
+        activeUsersHistory: [{date: '1402/01/01', count: 0}], // مقدار موقت برای رفع خطا
+        gameStats: {coinflip: 0, rps: 0, numberguess: 0, dice: 0}, // مقدار موقت برای رفع خطا
+        botStatus: {status: 'online', version: '1.0.0', uptime: '0 دقیقه'}, // مقدار موقت برای رفع خطا
+        recentUsers: []  // مقدار موقت برای رفع خطا
       });
     }
   });
@@ -816,7 +831,7 @@ function registerAdminRoutes(app: Express) {
         bank: parseInt(req.body.bank),
         crystals: parseInt(req.body.crystals),
         level: parseInt(req.body.level),
-        xp: parseInt(req.body.xp),
+        experience: parseInt(req.body.xp),
         banned: req.body.banned === 'on'
       };
       
@@ -1189,12 +1204,12 @@ function registerAdminRoutes(app: Express) {
       
       // دریافت اطلاعات مالکان کلن‌ها
       const users = await storage.getAllUsers();
-      const clanOwners = {};
+      const clanOwners: Record<string, User> = {};
       
       paginatedClans.forEach(clan => {
-        const owner = users.find(user => user.id === clan.ownerId);
+        const owner = users.find(user => user.id === Number(clan.ownerId));
         if (owner) {
-          clanOwners[clan.id] = owner;
+          clanOwners[String(clan.id)] = owner;
         }
       });
       
