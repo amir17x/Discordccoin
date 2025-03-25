@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, real } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, real, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -40,6 +40,7 @@ export const users = pgTable("users", {
   }),
   // سطح حساب بانکی (عادی، نقره‌ای، طلایی)
   bankLevel: text("bank_level").notNull().default("normal"),
+  creditScore: integer("credit_score").notNull().default(50),
   // منابع کلن برای کاربر
   clanResources: jsonb("clan_resources").$type<{
     materials: number,
@@ -322,6 +323,74 @@ export type InsertLottery = z.infer<typeof insertLotterySchema>;
 export type LotteryData = typeof lotteries.$inferSelect;
 export type UserStockData = typeof userStocks.$inferSelect;
 
+export type InsertLoan = z.infer<typeof insertLoanSchema>;
+export type LoanData = typeof loans.$inferSelect;
+
+export type InsertJob = z.infer<typeof insertJobSchema>;
+export type JobData = typeof jobs.$inferSelect;
+
+export type InsertAuction = z.infer<typeof insertAuctionSchema>;
+export type AuctionData = typeof auctions.$inferSelect;
+
+// Loans table
+export const loans = pgTable("loans", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  amount: integer("amount").notNull(),
+  interest: integer("interest").notNull(),
+  dueDate: timestamp("due_date").notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("active"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Jobs table
+export const jobs = pgTable("jobs", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  jobType: varchar("job_type", { length: 50 }).notNull(),
+  level: integer("level").notNull().default(1),
+  xp: integer("xp").notNull().default(0),
+  lastWork: timestamp("last_work"),
+});
+
+// Auctions table
+export const auctions = pgTable("auctions", {
+  id: serial("id").primaryKey(),
+  sellerId: integer("seller_id").notNull(),
+  itemId: integer("item_id"),
+  startingBid: integer("starting_bid").notNull(),
+  currentBid: integer("current_bid"),
+  highestBidderId: integer("highest_bidder_id"),
+  endTime: timestamp("end_time").notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("active"),
+  createdAt: timestamp("created_at").defaultNow(),
+  itemType: varchar("item_type", { length: 20 }).notNull(), // "item", "coin", "crystal"
+  itemAmount: integer("item_amount"), // для количества монет или кристаллов
+});
+
+// Define insert schemas for new tables
+export const insertLoanSchema = createInsertSchema(loans).pick({
+  userId: true,
+  amount: true,
+  interest: true,
+  dueDate: true,
+});
+
+export const insertJobSchema = createInsertSchema(jobs).pick({
+  userId: true,
+  jobType: true,
+});
+
+export const insertAuctionSchema = createInsertSchema(auctions).pick({
+  sellerId: true,
+  itemId: true,
+  startingBid: true,
+  endTime: true,
+  itemType: true,
+  itemAmount: true,
+});
+
 // Define game types
 export type GameType = "coinflip" | "rps" | "numberguess";
 
@@ -345,7 +414,8 @@ export interface ItemEffects {
 export interface Transaction {
   type: 'deposit' | 'withdraw' | 'transfer_in' | 'transfer_out' | 'game_win' | 'game_loss' | 'quest_reward' | 
         'steal_success' | 'steal_victim' | 'steal_failed' | 'item_purchase' | 'item_purchase_crystal' | 'welcome_bonus' |
-        'stock_buy' | 'stock_sell' | 'stock_dividend' | 'lottery_ticket' | 'lottery_win' | 'bank_interest';
+        'stock_buy' | 'stock_sell' | 'stock_dividend' | 'lottery_ticket' | 'lottery_win' | 'bank_interest' |
+        'loan_received' | 'loan_repayment' | 'job_salary' | 'auction_sale' | 'auction_bid' | 'auction_refund';
   amount: number;
   fee: number;
   timestamp: Date;
@@ -362,6 +432,9 @@ export interface Transaction {
   quantity?: number;     // تعداد سهام یا بلیط لاتاری
   lotteryId?: number;    // شناسه لاتاری
   lotteryName?: string;  // نام لاتاری
+  loanId?: string;       // شناسه وام
+  jobId?: string;        // شناسه شغل
+  auctionId?: string;    // شناسه حراج
 }
 
 // Define Transfer Statistics
@@ -642,4 +715,123 @@ export interface UserInterests {
   activities: string[];            // فعالیت‌های مورد علاقه
   topics: string[];                // موضوعات مورد علاقه
   updatedAt: string;               // آخرین بروزرسانی
+}
+
+/**
+ * مدل داده برای سیستم وام و بدهی
+ */
+export interface Loan {
+  id: string;                      // شناسه وام
+  userId: number;                  // شناسه کاربر
+  amount: number;                  // مقدار وام
+  interest: number;                // سود وام
+  dueDate: Date;                   // تاریخ سررسید
+  status: 'active' | 'repaid' | 'overdue'; // وضعیت وام
+  requestDate: Date;               // تاریخ درخواست
+  repaymentDate?: Date;            // تاریخ بازپرداخت
+  remainingAmount: number;         // مقدار باقی‌مانده برای پرداخت
+}
+
+/**
+ * مدل داده برای سیستم شغل و درآمد
+ */
+export interface Job {
+  id: string;                      // شناسه شغل
+  name: string;                    // نام شغل
+  description: string;             // توضیحات شغل
+  salaryBase: number;              // حقوق پایه
+  salaryCurrency: 'ccoin' | 'crystal'; // نوع ارز پرداختی
+  cooldown: number;                // زمان انتظار بین هر پرداخت (به ساعت)
+  requirements: {                  // پیش‌نیازهای شغل
+    minCoins?: number;             // حداقل سکه مورد نیاز
+    minCrystals?: number;          // حداقل کریستال مورد نیاز
+    minLevel?: number;             // حداقل سطح مورد نیاز
+  };
+  icon: string;                    // آیکون شغل (ایموجی)
+}
+
+/**
+ * مدل داده برای شغل‌های کاربر
+ */
+export interface UserJob {
+  userId: number;                  // شناسه کاربر
+  jobId: string;                   // شناسه شغل
+  level: number;                   // سطح شغلی کاربر
+  xp: number;                      // تجربه شغلی
+  lastWork: Date;                  // آخرین زمان دریافت حقوق
+  totalEarned: number;             // کل درآمد از این شغل
+}
+
+/**
+ * مدل داده برای سیستم حراج
+ */
+export interface Auction {
+  id: string;                      // شناسه حراج
+  sellerId: number;                // شناسه فروشنده
+  itemType: 'item' | 'ccoin' | 'crystal'; // نوع آیتم حراجی
+  itemId?: number;                 // شناسه آیتم (برای آیتم‌ها)
+  quantity: number;                // تعداد آیتم یا مقدار سکه/کریستال
+  startingBid: number;             // قیمت پایه
+  currentBid: number;              // پیشنهاد فعلی
+  highestBidderId?: number;        // شناسه بالاترین پیشنهاددهنده
+  startTime: Date;                 // زمان شروع
+  endTime: Date;                   // زمان پایان
+  status: 'active' | 'completed' | 'cancelled'; // وضعیت حراج
+  bids: AuctionBid[];              // تاریخچه پیشنهادها
+}
+
+/**
+ * مدل داده برای پیشنهادهای حراج
+ */
+export interface AuctionBid {
+  userId: number;                  // شناسه کاربر پیشنهاددهنده
+  amount: number;                  // مقدار پیشنهاد
+  timestamp: Date;                 // زمان پیشنهاد
+}
+
+/**
+ * مدل داده برای بازار سیاه
+ */
+export interface BlackMarketItem {
+  id: string;                      // شناسه آیتم
+  name: string;                    // نام آیتم
+  description: string;             // توضیحات آیتم
+  price: number;                   // قیمت آیتم
+  currency: 'ccoin' | 'crystal';   // نوع ارز
+  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'; // نادر بودن
+  risk: number;                    // ریسک خرید (0-100)
+  effects: {                      // اثرات آیتم
+    robberyBoost?: number;         // افزایش شانس سرقت
+    xpBoost?: number;              // افزایش تجربه
+    coinBoost?: number;            // افزایش سکه
+    unlockFeature?: string;        // آزادسازی ویژگی خاص
+  };
+  available: boolean;              // آیا در دسترس است
+  limitedStock?: number;           // تعداد محدود
+  expiresAfter?: number;           // انقضا بعد از چند روز
+  icon: string;                    // آیکون آیتم (ایموجی)
+}
+
+/**
+ * مدل داده برای سرمایه‌گذاری کلن
+ */
+export interface ClanInvestment {
+  id: string;                      // شناسه سرمایه‌گذاری
+  clanId: number;                  // شناسه کلن
+  type: 'business' | 'research' | 'expansion'; // نوع سرمایه‌گذاری
+  name: string;                    // نام سرمایه‌گذاری
+  description: string;             // توضیحات
+  initialCost: number;             // هزینه اولیه
+  currentValue: number;            // ارزش فعلی
+  returnRate: number;              // نرخ بازگشت (درصد)
+  dailyIncome: number;             // درآمد روزانه
+  level: number;                   // سطح سرمایه‌گذاری
+  upgradeCost: number;             // هزینه ارتقا
+  lastCollection: Date;            // آخرین زمان جمع‌آوری سود
+  contributors: {                  // مشارکت‌کنندگان
+    userId: number;                // شناسه کاربر
+    amount: number;                // مقدار مشارکت
+    share: number;                 // درصد سهم
+  }[];
+  icon: string;                    // آیکون (ایموجی)
 }

@@ -146,6 +146,27 @@ export interface IStorage {
   getUserInterests(userId: number): Promise<UserInterests | undefined>;
   updateUserInterests(userId: number, interests: Partial<UserInterests>): Promise<boolean>;
   findSimilarUsers(userId: number, limit?: number): Promise<User[]>;
+  
+  // Loan operations
+  getUserLoans(userId: number): Promise<Loan[]>;
+  getLoanById(loanId: string): Promise<Loan | undefined>;
+  createLoan(loan: Loan): Promise<Loan>;
+  updateLoanStatus(loanId: string, status: 'active' | 'repaid' | 'overdue', repaymentDate?: Date): Promise<boolean>;
+  updateCreditScore(userId: number, amount: number): Promise<number>;
+  
+  // Job operations
+  getUserJob(userId: number): Promise<JobData | undefined>;
+  getAvailableJobs(): Promise<{id: string, name: string, income: number, cyclePeriod: number, requirements: any}[]>;
+  assignJob(userId: number, jobType: string): Promise<JobData>;
+  collectJobIncome(userId: number): Promise<{amount: number, xpEarned: number, leveledUp: boolean}>;
+  updateJobXP(userId: number, xpAmount: number): Promise<{leveledUp: boolean, newLevel?: number}>;
+  
+  // Auction operations
+  getActiveAuctions(): Promise<AuctionData[]>;
+  getAuctionById(auctionId: number): Promise<AuctionData | undefined>;
+  createAuction(sellerId: number, itemId: number | null, startingBid: number, duration: number, itemType: string, itemAmount?: number): Promise<AuctionData>;
+  placeBid(auctionId: number, bidderId: number, amount: number): Promise<boolean>;
+  endAuction(auctionId: number): Promise<{sellerId: number, highestBidderId?: number, amount?: number, itemId?: number, itemType: string, itemAmount?: number}>;
 }
 
 export class MemStorage implements IStorage {
@@ -162,6 +183,13 @@ export class MemStorage implements IStorage {
   private lotteries: Map<number, LotteryData> = new Map();
   private privateChats: Map<string, PrivateChat> = new Map();
   private anonymousChats: Map<string, AnonymousChat> = new Map();
+  private loans: Map<string, Loan> = new Map();
+  private jobs: Map<number, JobData> = new Map();
+  private auctions: Map<number, AuctionData> = new Map();
+  
+  private currentLoanId = 1;
+  private currentJobId = 1;
+  private currentAuctionId = 1;
   
   private currentUserId = 1;
   private currentItemId = 1;
@@ -2440,6 +2468,111 @@ export class MemStorage implements IStorage {
     user.claimedRewards[rewardType] = new Date().toISOString();
     
     return true;
+  }
+
+  // ------------------------
+  // پیاده سازی عملیات‌های سیستم وام
+  // ------------------------
+
+  /**
+   * دریافت تمام وام‌های یک کاربر
+   * @param userId شناسه کاربر
+   * @returns لیست وام‌های کاربر
+   */
+  async getUserLoans(userId: number): Promise<Loan[]> {
+    const userLoans: Loan[] = [];
+    
+    for (const loan of this.loans.values()) {
+      if (loan.userId === userId) {
+        userLoans.push(loan);
+      }
+    }
+    
+    // مرتب‌سازی وام‌ها از جدیدترین به قدیمی‌ترین بر اساس تاریخ درخواست
+    return userLoans.sort((a, b) => 
+      new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime()
+    );
+  }
+
+  /**
+   * دریافت اطلاعات یک وام با شناسه
+   * @param loanId شناسه وام
+   * @returns اطلاعات وام یا undefined در صورت عدم وجود
+   */
+  async getLoanById(loanId: string): Promise<Loan | undefined> {
+    return this.loans.get(loanId);
+  }
+
+  /**
+   * ایجاد وام جدید
+   * @param loan اطلاعات وام جدید
+   * @returns وام ایجاد شده
+   */
+  async createLoan(loan: Loan): Promise<Loan> {
+    // اطمینان از وجود کاربر
+    const user = this.users.get(loan.userId);
+    if (!user) {
+      throw new Error(`کاربر با شناسه ${loan.userId} یافت نشد`);
+    }
+    
+    // افزودن مبلغ وام به کیف پول کاربر
+    user.wallet += loan.amount;
+    
+    // ثبت تراکنش
+    if (!user.transactions) user.transactions = [];
+    user.transactions.push({
+      type: 'loan_received',
+      amount: loan.amount,
+      fee: 0,
+      timestamp: new Date(),
+      loanId: loan.id
+    });
+    
+    // ذخیره اطلاعات وام
+    this.loans.set(loan.id, loan);
+    
+    return loan;
+  }
+
+  /**
+   * به‌روزرسانی وضعیت وام
+   * @param loanId شناسه وام
+   * @param status وضعیت جدید وام
+   * @param repaymentDate تاریخ بازپرداخت (اختیاری)
+   * @returns آیا به‌روزرسانی موفق بود
+   */
+  async updateLoanStatus(loanId: string, status: 'active' | 'repaid' | 'overdue', repaymentDate?: Date): Promise<boolean> {
+    const loan = this.loans.get(loanId);
+    if (!loan) return false;
+    
+    loan.status = status;
+    
+    if (repaymentDate) {
+      loan.repaymentDate = repaymentDate;
+    }
+    
+    return true;
+  }
+
+  /**
+   * به‌روزرسانی نمره اعتباری کاربر
+   * @param userId شناسه کاربر
+   * @param amount مقدار تغییر (مثبت یا منفی)
+   * @returns نمره اعتباری جدید کاربر
+   */
+  async updateCreditScore(userId: number, amount: number): Promise<number> {
+    const user = this.users.get(userId);
+    if (!user) throw new Error(`کاربر با شناسه ${userId} یافت نشد`);
+    
+    // اگر فیلد نمره اعتباری وجود ندارد، آن را ایجاد می‌کنیم
+    if (!user.creditScore) {
+      user.creditScore = 500; // نمره اعتباری پایه
+    }
+    
+    // اعمال تغییر و محدود کردن بین 0 تا 1000
+    user.creditScore = Math.max(0, Math.min(1000, user.creditScore + amount));
+    
+    return user.creditScore;
   }
 }
 
