@@ -79,7 +79,6 @@ export async function mainMenu(
         iconURL: interaction.client.user?.displayAvatarURL() 
       })
       .setThumbnail('https://cdn-icons-png.flaticon.com/512/6699/6699156.png') // آیکون سکه طلایی با درخشش
-      .setImage('https://cdn-icons-png.flaticon.com/512/6699/6699183.png') // تصویر بنر زیبا
       .setTimestamp();
     
     let components = [];
