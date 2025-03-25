@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ورود به پنل ادمین | ربات Ccoin</title>
+    
+    <!-- فونت آیکون Bootstrap -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- فونت‌های فارسی -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
+    
+    <!-- استایل Bootstrap RTL -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
+    
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #13151f;
+            color: #e9ecef;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .login-container {
+            background-color: #1c1f2e;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+            z-index: 1;
+        }
+        
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .login-body form {
+            margin-bottom: 1rem;
+        }
+        
+        .form-control {
+            background-color: #272b3f;
+            border-color: #343a40;
+            color: #e9ecef;
+            padding: 0.7rem 1rem;
+        }
+        
+        .form-control:focus {
+            background-color: #272b3f;
+            border-color: #7289da;
+            color: #e9ecef;
+            box-shadow: 0 0 0 0.25rem rgba(114, 137, 218, 0.25);
+        }
+        
+        .btn-primary {
+            background-color: #7289da;
+            border-color: #7289da;
+            width: 100%;
+            padding: 0.7rem;
+        }
+        
+        .btn-primary:hover {
+            background-color: #5e73bc;
+            border-color: #5e73bc;
+        }
+        
+        .background-shape {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.2;
+            z-index: 0;
+        }
+        
+        .shape-1 {
+            width: 600px;
+            height: 600px;
+            background-color: #7289da;
+            top: -300px;
+            left: -300px;
+        }
+        
+        .shape-2 {
+            width: 500px;
+            height: 500px;
+            background-color: #43b581;
+            bottom: -250px;
+            right: -250px;
+        }
+        
+        .logo {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: #7289da;
+        }
+    </style>
+</head>
+<body>
+    <!-- اشکال پس‌زمینه -->
+    <div class="background-shape shape-1"></div>
+    <div class="background-shape shape-2"></div>
+    
+    <div class="login-container">
+        <div class="login-header">
+            <div class="logo">
+                <i class="bi bi-discord"></i>
+            </div>
+            <h2>پنل ادمین Ccoin</h2>
+            <p class="text-muted">لطفاً وارد شوید</p>
+        </div>
+        
+        <div class="login-body">
+            <% if (error) { %>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> <%= error %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <% } %>
+            
+            <form action="/login" method="POST">
+                <div class="mb-4">
+                    <label for="username" class="form-label">نام کاربری</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-person"></i></span>
+                        <input type="text" class="form-control" id="username" name="username" placeholder="نام کاربری خود را وارد کنید" required autocomplete="username">
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="password" class="form-label">رمز عبور</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-key"></i></span>
+                        <input type="password" class="form-control" id="password" name="password" placeholder="رمز عبور خود را وارد کنید" required autocomplete="current-password">
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary mt-3">
+                    <i class="bi bi-box-arrow-in-right me-2"></i> ورود
+                </button>
+            </form>
+        </div>
+        
+        <div class="login-footer text-center mt-4">
+            <p class="text-muted small">
+                پنل ادمین ربات Ccoin &copy; <%= new Date().getFullYear() %>
+            </p>
+        </div>
+    </div>
+    
+    <!-- اسکریپت‌های Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1521,18 +1521,31 @@ async function handleDailyReward(interaction: ButtonInteraction) {
       message += ` زنجیره فعلی شما: ${streak} روز.`;
     }
     
-    if (interaction.deferred) {
-      await interaction.editReply({ content: message });
-    } else {
-      await interaction.reply({ content: message, ephemeral: true });
-    }
+    // ساخت دکمه‌های دسترسی به منوهای دیگر
+    const row = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('menu')
+          .setLabel('🏠 منوی اصلی')
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId('balance')
+          .setLabel('💰 مشاهده موجودی')
+          .setStyle(ButtonStyle.Primary)
+      );
     
-    // بعد از مدت کوتاهی، منوی اقتصاد را به‌روزرسانی می‌کنیم
-    setTimeout(async () => {
-      if (interaction.replied || interaction.deferred) {
-        await economyMenu(interaction, true);
-      }
-    }, 1500);
+    if (interaction.deferred) {
+      await interaction.editReply({ 
+        content: message,
+        components: [row]
+      });
+    } else {
+      await interaction.reply({ 
+        content: message, 
+        components: [row],
+        ephemeral: true 
+      });
+    }
   } catch (error) {
     console.error('Error in daily reward handler:', error);
     try {

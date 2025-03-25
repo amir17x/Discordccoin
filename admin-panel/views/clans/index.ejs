@@ -1,0 +1,137 @@
+<%- include('../partials/header') %>
+
+<div class="d-flex justify-content-between mb-4">
+    <div>
+        <a href="/dashboard" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> بازگشت به داشبورد
+        </a>
+    </div>
+    <div class="d-flex">
+        <form action="/clans/search" method="GET" class="d-flex me-2">
+            <input type="text" name="term" class="form-control me-2" placeholder="جستجوی کلن...">
+            <button type="submit" class="btn btn-outline-primary">
+                <i class="bi bi-search"></i>
+            </button>
+        </form>
+    </div>
+</div>
+
+<% if (locals.success) { %>
+<div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+    <%= success %>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+<% } %>
+
+<div class="card shadow mb-4">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold">لیست کلن‌ها</h6>
+        <span class="badge bg-light text-dark">تعداد: <%= pagination.totalItems %></span>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th scope="col">شناسه</th>
+                        <th scope="col">نام کلن</th>
+                        <th scope="col">مالک</th>
+                        <th scope="col">تعداد اعضا</th>
+                        <th scope="col">سطح</th>
+                        <th scope="col">منابع</th>
+                        <th scope="col">تاریخ ایجاد</th>
+                        <th scope="col">عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% clans.forEach(clan => { %>
+                    <tr>
+                        <td><%= clan.id %></td>
+                        <td><%= clan.name %></td>
+                        <td><%= clan.ownerId %></td>
+                        <td><%= typeof clan.members === 'object' ? clan.members.length : 0 %></td>
+                        <td><%= clan.level %></td>
+                        <td><%= typeof clan.resources === 'object' ? `${clan.resources.coins || 0} سکه` : '0 سکه' %></td>
+                        <td><%= new Date(clan.createdAt).toLocaleDateString('fa-IR') %></td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="/clans/<%= clan.id %>" class="btn btn-sm btn-info">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="/clans/<%= clan.id %>/edit" class="btn btn-sm btn-warning">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteClanModal<%= clan.id %>">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- مدال حذف کلن -->
+                            <div class="modal fade" id="deleteClanModal<%= clan.id %>" tabindex="-1" aria-labelledby="deleteClanModalLabel<%= clan.id %>" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-danger text-white">
+                                            <h5 class="modal-title" id="deleteClanModalLabel<%= clan.id %>">حذف کلن</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            آیا از حذف کلن "<%= clan.name %>" اطمینان دارید؟ با این کار تمام اعضای کلن نیز از کلن خارج خواهند شد. این عملیات غیرقابل بازگشت است.
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                                            <form action="/clans/<%= clan.id %>/delete" method="POST">
+                                                <button type="submit" class="btn btn-danger">حذف</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card-footer">
+        <nav aria-label="صفحه‌بندی کلن‌ها">
+            <ul class="pagination justify-content-center mb-0">
+                <% if (pagination.hasPrev) { %>
+                <li class="page-item">
+                    <a class="page-link" href="/clans?page=<%= pagination.currentPage - 1 %>" aria-label="قبلی">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                <% } else { %>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="قبلی">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                <% } %>
+                
+                <% for(let i = 1; i <= pagination.totalPages; i++) { %>
+                <li class="page-item <%= i === pagination.currentPage ? 'active' : '' %>">
+                    <a class="page-link" href="/clans?page=<%= i %>"><%= i %></a>
+                </li>
+                <% } %>
+                
+                <% if (pagination.hasNext) { %>
+                <li class="page-item">
+                    <a class="page-link" href="/clans?page=<%= pagination.currentPage + 1 %>" aria-label="بعدی">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <% } else { %>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="بعدی">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <% } %>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

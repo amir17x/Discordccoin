@@ -1,0 +1,303 @@
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+  <h1 class="h2">داشبورد مدیریت</h1>
+  <div class="btn-toolbar mb-2 mb-md-0">
+    <div class="btn-group me-2">
+      <button type="button" class="btn btn-sm btn-outline-secondary">گزارش</button>
+      <button type="button" class="btn btn-sm btn-outline-secondary">بروزرسانی</button>
+    </div>
+    <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle">
+      <i class="fas fa-calendar me-1"></i>
+      امروز
+    </button>
+  </div>
+</div>
+
+<!-- آمار کلی -->
+<div class="row mb-4">
+  <!-- کاربران -->
+  <div class="col-md-3">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body d-flex align-items-center">
+        <div class="icon-container bg-primary">
+          <i class="fas fa-users fa-2x text-white"></i>
+        </div>
+        <div class="ms-3">
+          <h5 class="mb-0"><%= stats.totalUsers %></h5>
+          <p class="text-muted mb-0">کاربران</p>
+          <small class="text-<%= stats.newUsers24h > 0 ? 'success' : 'secondary' %> d-flex align-items-center">
+            <i class="fas fa-<%= stats.newUsers24h > 0 ? 'arrow-up' : 'minus' %> me-1"></i>
+            <%= stats.newUsers24h %> کاربر جدید
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- کلن‌ها -->
+  <div class="col-md-3">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body d-flex align-items-center">
+        <div class="icon-container bg-success">
+          <i class="fas fa-flag fa-2x text-white"></i>
+        </div>
+        <div class="ms-3">
+          <h5 class="mb-0"><%= stats.totalClans %></h5>
+          <p class="text-muted mb-0">کلن‌ها</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Ccoin -->
+  <div class="col-md-3">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body d-flex align-items-center">
+        <div class="icon-container bg-warning">
+          <i class="fas fa-coins fa-2x text-white"></i>
+        </div>
+        <div class="ms-3">
+          <h5 class="mb-0"><%= helpers.formatNumber(stats.totalCcoin) %></h5>
+          <p class="text-muted mb-0">Ccoin</p>
+          <small class="text-<%= stats.economyChange > 0 ? 'success' : 'danger' %> d-flex align-items-center">
+            <i class="fas fa-<%= stats.economyChange > 0 ? 'arrow-up' : 'arrow-down' %> me-1"></i>
+            <%= helpers.formatNumber(Math.abs(stats.economyChange)) %> تغییر 24h
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- ماموریت‌ها -->
+  <div class="col-md-3">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body d-flex align-items-center">
+        <div class="icon-container bg-info">
+          <i class="fas fa-tasks fa-2x text-white"></i>
+        </div>
+        <div class="ms-3">
+          <h5 class="mb-0"><%= stats.activeQuests %></h5>
+          <p class="text-muted mb-0">ماموریت‌های فعال</p>
+          <small class="text-secondary d-flex align-items-center">
+            <%= stats.completedQuests7d %> تکمیل شده در هفته
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <!-- نمودار کاربران فعال -->
+  <div class="col-md-8">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white">
+        <h5 class="card-title mb-0">کاربران فعال (7 روز اخیر)</h5>
+      </div>
+      <div class="card-body">
+        <canvas id="activeUsersChart" height="250"></canvas>
+      </div>
+    </div>
+  </div>
+  
+  <!-- نمودار بازی‌ها -->
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white">
+        <h5 class="card-title mb-0">آمار بازی‌ها</h5>
+      </div>
+      <div class="card-body">
+        <canvas id="gamesChart" height="250"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <!-- کاربران فعال اخیر -->
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">کاربران فعال اخیر</h5>
+        <a href="/users" class="btn btn-sm btn-outline-primary">مشاهده همه</a>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">نام کاربری</th>
+                <th scope="col">آخرین فعالیت</th>
+                <th scope="col">موجودی</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (recentUsers && recentUsers.length > 0) { %>
+                <% recentUsers.forEach((user, index) => { %>
+                  <tr>
+                    <th scope="row"><%= index + 1 %></th>
+                    <td>
+                      <a href="/users/<%= user.id %>" class="text-decoration-none">
+                        <%= user.username %>
+                      </a>
+                    </td>
+                    <td><%= helpers.timeAgo(user.lastSeen) %></td>
+                    <td><%= helpers.formatNumber(user.wallet + user.bank) %> Ccoin</td>
+                  </tr>
+                <% }) %>
+              <% } else { %>
+                <tr>
+                  <td colspan="4" class="text-center py-3">هیچ کاربر فعالی یافت نشد.</td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- رویدادهای اخیر -->
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">رویدادهای اخیر</h5>
+        <a href="/logs" class="btn btn-sm btn-outline-primary">مشاهده همه</a>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">نوع</th>
+                <th scope="col">پیام</th>
+                <th scope="col">زمان</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (recentEvents && recentEvents.length > 0) { %>
+                <% recentEvents.forEach((event, index) => { %>
+                  <tr>
+                    <th scope="row"><%= index + 1 %></th>
+                    <td>
+                      <% if (event.type === 'user') { %>
+                        <span class="badge bg-primary">کاربر</span>
+                      <% } else if (event.type === 'transaction') { %>
+                        <span class="badge bg-success">تراکنش</span>
+                      <% } else if (event.type === 'game') { %>
+                        <span class="badge bg-warning text-dark">بازی</span>
+                      <% } else if (event.type === 'clan') { %>
+                        <span class="badge bg-info">کلن</span>
+                      <% } else if (event.type === 'system') { %>
+                        <span class="badge bg-dark">سیستم</span>
+                      <% } else { %>
+                        <span class="badge bg-secondary"><%= event.type %></span>
+                      <% } %>
+                    </td>
+                    <td><%= event.message %></td>
+                    <td><%= helpers.timeAgo(event.timestamp) %></td>
+                  </tr>
+                <% }) %>
+              <% } else { %>
+                <tr>
+                  <td colspan="4" class="text-center py-3">هیچ رویدادی یافت نشد.</td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- اسکریپت نمودارها -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // نمودار کاربران فعال
+  const activeUsersCtx = document.getElementById('activeUsersChart').getContext('2d');
+  const activeUsersData = {
+    labels: [
+      <% activeUsersHistory.forEach(item => { %>
+        '<%= item.date %>',
+      <% }) %>
+    ],
+    datasets: [{
+      label: 'کاربران فعال',
+      data: [
+        <% activeUsersHistory.forEach(item => { %>
+          <%= item.count %>,
+        <% }) %>
+      ],
+      backgroundColor: 'rgba(54, 162, 235, 0.2)',
+      borderColor: 'rgba(54, 162, 235, 1)',
+      borderWidth: 2,
+      tension: 0.3,
+      fill: true
+    }]
+  };
+  
+  new Chart(activeUsersCtx, {
+    type: 'line',
+    data: activeUsersData,
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'top',
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+  
+  // نمودار بازی‌ها
+  const gamesCtx = document.getElementById('gamesChart').getContext('2d');
+  const gamesData = {
+    labels: ['پرتاب سکه', 'سنگ کاغذ قیچی', 'حدس عدد', 'تاس', 'سایر'],
+    datasets: [{
+      label: 'تعداد بازی',
+      data: [
+        <%= gameStats.coinflip %>,
+        <%= gameStats.rps %>,
+        <%= gameStats.numberguess %>,
+        <%= gameStats.dice %>,
+        <%= gameStats.other %>
+      ],
+      backgroundColor: [
+        'rgba(255, 99, 132, 0.6)',
+        'rgba(54, 162, 235, 0.6)',
+        'rgba(255, 206, 86, 0.6)',
+        'rgba(75, 192, 192, 0.6)',
+        'rgba(153, 102, 255, 0.6)'
+      ],
+      borderColor: [
+        'rgba(255, 99, 132, 1)',
+        'rgba(54, 162, 235, 1)',
+        'rgba(255, 206, 86, 1)',
+        'rgba(75, 192, 192, 1)',
+        'rgba(153, 102, 255, 1)'
+      ],
+      borderWidth: 1
+    }]
+  };
+  
+  new Chart(gamesCtx, {
+    type: 'doughnut',
+    data: gamesData,
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'right',
+        }
+      }
+    }
+  });
+});
+</script>

@@ -1,0 +1,96 @@
+<nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+  <div class="position-sticky pt-3 sidebar-sticky">
+    <ul class="nav flex-column">
+      <li class="nav-item">
+        <a class="nav-link <%= active === 'dashboard' ? 'active' : '' %>" href="/dashboard">
+          <i class="fas fa-home"></i>
+          داشبورد
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link <%= active === 'users' ? 'active' : '' %>" href="/users">
+          <i class="fas fa-users"></i>
+          کاربران
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link <%= active === 'clans' ? 'active' : '' %>" href="/clans">
+          <i class="fas fa-flag"></i>
+          کلن‌ها
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link <%= active === 'quests' ? 'active' : '' %>" href="/quests">
+          <i class="fas fa-tasks"></i>
+          ماموریت‌ها
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link <%= active === 'items' ? 'active' : '' %>" href="/items">
+          <i class="fas fa-box"></i>
+          آیتم‌ها
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link <%= active === 'games' ? 'active' : '' %>" href="/games">
+          <i class="fas fa-gamepad"></i>
+          بازی‌ها
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link <%= active === 'economy' ? 'active' : '' %>" href="/economy">
+          <i class="fas fa-coins"></i>
+          اقتصاد
+        </a>
+      </li>
+    </ul>
+
+    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+      <span>ابزارها</span>
+    </h6>
+    <ul class="nav flex-column mb-2">
+      <li class="nav-item">
+        <a class="nav-link <%= active === 'logs' ? 'active' : '' %>" href="/logs">
+          <i class="fas fa-file-alt"></i>
+          لاگ‌ها
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link <%= active === 'notifications' ? 'active' : '' %>" href="/notifications">
+          <i class="fas fa-bell"></i>
+          اعلان‌ها
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link <%= active === 'settings' ? 'active' : '' %>" href="/settings">
+          <i class="fas fa-cog"></i>
+          تنظیمات
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://github.com/ccoin-bot/docs" target="_blank">
+          <i class="fas fa-book"></i>
+          راهنما
+        </a>
+      </li>
+    </ul>
+    
+    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+      <span>وضعیت ربات</span>
+    </h6>
+    <div class="px-3 py-2">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <small>وضعیت:</small>
+        <span class="badge bg-success">آنلاین</span>
+      </div>
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <small>زمان آپتایم:</small>
+        <span><%= botStatus.uptime || '0 ساعت' %></span>
+      </div>
+      <div class="d-flex justify-content-between align-items-center">
+        <small>نسخه:</small>
+        <span><%= botStatus.version || '1.0.0' %></span>
+      </div>
+    </div>
+  </div>
+</nav>

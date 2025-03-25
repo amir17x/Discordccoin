@@ -1,0 +1,29 @@
+<header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
+  <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6" href="/dashboard">
+    <img src="/img/logo.png" alt="Ccoin" class="header-logo me-2">
+    <span>پنل مدیریت Ccoin</span>
+  </a>
+  <button class="navbar-toggler d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="navbar-nav flex-row">
+    <div class="nav-item text-nowrap">
+      <a class="nav-link px-3" href="#" id="refreshData">
+        <i class="fas fa-sync-alt me-1"></i>
+        بروزرسانی
+      </a>
+    </div>
+    <div class="nav-item text-nowrap dropdown">
+      <a class="nav-link px-3 dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="fas fa-user-circle me-1"></i>
+        <%= user.username %>
+      </a>
+      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+        <li><a class="dropdown-item" href="/profile"><i class="fas fa-id-card me-2"></i> پروفایل</a></li>
+        <li><a class="dropdown-item" href="/settings"><i class="fas fa-cog me-2"></i> تنظیمات</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item" href="/auth/logout"><i class="fas fa-sign-out-alt me-2"></i> خروج</a></li>
+      </ul>
+    </div>
+  </div>
+</header>

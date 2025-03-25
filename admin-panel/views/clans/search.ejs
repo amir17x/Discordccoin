@@ -1,0 +1,94 @@
+<%- include('../partials/header') %>
+
+<div class="d-flex justify-content-between mb-4">
+    <div>
+        <a href="/clans" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> بازگشت به لیست کلن‌ها
+        </a>
+    </div>
+    <div class="d-flex">
+        <form action="/clans/search" method="GET" class="d-flex">
+            <input type="text" name="term" class="form-control me-2" placeholder="جستجوی کلن..." value="<%= searchTerm %>">
+            <button type="submit" class="btn btn-outline-primary">
+                <i class="bi bi-search"></i>
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold">نتایج جستجو برای: <%= searchTerm %></h6>
+        <span class="badge bg-light text-dark">تعداد: <%= clans.length %></span>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <% if (clans.length > 0) { %>
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th scope="col">شناسه</th>
+                        <th scope="col">نام کلن</th>
+                        <th scope="col">مالک</th>
+                        <th scope="col">سطح</th>
+                        <th scope="col">تجربه</th>
+                        <th scope="col">عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% clans.forEach(clan => { %>
+                    <tr>
+                        <td><%= clan.id %></td>
+                        <td><%= clan.name %></td>
+                        <td><%= clan.ownerId %></td>
+                        <td><%= clan.level %></td>
+                        <td><%= clan.experience %></td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="/clans/<%= clan.id %>" class="btn btn-sm btn-info">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="/clans/<%= clan.id %>/edit" class="btn btn-sm btn-warning">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteClanModal<%= clan.id %>">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- مدال حذف کلن -->
+                            <div class="modal fade" id="deleteClanModal<%= clan.id %>" tabindex="-1" aria-labelledby="deleteClanModalLabel<%= clan.id %>" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-danger text-white">
+                                            <h5 class="modal-title" id="deleteClanModalLabel<%= clan.id %>">حذف کلن</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            آیا از حذف کلن "<%= clan.name %>" اطمینان دارید؟ این عملیات غیرقابل بازگشت است.
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                                            <form action="/clans/<%= clan.id %>/delete" method="POST">
+                                                <button type="submit" class="btn btn-danger">حذف</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+            <% } else { %>
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                هیچ کلنی با عبارت "<%= searchTerm %>" یافت نشد.
+            </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,252 @@
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+  <h1 class="h2">مدیریت کاربران</h1>
+  <div class="btn-toolbar mb-2 mb-md-0">
+    <div class="btn-group me-2">
+      <button type="button" class="btn btn-sm btn-outline-secondary" id="exportUsersCSV">
+        <i class="fas fa-file-export me-1"></i>
+        خروجی CSV
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" id="refreshUserList">
+        <i class="fas fa-sync-alt me-1"></i>
+        بروزرسانی
+      </button>
+    </div>
+    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+      <i class="fas fa-user-plus me-1"></i>
+      کاربر جدید
+    </button>
+  </div>
+</div>
+
+<!-- بخش فیلتر و جستجو -->
+<div class="card mb-4 border-0 shadow-sm">
+  <div class="card-body">
+    <form id="userFilterForm" class="row g-3">
+      <div class="col-md-4">
+        <label for="searchQuery" class="form-label">جستجو:</label>
+        <input type="text" class="form-control" id="searchQuery" name="query" placeholder="نام کاربری، شناسه دیسکورد، ...">
+      </div>
+      <div class="col-md-3">
+        <label for="sortBy" class="form-label">مرتب‌سازی:</label>
+        <select class="form-select" id="sortBy" name="sortBy">
+          <option value="username">نام کاربری</option>
+          <option value="createdAt">تاریخ عضویت</option>
+          <option value="wallet">موجودی کیف پول</option>
+          <option value="bank">موجودی بانک</option>
+          <option value="level">سطح</option>
+          <option value="lastSeen">آخرین بازدید</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label for="filterBy" class="form-label">فیلتر:</label>
+        <select class="form-select" id="filterBy" name="filterBy">
+          <option value="all">همه کاربران</option>
+          <option value="active">کاربران فعال (7 روز اخیر)</option>
+          <option value="inactive">کاربران غیرفعال (30+ روز)</option>
+          <option value="banned">کاربران مسدود شده</option>
+          <option value="premium">کاربران ویژه</option>
+        </select>
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="fas fa-search me-1"></i>
+          جستجو
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- جدول کاربران -->
+<div class="card border-0 shadow-sm">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">نام کاربری</th>
+            <th scope="col">شناسه دیسکورد</th>
+            <th scope="col">موجودی کیف پول</th>
+            <th scope="col">موجودی بانک</th>
+            <th scope="col">تعداد کریستال</th>
+            <th scope="col">سطح</th>
+            <th scope="col">تاریخ عضویت</th>
+            <th scope="col">آخرین بازدید</th>
+            <th scope="col">عملیات</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (users && users.length > 0) { %>
+            <% users.forEach((user, index) => { %>
+              <tr>
+                <th scope="row"><%= (page - 1) * limit + index + 1 %></th>
+                <td>
+                  <a href="/users/<%= user.id %>" class="text-decoration-none">
+                    <%= user.username %>
+                    <% if (user.isBanned) { %>
+                      <span class="badge bg-danger ms-1">مسدود</span>
+                    <% } %>
+                    <% if (user.isPremium) { %>
+                      <span class="badge bg-warning text-dark ms-1">ویژه</span>
+                    <% } %>
+                  </a>
+                </td>
+                <td><small class="text-muted"><%= user.discordId %></small></td>
+                <td><%= helpers.formatNumber(user.wallet) %> Ccoin</td>
+                <td><%= helpers.formatNumber(user.bank) %> Ccoin</td>
+                <td><%= helpers.formatNumber(user.crystals) %></td>
+                <td>
+                  <div class="d-flex align-items-center">
+                    <span class="badge rounded-pill bg-primary me-1"><%= user.level %></span>
+                    <div class="progress flex-grow-1" style="height: 6px;">
+                      <div class="progress-bar" role="progressbar" style="width: <%= user.xp / (user.level * 100) * 100 %>%" 
+                           aria-valuenow="<%= user.xp %>" aria-valuemin="0" aria-valuemax="<%= user.level * 100 %>"></div>
+                    </div>
+                  </div>
+                </td>
+                <td><small><%= helpers.formatDate(user.createdAt) %></small></td>
+                <td><small><%= helpers.timeAgo(user.lastSeen) %></small></td>
+                <td>
+                  <div class="action-buttons">
+                    <a href="/users/<%= user.id %>" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="مشاهده پروفایل">
+                      <i class="fas fa-eye"></i>
+                    </a>
+                    <a href="/users/<%= user.id %>/edit" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" title="ویرایش کاربر">
+                      <i class="fas fa-edit"></i>
+                    </a>
+                    <% if (user.isBanned) { %>
+                      <button onclick="unbanUser('<%= user.id %>', '<%= user.username %>')" class="btn btn-sm btn-outline-success" data-bs-toggle="tooltip" title="رفع مسدودیت">
+                        <i class="fas fa-unlock"></i>
+                      </button>
+                    <% } else { %>
+                      <button onclick="banUser('<%= user.id %>', '<%= user.username %>')" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="مسدودیت">
+                        <i class="fas fa-ban"></i>
+                      </button>
+                    <% } %>
+                  </div>
+                </td>
+              </tr>
+            <% }) %>
+          <% } else { %>
+            <tr>
+              <td colspan="10" class="text-center py-3">هیچ کاربری یافت نشد.</td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- پاگینیشن -->
+<div class="d-flex justify-content-between align-items-center mt-4">
+  <div>
+    <span class="text-muted">نمایش <%= (page - 1) * limit + 1 %> تا <%= Math.min(page * limit, totalUsers) %> از <%= totalUsers %> کاربر</span>
+  </div>
+  <nav aria-label="Page navigation">
+    <ul class="pagination">
+      <li class="page-item <%= page <= 1 ? 'disabled' : '' %>">
+        <a class="page-link" href="/users?page=<%= page - 1 %>&limit=<%= limit %>" aria-label="Previous">
+          <span aria-hidden="true">&laquo;</span>
+        </a>
+      </li>
+      
+      <% for(let i = Math.max(1, page - 2); i <= Math.min(Math.ceil(totalUsers / limit), page + 2); i++) { %>
+        <li class="page-item <%= i === page ? 'active' : '' %>">
+          <a class="page-link" href="/users?page=<%= i %>&limit=<%= limit %>"><%= i %></a>
+        </li>
+      <% } %>
+      
+      <li class="page-item <%= page >= Math.ceil(totalUsers / limit) ? 'disabled' : '' %>">
+        <a class="page-link" href="/users?page=<%= page + 1 %>&limit=<%= limit %>" aria-label="Next">
+          <span aria-hidden="true">&raquo;</span>
+        </a>
+      </li>
+    </ul>
+  </nav>
+</div>
+
+<!-- مدال افزودن کاربر جدید -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addUserModalLabel">افزودن کاربر جدید</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="/users/add" method="POST">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="newUsername" class="form-label">نام کاربری</label>
+            <input type="text" class="form-control" id="newUsername" name="username" required>
+          </div>
+          <div class="mb-3">
+            <label for="newDiscordId" class="form-label">شناسه دیسکورد</label>
+            <input type="text" class="form-control" id="newDiscordId" name="discordId" required>
+          </div>
+          <div class="mb-3">
+            <label for="newWallet" class="form-label">موجودی کیف پول اولیه</label>
+            <input type="number" class="form-control" id="newWallet" name="wallet" value="0">
+          </div>
+          <div class="mb-3">
+            <label for="newBank" class="form-label">موجودی بانک اولیه</label>
+            <input type="number" class="form-control" id="newBank" name="bank" value="0">
+          </div>
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="newPremium" name="isPremium">
+            <label class="form-check-label" for="newPremium">کاربر ویژه</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+          <button type="submit" class="btn btn-primary">ذخیره</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- اسکریپت‌های صفحه کاربران -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // اسکریپت مرتب‌سازی و فیلتر کردن
+    const userFilterForm = document.getElementById('userFilterForm');
+    if (userFilterForm) {
+      userFilterForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(userFilterForm);
+        const params = new URLSearchParams();
+        
+        for (const [key, value] of formData.entries()) {
+          if (value) {
+            params.append(key, value);
+          }
+        }
+        
+        window.location.href = `/users?${params.toString()}`;
+      });
+    }
+    
+    // اسکریپت خروجی CSV
+    const exportBtn = document.getElementById('exportUsersCSV');
+    if (exportBtn) {
+      exportBtn.addEventListener('click', function() {
+        window.location.href = '/users/export-csv';
+      });
+    }
+  });
+  
+  // فانکشن‌های مسدودسازی کاربر
+  function banUser(userId, username) {
+    if (confirm(`آیا از مسدود کردن کاربر "${username}" اطمینان دارید؟`)) {
+      window.location.href = `/users/${userId}/ban`;
+    }
+  }
+  
+  function unbanUser(userId, username) {
+    if (confirm(`آیا از رفع مسدودیت کاربر "${username}" اطمینان دارید؟`)) {
+      window.location.href = `/users/${userId}/unban`;
+    }
+  }
+</script>
