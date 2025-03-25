@@ -747,6 +747,328 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       return;
     }
     
+    // Handle robbery menu buttons
+    if (action === 'rob_radar') {
+      // رادار دزدی - اسکن کاربران برای دزدی
+      const users = await storage.getAllUsers();
+      const potentialTargets = users.filter(u => 
+        u.discordId !== interaction.user.id && 
+        u.wallet > 0
+      );
+      
+      // انتخاب 3 کاربر تصادفی از بین کاربران با کیف پول غیر خالی
+      const targets = [];
+      const usedIndexes = new Set();
+      
+      for (let i = 0; i < 3 && i < potentialTargets.length; i++) {
+        let randomIndex;
+        do {
+          randomIndex = Math.floor(Math.random() * potentialTargets.length);
+        } while (usedIndexes.has(randomIndex));
+        
+        usedIndexes.add(randomIndex);
+        targets.push(potentialTargets[randomIndex]);
+      }
+      
+      const embed = new EmbedBuilder()
+        .setColor('#800080')
+        .setTitle('📡 رادار دزدی')
+        .setDescription('🔍 کاربران زیر برای دزدی شناسایی شدند:')
+        .setThumbnail('https://cdn-icons-png.flaticon.com/512/3622/3622039.png') // تصویر رادار
+        .setTimestamp();
+      
+      if (targets.length > 0) {
+        targets.forEach((target, index) => {
+          embed.addFields({ 
+            name: `${index + 1}️⃣ ${target.username}`, 
+            value: `موجودی کیف پول: ${target.wallet} Ccoin`, 
+            inline: true 
+          });
+        });
+        
+        embed.setFooter({ text: '✅ برای انتخاب هدف، دکمه "انتخاب" را بزنید!' });
+      } else {
+        embed.setDescription('⚠️ هیچ کاربر مناسبی برای دزدی پیدا نشد! بعداً دوباره امتحان کنید.');
+      }
+      
+      await interaction.reply({ embeds: [embed], ephemeral: true });
+      return;
+    }
+    
+    if (action === 'rob_help') {
+      // راهنمای دزدی
+      const helpEmbed = new EmbedBuilder()
+        .setColor('#800080')
+        .setTitle('📘 راهنمای دزدی')
+        .setDescription('در این بخش می‌توانید از کاربران دیگر Ccoin دزدی کنید.')
+        .setThumbnail('https://cdn-icons-png.flaticon.com/512/3557/3557302.png') // آیکون راهنما
+        .addFields(
+          { name: '📡 رادار', value: 'کاربران را برای دزدی اسکن می‌کند.', inline: false },
+          { name: '✅ انتخاب', value: 'یک هدف برای دزدی انتخاب می‌کنید.', inline: false },
+          { name: '📊 آماردزدی', value: 'آمار دزدی‌های شما را نمایش می‌دهد.', inline: false },
+          { name: '🎭 تغییر چهره', value: 'با هزینه 50 کریستال، شانس موفقیت دزدی را افزایش می‌دهد.', inline: false },
+          { name: '🛡️ آیتم‌های دزدی', value: 'آیتم‌های مخصوص دزدی را مشاهده و مدیریت کنید.', inline: false },
+          { name: '⚠️ نکات مهم', value: 'حداکثر مقدار دزدی 100 Ccoin است.\nدر صورت شکست، 200 Ccoin جریمه می‌شوید.\nبعد از هر دزدی، 4 ساعت باید صبر کنید.', inline: false }
+        )
+        .setImage('https://cdn-icons-png.flaticon.com/512/6823/6823006.png') // تصویر دزد
+        .setFooter({ text: 'برای بازگشت به منوی دزدی، دکمه بازگشت را بزنید.' })
+        .setTimestamp();
+      
+      const row = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('robbery')
+            .setLabel('🔙 بازگشت')
+            .setStyle(ButtonStyle.Secondary)
+        );
+      
+      await interaction.reply({ embeds: [helpEmbed], components: [row], ephemeral: true });
+      return;
+    }
+    
+    if (action === 'rob_stats') {
+      // آمار دزدی
+      const user = await storage.getUserByDiscordId(interaction.user.id);
+      
+      if (!user) {
+        await interaction.reply({
+          content: 'شما ابتدا باید یک حساب ایجاد کنید. از دستور /menu استفاده کنید.',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      // شمارش تعداد تراکنش‌های سرقت
+      const transactions = await storage.getUserTransactions(user.id);
+      const successfulRobs = transactions.filter(t => t.type === 'steal_success').length;
+      const failedRobs = transactions.filter(t => t.type === 'steal_failed').length;
+      const totalRobs = successfulRobs + failedRobs;
+      
+      // محاسبه مجموع مبالغ دزدیده شده و جریمه‌ها
+      const totalStolen = transactions
+        .filter(t => t.type === 'steal_success')
+        .reduce((sum, t) => sum + t.amount, 0);
+      
+      const totalPenalties = transactions
+        .filter(t => t.type === 'steal_failed')
+        .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+      
+      const netProfit = totalStolen - totalPenalties;
+      
+      // ایجاد Embed آمار
+      const statsEmbed = new EmbedBuilder()
+        .setColor('#800080')
+        .setTitle('📊 آمار دزدی')
+        .setThumbnail('https://cdn-icons-png.flaticon.com/512/2737/2737626.png') // آیکون آمار
+        .setTimestamp();
+      
+      if (totalRobs > 0) {
+        statsEmbed.addFields(
+          { name: '🕵️ تعداد کل دزدی‌ها', value: `${totalRobs}`, inline: true },
+          { name: '✅ دزدی‌های موفق', value: `${successfulRobs}`, inline: true },
+          { name: '❌ دزدی‌های ناموفق', value: `${failedRobs}`, inline: true },
+          { name: '💰 کل Ccoin دزدیده شده', value: `${totalStolen} Ccoin`, inline: true },
+          { name: '💸 کل جریمه‌ها', value: `${totalPenalties} Ccoin`, inline: true },
+          { name: '📈 سود/زیان خالص', value: `${netProfit} Ccoin`, inline: true }
+        );
+        
+        const successRate = totalRobs > 0 ? ((successfulRobs / totalRobs) * 100).toFixed(1) : '0';
+        statsEmbed.setDescription(`نرخ موفقیت شما در دزدی: ${successRate}%`);
+      } else {
+        statsEmbed.setDescription('⚠️ هنوز هیچ دزدی‌ای انجام نداده‌اید! با رادار شروع کنید!');
+      }
+      
+      const row = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('robbery')
+            .setLabel('🔙 بازگشت')
+            .setStyle(ButtonStyle.Secondary)
+        );
+      
+      await interaction.reply({ embeds: [statsEmbed], components: [row], ephemeral: true });
+      return;
+    }
+    
+    if (action === 'rob_items') {
+      // آیتم‌های دزدی
+      const user = await storage.getUserByDiscordId(interaction.user.id);
+      
+      if (!user) {
+        await interaction.reply({
+          content: 'شما ابتدا باید یک حساب ایجاد کنید. از دستور /menu استفاده کنید.',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      // دریافت آیتم‌های مرتبط با دزدی
+      const items = await storage.getAllItems();
+      const robberyItems = items.filter(item => 
+        item.category === 'robbery' || 
+        (item.effects && 'robberyChance' in (item.effects as any))
+      );
+      
+      // دریافت آیتم‌های کاربر
+      const inventoryItems = await storage.getInventoryItems(user.id);
+      
+      // ایجاد Embed آیتم‌ها
+      const itemsEmbed = new EmbedBuilder()
+        .setColor('#800080')
+        .setTitle('🛡️ آیتم‌های دزدی')
+        .setDescription('آیتم‌های مخصوص دزدی که می‌توانید از فروشگاه خریداری کنید:')
+        .setThumbnail('https://cdn-icons-png.flaticon.com/512/4616/4616279.png') // آیکون آیتم‌ها
+        .setTimestamp();
+      
+      if (robberyItems.length > 0) {
+        robberyItems.forEach(item => {
+          const userHasItem = inventoryItems.some(invItem => invItem.item.id === item.id);
+          const itemEffect = item.effects ? `(افزایش شانس: ${(item.effects as any).robberyChance * 100}%)` : '';
+          
+          itemsEmbed.addFields({
+            name: `${userHasItem ? '✅' : '⬜'} ${item.name}`,
+            value: `قیمت: ${item.price} Ccoin یا ${item.crystalPrice} کریستال\n${item.description} ${itemEffect}`,
+            inline: false
+          });
+        });
+      } else {
+        itemsEmbed.setDescription('هیچ آیتم مخصوص دزدی یافت نشد!');
+      }
+      
+      const rows = [
+        new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('shop')
+              .setLabel('🛒 فروشگاه')
+              .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
+              .setCustomId('inventory')
+              .setLabel('🎒 کوله پشتی')
+              .setStyle(ButtonStyle.Success),
+            new ButtonBuilder()
+              .setCustomId('robbery')
+              .setLabel('🔙 بازگشت')
+              .setStyle(ButtonStyle.Secondary)
+          )
+      ];
+      
+      await interaction.reply({ embeds: [itemsEmbed], components: rows, ephemeral: true });
+      return;
+    }
+    
+    if (action === 'rob_disguise') {
+      // تغییر چهره - افزایش شانس موفقیت برای یک دزدی
+      const user = await storage.getUserByDiscordId(interaction.user.id);
+      
+      if (!user) {
+        await interaction.reply({
+          content: 'شما ابتدا باید یک حساب ایجاد کنید. از دستور /menu استفاده کنید.',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      if (user.crystals < 50) {
+        await interaction.reply({
+          content: '❌ شما به 50 کریستال برای تغییر چهره نیاز دارید!',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      // بررسی زمان دزدی
+      const now = new Date();
+      const lastRob = user.lastRob ? new Date(user.lastRob) : null;
+      const canRob = !lastRob || (now.getTime() - lastRob.getTime() >= ROB_COOLDOWN);
+      
+      if (!canRob) {
+        await interaction.reply({
+          content: '❌ شما باید ابتدا منتظر پایان کول‌داون دزدی بمانید!',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      // نمایش تایید برای استفاده از تغییر چهره
+      const confirmEmbed = new EmbedBuilder()
+        .setColor('#800080')
+        .setTitle('🎭 تغییر چهره')
+        .setDescription('با استفاده از تغییر چهره، شانس موفقیت دزدی بعدی شما 25% افزایش می‌یابد.')
+        .addFields(
+          { name: '💎 هزینه', value: '50 کریستال', inline: true },
+          { name: '💎 موجودی شما', value: `${user.crystals} کریستال`, inline: true },
+          { name: '⚠️ توجه', value: 'این افزایش شانس فقط برای یک بار دزدی معتبر است.', inline: false }
+        )
+        .setThumbnail('https://cdn-icons-png.flaticon.com/512/4616/4616114.png') // آیکون تغییر چهره
+        .setTimestamp();
+      
+      const row = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('rob_disguise_confirm')
+            .setLabel('✅ تایید و پرداخت 50 کریستال')
+            .setStyle(ButtonStyle.Success),
+          new ButtonBuilder()
+            .setCustomId('robbery')
+            .setLabel('❌ انصراف')
+            .setStyle(ButtonStyle.Danger)
+        );
+      
+      await interaction.reply({ embeds: [confirmEmbed], components: [row], ephemeral: true });
+      return;
+    }
+    
+    if (action === 'rob_disguise_confirm') {
+      // اجرای تغییر چهره
+      const user = await storage.getUserByDiscordId(interaction.user.id);
+      
+      if (!user) {
+        await interaction.reply({
+          content: 'شما ابتدا باید یک حساب ایجاد کنید. از دستور /menu استفاده کنید.',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      if (user.crystals < 50) {
+        await interaction.reply({
+          content: '❌ شما به 50 کریستال برای تغییر چهره نیاز دارید!',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      // کسر کریستال و اعمال بافر روی شانس دزدی
+      await storage.addCrystals(user.id, -50);
+      
+      // افزودن آیتم موقت تغییر چهره به کوله پشتی (با اثر +25% شانس)
+      await storage.addItemToInventory(user.id, -999, 1); // آیدی منفی برای آیتم مجازی
+      
+      const successEmbed = new EmbedBuilder()
+        .setColor('#4CAF50')
+        .setTitle('✅ تغییر چهره موفق!')
+        .setDescription('تغییر چهره با موفقیت انجام شد. شانس موفقیت دزدی بعدی شما 25% افزایش یافت!')
+        .setThumbnail('https://cdn-icons-png.flaticon.com/512/1917/1917641.png') // آیکون موفقیت
+        .addFields(
+          { name: '💎 موجودی جدید کریستال', value: `${user.crystals - 50} کریستال`, inline: true },
+          { name: '🎯 شانس جدید موفقیت', value: '65% (40% + 25%)', inline: true }
+        )
+        .setFooter({ text: 'اکنون می‌توانید با خیال راحت‌تر دزدی کنید!' })
+        .setTimestamp();
+      
+      const row = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('robbery')
+            .setLabel('🔙 بازگشت به منوی دزدی')
+            .setStyle(ButtonStyle.Secondary)
+        );
+      
+      await interaction.reply({ embeds: [successEmbed], components: [row], ephemeral: true });
+      return;
+    }
+
     if (action === 'stocks_portfolio') {
       await stocksMenu(interaction, 'portfolio');
       return;

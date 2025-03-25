@@ -19,7 +19,7 @@ export async function inventoryMenu(
     
     if (!user) {
       await interaction.reply({
-        content: 'You need to create an account first. Use the /menu command.',
+        content: 'شما ابتدا باید یک حساب ایجاد کنید. از دستور /menu استفاده کنید.',
         ephemeral: true
       });
       return;
@@ -28,11 +28,13 @@ export async function inventoryMenu(
     // Get user's inventory
     const inventoryItems = await storage.getInventoryItems(user.id);
     
-    // Create the inventory embed
+    // Create the inventory embed with backpack image
     const embed = new EmbedBuilder()
       .setColor('#9B59B6')
       .setTitle('🎒 کوله‌پشتی')
       .setDescription('مدیریت آیتم‌های شما')
+      .setThumbnail('https://cdn-icons-png.flaticon.com/512/7613/7613882.png') // تصویر کوله پشتی زیبا
+      .setImage('https://cdn-icons-png.flaticon.com/512/2933/2933116.png') // تصویر آیتم‌های متنوع داخل کوله پشتی
       .setFooter({ text: `${interaction.user.username} | برای استفاده از آیتم روی دکمه کلیک کنید` })
       .setTimestamp();
     
@@ -172,12 +174,12 @@ export async function inventoryMenu(
     try {
       if (followUp) {
         await interaction.followUp({
-          content: 'Sorry, there was an error displaying the inventory menu!',
+          content: 'متأسفانه در نمایش منوی کوله‌پشتی خطایی رخ داد!',
           ephemeral: true
         });
       } else {
         await interaction.reply({
-          content: 'Sorry, there was an error displaying the inventory menu!',
+          content: 'متأسفانه در نمایش منوی کوله‌پشتی خطایی رخ داد!',
           ephemeral: true
         });
       }

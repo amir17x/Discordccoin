@@ -7,6 +7,7 @@ import { processTransfer } from '../components/economyMenu';
 import { LogType, getLogger } from '../utils/logger';
 import { botConfig } from '../utils/config';
 import { adminMenu } from '../components/adminMenu';
+import { clansMenu } from '../components/clansMenu';
 
 /**
  * Handler for modal submissions
@@ -463,6 +464,188 @@ export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
       setTimeout(async () => {
         await adminMenu(interaction, 'economy');
       }, 1500);
+      
+      return;
+    }
+    
+    // Handle clan creation modal
+    if (customId === 'create_clan_modal') {
+      const clanName = interaction.fields.getTextInputValue('clan_name');
+      const clanDescription = interaction.fields.getTextInputValue('clan_description') || '';
+      
+      // Check if user exists
+      const user = await storage.getUserByDiscordId(interaction.user.id);
+      
+      if (!user) {
+        await interaction.reply({
+          content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      // Check if user already has a clan
+      if (user.clanId) {
+        await interaction.reply({
+          content: '⚠️ شما در حال حاضر عضو یک کلن هستید و نمی‌توانید کلن جدیدی بسازید.',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      // Check if user has enough Ccoin (2000)
+      if (user.wallet < 2000) {
+        await interaction.reply({
+          content: '⚠️ شما حداقل به 2000 سکه برای ساخت کلن نیاز دارید.',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      // Check if clan name is too short
+      if (clanName.length < 3) {
+        await interaction.reply({
+          content: '⚠️ نام کلن باید حداقل 3 کاراکتر باشد.',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      // Check if clan name already exists
+      const existingClan = await storage.getClanByName(clanName);
+      if (existingClan) {
+        await interaction.reply({
+          content: '⚠️ کلنی با این نام قبلاً ثبت شده است. لطفاً نام دیگری انتخاب کنید.',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      // Create clan
+      try {
+        await interaction.deferReply({ ephemeral: true });
+        
+        // Deduct creation cost
+        await storage.addToWallet(user.id, -2000, 'clan_create');
+        
+        // Create clan
+        const clan = await storage.createClan({
+          name: clanName,
+          description: clanDescription,
+          ownerId: user.discordId,
+          level: 1,
+          memberCount: 1,
+          bank: 0,
+          createdAt: new Date()
+        });
+        
+        // Add user to clan
+        await storage.updateUser(user.id, { clanId: clan.id });
+        
+        // Show success message
+        const successEmbed = new EmbedBuilder()
+          .setColor('#FFD700')
+          .setTitle('🏰 کلن با موفقیت ساخته شد!')
+          .setDescription(`تبریک! کلن **${clanName}** با موفقیت ساخته شد.`)
+          .addFields(
+            { name: '💰 هزینه ساخت', value: '2000 سکه', inline: true },
+            { name: '👑 مالک', value: `<@${user.discordId}>`, inline: true },
+            { name: '👥 اعضا', value: '1/10', inline: true },
+            { name: '📝 توضیحات', value: clanDescription || 'بدون توضیحات', inline: false }
+          )
+          .setFooter({ text: 'برای مدیریت کلن خود، به منوی کلن‌ها بروید.' })
+          .setTimestamp();
+        
+        await interaction.editReply({
+          embeds: [successEmbed]
+        });
+        
+        // Return to clans menu after a delay
+        setTimeout(async () => {
+          await clansMenu(interaction, true);
+        }, 2500);
+      } catch (error) {
+        console.error('Error creating clan:', error);
+        
+        try {
+          if (interaction.deferred) {
+            await interaction.editReply({
+              content: '❌ خطایی در ایجاد کلن رخ داد. لطفاً مجدداً تلاش کنید.'
+            });
+          } else {
+            await interaction.reply({
+              content: '❌ خطایی در ایجاد کلن رخ داد. لطفاً مجدداً تلاش کنید.',
+              ephemeral: true
+            });
+          }
+        } catch (e) {
+          console.error('Error handling clan creation error:', e);
+        }
+      }
+      
+      return;
+    }
+    
+    // Handle clan rankings display
+    if (customId === 'clan_rankings') {
+      try {
+        // Get all clans
+        const clans = await storage.getAllClans();
+        
+        if (clans.length === 0) {
+          await interaction.reply({
+            content: '⚠️ در حال حاضر هیچ کلنی وجود ندارد.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // Sort clans by level and member count
+        const sortedClans = clans.sort((a, b) => {
+          if (b.level !== a.level) {
+            return b.level - a.level;
+          }
+          return b.memberCount - a.memberCount;
+        });
+        
+        // Create the rankings embed
+        const embed = new EmbedBuilder()
+          .setColor('#FFD700')
+          .setTitle('🏆 رتبه‌بندی کلن‌ها')
+          .setDescription('کلن‌های برتر بر اساس سطح و تعداد اعضا')
+          .setFooter({ text: 'برای پیوستن به کلن یا ساخت کلن جدید به منوی کلن‌ها بروید.' })
+          .setTimestamp();
+        
+        // Add top clans to the embed
+        sortedClans.slice(0, 10).forEach((clan, index) => {
+          embed.addFields({
+            name: `${index + 1}. ${clan.name}`,
+            value: `👑 مالک: <@${clan.ownerId}>\n🏅 سطح: ${clan.level}\n👥 اعضا: ${clan.memberCount}/${10 * clan.level}\n💰 خزانه: ${clan.bank} Ccoin`,
+            inline: false
+          });
+        });
+        
+        // Add buttons
+        const row = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('clans')
+              .setLabel('🔙 بازگشت به منوی کلن‌ها')
+              .setStyle(ButtonStyle.Primary)
+          );
+        
+        await interaction.reply({
+          embeds: [embed],
+          components: [row],
+          ephemeral: true
+        });
+      } catch (error) {
+        console.error('Error displaying clan rankings:', error);
+        await interaction.reply({
+          content: '❌ خطایی در نمایش رتبه‌بندی کلن‌ها رخ داد. لطفاً مجدداً تلاش کنید.',
+          ephemeral: true
+        });
+      }
       
       return;
     }

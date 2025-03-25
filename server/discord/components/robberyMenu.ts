@@ -11,11 +11,11 @@ import {
 import { storage } from '../../storage';
 import { botConfig } from '../utils/config';
 
-// Constants - با توجه به مستندات بخش دزدی که شما ارائه دادید
+// Constants - با توجه به مستندات بخش دزدی
 const ROB_COOLDOWN = 4 * 60 * 60 * 1000; // 4 hours
-const BASE_SUCCESS_RATE = 0.4; // 40% base success rate
-const MAX_ROB_AMOUNT = 100; // حداکثر مقدار دزدی
-const PENALTY_AMOUNT = 200; // جریمه شکست در دزدی
+const MAX_ROB_AMOUNT = 100; // حداکثر مقدار دزدی (100 سکه)
+const PENALTY_AMOUNT = 200; // مقدار جریمه در صورت شکست (200 سکه)
+const BASE_SUCCESS_RATE = 0.4; // نرخ موفقیت پایه (40%)
 
 // Function to create and send the robbery menu
 export async function robberyMenu(
@@ -58,16 +58,18 @@ export async function robberyMenu(
       u.wallet > 0
     ).sort((a, b) => b.wallet - a.wallet).slice(0, 10); // Top 10 richest users
     
-    // Create the robbery embed
+    // Create the robbery embed with thief image
     const embed = new EmbedBuilder()
       .setColor('#800080') // رنگ بنفش طبق مستندات
       .setTitle('🕵️ بخش دزدی')
       .setDescription('از کاربران دیگر سکه بدزدید و موجودی خود را افزایش دهید!\nاما مراقب باشید، اگر دستگیر شوید، جریمه خواهید شد!')
+      .setThumbnail('https://cdn-icons-png.flaticon.com/512/4185/4185661.png') // تصویر دزد با نقاب و کیف پول
       .addFields(
         { name: '✨ نرخ موفقیت پایه', value: `${BASE_SUCCESS_RATE * 100}%`, inline: true },
-        { name: '🔒 قفل زمانی', value: `${canRob ? 'آماده برای دزدی!' : cooldownText}`, inline: true },
+        { name: '🔒 قفل زمانی', value: `${canRob ? '✅ آماده برای دزدی!' : cooldownText}`, inline: true },
         { name: '👛 موجودی شما', value: `${user.wallet} Ccoin`, inline: true }
       )
+      .setImage('https://cdn-icons-png.flaticon.com/512/6823/6823006.png') // تصویر دزد در حال دزدی از صندوق
       .setFooter({ text: `توجه: در صورت شکست، ${PENALTY_AMOUNT} Ccoin جریمه خواهید شد!` })
       .setTimestamp();
     
@@ -89,8 +91,44 @@ export async function robberyMenu(
           .setDisabled(!canRob || possibleTargets.length === 0)
       );
     
+    // Create action buttons for robbery menu with new mechanism buttons
+    const row1 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('rob_radar')
+          .setLabel('📡 رادار')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('rob_select')
+          .setLabel('✅ انتخاب')
+          .setStyle(ButtonStyle.Success)
+          .setDisabled(!canRob),
+        new ButtonBuilder()
+          .setCustomId('rob_stats')
+          .setLabel('📊 آماردزدی')
+          .setStyle(ButtonStyle.Secondary)
+      );
+      
+    // Add help and items buttons in another row  
+    const rowMechanisms = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('rob_help')
+          .setLabel('📘 راهنمای دزدی')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('rob_items')
+          .setLabel('🛡️ آیتم‌های دزدی')
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId('rob_disguise')
+          .setLabel('🎭 تغییر چهره')
+          .setStyle(ButtonStyle.Danger)
+          .setDisabled(!canRob)
+      );
+    
     // Create back button
-    const row = new ActionRowBuilder<ButtonBuilder>()
+    const row2 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
           .setCustomId('economy')
@@ -100,8 +138,8 @@ export async function robberyMenu(
     
     // Components to show based on availability
     const components: (ActionRowBuilder<ButtonBuilder> | ActionRowBuilder<StringSelectMenuBuilder>)[] = possibleTargets.length > 0 ? 
-      [targetMenu, row] : 
-      [row];
+      [targetMenu, row1, rowMechanisms, row2] : 
+      [row1, rowMechanisms, row2];
     
     // Send the robbery menu
     if (followUp) {
@@ -221,10 +259,12 @@ export async function handleRobbery(
         .setColor('#4CAF50')
         .setTitle('✅ دزدی موفق!')
         .setDescription(`شما با موفقیت ${robAmount} Ccoin از ${targetUser.username} دزدیدید!`)
+        .setThumbnail('https://cdn-icons-png.flaticon.com/512/1917/1917641.png') // تصویر دزد موفق با کیسه پول
         .addFields(
           { name: '💰 مقدار دزدیده شده', value: `${robAmount} Ccoin`, inline: true },
           { name: '👛 موجودی جدید شما', value: `${user.wallet + robAmount} Ccoin`, inline: true }
         )
+        .setImage('https://cdn-icons-png.flaticon.com/512/4185/4185731.png') // تصویر فرد در حال فرار با کیسه پول
         .setFooter({ text: `${new Date().toLocaleTimeString()}` })
         .setTimestamp();
       
@@ -268,10 +308,12 @@ export async function handleRobbery(
         .setColor('#F44336')
         .setTitle('❌ دزدی ناموفق!')
         .setDescription(`شما هنگام دزدی از ${targetUser.username} دستگیر شدید!`)
+        .setThumbnail('https://cdn-icons-png.flaticon.com/512/2665/2665326.png') // تصویر دستبند پلیس
         .addFields(
           { name: '💸 جریمه', value: `${PENALTY_AMOUNT} Ccoin`, inline: true },
           { name: '👛 موجودی جدید شما', value: `${user.wallet - PENALTY_AMOUNT} Ccoin`, inline: true }
         )
+        .setImage('https://cdn-icons-png.flaticon.com/512/3575/3575120.png') // تصویر پلیس و دستگیری
         .setFooter({ text: `${new Date().toLocaleTimeString()}` })
         .setTimestamp();
       
