@@ -47,7 +47,13 @@ app.use((req, res, next) => {
     log(`Error initializing Discord bot: ${error}`, "error");
   }
 
-  // We'll set up the admin panel later to avoid slowing down initial startup
+  // Setup admin panel
+  try {
+    setupAdminPanel(app);
+    log("Admin panel initialized successfully");
+  } catch (error) {
+    log(`Error initializing admin panel: ${error}`, "error");
+  }
 
   const server = await registerRoutes(app);
 
@@ -78,13 +84,5 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`Server is running on port ${port}`);
-    
-    // Setup admin panel after server is started
-    try {
-      setupAdminPanel(app);
-      log("Admin panel initialized successfully");
-    } catch (error) {
-      log(`Error initializing admin panel: ${error}`, "error");
-    }
   });
 })();

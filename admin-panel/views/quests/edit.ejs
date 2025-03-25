@@ -3,7 +3,7 @@
 <div class="container-fluid">
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">ویرایش ماموریت</h1>
-        <a href="/quests" class="d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
+        <a href="/admin/quests" class="d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
             <i class="fas fa-arrow-right fa-sm text-white-50 ml-1"></i> بازگشت به لیست ماموریت‌ها
         </a>
     </div>
@@ -15,7 +15,7 @@
                     <h6 class="m-0 font-weight-bold text-primary">اطلاعات ماموریت</h6>
                 </div>
                 <div class="card-body">
-                    <form action="/quests/<%= quest.id %>/edit" method="POST">
+                    <form action="/admin/quests/<%= quest.id %>/edit" method="POST">
                         <!-- عنوان ماموریت -->
                         <div class="form-group">
                             <label for="title">عنوان ماموریت <span class="text-danger">*</span></label>
@@ -93,7 +93,7 @@
                         </div>
 
                         <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
-                        <a href="/quests/<%= quest.id %>" class="btn btn-secondary">انصراف</a>
+                        <a href="/admin/quests/<%= quest.id %>" class="btn btn-secondary">انصراف</a>
                     </form>
                 </div>
             </div>
@@ -145,7 +145,7 @@
                     <h6 class="m-0 font-weight-bold text-primary">عملیات</h6>
                 </div>
                 <div class="card-body">
-                    <a href="/quests/<%= quest.id %>/delete" class="btn btn-danger btn-block" onclick="return confirm('آیا از حذف این ماموریت اطمینان دارید؟ این عمل قابل بازگشت نیست.')">
+                    <a href="/admin/quests/<%= quest.id %>/delete" class="btn btn-danger btn-block" onclick="return confirm('آیا از حذف این ماموریت اطمینان دارید؟ این عمل قابل بازگشت نیست.')">
                         <i class="fas fa-trash fa-sm text-white-50 ml-1"></i> حذف ماموریت
                     </a>
                 </div>

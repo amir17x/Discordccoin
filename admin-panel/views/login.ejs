@@ -130,18 +130,18 @@
 </head>
 <body>
   <!-- پیغام‌های فلش -->
-  <% if (messages && messages.error && messages.error.length > 0) { %>
+  <% if (locals.error_messages && error_messages.length > 0) { %>
     <div class="alert alert-danger alert-dismissible fade show message-toast" role="alert">
       <i class="bi bi-exclamation-triangle-fill me-2"></i>
-      <%= messages.error %>
+      <%= error_messages %>
       <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="بستن"></button>
     </div>
   <% } %>
   
-  <% if (messages && messages.success && messages.success.length > 0) { %>
+  <% if (locals.success_messages && success_messages.length > 0) { %>
     <div class="alert alert-success alert-dismissible fade show message-toast" role="alert">
       <i class="bi bi-check-circle-fill me-2"></i>
-      <%= messages.success %>
+      <%= success_messages %>
       <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="بستن"></button>
     </div>
   <% } %>

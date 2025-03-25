@@ -3,7 +3,7 @@
 <div class="container-fluid">
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">ایجاد ماموریت جدید</h1>
-        <a href="/quests" class="d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
+        <a href="/admin/quests" class="d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
             <i class="fas fa-arrow-right fa-sm text-white-50 ml-1"></i> بازگشت به لیست ماموریت‌ها
         </a>
     </div>
@@ -15,7 +15,7 @@
                     <h6 class="m-0 font-weight-bold text-primary">اطلاعات ماموریت</h6>
                 </div>
                 <div class="card-body">
-                    <form action="/quests/create" method="POST">
+                    <form action="/admin/quests/create" method="POST">
                         <!-- عنوان ماموریت -->
                         <div class="form-group">
                             <label for="title">عنوان ماموریت <span class="text-danger">*</span></label>
@@ -93,7 +93,7 @@
                         </div>
 
                         <button type="submit" class="btn btn-success">ایجاد ماموریت</button>
-                        <a href="/quests" class="btn btn-secondary">انصراف</a>
+                        <a href="/admin/quests" class="btn btn-secondary">انصراف</a>
                     </form>
                 </div>
             </div>
