@@ -56,6 +56,17 @@ export const users = pgTable("users", {
   lotteryTickets: jsonb("lottery_tickets").$type<UserLottery[]>().default([]),
   // تاریخ آخرین پرداخت سود سهام
   lastDividendPayout: timestamp("last_dividend_payout"),
+  // سیستم دوستان و چت
+  friends: jsonb("friends").$type<Friend[]>().default([]),
+  friendRequests: jsonb("friend_requests").$type<FriendRequest[]>().default([]),
+  blockedUsers: jsonb("blocked_users").$type<BlockedUser[]>().default([]),
+  interests: jsonb("interests").$type<UserInterests>().default({
+    games: [],
+    activities: [],
+    topics: [],
+    updatedAt: new Date().toISOString()
+  }),
+  
   // فیلدهای مدیریتی
   banned: boolean("banned").notNull().default(false), // وضعیت مسدودیت
   banReason: text("ban_reason"), // دلیل مسدودیت
@@ -526,7 +537,7 @@ export interface Pet {
   lastFed: string;                 // آخرین زمان غذا دادن
   lastPlayed: string;              // آخرین زمان بازی کردن
   acquiredDate: string;            // تاریخ به دست آوردن پت
-  abilities: {                     // توانایی‌های ویژه پت
+  abilities: {                   // توانایی‌های ویژه پت
     economyBoost?: number;         // افزایش درصدی Ccoin دریافتی
     luckBoost?: number;            // افزایش شانس در بازی‌ها و چرخ شانس
     expBoost?: number;             // افزایش تجربه دریافتی
@@ -543,4 +554,91 @@ export interface Pet {
     wins: number;                  // تعداد پیروزی‌ها
   };
   active: boolean;                 // آیا پت فعال است
+}
+
+/**
+ * مدل داده برای سیستم دوستان
+ */
+export interface Friend {
+  friendId: string;                // شناسه دوست
+  friendshipLevel: number;         // سطح دوستی
+  friendshipXP: number;            // امتیاز دوستی
+  addedAt: string;                 // تاریخ اضافه شدن
+  lastInteraction: string;         // آخرین تعامل
+  favoriteStatus: boolean;         // وضعیت علاقه‌مندی
+  notes?: string;                  // یادداشت‌های خصوصی
+}
+
+/**
+ * مدل داده برای درخواست‌های دوستی
+ */
+export interface FriendRequest {
+  fromUserId: string;              // شناسه فرستنده درخواست
+  toUserId: string;                // شناسه گیرنده درخواست
+  status: 'pending' | 'accepted' | 'rejected' | 'canceled';  // وضعیت درخواست
+  message?: string;                // پیام همراه درخواست
+  timestamp: string;               // زمان درخواست
+}
+
+/**
+ * مدل داده برای کاربران بلاک شده
+ */
+export interface BlockedUser {
+  userId: string;                  // شناسه کاربر بلاک شده
+  reason?: string;                 // دلیل بلاک کردن
+  timestamp: string;               // زمان بلاک کردن
+}
+
+/**
+ * مدل داده برای چت خصوصی
+ */
+export interface PrivateChat {
+  chatId: string;                  // شناسه چت
+  participants: string[];          // شرکت‌کنندگان چت
+  messages: PrivateMessage[];      // پیام‌های چت
+  createdAt: string;               // زمان ایجاد چت
+  lastActivityAt: string;          // آخرین فعالیت در چت
+}
+
+/**
+ * مدل داده برای پیام‌های خصوصی
+ */
+export interface PrivateMessage {
+  senderId: string;                // شناسه فرستنده
+  content: string;                 // محتوای پیام
+  timestamp: string;               // زمان ارسال
+  readAt?: string;                 // زمان خوانده شدن
+  attachments?: any[];             // فایل‌های پیوست
+}
+
+/**
+ * مدل داده برای چت ناشناس
+ */
+export interface AnonymousChat {
+  chatId: string;                  // شناسه چت
+  user1Id: string;                 // شناسه کاربر اول
+  user2Id: string;                 // شناسه کاربر دوم
+  messages: AnonymousMessage[];    // پیام‌های چت
+  createdAt: string;               // زمان ایجاد چت
+  status: 'active' | 'ended';      // وضعیت چت
+  lastMessageAt: string;           // زمان آخرین پیام
+}
+
+/**
+ * مدل داده برای پیام‌های ناشناس
+ */
+export interface AnonymousMessage {
+  sender: 'user1' | 'user2';       // فرستنده (بدون افشای هویت)
+  content: string;                 // محتوای پیام
+  timestamp: string;               // زمان ارسال
+}
+
+/**
+ * سیستم علایق کاربر برای پیدا کردن دوستان مشابه
+ */
+export interface UserInterests {
+  games: string[];                 // علاقه به بازی‌ها
+  activities: string[];            // فعالیت‌های مورد علاقه
+  topics: string[];                // موضوعات مورد علاقه
+  updatedAt: string;               // آخرین بروزرسانی
 }

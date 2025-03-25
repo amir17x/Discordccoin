@@ -111,6 +111,34 @@ export interface IStorage {
   playWithPet(userId: number, petId: string): Promise<Pet | null>;
   activatePet(userId: number, petId: string): Promise<boolean>;
   renamePet(userId: number, petId: string, newName: string): Promise<Pet | null>;
+  
+  // Friends operations
+  getFriends(userId: number): Promise<Friend[]>;
+  getFriendRequests(userId: number): Promise<FriendRequest[]>;
+  sendFriendRequest(fromUserId: number, toUserId: number, message?: string): Promise<boolean>;
+  acceptFriendRequest(requestId: string): Promise<boolean>;
+  rejectFriendRequest(requestId: string): Promise<boolean>;
+  removeFriend(userId: number, friendId: number): Promise<boolean>;
+  getFriendshipLevel(userId: number, friendId: number): Promise<number>;
+  updateFriendshipXP(userId: number, friendId: number, xp: number): Promise<boolean>;
+  
+  // Private & Anonymous Chat operations
+  getPrivateChats(userId: number): Promise<PrivateChat[]>;
+  getPrivateChat(chatId: string): Promise<PrivateChat | undefined>;
+  createPrivateChat(user1Id: number, user2Id: number): Promise<PrivateChat>;
+  addPrivateMessage(chatId: string, senderId: number, content: string): Promise<boolean>;
+  markMessagesAsRead(chatId: string, userId: number): Promise<boolean>;
+  
+  // Blocked users operations
+  getBlockedUsers(userId: number): Promise<BlockedUser[]>;
+  blockUser(userId: number, blockedUserId: number, reason?: string): Promise<boolean>;
+  unblockUser(userId: number, blockedUserId: number): Promise<boolean>;
+  isUserBlocked(userId: number, blockedUserId: number): Promise<boolean>;
+  
+  // User interests operations
+  getUserInterests(userId: number): Promise<UserInterests | undefined>;
+  updateUserInterests(userId: number, interests: Partial<UserInterests>): Promise<boolean>;
+  findSimilarUsers(userId: number, limit?: number): Promise<User[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -124,6 +152,9 @@ export class MemStorage implements IStorage {
   private games: Game[] = [];
   private stocks: Map<number, StockData> = new Map();
   private userStocks: Map<number, UserStockData[]> = new Map();
+  private lotteries: Map<number, LotteryData> = new Map();
+  private privateChats: Map<string, PrivateChat> = new Map();
+  private anonymousChats: Map<string, AnonymousChat> = new Map();
   
   private currentUserId = 1;
   private currentItemId = 1;
@@ -135,6 +166,7 @@ export class MemStorage implements IStorage {
   private currentUserAchievementId = 1;
   private currentStockId = 1;
   private currentUserStockId = 1;
+  private currentLotteryId = 1;
 
   constructor() {
     this.initializeData();
@@ -1732,6 +1764,478 @@ export class MemStorage implements IStorage {
     user.pets[petIndex].name = newName;
     
     return user.pets[petIndex];
+  }
+
+  // Friends system methods
+  async getFriends(userId: number): Promise<Friend[]> {
+    const user = this.users.get(userId);
+    if (!user || !user.friends) return [];
+    return user.friends;
+  }
+
+  async getFriendRequests(userId: number): Promise<FriendRequest[]> {
+    const user = this.users.get(userId);
+    if (!user || !user.friendRequests) return [];
+    
+    // فیلتر کردن درخواست‌های مربوط به کاربر (دریافتی یا ارسالی)
+    return user.friendRequests.filter(req => 
+      req.toUserId === user.discordId || req.fromUserId === user.discordId
+    );
+  }
+
+  async sendFriendRequest(fromUserId: number, toUserId: number, message?: string): Promise<boolean> {
+    const fromUser = this.users.get(fromUserId);
+    const toUser = this.users.get(toUserId);
+    
+    if (!fromUser || !toUser) return false;
+    
+    // بررسی آیا قبلاً درخواست فرستاده شده
+    if (!toUser.friendRequests) {
+      toUser.friendRequests = [];
+    }
+    
+    const existingRequest = toUser.friendRequests.find(req => 
+      req.fromUserId === fromUser.discordId && req.toUserId === toUser.discordId && req.status === 'pending'
+    );
+    
+    if (existingRequest) return false;
+    
+    // بررسی آیا از قبل دوست هستند
+    if (toUser.friends && toUser.friends.some(f => f.friendId === fromUser.discordId)) {
+      return false;
+    }
+    
+    // ایجاد درخواست جدید
+    const newRequest: FriendRequest = {
+      fromUserId: fromUser.discordId,
+      toUserId: toUser.discordId,
+      status: 'pending',
+      message: message,
+      timestamp: new Date().toISOString()
+    };
+    
+    // اضافه کردن درخواست به هر دو کاربر
+    toUser.friendRequests.push(newRequest);
+    
+    if (!fromUser.friendRequests) {
+      fromUser.friendRequests = [];
+    }
+    fromUser.friendRequests.push(newRequest);
+    
+    return true;
+  }
+
+  async acceptFriendRequest(requestId: string): Promise<boolean> {
+    // پیدا کردن درخواست با جستجو در تمام کاربران
+    let request: FriendRequest | undefined;
+    let fromUser: User | undefined;
+    let toUser: User | undefined;
+    
+    for (const user of this.users.values()) {
+      if (user.friendRequests) {
+        const foundRequest = user.friendRequests.find(req => 
+          `${req.fromUserId}_${req.toUserId}` === requestId && req.status === 'pending'
+        );
+        
+        if (foundRequest) {
+          request = foundRequest;
+          
+          // پیدا کردن کاربر فرستنده و گیرنده
+          for (const u of this.users.values()) {
+            if (u.discordId === request.fromUserId) {
+              fromUser = u;
+            } else if (u.discordId === request.toUserId) {
+              toUser = u;
+            }
+            
+            if (fromUser && toUser) break;
+          }
+          
+          break;
+        }
+      }
+    }
+    
+    if (!request || !fromUser || !toUser) return false;
+    
+    // بروزرسانی وضعیت درخواست
+    request.status = 'accepted';
+    
+    // اضافه کردن دوست به هر دو کاربر
+    const now = new Date().toISOString();
+    
+    if (!fromUser.friends) fromUser.friends = [];
+    if (!toUser.friends) toUser.friends = [];
+    
+    fromUser.friends.push({
+      friendId: toUser.discordId,
+      friendshipLevel: 1,
+      friendshipXP: 0,
+      addedAt: now,
+      lastInteraction: now,
+      favoriteStatus: false
+    });
+    
+    toUser.friends.push({
+      friendId: fromUser.discordId,
+      friendshipLevel: 1,
+      friendshipXP: 0,
+      addedAt: now,
+      lastInteraction: now,
+      favoriteStatus: false
+    });
+    
+    return true;
+  }
+
+  async rejectFriendRequest(requestId: string): Promise<boolean> {
+    // جستجو در تمام کاربران برای یافتن درخواست
+    for (const user of this.users.values()) {
+      if (user.friendRequests) {
+        const requestIndex = user.friendRequests.findIndex(req => 
+          `${req.fromUserId}_${req.toUserId}` === requestId && req.status === 'pending'
+        );
+        
+        if (requestIndex >= 0) {
+          // تغییر وضعیت به رد شده
+          user.friendRequests[requestIndex].status = 'rejected';
+          
+          // یافتن کاربر دیگر و بروزرسانی درخواست در آنجا هم
+          const req = user.friendRequests[requestIndex];
+          for (const otherUser of this.users.values()) {
+            if (otherUser.friendRequests && otherUser.discordId !== user.discordId) {
+              const otherRequestIndex = otherUser.friendRequests.findIndex(r => 
+                r.fromUserId === req.fromUserId && r.toUserId === req.toUserId
+              );
+              
+              if (otherRequestIndex >= 0) {
+                otherUser.friendRequests[otherRequestIndex].status = 'rejected';
+                return true;
+              }
+            }
+          }
+          
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }
+
+  async removeFriend(userId: number, friendId: number): Promise<boolean> {
+    const user = this.users.get(userId);
+    const friend = this.users.get(friendId);
+    
+    if (!user || !friend || !user.friends || !friend.friends) return false;
+    
+    // حذف دوست از لیست کاربر
+    const userFriendIndex = user.friends.findIndex(f => f.friendId === friend.discordId);
+    if (userFriendIndex >= 0) {
+      user.friends.splice(userFriendIndex, 1);
+    }
+    
+    // حذف کاربر از لیست دوست
+    const friendUserIndex = friend.friends.findIndex(f => f.friendId === user.discordId);
+    if (friendUserIndex >= 0) {
+      friend.friends.splice(friendUserIndex, 1);
+    }
+    
+    return userFriendIndex >= 0 || friendUserIndex >= 0;
+  }
+
+  async getFriendshipLevel(userId: number, friendId: number): Promise<number> {
+    const user = this.users.get(userId);
+    const friend = this.users.get(friendId);
+    
+    if (!user || !friend || !user.friends) return 0;
+    
+    const friendship = user.friends.find(f => f.friendId === friend.discordId);
+    return friendship ? friendship.friendshipLevel : 0;
+  }
+
+  async updateFriendshipXP(userId: number, friendId: number, xp: number): Promise<boolean> {
+    const user = this.users.get(userId);
+    const friend = this.users.get(friendId);
+    
+    if (!user || !friend || !user.friends) return false;
+    
+    const friendshipIndex = user.friends.findIndex(f => f.friendId === friend.discordId);
+    if (friendshipIndex < 0) return false;
+    
+    const friendship = user.friends[friendshipIndex];
+    
+    // افزایش XP
+    friendship.friendshipXP += xp;
+    friendship.lastInteraction = new Date().toISOString();
+    
+    // بررسی ارتقای سطح
+    const oldLevel = friendship.friendshipLevel;
+    if (friendship.friendshipXP >= 5000) {
+      friendship.friendshipLevel = 5; // استاد دوستی
+    } else if (friendship.friendshipXP >= 2000) {
+      friendship.friendshipLevel = 4; // حرفه‌ای
+    } else if (friendship.friendshipXP >= 1000) {
+      friendship.friendshipLevel = 3; // پیشرفته
+    } else if (friendship.friendshipXP >= 500) {
+      friendship.friendshipLevel = 2; // متوسط
+    } else {
+      friendship.friendshipLevel = 1; // مبتدی
+    }
+    
+    // بروزرسانی دوستی در لیست دوست هم
+    if (friend.friends) {
+      const reverseFriendshipIndex = friend.friends.findIndex(f => f.friendId === user.discordId);
+      if (reverseFriendshipIndex >= 0) {
+        friend.friends[reverseFriendshipIndex].friendshipXP = friendship.friendshipXP;
+        friend.friends[reverseFriendshipIndex].friendshipLevel = friendship.friendshipLevel;
+        friend.friends[reverseFriendshipIndex].lastInteraction = friendship.lastInteraction;
+      }
+    }
+    
+    return friendship.friendshipLevel > oldLevel;
+  }
+
+  // Private & Anonymous Chat operations
+  async getPrivateChats(userId: number): Promise<PrivateChat[]> {
+    const user = this.users.get(userId);
+    if (!user) return [];
+    
+    const result: PrivateChat[] = [];
+    for (const chat of this.privateChats.values()) {
+      if (chat.participants.includes(user.discordId)) {
+        result.push(chat);
+      }
+    }
+    
+    return result;
+  }
+
+  async getPrivateChat(chatId: string): Promise<PrivateChat | undefined> {
+    return this.privateChats.get(chatId);
+  }
+
+  async createPrivateChat(user1Id: number, user2Id: number): Promise<PrivateChat> {
+    const user1 = this.users.get(user1Id);
+    const user2 = this.users.get(user2Id);
+    
+    if (!user1 || !user2) {
+      throw new Error("One or both users not found");
+    }
+    
+    // بررسی آیا چت قبلی وجود دارد
+    for (const chat of this.privateChats.values()) {
+      if (
+        chat.participants.includes(user1.discordId) && 
+        chat.participants.includes(user2.discordId)
+      ) {
+        return chat;
+      }
+    }
+    
+    // ایجاد چت جدید
+    const chatId = `private_${user1.discordId}_${user2.discordId}_${Date.now()}`;
+    const now = new Date().toISOString();
+    
+    const newChat: PrivateChat = {
+      chatId,
+      participants: [user1.discordId, user2.discordId],
+      messages: [],
+      createdAt: now,
+      lastActivityAt: now
+    };
+    
+    this.privateChats.set(chatId, newChat);
+    return newChat;
+  }
+
+  async addPrivateMessage(chatId: string, senderId: number, content: string): Promise<boolean> {
+    const chat = this.privateChats.get(chatId);
+    const sender = this.users.get(senderId);
+    
+    if (!chat || !sender || !chat.participants.includes(sender.discordId)) {
+      return false;
+    }
+    
+    // افزودن پیام جدید
+    const newMessage: PrivateMessage = {
+      senderId: sender.discordId,
+      content,
+      timestamp: new Date().toISOString()
+    };
+    
+    chat.messages.push(newMessage);
+    chat.lastActivityAt = newMessage.timestamp;
+    
+    // ذخیره بروزرسانی
+    this.privateChats.set(chatId, chat);
+    
+    return true;
+  }
+
+  async markMessagesAsRead(chatId: string, userId: number): Promise<boolean> {
+    const chat = this.privateChats.get(chatId);
+    const user = this.users.get(userId);
+    
+    if (!chat || !user || !chat.participants.includes(user.discordId)) {
+      return false;
+    }
+    
+    const now = new Date().toISOString();
+    
+    // علامت‌گذاری تمام پیام‌های خوانده نشده
+    for (const message of chat.messages) {
+      if (
+        message.senderId !== user.discordId && // پیام از فرد دیگر است
+        !message.readAt // هنوز خوانده نشده
+      ) {
+        message.readAt = now;
+      }
+    }
+    
+    // ذخیره بروزرسانی
+    this.privateChats.set(chatId, chat);
+    
+    return true;
+  }
+
+  // Blocked users operations
+  async getBlockedUsers(userId: number): Promise<BlockedUser[]> {
+    const user = this.users.get(userId);
+    if (!user || !user.blockedUsers) return [];
+    
+    return user.blockedUsers;
+  }
+
+  async blockUser(userId: number, blockedUserId: number, reason?: string): Promise<boolean> {
+    const user = this.users.get(userId);
+    const blockedUser = this.users.get(blockedUserId);
+    
+    if (!user || !blockedUser) return false;
+    
+    // اطمینان از وجود آرایه blockedUsers
+    if (!user.blockedUsers) {
+      user.blockedUsers = [];
+    }
+    
+    // بررسی آیا قبلاً بلاک شده
+    if (user.blockedUsers.some(b => b.userId === blockedUser.discordId)) {
+      return false;
+    }
+    
+    // افزودن به لیست بلاک
+    user.blockedUsers.push({
+      userId: blockedUser.discordId,
+      reason,
+      timestamp: new Date().toISOString()
+    });
+    
+    return true;
+  }
+
+  async unblockUser(userId: number, blockedUserId: number): Promise<boolean> {
+    const user = this.users.get(userId);
+    const blockedUser = this.users.get(blockedUserId);
+    
+    if (!user || !blockedUser || !user.blockedUsers) return false;
+    
+    const index = user.blockedUsers.findIndex(b => b.userId === blockedUser.discordId);
+    if (index < 0) return false;
+    
+    user.blockedUsers.splice(index, 1);
+    return true;
+  }
+
+  async isUserBlocked(userId: number, blockedUserId: number): Promise<boolean> {
+    const user = this.users.get(userId);
+    const blockedUser = this.users.get(blockedUserId);
+    
+    if (!user || !blockedUser || !user.blockedUsers) return false;
+    
+    return user.blockedUsers.some(b => b.userId === blockedUser.discordId);
+  }
+
+  // User interests operations
+  async getUserInterests(userId: number): Promise<UserInterests | undefined> {
+    const user = this.users.get(userId);
+    if (!user) return undefined;
+    
+    return user.interests;
+  }
+
+  async updateUserInterests(userId: number, interests: Partial<UserInterests>): Promise<boolean> {
+    const user = this.users.get(userId);
+    if (!user) return false;
+    
+    // اطمینان از وجود فیلد interests
+    if (!user.interests) {
+      user.interests = {
+        games: [],
+        activities: [],
+        topics: [],
+        updatedAt: new Date().toISOString()
+      };
+    }
+    
+    // بروزرسانی فیلدها
+    if (interests.games) user.interests.games = interests.games;
+    if (interests.activities) user.interests.activities = interests.activities;
+    if (interests.topics) user.interests.topics = interests.topics;
+    
+    user.interests.updatedAt = new Date().toISOString();
+    
+    return true;
+  }
+
+  async findSimilarUsers(userId: number, limit: number = 5): Promise<User[]> {
+    const user = this.users.get(userId);
+    if (!user || !user.interests) return [];
+    
+    const userInterests = user.interests;
+    const similarUsers: {user: User, score: number}[] = [];
+    
+    // محاسبه امتیاز شباهت برای تمام کاربران
+    for (const otherUser of this.users.values()) {
+      if (
+        otherUser.id === user.id || // خود کاربر نباشد
+        !otherUser.interests // علایق تعریف نشده باشد
+      ) {
+        continue;
+      }
+      
+      let score = 0;
+      
+      // محاسبه اشتراک در بازی‌ها
+      for (const game of userInterests.games) {
+        if (otherUser.interests.games.includes(game)) {
+          score += 3;
+        }
+      }
+      
+      // محاسبه اشتراک در فعالیت‌ها
+      for (const activity of userInterests.activities) {
+        if (otherUser.interests.activities.includes(activity)) {
+          score += 2;
+        }
+      }
+      
+      // محاسبه اشتراک در موضوعات
+      for (const topic of userInterests.topics) {
+        if (otherUser.interests.topics.includes(topic)) {
+          score += 1;
+        }
+      }
+      
+      if (score > 0) {
+        similarUsers.push({ user: otherUser, score });
+      }
+    }
+    
+    // مرتب‌سازی بر اساس امتیاز نزولی
+    similarUsers.sort((a, b) => b.score - a.score);
+    
+    // برگرداندن کاربران مشابه با محدودیت تعداد
+    return similarUsers.slice(0, limit).map(item => item.user);
   }
 }
 
