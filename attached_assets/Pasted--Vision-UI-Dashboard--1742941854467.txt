@@ -1,0 +1,768 @@
+خیلی خوبه که می‌خوای یه پنل ادمین زیبا و مدرن مثل **Vision UI Dashboard** برای مدیریت ربات دیسکوردت (Ccoin) بسازی! داشبورد Vision UI که لینکش رو فرستادی، یه طراحی بسیار حرفه‌ای و مدرن داره که با **React** ساخته شده و از استایل‌های جذاب، نمودارهای پویا، و یه UI کاربرپسند استفاده می‌کنه. من یه پنل مشابه برای مدیریت ربات دیسکوردت طراحی می‌کنم که هم زیبا باشه، هم کاربردی، و هم قابلیت‌های مورد نیاز برای مدیریت ربات Ccoin رو داشته باشه. این پنل رو با **React**، **Tailwind CSS** (برای استایل‌دهی مشابه Vision UI)، و **Chart.js** (برای نمودارها) پیاده‌سازی می‌کنم و یه رابط بک‌اند با **Express.js** برای ارتباط با دیتابیس و ربات دیسکورد می‌سازم.
+
+---
+
+### مستند جامع برای طراحی و پیاده‌سازی پنل ادمین مدرن و زیبا برای ربات Ccoin
+
+#### مقدمه
+هدف این مستند، طراحی و پیاده‌سازی یه پنل ادمین مدرن و زیبا برای مدیریت ربات دیسکورد Ccoin هست که شبیه به Vision UI Dashboard باشه. این پنل با **React** برای فرانت‌اند، **Tailwind CSS** برای استایل‌دهی، **Chart.js** برای نمودارها، **Express.js** برای بک‌اند، و **discord.js** برای ارتباط با ربات دیسکورد پیاده‌سازی می‌شه. همچنین از **Discord OAuth2** برای احراز هویت و **SQLite** برای دیتابیس استفاده می‌کنیم.
+
+---
+
+### 1. قابلیت‌های پنل ادمین
+#### 1.1. داشبورد (Dashboard)
+- **کارت‌های آماری (Stat Cards):**  
+  - تعداد کل کاربرا (Total Users).
+  - تعداد کاربرای جدید در 24 ساعت گذشته (New Users in Last 24h).
+  - مجموع Ccoin و کریستال‌ها توی سرور.
+  - تعداد کلن‌ها و کوئست‌ها.
+  - تعداد پیام‌ها و دستورات اجرا‌شده.
+- **نمودارها:**  
+  - نمودار خطی (Line Chart) برای کاربرای جدید در 7 روز گذشته.
+  - نمودار میله‌ای (Bar Chart) برای پیام‌ها در 7 روز گذشته.
+  - نمودار دوناتی (Doughnut Chart) برای توزیع Ccoin بین کاربرا.
+- **وضعیت سرور:**  
+  - وضعیت ربات (Online/Offline).
+  - آپتایم سرور (Uptime).
+  - مصرف حافظه (Memory Usage).
+
+#### 1.2. مدیریت کاربرا (User Management)
+- **لیست کاربرا:**  
+  - جدول با ستون‌های (نام کاربری، آیدی، Ccoin، کریستال، سطح، تعداد پیام‌ها).
+  - امکان جستجو و فیلتر (بر اساس Ccoin، سطح، یا نام).
+  - دکمه‌های "ویرایش" و "حذف".
+- **ویرایش کاربر:**  
+  - تغییر Ccoin، کریستال، سطح، و XP.
+  - بن کردن یا آنبن کردن کاربر.
+- **اضافه کردن کاربر:**  
+  - فرم برای اضافه کردن کاربر جدید (آیدی، نام کاربری، Ccoin اولیه).
+
+#### 1.3. مدیریت اقتصاد (Economy Management)
+- **آمار اقتصادی:**  
+  - مجموع Ccoin و کریستال توی سرور.
+  - تعداد کل تراکنش‌ها.
+  - میانگین Ccoin هر کاربر.
+- **مدیریت تراکنش‌ها:**  
+  - جدول تراکنش‌ها (فرستنده، گیرنده، مقدار، تاریخ).
+  - دکمه برای لغو تراکنش.
+- **اضافه/حذف Ccoin و کریستال:**  
+  - فرم برای تغییر موجودی یه کاربر خاص.
+
+#### 1.4. مدیریت کلن‌ها (Clan Management)
+- **لیست کلن‌ها:**  
+  - جدول (نام، لیدر، تعداد اعضا، سطح، مجموع Ccoin).
+  - دکمه‌های "ویرایش" و "حذف".
+- **ایجاد/ویرایش کلن:**  
+  - فرم برای ایجاد یا ویرایش کلن (نام، لیدر، سطح).
+
+#### 1.5. مدیریت کوئست‌ها (Quest Management)
+- **لیست کوئست‌ها:**  
+  - جدول (عنوان، توضیحات، دسته‌بندی، حداقل سطح، پاداش).
+  - دکمه‌های "ویرایش" و "حذف".
+- **ایجاد/ویرایش کوئست:**  
+  - فرم برای ایجاد یا ویرایش کوئست.
+
+#### 1.6. لاگ‌ها (Logs)
+- **لاگ فعالیت‌ها:**  
+  - جدول (تاریخ، نوع فعالیت، کاربر، توضیحات).
+  - فیلتر بر اساس تاریخ یا نوع فعالیت.
+
+#### 1.7. تنظیمات (Settings)
+- **تنظیمات ربات:**  
+  - تغییر پیشوند دستورات.
+  - تغییر نرخ تبدیل کریستال به Ccoin.
+- **تنظیمات پنل:**  
+  - تغییر تم (Dark/Light).
+
+#### 1.8. رابط دیسکورد
+- **دستور `/admin`:**  
+  - یه پیام با دکمه‌های تعاملی برای مدیریت سریع (اقتصاد، کلن‌ها، کوئست‌ها، کاربرا، تنظیمات، لاگ‌ها).
+  - دکمه برای باز کردن لینک پنل وب.
+
+---
+
+### 2. طراحی UI (مشابه Vision UI Dashboard)
+#### 2.1. ویژگی‌های طراحی Vision UI
+Vision UI Dashboard یه طراحی مدرن داره با:
+- **تم تیره:** پس‌زمینه تیره با رنگ‌های زنده (آبی، بنفش، سبز).
+- **کارت‌های شیشه‌ای (Glassmorphism):** کارت‌ها با افکت شیشه‌ای (شفافیت و سایه).
+- **نمودارهای پویا:** استفاده از Chart.js برای نمایش داده‌ها.
+- **نوار کناری:** منوی ناوبری با آیکون‌ها و انیمیشن.
+- **هدر:** نمایش نام کاربر و دکمه‌های تنظیمات.
+
+#### 2.2. ساختار UI
+- **نوار کناری (Sidebar):**  
+  - لوگوی ربات (Ccoin Bot).
+  - نام ادمین (whysiks).
+  - منو: Dashboard, Users, Economy, Clans, Quests, Logs, Settings.
+  - آیکون کنار هر گزینه (مثلاً 📊 برای داشبورد).
+- **هدر (Header):**  
+  - نام ادمین و آواتار.
+  - دکمه تغییر تم (Dark/Light).
+  - دکمه خروج (Logout).
+- **بخش اصلی (Main Content):**  
+  - کارت‌های آماری با افکت شیشه‌ای.
+  - نمودارها با انیمیشن.
+  - جداول با قابلیت جستجو و فیلتر.
+  - فرم‌ها با طراحی مدرن.
+
+#### 2.3. نمونه طراحی داشبورد
+یه نمونه متنی از داشبورد:
+
+```
+[Sidebar]
+- Logo: Ccoin Bot
+- Admin: whysiks
+- 📊 Dashboard (active)
+- 👥 Users
+- 💰 Economy
+- 🏰 Clans
+- 🎯 Quests
+- 📜 Logs
+- ⚙️ Settings
+
+[Header]
+- whysiks (Avatar) | 🌙 Dark Mode | Logout
+
+[Main Content]
+📊 Dashboard
+------------------------------------------------
+[Glass Card] کل کاربرا: 150
+[Glass Card] کاربرای جدید (24 ساعت): 5
+[Glass Card] مجموع Ccoin: 10,000
+[Glass Card] مجموع کریستال: 500
+[Glass Card] تعداد کلن‌ها: 10
+[Glass Card] تعداد کوئست‌ها: 20
+
+[Glass Card] وضعیت سرور
+- ربات: آنلاین ✅
+- آپتایم: 3 روز و 12 ساعت
+- مصرف حافظه: 128 MB
+
+[Chart Card] کاربرای جدید (7 روز گذشته)
+[Line Chart: 2, 3, 1, 5, 4, 3, 5]
+
+[Chart Card] پیام‌ها (7 روز گذشته)
+[Bar Chart: 500, 600, 450, 700, 800, 650, 900]
+
+[Chart Card] توزیع Ccoin
+[Doughnut Chart: کاربر 1: 30%, کاربر 2: 20%, ...]
+------------------------------------------------
+```
+
+---
+
+### 3. پیاده‌سازی کد
+
+#### 3.1. نصب پکیج‌های مورد نیاز
+برای فرانت‌اند و بک‌اند:
+
+```bash
+# برای بک‌اند
+npm install express express-session discord-oauth2 sqlite3 discord.js
+
+# برای فرانت‌اند (توی پوشه client)
+npx create-react-app client --template typescript
+cd client
+npm install axios chart.js react-chartjs-2 tailwindcss @tailwindcss/vite
+```
+
+#### 3.2. ساختار پروژه
+```
+project/
+├── server/
+│   ├── index.ts        # فایل اصلی سرور
+│   ├── admin.ts        # روت‌های API
+│   ├── storage.ts      # توابع دیتابیس
+│   ├── database.ts     # تنظیمات دیتابیس
+│   └── bot.ts          # ربات دیسکورد
+├── client/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── Sidebar.tsx
+│   │   │   ├── Header.tsx
+│   │   │   └── StatCard.tsx
+│   │   ├── pages/
+│   │   │   ├── Dashboard.tsx
+│   │   │   ├── Users.tsx
+│   │   │   ├── Economy.tsx
+│   │   │   ├── Clans.tsx
+│   │   │   ├── Quests.tsx
+│   │   │   ├── Logs.tsx
+│   │   │   └── Settings.tsx
+│   │   ├── App.tsx
+│   │   ├── index.tsx
+│   │   └── tailwind.css
+│   ├── package.json
+│   └── vite.config.ts
+├── package.json
+└── .replit
+```
+
+#### 3.3. تنظیمات بک‌اند (server/index.ts)
+فایل اصلی سرور:
+
+```typescript
+import express from 'express';
+import session from 'express-session';
+import cors from 'cors';
+import adminRoutes from './admin';
+import { initDatabase } from './database';
+import { startBot } from './bot';
+
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+app.use(
+  session({
+    secret: 'your-secret-key',
+    resave: false,
+    saveUninitialized: false,
+  })
+);
+
+// راه‌اندازی دیتابیس
+initDatabase();
+
+// روت‌های API
+app.use('/api/admin', adminRoutes);
+
+// راه‌اندازی ربات دیسکورد
+startBot();
+
+app.listen(5000, () => {
+  console.log('Server running on port 5000');
+});
+```
+
+#### 3.4. روت‌های API (server/admin.ts)
+روت‌های API برای ارتباط با فرانت‌اند:
+
+```typescript
+import express from 'express';
+import DiscordOauth2 from 'discord-oauth2';
+import { getStats, getUsers, getUser, updateUser } from './storage';
+
+const router = express.Router();
+const oauth = new DiscordOauth2();
+
+// میدلوِر برای چک کردن ورود
+const ensureAuthenticated = (req, res, next) => {
+  if (!req.session.user) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  const guild = req.session.guilds.find(g => g.id === 'YOUR_GUILD_ID');
+  if (!guild || !guild.roles.includes('ADMIN_ROLE_ID')) {
+    return res.status(403).json({ error: 'Access Denied' });
+  }
+  next();
+};
+
+// ورود
+router.get('/login', (req, res) => {
+  const redirectUri = 'http://localhost:3000/auth/callback';
+  const url = oauth.generateAuthUrl({
+    clientId: 'YOUR_CLIENT_ID',
+    redirectUri,
+    scope: ['identify', 'guilds'],
+  });
+  res.json({ url });
+});
+
+// کال‌بک ورود
+router.get('/callback', async (req, res) => {
+  const redirectUri = 'http://localhost:3000/auth/callback';
+  const token = await oauth.tokenRequest({
+    clientId: 'YOUR_CLIENT_ID',
+    clientSecret: 'YOUR_CLIENT_SECRET',
+    code: req.query.code,
+    grantType: 'authorization_code',
+    redirectUri,
+  });
+  const user = await oauth.getUser(token.access_token);
+  const guilds = await oauth.getUserGuilds(token.access_token);
+  req.session.user = user;
+  req.session.guilds = guilds;
+  res.redirect('http://localhost:3000/dashboard');
+});
+
+// خروج
+router.get('/logout', (req, res) => {
+  req.session.destroy();
+  res.json({ message: 'Logged out' });
+});
+
+// دریافت آمار
+router.get('/stats', ensureAuthenticated, async (req, res) => {
+  const stats = await getStats();
+  res.json(stats);
+});
+
+// دریافت کاربرا
+router.get('/users', ensureAuthenticated, async (req, res) => {
+  const users = await getUsers();
+  res.json(users);
+});
+
+// ویرایش کاربر
+router.put('/users/:id', ensureAuthenticated, async (req, res) => {
+  const { ccoin, crystals, level, xp } = req.body;
+  await updateUser(req.params.id, { ccoin, crystals, level, xp });
+  res.json({ message: 'User updated' });
+});
+
+export default router;
+```
+
+#### 3.5. ربات دیسکورد (server/bot.ts)
+فایل ربات برای دستور `/admin`:
+
+```typescript
+import { Client, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { getStats } from './storage';
+
+const client = new Client({ intents: ['Guilds', 'GuildMessages', 'MessageContent'] });
+
+export async function startBot() {
+  client.on('ready', () => {
+    console.log(`Logged in as ${client.user.tag}!`);
+  });
+
+  client.on('interactionCreate', async (interaction) => {
+    if (!interaction.isCommand() && !interaction.isButton()) return;
+
+    const member = interaction.member;
+    if (!member.roles.cache.has('ADMIN_ROLE_ID')) {
+      return interaction.reply({ content: 'شما دسترسی به این دستور ندارید!', ephemeral: true });
+    }
+
+    if (interaction.isCommand() && interaction.commandName === 'admin') {
+      const stats = await getStats();
+      const embed = new EmbedBuilder()
+        .setTitle('📊 پنل ادمین Ccoin')
+        .setDescription(
+          `👥 تعداد کاربرا: ${stats.totalUsers}\n` +
+          `💰 مجموع Ccoin: ${stats.totalCcoin}\n` +
+          `💎 مجموع کریستال: ${stats.totalCrystals}\n` +
+          `🏰 تعداد کلن‌ها: ${stats.totalClans}\n` +
+          `🎯 تعداد کوئست‌ها: ${stats.totalQuests}`
+        )
+        .setColor('#7289DA');
+
+      const row1 = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('economy').setLabel('مدیریت اقتصاد').setStyle(ButtonStyle.Primary).setEmoji('💰'),
+        new ButtonBuilder().setCustomId('clans').setLabel('مدیریت کلن‌ها').setStyle(ButtonStyle.Primary).setEmoji('🏰'),
+        new ButtonBuilder().setCustomId('quests').setLabel('مدیریت کوئست‌ها').setStyle(ButtonStyle.Primary).setEmoji('🎯')
+      );
+
+      const row2 = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('users').setLabel('مدیریت کاربرا').setStyle(ButtonStyle.Primary).setEmoji('👥'),
+        new ButtonBuilder().setCustomId('settings').setLabel('تنظیمات').setStyle(ButtonStyle.Primary).setEmoji('⚙️'),
+        new ButtonBuilder().setCustomId('logs').setLabel('لاگ‌ها').setStyle(ButtonStyle.Primary).setEmoji('📜')
+      );
+
+      const row3 = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setLabel('پنل وب')
+          .setStyle(ButtonStyle.Link)
+          .setURL('http://localhost:3000')
+          .setEmoji('🌐')
+      );
+
+      await interaction.reply({ embeds: [embed], components: [row1, row2, row3], ephemeral: true });
+    }
+  });
+
+  client.login('YOUR_BOT_TOKEN');
+}
+```
+
+#### 3.6. فرانت‌اند (React)
+
+##### 3.6.1. تنظیمات Tailwind CSS (client/tailwind.css)
+فایل Tailwind CSS رو تنظیم می‌کنیم:
+
+```css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-gray-900 text-white;
+}
+
+.glass {
+  @apply bg-gray-800 bg-opacity-30 backdrop-blur-md border border-gray-700 rounded-lg shadow-lg;
+}
+```
+
+فایل `vite.config.ts` برای Tailwind:
+
+```typescript
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+});
+```
+
+##### 3.6.2. کامپوننت Sidebar (client/src/components/Sidebar.tsx)
+نوار کناری:
+
+```tsx
+import { Link, useLocation } from 'react-router-dom';
+
+const Sidebar = () => {
+  const location = useLocation();
+
+  const menuItems = [
+    { path: '/dashboard', label: '📊 داشبورد' },
+    { path: '/users', label: '👥 کاربرا' },
+    { path: '/economy', label: '💰 اقتصاد' },
+    { path: '/clans', label: '🏰 کلن‌ها' },
+    { path: '/quests', label: '🎯 کوئست‌ها' },
+    { path: '/logs', label: '📜 لاگ‌ها' },
+    { path: '/settings', label: '⚙️ تنظیمات' },
+  ];
+
+  return (
+    <aside className="fixed top-0 left-0 w-64 h-full glass p-4">
+      <div className="text-center mb-6">
+        <img src="/logo.png" alt="Ccoin Bot" className="w-16 mx-auto" />
+        <h2 className="text-xl font-bold mt-2">Ccoin Bot</h2>
+        <p className="text-gray-400">ادمین: whysiks</p>
+      </div>
+      <nav>
+        {menuItems.map((item) => (
+          <Link
+            key={item.path}
+            to={item.path}
+            className={`block py-2 px-4 rounded ${
+              location.pathname === item.path ? 'bg-blue-600' : 'hover:bg-gray-700'
+            }`}
+          >
+            {item.label}
+          </Link>
+        ))}
+      </nav>
+    </aside>
+  );
+};
+
+export default Sidebar;
+```
+
+##### 3.6.3. کامپوننت Header (client/src/components/Header.tsx)
+هدر:
+
+```tsx
+const Header = () => {
+  const handleLogout = async () => {
+    await fetch('http://localhost:5000/api/admin/logout');
+    window.location.href = '/';
+  };
+
+  return (
+    <header className="glass p-4 flex justify-between items-center">
+      <div className="flex items-center space-x-4">
+        <img src="https://via.placeholder.com/40" alt="Avatar" className="w-10 h-10 rounded-full" />
+        <span className="font-semibold">whysiks (ادمین)</span>
+      </div>
+      <div className="flex space-x-4">
+        <button className="bg-gray-700 hover:bg-gray-600 py-2 px-4 rounded">🌙 تم تیره</button>
+        <button onClick={handleLogout} className="bg-red-600 hover:bg-red-700 py-2 px-4 rounded">
+          خروج
+        </button>
+      </div>
+    </header>
+  );
+};
+
+export default Header;
+```
+
+##### 3.6.4. کامپوننت StatCard (client/src/components/StatCard.tsx)
+کارت آماری:
+
+```tsx
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  icon?: string;
+}
+
+const StatCard = ({ title, value, icon }: StatCardProps) => {
+  return (
+    <div className="glass p-4">
+      <div className="flex items-center space-x-4">
+        {icon && <span className="text-2xl">{icon}</span>}
+        <div>
+          <h2 className="text-lg font-semibold">{title}</h2>
+          <p className="text-2xl mt-2">{value}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default StatCard;
+```
+
+##### 3.6.5. صفحه داشبورد (client/src/pages/Dashboard.tsx)
+صفحه داشبورد:
+
+```tsx
+import { useEffect, useState } from 'react';
+import { Line, Bar, Doughnut } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Tooltip, Legend } from 'chart.js';
+import StatCard from '../components/StatCard';
+import axios from 'axios';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Tooltip, Legend);
+
+const Dashboard = () => {
+  const [stats, setStats] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      const response = await axios.get('http://localhost:5000/api/admin/stats');
+      setStats(response.data);
+    };
+    fetchStats();
+  }, []);
+
+  if (!stats) return <div>Loading...</div>;
+
+  const newUsersData = {
+    labels: ['6 روز پیش', '5 روز پیش', '4 روز پیش', '3 روز پیش', '2 روز پیش', 'دیروز', 'امروز'],
+    datasets: [
+      {
+        label: 'کاربرای جدید',
+        data: [2, 3, 1, 5, 4, 3, 5],
+        borderColor: '#3B82F6',
+        fill: false,
+      },
+    ],
+  };
+
+  const messagesData = {
+    labels: ['6 روز پیش', '5 روز پیش', '4 روز پیش', '3 روز پیش', '2 روز پیش', 'دیروز', 'امروز'],
+    datasets: [
+      {
+        label: 'پیام‌ها',
+        data: [500, 600, 450, 700, 800, 650, 900],
+        backgroundColor: '#3B82F6',
+      },
+    ],
+  };
+
+  const ccoinData = {
+    labels: ['کاربر 1', 'کاربر 2', 'کاربر 3', 'کاربر 4', 'بقیه'],
+    datasets: [
+      {
+        label: 'توزیع Ccoin',
+        data: [30, 20, 15, 10, 25],
+        backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'],
+      },
+    ],
+  };
+
+  return (
+    <div className="ml-64 p-6">
+      <h1 className="text-3xl font-bold mb-6">📊 داشبورد</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard title="کل کاربرا" value={stats.totalUsers} icon="👥" />
+        <StatCard title="کاربرای جدید (24 ساعت)" value={stats.newUsers24h} icon="🆕" />
+        <StatCard title="مجموع Ccoin" value={stats.totalCcoin} icon="💰" />
+        <StatCard title="مجموع کریستال" value={stats.totalCrystals} icon="💎" />
+        <StatCard title="تعداد کلن‌ها" value={stats.totalClans} icon="🏰" />
+        <StatCard title="تعداد کوئست‌ها" value={stats.totalQuests} icon="🎯" />
+        <StatCard title="کل پیام‌ها" value={stats.totalMessages} icon="💬" />
+        <StatCard title="دستورات اجرا‌شده" value={stats.commandsUsed} icon="🤖" />
+      </div>
+      <div className="mt-6 glass p-4">
+        <h2 className="text-xl font-semibold mb-4">وضعیت سرور</h2>
+        <p>ربات: <span className="text-green-500">آنلاین ✅</span></p>
+        <p>آپتایم: {stats.uptime}</p>
+        <p>مصرف حافظه: {stats.memoryUsage} MB</p>
+      </div>
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="glass p-4">
+          <h2 className="text-xl font-semibold mb-4">کاربرای جدید (7 روز گذشته)</h2>
+          <Line data={newUsersData} />
+        </div>
+        <div className="glass p-4">
+          <h2 className="text-xl font-semibold mb-4">پیام‌ها (7 روز گذشته)</h2>
+          <Bar data={messagesData} />
+        </div>
+        <div className="glass p-4">
+          <h2 className="text-xl font-semibold mb-4">توزیع Ccoin</h2>
+          <Doughnut data={ccoinData} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Dashboard;
+```
+
+##### 3.6.6. فایل App.tsx (client/src/App.tsx)
+فایل اصلی React:
+
+```tsx
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Sidebar from './components/Sidebar';
+import Header from './components/Header';
+import Dashboard from './pages/Dashboard';
+import Users from './pages/Users';
+import Economy from './pages/Economy';
+import Clans from './pages/Clans';
+import Quests from './pages/Quests';
+import Logs from './pages/Logs';
+import Settings from './pages/Settings';
+
+const App = () => {
+  return (
+    <Router>
+      <div className="flex">
+        <Sidebar />
+        <div className="flex-1">
+          <Header />
+          <Routes>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/users" element={<Users />} />
+            <Route path="/economy" element={<Economy />} />
+            <Route path="/clans" element={<Clans />} />
+            <Route path="/quests" element={<Quests />} />
+            <Route path="/logs" element={<Logs />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/" element={<Navigate to="/dashboard" />} />
+          </Routes>
+        </div>
+      </div>
+    </Router>
+  );
+};
+
+export default App;
+```
+
+#### 3.7. توابع دیتابیس (server/storage.ts)
+توابع دیتابیس برای دریافت آمار:
+
+```typescript
+import { db } from './database';
+
+export async function getStats() {
+  return new Promise((resolve, reject) => {
+    db.get(
+      'SELECT (SELECT COUNT(*) FROM users) as totalUsers, ' +
+        '(SELECT COUNT(*) FROM users WHERE created_at >= ?) as newUsers24h, ' +
+        '(SELECT SUM(messages_sent) FROM users) as totalMessages, ' +
+        '(SELECT SUM(commands_used) FROM users) as commandsUsed, ' +
+        '(SELECT SUM(ccoin) FROM users) as totalCcoin, ' +
+        '(SELECT SUM(crystals) FROM users) as totalCrystals, ' +
+        '(SELECT COUNT(*) FROM clans) as totalClans, ' +
+        '(SELECT COUNT(*) FROM quests) as totalQuests',
+      [new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()],
+      (err, row) => {
+        if (err) reject(err);
+        resolve({
+          totalUsers: row.totalUsers,
+          newUsers24h: row.newUsers24h,
+          totalMessages: row.totalMessages,
+          commandsUsed: row.commandsUsed,
+          totalCcoin: row.totalCcoin,
+          totalCrystals: row.totalCrystals,
+          totalClans: row.totalClans,
+          totalQuests: row.totalQuests,
+          uptime: '3 روز و 12 ساعت',
+          memoryUsage: (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2),
+        });
+      }
+    );
+  });
+}
+
+export async function getUsers() {
+  return new Promise((resolve, reject) => {
+    db.all('SELECT * FROM users', (err, rows) => {
+      if (err) reject(err);
+      resolve(rows);
+    });
+  });
+}
+
+export async function getUser(userId) {
+  return new Promise((resolve, reject) => {
+    db.get('SELECT * FROM users WHERE user_id = ?', [userId], (err, row) => {
+      if (err) reject(err);
+      resolve(row);
+    });
+  });
+}
+
+export async function updateUser(userId, data) {
+  return new Promise((resolve, reject) => {
+    db.run(
+      'UPDATE users SET ccoin = ?, crystals = ?, level = ?, xp = ? WHERE user_id = ?',
+      [data.ccoin, data.crystals, data.level, data.xp, userId],
+      (err) => {
+        if (err) reject(err);
+        resolve();
+      }
+    );
+  });
+}
+```
+
+---
+
+### 4. مستند برای هوش مصنوعی
+#### مقدمه
+این مستند برای طراحی و پیاده‌سازی یه پنل ادمین مدرن و زیبا برای ربات Ccoin طراحی شده که شبیه به Vision UI Dashboard باشه. این پنل با React، Tailwind CSS، Chart.js، Express.js، و discord.js پیاده‌سازی می‌شه.
+
+#### قابلیت‌ها
+- **داشبورد:** کارت‌های آماری (کاربرا، Ccoin، کریستال، کلن‌ها، کوئست‌ها)، نمودارها (کاربرای جدید، پیام‌ها، توزیع Ccoin)، وضعیت سرور.
+- **مدیریت کاربرا:** لیست کاربرا، ویرایش/حذف، اضافه کردن کاربر.
+- **مدیریت اقتصاد:** آمار اقتصادی، مدیریت تراکنش‌ها، تغییر موجودی.
+- **مدیریت کلن‌ها:** لیست کلن‌ها، ایجاد/ویرایش/حذف.
+- **مدیریت کوئست‌ها:** لیست کوئست‌ها، ایجاد/ویرایش/حذف.
+- **لاگ‌ها:** نمایش لاگ فعالیت‌ها.
+- **تنظیمات:** تنظیمات ربات و پنل.
+- **رابط دیسکورد:** دستور `/admin` با دکمه‌های تعاملی.
+
+#### طراحی UI
+- **تم:** تیره با افکت شیشه‌ای (Glassmorphism).
+- **نوار کناری:** منوی ناوبری با آیکون‌ها.
+- **هدر:** نام ادمین، آواتار، دکمه تغییر تم، دکمه خروج.
+- **محتوا:** کارت‌های آماری، نمودارها، جداول، فرم‌ها.
+
+#### تغییرات توی کد
+1. **نصب پکیج‌ها:**  
+   ```bash
+   npm install express express-session discord-oauth2 sqlite3 discord.js
+   cd client
+   npm install axios chart.js react-chartjs-2 tailwindcss @tailwindcss/vite
+   ```
+2. **ساختار پروژه:**  
+   فایل‌ها و پوشه‌ها طبق ساختار بالا.
+3. **بک‌اند:**  
+   - `server/index.ts`: راه‌اندازی سرور.
+   - `server/admin.ts`: روت‌های API.
+   - `server/bot.ts`: ربات دیسکورد.
+4. **فرانت‌اند:**  
+   - `client/src/components/`: کامپوننت‌ها (Sidebar, Header, StatCard).
+   - `client/src/pages/`: صفحات (Dashboard, Users, ...).
+   - `client/tailwind.css`: استایل‌ها.
+
+#### نتیجه‌گیری
+این پنل ادمین یه رابط کاربری مدرن و زیبا شبیه به Vision UI Dashboard ارائه می‌ده که هم از طریق وب و هم از داخل دیسکورد قابل استفاده است.
+
+---
+
+اگه سؤالی داری یا می‌خوای روی یه بخش خاص بیشتر کار کنیم، بگو تا کمکت کنم! 😊🚀
