@@ -44,6 +44,7 @@ export async function investmentMenu(
       .setColor('#9370DB')
       .setTitle('📈 سیستم سرمایه‌گذاری Ccoin')
       .setDescription('در اینجا می‌توانید سرمایه خود را در طرح‌های مختلف سرمایه‌گذاری کنید و سود دریافت کنید.')
+      .setThumbnail('https://img.icons8.com/fluency/48/get-cash.png')
       .addFields(
         { name: '💳 موجودی کیف پول', value: `${user.wallet} Ccoin`, inline: true },
         { name: '🏦 موجودی بانک', value: `${user.bank} Ccoin`, inline: true },
