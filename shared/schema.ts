@@ -7,6 +7,7 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   discordId: text("discord_id").notNull().unique(),
   username: text("username").notNull(),
+  displayName: text("display_name"), // نام نمایشی کاربر (برای پنل مدیریت)
   wallet: integer("wallet").notNull().default(0),
   bank: integer("bank").notNull().default(0),
   crystals: integer("crystals").notNull().default(0),
@@ -19,6 +20,7 @@ export const users = pgTable("users", {
   lastWheelSpin: timestamp("last_wheel_spin"),
   lastBankInterest: timestamp("last_bank_interest"), // تاریخ آخرین پرداخت سود بانکی
   lastSeen: timestamp("last_seen").defaultNow(), // آخرین زمان فعالیت
+  lastActive: timestamp("last_active").defaultNow(), // آخرین زمان فعالیت برای پنل مدیریت
   inventory: jsonb("inventory").notNull().default({}),
   dailyStreak: integer("daily_streak").notNull().default(0),
   totalGamesPlayed: integer("total_games_played").notNull().default(0),
@@ -54,6 +56,13 @@ export const users = pgTable("users", {
   lotteryTickets: jsonb("lottery_tickets").$type<UserLottery[]>().default([]),
   // تاریخ آخرین پرداخت سود سهام
   lastDividendPayout: timestamp("last_dividend_payout"),
+  // فیلدهای مدیریتی
+  banned: boolean("banned").notNull().default(false), // وضعیت مسدودیت
+  banReason: text("ban_reason"), // دلیل مسدودیت
+  role: text("role").default("user"), // نقش کاربر (user, admin, moderator)
+  isPremium: boolean("is_premium").default(false), // آیا کاربر حساب ویژه دارد
+  premiumUntil: timestamp("premium_until"), // تاریخ پایان حساب ویژه
+  notes: text("notes"), // یادداشت‌های مدیریتی
   createdAt: timestamp("created_at").defaultNow(),
 });
 
