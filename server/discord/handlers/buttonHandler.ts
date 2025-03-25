@@ -21,6 +21,8 @@ import { achievementsMenu, showCategoryAchievements } from '../components/achiev
 import { seasonsMenu } from '../components/seasonsMenu';
 import { parallelWorldsMenu } from '../components/parallelWorldsMenu';
 import { petMenu, buyNewPet, feedPet, playWithPet, activatePet, renamePetModal } from '../components/petMenu';
+import { friendsMainMenu, friendsList, friendRequests } from '../components/friendsMenu/friendsMainMenu';
+import { showFriendshipDetails } from '../components/friendsMenu/friendshipLevelMenu';
 import { handleCoinFlip } from '../games/coinFlip';
 import { handleRockPaperScissors } from '../games/rockPaperScissors';
 import { handleNumberGuess } from '../games/numberGuess';
@@ -1282,6 +1284,45 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       return;
     }
     
+    // منوی دوستان
+    if (action === 'friends') {
+      await friendsMainMenu(interaction);
+      return;
+    }
+    
+    // لیست دوستان
+    if (action === 'friends_list') {
+      await friendsList(interaction);
+      return;
+    }
+    
+    // درخواست‌های دوستی
+    if (action === 'friend_requests') {
+      await friendRequests(interaction);
+      return;
+    }
+    
+    // نمایش جزئیات دوستی
+    if (action === 'friend_details') {
+      const friendId = params[0];
+      await showFriendshipDetails(interaction, friendId);
+      return;
+    }
+    
+    // تنظیم بهترین دوست
+    if (action === 'best_friend_set') {
+      const friendId = params[0];
+      await handleBestFriend(interaction, friendId, 'set');
+      return;
+    }
+    
+    // حذف بهترین دوست
+    if (action === 'best_friend_remove') {
+      const friendId = params[0];
+      await handleBestFriend(interaction, friendId, 'remove');
+      return;
+    }
+    
     // Handle other options menu buttons that are not yet implemented
     if (action === 'marketplace' || action === 'calendar') {
       await interaction.reply({
@@ -1992,6 +2033,143 @@ export async function handleSetDefaultLogChannel(interaction: ButtonInteraction)
       content: 'متاسفانه در تنظیم کانال پیش‌فرض لاگ خطایی رخ داد!',
       ephemeral: true
     });
+  }
+}
+
+// Handler for managing best friend status
+async function handleBestFriend(interaction: ButtonInteraction, friendId: string, action: 'set' | 'remove') {
+  try {
+    // برای اطمینان از عدم تایم‌اوت، یک پاسخ با تاخیر ارسال می‌کنیم
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferReply({ ephemeral: true });
+    }
+    
+    // دریافت کاربر از دیتابیس
+    const user = await storage.getUserByDiscordId(interaction.user.id);
+    if (!user) {
+      const message = '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور `/menu` استفاده نمایید.';
+      if (interaction.deferred) {
+        await interaction.editReply({ content: message });
+      } else {
+        await interaction.reply({ content: message, ephemeral: true });
+      }
+      return;
+    }
+    
+    // بررسی وجود دوست
+    const friends = await storage.getFriends(user.id);
+    const friend = friends.find(f => f.friendId === friendId);
+    
+    if (!friend) {
+      const message = '❌ این کاربر در لیست دوستان شما وجود ندارد!';
+      if (interaction.deferred) {
+        await interaction.editReply({ content: message });
+      } else {
+        await interaction.reply({ content: message, ephemeral: true });
+      }
+      return;
+    }
+    
+    // تنظیم یا حذف وضعیت بهترین دوست
+    let result = true;
+    let responseMessage = '';
+    
+    // یافتن شناسه کاربر دوست (با استفاده از discordId)
+    let friendUserId = 0;
+    const allUsers = await storage.getAllUsers();
+    for (const u of allUsers) {
+      if (u.discordId === friendId) {
+        friendUserId = u.id;
+        break;
+      }
+    }
+    
+    if (friendUserId === 0) {
+      const message = '❌ کاربر دوست یافت نشد!';
+      if (interaction.deferred) {
+        await interaction.editReply({ content: message });
+      } else {
+        await interaction.reply({ content: message, ephemeral: true });
+      }
+      return;
+    }
+    
+    if (action === 'set') {
+      // بررسی اینکه آیا کاربر قبلاً بهترین دوست دارد
+      const existingBestFriend = friends.find(f => f.isBestFriend);
+      
+      if (existingBestFriend && existingBestFriend.friendId !== friendId) {
+        // ثبت فعالیت مربوط به تغییر بهترین دوست
+        await storage.recordFriendshipActivity(
+          user.id,
+          Number(friendUserId),
+          'best_friend',
+          'تغییر به بهترین دوست',
+          25
+        );
+        
+        // بروزرسانی XP دوستی
+        await storage.updateFriendshipXP(user.id, friendId, 25);
+        
+        responseMessage = `💖 کاربر با موفقیت به عنوان بهترین دوست شما انتخاب شد! دوست قبلی از حالت بهترین دوست خارج شد.`;
+      } else if (existingBestFriend && existingBestFriend.friendId === friendId) {
+        responseMessage = `💖 این کاربر در حال حاضر بهترین دوست شماست!`;
+      } else {
+        // ثبت فعالیت مربوط به انتخاب بهترین دوست جدید
+        await storage.recordFriendshipActivity(
+          user.id,
+          Number(friendUserId),
+          'best_friend',
+          'انتخاب به عنوان بهترین دوست',
+          50
+        );
+        
+        // بروزرسانی XP دوستی
+        await storage.updateFriendshipXP(user.id, friendId, 50);
+        
+        responseMessage = `💖 کاربر با موفقیت به عنوان بهترین دوست شما انتخاب شد!`;
+      }
+    } else if (action === 'remove') {
+      // ثبت فعالیت مربوط به حذف بهترین دوست
+      await storage.recordFriendshipActivity(
+        user.id,
+        Number(friendUserId),
+        'best_friend_remove',
+        'حذف از بهترین دوست',
+        0
+      );
+      
+      responseMessage = `💔 کاربر دیگر بهترین دوست شما نیست.`;
+    }
+    
+    // ارسال پاسخ
+    if (interaction.deferred) {
+      await interaction.editReply({ content: responseMessage });
+    } else {
+      await interaction.reply({ content: responseMessage, ephemeral: true });
+    }
+    
+    // بروزرسانی نمایش جزئیات دوستی
+    setTimeout(async () => {
+      if (interaction.replied || interaction.deferred) {
+        await showFriendshipDetails(interaction, friendId);
+      }
+    }, 2000);
+    
+  } catch (error) {
+    console.error('Error in best friend handler:', error);
+    try {
+      const errorMessage = '❌ متأسفانه در انجام عملیات خطایی رخ داد! لطفاً دوباره تلاش کنید.';
+      if (interaction.deferred) {
+        await interaction.editReply({ content: errorMessage });
+      } else if (interaction.replied) {
+        await interaction.followUp({ content: errorMessage, ephemeral: true });
+      } else {
+        await interaction.reply({ content: errorMessage, ephemeral: true });
+      }
+    } catch (e) {
+      console.error('Error handling best friend failure:', e);
+    }
   }
 }
 

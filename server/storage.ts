@@ -120,6 +120,7 @@ export interface IStorage {
   rejectFriendRequest(requestId: string): Promise<boolean>;
   removeFriend(userId: number, friendId: number): Promise<boolean>;
   getFriendshipLevel(userId: number, friendId: number): Promise<number>;
+  updateFriendshipStatus(userId: number, friendId: string, updates: Partial<Friend>): Promise<boolean>;
   updateFriendshipXP(userId: number, friendId: string, xp: number): Promise<{ leveledUp: boolean, newLevel?: number }>;
   recordFriendshipActivity(userId: number, friendId: number, type: string, details: string, xpEarned: number): Promise<boolean>;
   getFriendshipActivities(userId: number, friendId: number, limit?: number): Promise<any[]>;
@@ -2022,6 +2023,56 @@ export class MemStorage implements IStorage {
       leveledUp,
       newLevel: leveledUp ? newLevel : undefined
     };
+  }
+
+  /**
+   * بروزرسانی وضعیت دوستی بین دو کاربر
+   * @param userId شناسه کاربر
+   * @param friendId شناسه دوست (به صورت رشته - می‌تواند شناسه دیسکورد یا شناسه عددی کاربر باشد)
+   * @param updates تغییراتی که باید در وضعیت دوستی اعمال شود
+   * @returns آیا عملیات موفق بوده است
+   */
+  async updateFriendshipStatus(userId: number, friendId: string, updates: Partial<Friend>): Promise<boolean> {
+    const user = this.users.get(userId);
+    // یافتن کاربر دوست با شناسه دیسکورد یا شناسه عددی
+    let friendObject: User | undefined;
+    
+    for (const u of this.users.values()) {
+      if (u.discordId === friendId || u.id.toString() === friendId) {
+        friendObject = u;
+        break;
+      }
+    }
+    
+    if (!user || !friendObject || !user.friends) {
+      return false;
+    }
+    
+    // یافتن ایندکس دوستی در لیست دوستان کاربر
+    const friendshipIndex = user.friends.findIndex(f => f.friendId === friendObject!.discordId);
+    if (friendshipIndex < 0) {
+      return false;
+    }
+    
+    // اعمال تغییرات به دوستی
+    user.friends[friendshipIndex] = {
+      ...user.friends[friendshipIndex],
+      ...updates,
+      lastInteraction: new Date().toISOString() // به‌روزرسانی زمان آخرین تعامل
+    };
+    
+    // اگر وضعیت متقابل هم نیاز به به‌روزرسانی دارد
+    if (updates.isBestFriend !== undefined && friendObject.friends) {
+      // در صورتی که وضعیت بهترین دوست تغییر کرده باشد
+      const reverseFriendshipIndex = friendObject.friends.findIndex(f => f.friendId === user.discordId);
+      if (reverseFriendshipIndex >= 0) {
+        // اگر کاربر این دوست را به عنوان بهترین دوست انتخاب کرده، دوست هم باید مطلع شود
+        // اما ما وضعیت بهترین دوست را در طرف مقابل تغییر نمی‌دهیم
+        friendObject.friends[reverseFriendshipIndex].lastInteraction = new Date().toISOString();
+      }
+    }
+    
+    return true;
   }
 
   // Private & Anonymous Chat operations
