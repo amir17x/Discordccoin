@@ -9,10 +9,13 @@ import {
   StringSelectMenuOptionBuilder
 } from 'discord.js';
 import { storage } from '../../storage';
+import { botConfig } from '../utils/config';
 
-// Constants
+// Constants - با توجه به مستندات بخش دزدی که شما ارائه دادید
 const ROB_COOLDOWN = 4 * 60 * 60 * 1000; // 4 hours
 const BASE_SUCCESS_RATE = 0.4; // 40% base success rate
+const MAX_ROB_AMOUNT = 100; // حداکثر مقدار دزدی
+const PENALTY_AMOUNT = 200; // جریمه شکست در دزدی
 
 // Function to create and send the robbery menu
 export async function robberyMenu(
@@ -57,15 +60,15 @@ export async function robberyMenu(
     
     // Create the robbery embed
     const embed = new EmbedBuilder()
-      .setColor('#FF5733')
-      .setTitle('🕵️‍♂️ سرقت')
-      .setDescription('از کاربران دیگر سرقت کنید و سکه به دست آورید!\nاما مراقب باشید، اگر دستگیر شوید، جریمه خواهید شد!')
+      .setColor('#800080') // رنگ بنفش طبق مستندات
+      .setTitle('🕵️ بخش دزدی')
+      .setDescription('از کاربران دیگر سکه بدزدید و موجودی خود را افزایش دهید!\nاما مراقب باشید، اگر دستگیر شوید، جریمه خواهید شد!')
       .addFields(
         { name: '✨ نرخ موفقیت پایه', value: `${BASE_SUCCESS_RATE * 100}%`, inline: true },
-        { name: '🔒 قفل زمانی', value: `${canRob ? 'آماده برای سرقت!' : cooldownText}`, inline: true },
+        { name: '🔒 قفل زمانی', value: `${canRob ? 'آماده برای دزدی!' : cooldownText}`, inline: true },
         { name: '👛 موجودی شما', value: `${user.wallet} Ccoin`, inline: true }
       )
-      .setFooter({ text: 'توجه: اگر دستگیر شوید، جریمه شما برابر مقدار سرقت خواهد بود!' })
+      .setFooter({ text: `توجه: در صورت شکست، ${PENALTY_AMOUNT} Ccoin جریمه خواهید شد!` })
       .setTimestamp();
     
     // Create target selection menu
@@ -195,8 +198,8 @@ export async function handleRobbery(
       }
     }
     
-    // Make the robbery attempt
-    const robAmount = Math.min(Math.floor(targetUser.wallet * 0.2), 200); // Max 20% or 200 Ccoin
+    // طبق مستندات، حداکثر مقدار دزدی 100 Ccoin یا کل موجودی کیف پول (هرکدام کمتر باشد)
+    const robAmount = Math.min(targetUser.wallet, MAX_ROB_AMOUNT);
     const isSuccessful = Math.random() < successRate;
     
     // Update last rob time
@@ -213,38 +216,71 @@ export async function handleRobbery(
         sourceId: user.id,
         sourceName: user.username
       });
+      
       const successEmbed = new EmbedBuilder()
         .setColor('#4CAF50')
-        .setTitle('🕵️‍♂️ سرقت موفق!')
-        .setDescription(`شما با موفقیت از ${targetUser.username} سرقت کردید!`)
+        .setTitle('✅ دزدی موفق!')
+        .setDescription(`شما با موفقیت ${robAmount} Ccoin از ${targetUser.username} دزدیدید!`)
         .addFields(
-          { name: '💰 مقدار سرقت شده', value: `${robAmount} Ccoin`, inline: true },
+          { name: '💰 مقدار دزدیده شده', value: `${robAmount} Ccoin`, inline: true },
           { name: '👛 موجودی جدید شما', value: `${user.wallet + robAmount} Ccoin`, inline: true }
         )
-        .setFooter({ text: `${interaction.user.username} | ${new Date().toLocaleString()}` })
+        .setFooter({ text: `${new Date().toLocaleTimeString()}` })
         .setTimestamp();
       
-      await interaction.update({ embeds: [successEmbed], components: [] });
+      try {
+        await interaction.update({ embeds: [successEmbed], components: [] });
+      } catch (updateError) {
+        console.error('Error updating robbery success message:', updateError);
+        await interaction.followUp({ embeds: [successEmbed], ephemeral: true });
+      }
+      
+      // اطلاع‌رسانی به کاربر هدف
+      try {
+        const targetMember = await interaction.guild?.members.fetch(targetUser.discordId);
+        if (targetMember) {
+          const victimEmbed = new EmbedBuilder()
+            .setColor('#FF5733')
+            .setTitle('⚠️ دزدی!')
+            .setDescription(`🕵️ ${interaction.user.username} از کیف پول شما ${robAmount} Ccoin دزدید!`)
+            .addFields(
+              { name: '👛 موجودی جدید شما', value: `${targetUser.wallet - robAmount} Ccoin`, inline: true },
+              { name: '🛡️ محافظت', value: 'برای جلوگیری از دزدی، محافظ دزدی را از فروشگاه بخرید!', inline: false }
+            )
+            .setTimestamp();
+          
+          targetMember.send({ embeds: [victimEmbed] }).catch(() => {
+            // پیام‌های خصوصی ممکن است برای کاربر غیرفعال باشند، در این صورت خطا را نادیده می‌گیریم
+          });
+        }
+      } catch (notificationError) {
+        console.error('Error notifying victim:', notificationError);
+      }
       
     } else {
-      // Robbery failed - user gets fined
-      await storage.addToWallet(user.id, -robAmount, 'steal_failed', {
+      // Robbery failed - user gets fined with PENALTY_AMOUNT
+      await storage.addToWallet(user.id, -PENALTY_AMOUNT, 'steal_failed', {
         targetId: targetUser.id,
         targetName: targetUser.username
       });
       
       const failedEmbed = new EmbedBuilder()
         .setColor('#F44336')
-        .setTitle('🚨 سرقت ناموفق!')
-        .setDescription(`شما هنگام سرقت از ${targetUser.username} دستگیر شدید!`)
+        .setTitle('❌ دزدی ناموفق!')
+        .setDescription(`شما هنگام دزدی از ${targetUser.username} دستگیر شدید!`)
         .addFields(
-          { name: '💰 جریمه', value: `${robAmount} Ccoin`, inline: true },
-          { name: '👛 موجودی جدید شما', value: `${user.wallet - robAmount} Ccoin`, inline: true }
+          { name: '💸 جریمه', value: `${PENALTY_AMOUNT} Ccoin`, inline: true },
+          { name: '👛 موجودی جدید شما', value: `${user.wallet - PENALTY_AMOUNT} Ccoin`, inline: true }
         )
-        .setFooter({ text: `${interaction.user.username} | ${new Date().toLocaleString()}` })
+        .setFooter({ text: `${new Date().toLocaleTimeString()}` })
         .setTimestamp();
       
-      await interaction.update({ embeds: [failedEmbed], components: [] });
+      try {
+        await interaction.update({ embeds: [failedEmbed], components: [] });
+      } catch (updateError) {
+        console.error('Error updating robbery failure message:', updateError);
+        await interaction.followUp({ embeds: [failedEmbed], ephemeral: true });
+      }
     }
     
     // After a delay, return to the robbery menu

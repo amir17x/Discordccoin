@@ -258,7 +258,18 @@ export async function handleRockPaperScissors(
     }
     
     // Send the result
-    await interaction.update({ embeds: [resultEmbed], components: [row] });
+    if (interaction.deferred) {
+      await interaction.editReply({ embeds: [resultEmbed], components: [row] });
+    } else if (interaction.replied) {
+      await interaction.followUp({ embeds: [resultEmbed], components: [row] });
+    } else {
+      try {
+        await interaction.update({ embeds: [resultEmbed], components: [row] });
+      } catch (updateError) {
+        console.error('Failed to update message, trying to reply instead:', updateError);
+        await interaction.reply({ embeds: [resultEmbed], components: [row] });
+      }
+    }
     
   } catch (error) {
     console.error('Error in rock paper scissors game:', error);
