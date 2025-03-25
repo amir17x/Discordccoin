@@ -25,7 +25,7 @@ import { friendsMainMenu, friendsList, friendRequests, sendFriendRequest } from 
 import { showFriendshipDetails } from '../components/friendsMenu/friendshipLevelMenu';
 import { blockedUsersList, searchUserToBlock, unblockUser, processUnblockUser, cancelUnblockProcess } from '../components/friendsMenu/blockedUsersMenu';
 import { AnonymousChatMenu } from '../components/anonymousChatMenu/anonymousChatMenu';
-import { personalNotificationsMenu, toggleNotifications, showAdvancedNotificationSettings, toggleNotificationType } from '../components/personalNotificationsMenu';
+import { personalNotificationsMenu, toggleNotifications, showAdvancedNotificationSettings, toggleNotificationType, sendTestNotification } from '../components/personalNotificationsMenu';
 import { handleCoinFlip } from '../games/coinFlip';
 import { handleRockPaperScissors } from '../games/rockPaperScissors';
 import { handleNumberGuess } from '../games/numberGuess';
@@ -1472,6 +1472,12 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     // تغییر وضعیت اعلان اقتصادی
     if (action === 'toggle_economy') {
       await toggleNotificationType(interaction, 'economy');
+      return;
+    }
+    
+    // ارسال اعلان تست برای کاربر
+    if (action === 'test_notification') {
+      await sendTestNotification(interaction);
       return;
     }
     
