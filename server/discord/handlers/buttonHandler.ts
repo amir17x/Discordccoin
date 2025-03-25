@@ -21,7 +21,7 @@ import { achievementsMenu, showCategoryAchievements } from '../components/achiev
 import { seasonsMenu } from '../components/seasonsMenu';
 import { parallelWorldsMenu } from '../components/parallelWorldsMenu';
 import { petMenu, buyNewPet, feedPet, playWithPet, activatePet, renamePetModal } from '../components/petMenu';
-import { friendsMainMenu, friendsList, friendRequests } from '../components/friendsMenu/friendsMainMenu';
+import { friendsMainMenu, friendsList, friendRequests, sendFriendRequest } from '../components/friendsMenu/friendsMainMenu';
 import { showFriendshipDetails } from '../components/friendsMenu/friendshipLevelMenu';
 import { handleCoinFlip } from '../games/coinFlip';
 import { handleRockPaperScissors } from '../games/rockPaperScissors';
@@ -1320,6 +1320,15 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     if (action === 'best_friend_remove') {
       const friendId = params[0];
       await handleBestFriend(interaction, friendId, 'remove');
+      return;
+    }
+    
+    // ارسال درخواست دوستی (از چت ناشناس و منوی دوستان)
+    if (customId.startsWith('send_friend_request_')) {
+      const targetUserId = parseInt(customId.split('_').pop() || '0');
+      if (targetUserId > 0) {
+        await sendFriendRequest(interaction, targetUserId);
+      }
       return;
     }
     
