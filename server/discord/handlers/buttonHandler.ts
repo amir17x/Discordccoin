@@ -25,6 +25,7 @@ import { friendsMainMenu, friendsList, friendRequests, sendFriendRequest } from 
 import { showFriendshipDetails } from '../components/friendsMenu/friendshipLevelMenu';
 import { blockedUsersList, searchUserToBlock, unblockUser, processUnblockUser, cancelUnblockProcess } from '../components/friendsMenu/blockedUsersMenu';
 import { AnonymousChatMenu } from '../components/anonymousChatMenu/anonymousChatMenu';
+import { personalNotificationsMenu, toggleNotifications, showAdvancedNotificationSettings, toggleNotificationType } from '../components/personalNotificationsMenu';
 import { handleCoinFlip } from '../games/coinFlip';
 import { handleRockPaperScissors } from '../games/rockPaperScissors';
 import { handleNumberGuess } from '../games/numberGuess';
@@ -1423,6 +1424,54 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     // تازه‌سازی چت فعال
     if (action === 'refresh_chat') {
       await AnonymousChatMenu.handleInteraction(interaction);
+      return;
+    }
+    
+    // منوی اعلان‌های شخصی
+    if (action === 'notifications_menu') {
+      await personalNotificationsMenu(interaction);
+      return;
+    }
+    
+    // فعال‌سازی اعلان‌ها
+    if (action === 'enable_notifications') {
+      await toggleNotifications(interaction, true);
+      return;
+    }
+    
+    // غیرفعال‌سازی اعلان‌ها
+    if (action === 'disable_notifications') {
+      await toggleNotifications(interaction, false);
+      return;
+    }
+    
+    // تنظیمات پیشرفته اعلان‌ها
+    if (action === 'notification_settings') {
+      await showAdvancedNotificationSettings(interaction);
+      return;
+    }
+    
+    // تغییر وضعیت اعلان چت خصوصی
+    if (action === 'toggle_private_chat') {
+      await toggleNotificationType(interaction, 'private_chat');
+      return;
+    }
+    
+    // تغییر وضعیت اعلان چت ناشناس
+    if (action === 'toggle_anonymous_chat') {
+      await toggleNotificationType(interaction, 'anonymous_chat');
+      return;
+    }
+    
+    // تغییر وضعیت اعلان درخواست دوستی
+    if (action === 'toggle_friend_request') {
+      await toggleNotificationType(interaction, 'friend_request');
+      return;
+    }
+    
+    // تغییر وضعیت اعلان اقتصادی
+    if (action === 'toggle_economy') {
+      await toggleNotificationType(interaction, 'economy');
       return;
     }
     

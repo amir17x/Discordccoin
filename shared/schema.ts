@@ -2,6 +2,35 @@ import { pgTable, text, serial, integer, boolean, timestamp, jsonb, real, varcha
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// تایپ‌های مربوط به سیستم اعلان‌های شخصی
+export type NotificationType = 'private_chat' | 'anonymous_chat' | 'friend_request' | 'economy';
+
+export interface NotificationSettings {
+  enabled: boolean;
+  notifyPrivateChat: boolean;
+  notifyAnonymousChat: boolean;
+  notifyFriendRequest: boolean;
+  notifyEconomy: boolean;
+}
+
+export interface Notification {
+  id?: string;
+  userId: number;
+  type: NotificationType;
+  message: string;
+  priority: number;
+  relatedEntityId?: string;
+  sent: boolean;
+  timestamp: Date;
+}
+
+export interface UserInteraction {
+  userId: number;
+  targetId: string;
+  interactionCount: number;
+  lastInteraction: Date;
+}
+
 // Users table
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),

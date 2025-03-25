@@ -5,7 +5,7 @@ import { storage } from './storage';
 import FileStore from 'session-file-store';
 import flash from 'connect-flash';
 import expressLayouts from 'express-ejs-layouts';
-import { Transaction, User, Item, Clan } from '@shared/schema';
+import { Transaction, User, Item, Clan, Friend, BlockedUser, PrivateChat } from '@shared/schema';
 
 declare module 'express-session' {
   interface SessionData {
@@ -957,6 +957,430 @@ function registerAdminRoutes(app: Express) {
    */
   app.get("/admin", (req: Request, res: Response) => {
     res.redirect('/admin/dashboard');
+  });
+
+  /**
+   * مدیریت دوستی‌ها
+   */
+  app.get("/admin/friendships", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const users = await storage.getAllUsers();
+      
+      // آمار دوستی‌ها
+      let totalFriendships = 0;
+      let friendshipLevels = [0, 0, 0, 0, 0]; // سطح 1 تا 5
+      
+      // کاربران با بیشترین دوست
+      const userFriendCounts: { userId: number; username: string; friendCount: number }[] = [];
+      
+      for (const user of users) {
+        const friends = await storage.getFriends(user.id);
+        if (friends && friends.length > 0) {
+          totalFriendships += friends.length;
+          
+          // محاسبه تعداد در هر سطح دوستی
+          friends.forEach(friend => {
+            if (friend.friendshipLevel >= 1 && friend.friendshipLevel <= 5) {
+              friendshipLevels[friend.friendshipLevel - 1]++;
+            }
+          });
+          
+          userFriendCounts.push({
+            userId: user.id,
+            username: user.username,
+            friendCount: friends.length
+          });
+        }
+      }
+      
+      // مرتب‌سازی کاربران بر اساس تعداد دوستان
+      userFriendCounts.sort((a, b) => b.friendCount - a.friendCount);
+      
+      // محاسبه متوسط دوستی‌ها
+      const avgFriendships = users.length > 0 ? totalFriendships / users.length : 0;
+      
+      res.render('friendships/index', {
+        title: 'مدیریت دوستی‌ها',
+        stats: {
+          totalFriendships,
+          avgFriendships,
+          friendshipLevels
+        },
+        topUsers: userFriendCounts.slice(0, 10) // 10 کاربر برتر
+      });
+    } catch (error) {
+      console.error('خطا در بارگیری اطلاعات دوستی‌ها:', error);
+      req.flash('error', 'خطا در بارگیری اطلاعات دوستی‌ها');
+      res.render('friendships/index', { 
+        title: 'مدیریت دوستی‌ها',
+        stats: {
+          totalFriendships: 0,
+          avgFriendships: 0,
+          friendshipLevels: [0, 0, 0, 0, 0]
+        },
+        topUsers: []
+      });
+    }
+  });
+
+  /**
+   * مشاهده دوستان یک کاربر
+   */
+  app.get("/admin/users/:id/friends", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      // دریافت اطلاعات کاربر
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        req.flash('error', 'کاربر مورد نظر یافت نشد.');
+        return res.redirect('/admin/users');
+      }
+      
+      // دریافت لیست دوستان
+      const friends = await storage.getFriends(userId);
+      
+      // دریافت اطلاعات کامل هر دوست
+      const friendDetails = [];
+      for (const friend of friends) {
+        const friendUser = await storage.getUserByDiscordId(friend.friendId);
+        if (friendUser) {
+          friendDetails.push({
+            ...friend,
+            user: friendUser
+          });
+        }
+      }
+      
+      // دریافت درخواست‌های دوستی
+      const friendRequests = await storage.getFriendRequests(userId);
+      const pendingRequests = friendRequests.filter(r => r.status === 'pending');
+      
+      // دریافت اطلاعات کامل برای هر درخواست
+      const requestDetails = [];
+      for (const request of pendingRequests) {
+        let user;
+        if (request.fromUserId === userId.toString()) {
+          user = await storage.getUserByDiscordId(request.toUserId);
+          if (user) {
+            requestDetails.push({
+              ...request,
+              direction: 'sent',
+              user
+            });
+          }
+        } else {
+          user = await storage.getUserByDiscordId(request.fromUserId);
+          if (user) {
+            requestDetails.push({
+              ...request,
+              direction: 'received',
+              user
+            });
+          }
+        }
+      }
+      
+      res.render('friendships/user-friends', {
+        title: `دوستان ${user.username}`,
+        user,
+        friends: friendDetails,
+        requests: requestDetails
+      });
+    } catch (error) {
+      console.error('خطا در بارگیری لیست دوستان:', error);
+      req.flash('error', 'خطا در بارگیری لیست دوستان');
+      res.redirect('/admin/users');
+    }
+  });
+
+  /**
+   * مدیریت کاربران بلاک شده
+   */
+  app.get("/admin/blocked-users", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const users = await storage.getAllUsers();
+      
+      // جمع‌آوری آمار کاربران بلاک شده
+      let totalBlockedUsers = 0;
+      const userBlockCounts: { userId: number; username: string; blockCount: number }[] = [];
+      
+      for (const user of users) {
+        const blockedUsers = await storage.getBlockedUsers(user.id);
+        if (blockedUsers && blockedUsers.length > 0) {
+          totalBlockedUsers += blockedUsers.length;
+          userBlockCounts.push({
+            userId: user.id,
+            username: user.username,
+            blockCount: blockedUsers.length
+          });
+        }
+      }
+      
+      // مرتب‌سازی کاربران بر اساس تعداد بلاک‌ها
+      userBlockCounts.sort((a, b) => b.blockCount - a.blockCount);
+      
+      res.render('blocked-users/index', {
+        title: 'مدیریت کاربران بلاک شده',
+        stats: {
+          totalBlockedUsers,
+          usersWithBlocks: userBlockCounts.length
+        },
+        topBlockers: userBlockCounts.slice(0, 10) // 10 کاربر برتر
+      });
+    } catch (error) {
+      console.error('خطا در بارگیری اطلاعات کاربران بلاک شده:', error);
+      req.flash('error', 'خطا در بارگیری اطلاعات کاربران بلاک شده');
+      res.render('blocked-users/index', { 
+        title: 'مدیریت کاربران بلاک شده',
+        stats: {
+          totalBlockedUsers: 0,
+          usersWithBlocks: 0
+        },
+        topBlockers: []
+      });
+    }
+  });
+
+  /**
+   * مشاهده کاربران بلاک شده توسط یک کاربر
+   */
+  app.get("/admin/users/:id/blocked", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      // دریافت اطلاعات کاربر
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        req.flash('error', 'کاربر مورد نظر یافت نشد.');
+        return res.redirect('/admin/users');
+      }
+      
+      // دریافت لیست کاربران بلاک شده
+      const blockedUsers = await storage.getBlockedUsers(userId);
+      
+      // دریافت اطلاعات کامل هر کاربر بلاک شده
+      const blockedDetails = [];
+      for (const blocked of blockedUsers) {
+        const blockedUser = await storage.getUserByDiscordId(blocked.userId);
+        if (blockedUser) {
+          blockedDetails.push({
+            ...blocked,
+            user: blockedUser
+          });
+        }
+      }
+      
+      res.render('blocked-users/user-blocked', {
+        title: `کاربران بلاک شده توسط ${user.username}`,
+        user,
+        blockedUsers: blockedDetails
+      });
+    } catch (error) {
+      console.error('خطا در بارگیری لیست کاربران بلاک شده:', error);
+      req.flash('error', 'خطا در بارگیری لیست کاربران بلاک شده');
+      res.redirect('/admin/users');
+    }
+  });
+
+  /**
+   * رفع بلاک یک کاربر (توسط ادمین)
+   */
+  app.post("/admin/unblock-user", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.body.userId);
+      const blockedUserId = parseInt(req.body.blockedUserId);
+      
+      // بررسی وجود کاربر
+      const user = await storage.getUser(userId);
+      const blockedUser = await storage.getUser(blockedUserId);
+      
+      if (!user || !blockedUser) {
+        req.flash('error', 'یکی از کاربران یافت نشد.');
+        return res.redirect('/admin/blocked-users');
+      }
+      
+      // رفع بلاک
+      const result = await storage.unblockUser(userId, blockedUserId);
+      
+      if (result) {
+        req.flash('success', `کاربر ${blockedUser.username} با موفقیت از لیست بلاک ${user.username} حذف شد.`);
+      } else {
+        req.flash('error', 'خطا در رفع بلاک کاربر.');
+      }
+      
+      // بازگشت به صفحه قبلی
+      res.redirect(req.body.returnUrl || '/admin/blocked-users');
+    } catch (error) {
+      console.error('خطا در رفع بلاک کاربر:', error);
+      req.flash('error', 'خطا در رفع بلاک کاربر');
+      res.redirect('/admin/blocked-users');
+    }
+  });
+
+  /**
+   * مدیریت چت‌های خصوصی
+   */
+  app.get("/admin/private-chats", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const users = await storage.getAllUsers();
+      
+      // جمع‌آوری آمار چت‌های خصوصی
+      let totalChats = 0;
+      let totalMessages = 0;
+      const userChatCounts: { userId: number; username: string; chatCount: number }[] = [];
+      
+      for (const user of users.slice(0, 50)) { // محدود کردن به 50 کاربر برای کارایی بهتر
+        const chats = await storage.getPrivateChats(user.id);
+        if (chats && chats.length > 0) {
+          totalChats += chats.length;
+          totalMessages += chats.reduce((sum, chat) => sum + chat.messages.length, 0);
+          
+          userChatCounts.push({
+            userId: user.id,
+            username: user.username,
+            chatCount: chats.length
+          });
+        }
+      }
+      
+      // مرتب‌سازی کاربران بر اساس تعداد چت‌ها
+      userChatCounts.sort((a, b) => b.chatCount - a.chatCount);
+      
+      // محاسبه میانگین پیام در هر چت
+      const avgMessagesPerChat = totalChats > 0 ? Math.round(totalMessages / totalChats) : 0;
+      
+      res.render('chats/index', {
+        title: 'مدیریت چت‌های خصوصی',
+        stats: {
+          totalChats,
+          totalMessages,
+          avgMessagesPerChat,
+          usersWithChat: userChatCounts.length
+        },
+        topUsers: userChatCounts.slice(0, 10) // 10 کاربر برتر
+      });
+    } catch (error) {
+      console.error('خطا در بارگیری اطلاعات چت‌های خصوصی:', error);
+      req.flash('error', 'خطا در بارگیری اطلاعات چت‌های خصوصی');
+      res.render('chats/index', { 
+        title: 'مدیریت چت‌های خصوصی',
+        stats: {
+          totalChats: 0,
+          totalMessages: 0,
+          avgMessagesPerChat: 0,
+          usersWithChat: 0
+        },
+        topUsers: []
+      });
+    }
+  });
+
+  /**
+   * مشاهده چت‌های خصوصی یک کاربر
+   */
+  app.get("/admin/users/:id/chats", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      // دریافت اطلاعات کاربر
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        req.flash('error', 'کاربر مورد نظر یافت نشد.');
+        return res.redirect('/admin/users');
+      }
+      
+      // دریافت چت‌های خصوصی
+      const chats = await storage.getPrivateChats(userId);
+      
+      // دریافت اطلاعات طرف مقابل هر چت
+      const chatDetails = [];
+      for (const chat of chats) {
+        const otherParticipantId = chat.participants.find((p: string) => p !== user.discordId);
+        if (otherParticipantId) {
+          const otherUser = await storage.getUserByDiscordId(otherParticipantId);
+          if (otherUser) {
+            chatDetails.push({
+              ...chat,
+              otherUser,
+              messageCount: chat.messages.length,
+              lastActivity: chat.lastActivityAt
+            });
+          }
+        }
+      }
+      
+      // مرتب‌سازی بر اساس آخرین فعالیت
+      chatDetails.sort((a, b) => 
+        new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime()
+      );
+      
+      res.render('chats/user-chats', {
+        title: `چت‌های خصوصی ${user.username}`,
+        user,
+        chats: chatDetails
+      });
+    } catch (error) {
+      console.error('خطا در بارگیری چت‌های خصوصی:', error);
+      req.flash('error', 'خطا در بارگیری چت‌های خصوصی');
+      res.redirect('/admin/users');
+    }
+  });
+
+  /**
+   * مشاهده یک چت خصوصی
+   */
+  app.get("/admin/chats/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const chatId = req.params.id;
+      
+      // دریافت اطلاعات چت
+      const chat = await storage.getPrivateChat(chatId);
+      
+      if (!chat) {
+        req.flash('error', 'چت مورد نظر یافت نشد.');
+        return res.redirect('/admin/private-chats');
+      }
+      
+      // دریافت اطلاعات شرکت‌کنندگان
+      const participants = [];
+      for (const participantId of chat.participants) {
+        const user = await storage.getUserByDiscordId(participantId);
+        if (user) {
+          participants.push(user);
+        }
+      }
+      
+      // مرتب‌سازی پیام‌ها بر اساس زمان
+      const messages = [...chat.messages];
+      messages.sort((a, b) => 
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+      
+      // افزودن اطلاعات فرستنده به پیام‌ها
+      const messagesWithSender = [];
+      for (const message of messages) {
+        const sender = participants.find(p => p.discordId === message.senderId);
+        messagesWithSender.push({
+          ...message,
+          sender
+        });
+      }
+      
+      res.render('chats/chat-detail', {
+        title: 'جزئیات چت خصوصی',
+        chat,
+        participants,
+        messages: messagesWithSender
+      });
+    } catch (error) {
+      console.error('خطا در بارگیری جزئیات چت:', error);
+      req.flash('error', 'خطا در بارگیری جزئیات چت');
+      res.redirect('/admin/private-chats');
+    }
   });
 
   /**

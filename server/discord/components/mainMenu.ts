@@ -490,16 +490,16 @@ export async function mainMenu(
             .setStyle(ButtonStyle.Danger),
         );
       
-      // Row 3: امکانات بخش دنیای مجازی
+      // Row 3: امکانات بخش دنیای مجازی و ابزارهای ارتباطی
       const row3 = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
           new ButtonBuilder()
-            .setCustomId('giveaway_bridge')
-            .setLabel('🎮 قرعه‌کشی گیواوی')
+            .setCustomId('notifications_menu')
+            .setLabel('🔔 اعلان‌های شخصی')
             .setStyle(ButtonStyle.Success),
           new ButtonBuilder()
-            .setCustomId('seasons')
-            .setLabel('📅 فصل‌ها')
+            .setCustomId('giveaway_bridge')
+            .setLabel('🎮 قرعه‌کشی گیواوی')
             .setStyle(ButtonStyle.Primary),
           new ButtonBuilder()
             .setCustomId('parallel_worlds')

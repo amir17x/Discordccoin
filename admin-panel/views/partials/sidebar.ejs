@@ -88,6 +88,28 @@
             </li>
         </ul>
         
+        <h6 class="nav-heading">اجتماعی</h6>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a href="/admin/friendships" class="nav-link <%= currentPage === 'friendships' ? 'active' : '' %>">
+                    <i class="bi bi-people-fill"></i>
+                    <span>سیستم دوستی</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/admin/blocked-users" class="nav-link <%= currentPage === 'blocked-users' ? 'active' : '' %>">
+                    <i class="bi bi-person-x-fill"></i>
+                    <span>کاربران بلاک شده</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/admin/private-chats" class="nav-link <%= currentPage === 'private-chats' ? 'active' : '' %>">
+                    <i class="bi bi-chat-dots-fill"></i>
+                    <span>چت‌های خصوصی</span>
+                </a>
+            </li>
+        </ul>
+
         <h6 class="nav-heading">سیستم</h6>
         <ul class="nav flex-column">
             <li class="nav-item">

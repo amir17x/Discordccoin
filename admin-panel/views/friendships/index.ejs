@@ -1,0 +1,121 @@
+<%- include('../partials/header') %>
+
+<div class="content-wrapper">
+  <div class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <h1 class="m-0 text-dark">مدیریت دوستی‌ها</h1>
+        </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-left">
+            <li class="breadcrumb-item"><a href="/admin/dashboard">داشبورد</a></li>
+            <li class="breadcrumb-item active">مدیریت دوستی‌ها</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="container-fluid">
+      <!-- نمایش آمارها -->
+      <div class="row">
+        <div class="col-lg-3 col-6">
+          <div class="small-box bg-info">
+            <div class="inner">
+              <h3><%= stats.totalFriendships %></h3>
+              <p>تعداد کل دوستی‌ها</p>
+            </div>
+            <div class="icon">
+              <i class="fas fa-users"></i>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-lg-3 col-6">
+          <div class="small-box bg-success">
+            <div class="inner">
+              <h3><%= stats.avgFriendships.toFixed(1) %></h3>
+              <p>میانگین دوست هر کاربر</p>
+            </div>
+            <div class="icon">
+              <i class="fas fa-chart-line"></i>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-lg-6">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">سطوح دوستی</h3>
+            </div>
+            <div class="card-body p-0">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>سطح</th>
+                    <th>تعداد</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% for(let i = 0; i < stats.friendshipLevels.length; i++) { %>
+                  <tr>
+                    <td>سطح <%= i + 1 %></td>
+                    <td><%= stats.friendshipLevels[i] %></td>
+                  </tr>
+                  <% } %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- کاربران با بیشترین دوست -->
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">کاربران با بیشترین دوست</h3>
+            </div>
+            <div class="card-body table-responsive p-0">
+              <table class="table table-hover text-nowrap">
+                <thead>
+                  <tr>
+                    <th>شناسه</th>
+                    <th>نام کاربری</th>
+                    <th>تعداد دوستان</th>
+                    <th>عملیات</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% if(topUsers.length > 0) { %>
+                    <% topUsers.forEach(function(user) { %>
+                      <tr>
+                        <td><%= user.userId %></td>
+                        <td><%= user.username %></td>
+                        <td><span class="badge bg-primary"><%= user.friendCount %></span></td>
+                        <td>
+                          <a href="/admin/users/<%= user.userId %>/friends" class="btn btn-info btn-sm">
+                            <i class="fas fa-eye"></i> مشاهده دوستان
+                          </a>
+                        </td>
+                      </tr>
+                    <% }); %>
+                  <% } else { %>
+                    <tr>
+                      <td colspan="4" class="text-center">هیچ کاربری با دوست پیدا نشد.</td>
+                    </tr>
+                  <% } %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

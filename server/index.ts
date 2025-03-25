@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initDiscordBot } from "./discord/client";
+import { setupAdminPanel } from "./admin";
 
 const app = express();
 app.use(express.json());
@@ -46,6 +47,8 @@ app.use((req, res, next) => {
     log(`Error initializing Discord bot: ${error}`, "error");
   }
 
+  // We'll set up the admin panel later to avoid slowing down initial startup
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -75,5 +78,13 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`Server is running on port ${port}`);
+    
+    // Setup admin panel after server is started
+    try {
+      setupAdminPanel(app);
+      log("Admin panel initialized successfully");
+    } catch (error) {
+      log(`Error initializing admin panel: ${error}`, "error");
+    }
   });
 })();

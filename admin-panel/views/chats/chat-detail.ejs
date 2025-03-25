@@ -1,0 +1,115 @@
+<%- include('../partials/header') %>
+
+<div class="content-wrapper">
+  <div class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <h1 class="m-0 text-dark">جزئیات چت خصوصی</h1>
+        </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-left">
+            <li class="breadcrumb-item"><a href="/admin/dashboard">داشبورد</a></li>
+            <li class="breadcrumb-item"><a href="/admin/private-chats">چت‌های خصوصی</a></li>
+            <li class="breadcrumb-item active">جزئیات چت</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="container-fluid">
+      <!-- اطلاعات چت -->
+      <div class="row">
+        <div class="col-md-3">
+          <div class="card card-primary card-outline">
+            <div class="card-header">
+              <h3 class="card-title">اطلاعات چت</h3>
+            </div>
+            <div class="card-body">
+              <strong><i class="fas fa-hashtag mr-1"></i> شناسه چت</strong>
+              <p class="text-muted"><%= chat.id %></p>
+              <hr>
+              
+              <strong><i class="fas fa-calendar-alt mr-1"></i> تاریخ ایجاد</strong>
+              <p class="text-muted"><%= new Date(chat.createdAt).toLocaleDateString('fa-IR') %></p>
+              <hr>
+              
+              <strong><i class="fas fa-clock mr-1"></i> آخرین فعالیت</strong>
+              <p class="text-muted"><%= new Date(chat.lastActivityAt).toLocaleDateString('fa-IR') %></p>
+              <hr>
+              
+              <strong><i class="fas fa-comments mr-1"></i> تعداد پیام‌ها</strong>
+              <p class="text-muted"><%= chat.messages.length %></p>
+            </div>
+          </div>
+          
+          <div class="card card-primary card-outline">
+            <div class="card-header">
+              <h3 class="card-title">شرکت‌کنندگان</h3>
+            </div>
+            <div class="card-body">
+              <% participants.forEach(function(participant) { %>
+                <div class="user-block">
+                  <img class="img-circle" src="https://cdn.discordapp.com/avatars/<%= participant.discordId %>/<%= participant.avatar || 'default' %>.png" alt="User Image" onerror="this.src='/admin/img/default-avatar.png'">
+                  <span class="username">
+                    <a href="/admin/users/<%= participant.id %>"><%= participant.username %></a>
+                  </span>
+                  <span class="description">
+                    <%= participant.discordId %>
+                  </span>
+                </div>
+                <br>
+              <% }); %>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-9">
+          <div class="card direct-chat direct-chat-primary">
+            <div class="card-header">
+              <h3 class="card-title">تاریخچه پیام‌ها</h3>
+              <div class="card-tools">
+                <span title="تعداد پیام‌ها" class="badge badge-primary"><%= messages.length %></span>
+              </div>
+            </div>
+            
+            <div class="card-body">
+              <div class="direct-chat-messages" style="height: 600px;">
+                <% if(messages.length > 0) { %>
+                  <% messages.forEach(function(message) { %>
+                    <div class="direct-chat-msg <%= message.sender && message.sender.id === participants[0].id ? '' : 'right' %>">
+                      <div class="direct-chat-infos clearfix">
+                        <span class="direct-chat-name <%= message.sender && message.sender.id === participants[0].id ? 'float-right' : 'float-left' %>">
+                          <%= message.sender ? message.sender.username : 'ناشناس' %>
+                        </span>
+                        <span class="direct-chat-timestamp <%= message.sender && message.sender.id === participants[0].id ? 'float-left' : 'float-right' %>">
+                          <%= new Date(message.timestamp).toLocaleString('fa-IR') %>
+                        </span>
+                      </div>
+                      <% if(message.sender) { %>
+                        <img class="direct-chat-img" src="https://cdn.discordapp.com/avatars/<%= message.sender.discordId %>/<%= message.sender.avatar || 'default' %>.png" alt="User Image" onerror="this.src='/admin/img/default-avatar.png'">
+                      <% } else { %>
+                        <img class="direct-chat-img" src="/admin/img/default-avatar.png" alt="User Image">
+                      <% } %>
+                      <div class="direct-chat-text">
+                        <%= message.content %>
+                      </div>
+                    </div>
+                  <% }); %>
+                <% } else { %>
+                  <div class="text-center p-4">
+                    <p class="text-muted">هیچ پیامی در این چت وجود ندارد.</p>
+                  </div>
+                <% } %>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

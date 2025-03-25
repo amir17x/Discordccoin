@@ -8,6 +8,10 @@ import {
   UserQuest,
   Achievement,
   UserAchievement,
+  NotificationSettings,
+  NotificationType,
+  Notification,
+  UserInteraction,
   Item,
   InsertItem,
   Game,
@@ -57,6 +61,15 @@ export interface IStorage {
   updateUser(id: number, updates: Partial<User>): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
   getUserTransactions(userId: number): Promise<Transaction[]>;
+  
+  // Notification operations
+  getUserNotificationSettings(userId: number): Promise<NotificationSettings | undefined>;
+  updateUserNotificationSettings(userId: number, updates: Partial<NotificationSettings>): Promise<NotificationSettings | undefined>;
+  saveNotification(notification: Notification): Promise<Notification>;
+  updateNotificationStatus(userId: number, type: NotificationType, relatedEntityId?: string): Promise<boolean>;
+  getUserInteractionCount(userId: number, targetId: string): Promise<number>;
+  getLastUserInteraction(userId: number, targetId: string): Promise<Date | undefined>;
+  getUserEconomicActivity(userId: number): Promise<number>;
   
   // Economy operations
   addToWallet(userId: number, amount: number): Promise<User | undefined>;
@@ -186,6 +199,11 @@ export class MemStorage implements IStorage {
   private loans: Map<string, Loan> = new Map();
   private jobs: Map<number, JobData> = new Map();
   private auctions: Map<number, AuctionData> = new Map();
+  
+  // اعلان‌های شخصی
+  private notificationSettings: Map<number, NotificationSettings> = new Map();
+  private notifications: Map<number, Notification[]> = new Map();
+  private userInteractions: Map<string, UserInteraction> = new Map(); // کلید: `${userId}_${targetId}`
   
   private currentLoanId = 1;
   private currentJobId = 1;
@@ -2573,6 +2591,126 @@ export class MemStorage implements IStorage {
     user.creditScore = Math.max(0, Math.min(1000, user.creditScore + amount));
     
     return user.creditScore;
+  }
+  // Notification operations
+  async getUserNotificationSettings(userId: number): Promise<NotificationSettings | undefined> {
+    // اگر تنظیمات وجود داشت، برگردان
+    if (this.notificationSettings.has(userId)) {
+      return this.notificationSettings.get(userId);
+    }
+    
+    // اگر وجود نداشت، تنظیمات پیش‌فرض را برگردان
+    const defaultSettings: NotificationSettings = {
+      enabled: true,
+      notifyPrivateChat: true,
+      notifyAnonymousChat: true,
+      notifyFriendRequest: true,
+      notifyEconomy: true
+    };
+    
+    // ذخیره تنظیمات پیش‌فرض
+    this.notificationSettings.set(userId, defaultSettings);
+    
+    return defaultSettings;
+  }
+  
+  async updateUserNotificationSettings(userId: number, updates: Partial<NotificationSettings>): Promise<NotificationSettings | undefined> {
+    // دریافت تنظیمات فعلی
+    const currentSettings = await this.getUserNotificationSettings(userId);
+    
+    if (!currentSettings) {
+      return undefined;
+    }
+    
+    // به‌روزرسانی تنظیمات
+    const updatedSettings: NotificationSettings = {
+      ...currentSettings,
+      ...updates
+    };
+    
+    // ذخیره تنظیمات جدید
+    this.notificationSettings.set(userId, updatedSettings);
+    
+    return updatedSettings;
+  }
+  
+  async saveNotification(notification: Notification): Promise<Notification> {
+    // اضافه کردن شناسه یکتا به صورت دستی
+    const id = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const newNotification: Notification = {
+      ...notification,
+      id
+    };
+    
+    // دریافت اعلان‌های کاربر
+    let userNotifications = this.notifications.get(notification.userId) || [];
+    
+    // اضافه کردن اعلان جدید
+    userNotifications.push(newNotification);
+    
+    // ذخیره اعلان‌ها
+    this.notifications.set(notification.userId, userNotifications);
+    
+    return newNotification;
+  }
+  
+  async updateNotificationStatus(userId: number, type: NotificationType, relatedEntityId?: string): Promise<boolean> {
+    // دریافت اعلان‌های کاربر
+    const userNotifications = this.notifications.get(userId) || [];
+    
+    // پیدا کردن اعلان مورد نظر
+    const index = userNotifications.findIndex(notification => 
+      notification.type === type && 
+      (relatedEntityId ? notification.relatedEntityId === relatedEntityId : true) &&
+      !notification.sent
+    );
+    
+    if (index === -1) {
+      return false;
+    }
+    
+    // به‌روزرسانی وضعیت ارسال
+    userNotifications[index].sent = true;
+    
+    // ذخیره تغییرات
+    this.notifications.set(userId, userNotifications);
+    
+    return true;
+  }
+  
+  async getUserInteractionCount(userId: number, targetId: string): Promise<number> {
+    const key = `${userId}_${targetId}`;
+    const interaction = this.userInteractions.get(key);
+    
+    return interaction ? interaction.interactionCount : 0;
+  }
+  
+  async getLastUserInteraction(userId: number, targetId: string): Promise<Date | undefined> {
+    const key = `${userId}_${targetId}`;
+    const interaction = this.userInteractions.get(key);
+    
+    return interaction ? interaction.lastInteraction : undefined;
+  }
+  
+  async getUserEconomicActivity(userId: number): Promise<number> {
+    const user = await this.getUser(userId);
+    
+    if (!user || !user.transactions) {
+      return 0;
+    }
+    
+    // بررسی تعداد تراکنش‌های اقتصادی در 30 روز گذشته
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const recentTransactions = user.transactions.filter(tx => 
+      new Date(tx.timestamp) >= thirtyDaysAgo &&
+      ['deposit', 'withdraw', 'transfer_in', 'transfer_out', 'stock_buy', 
+       'stock_sell', 'lottery_ticket', 'bank_interest', 'loan_received', 
+       'loan_repayment', 'job_salary', 'auction_bid'].includes(tx.type)
+    );
+    
+    return recentTransactions.length;
   }
 }
 
