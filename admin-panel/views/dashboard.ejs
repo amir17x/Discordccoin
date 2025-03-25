@@ -321,147 +321,144 @@
 </div>
 
 <!-- اسکریپت‌های نمودارها -->
-<% 
-const pageScript = `
+<!-- اسکریپت نمودارها -->
 <script>
-    // داده‌های نمودار فعالیت کاربران
-    const userActivityData = {
-        labels: ${JSON.stringify(charts.userActivity.labels)},
-        datasets: [{
-            label: 'تعداد کاربران فعال',
-            backgroundColor: 'rgba(0, 117, 255, 0.2)',
-            borderColor: 'rgba(0, 117, 255, 1)',
-            borderWidth: 2,
-            tension: 0.4,
-            pointRadius: 3,
-            pointBackgroundColor: 'rgba(0, 117, 255, 1)',
-            pointBorderColor: 'rgba(0, 0, 0, 0)',
-            pointHoverBackgroundColor: '#fff',
-            pointHoverBorderColor: 'rgba(0, 117, 255, 1)',
-            pointHoverRadius: 5,
-            pointHoverBorderWidth: 2,
-            fill: true,
-            data: ${JSON.stringify(charts.userActivity.data)}
-        }]
-    };
+  // داده‌های نمودار فعالیت کاربران
+  const userActivityData = {
+    labels: <%- JSON.stringify(charts.userActivity.labels) %>,
+    datasets: [{
+      label: 'تعداد کاربران فعال',
+      backgroundColor: 'rgba(0, 117, 255, 0.2)',
+      borderColor: 'rgba(0, 117, 255, 1)',
+      borderWidth: 2,
+      tension: 0.4,
+      pointRadius: 3,
+      pointBackgroundColor: 'rgba(0, 117, 255, 1)',
+      pointBorderColor: 'rgba(0, 0, 0, 0)',
+      pointHoverBackgroundColor: '#fff',
+      pointHoverBorderColor: 'rgba(0, 117, 255, 1)',
+      pointHoverRadius: 5,
+      pointHoverBorderWidth: 2,
+      fill: true,
+      data: <%- JSON.stringify(charts.userActivity.data) %>
+    }]
+  };
 
-    // داده‌های نمودار تراکنش‌ها
-    const transactionsData = {
-        labels: ${JSON.stringify(charts.transactions.labels)},
-        datasets: [{
-            label: 'واریز',
-            backgroundColor: 'rgba(33, 212, 253, 0.7)',
-            borderColor: 'rgba(33, 212, 253, 1)',
-            borderWidth: 0,
-            borderRadius: 5,
-            maxBarThickness: 10,
-            data: ${JSON.stringify(charts.transactions.deposits)}
-        }, {
-            label: 'برداشت',
-            backgroundColor: 'rgba(249, 99, 59, 0.7)',
-            borderColor: 'rgba(249, 99, 59, 1)',
-            borderWidth: 0,
-            borderRadius: 5,
-            maxBarThickness: 10,
-            data: ${JSON.stringify(charts.transactions.withdrawals)}
-        }]
-    };
+  // داده‌های نمودار تراکنش‌ها
+  const transactionsData = {
+    labels: <%- JSON.stringify(charts.transactions.labels) %>,
+    datasets: [{
+      label: 'واریز',
+      backgroundColor: 'rgba(33, 212, 253, 0.7)',
+      borderColor: 'rgba(33, 212, 253, 1)',
+      borderWidth: 0,
+      borderRadius: 5,
+      maxBarThickness: 10,
+      data: <%- JSON.stringify(charts.transactions.deposits) %>
+    }, {
+      label: 'برداشت',
+      backgroundColor: 'rgba(249, 99, 59, 0.7)',
+      borderColor: 'rgba(249, 99, 59, 1)',
+      borderWidth: 0,
+      borderRadius: 5,
+      maxBarThickness: 10,
+      data: <%- JSON.stringify(charts.transactions.withdrawals) %>
+    }]
+  };
 
-    // داده‌های نمودار بازی‌ها
-    const gamesData = {
-        labels: ${JSON.stringify(charts.games.labels)},
-        datasets: [{
-            data: ${JSON.stringify(charts.games.data)},
-            backgroundColor: [
-                'rgba(33, 212, 253, 0.8)',
-                'rgba(0, 117, 255, 0.8)',
-                'rgba(249, 99, 59, 0.8)',
-                'rgba(134, 69, 255, 0.8)',
-                'rgba(229, 233, 234, 0.6)'
-            ],
-            borderWidth: 0,
-            cutout: '70%'
-        }]
-    };
+  // داده‌های نمودار بازی‌ها
+  const gamesData = {
+    labels: <%- JSON.stringify(charts.games.labels) %>,
+    datasets: [{
+      data: <%- JSON.stringify(charts.games.data) %>,
+      backgroundColor: [
+        'rgba(33, 212, 253, 0.8)',
+        'rgba(0, 117, 255, 0.8)',
+        'rgba(249, 99, 59, 0.8)',
+        'rgba(134, 69, 255, 0.8)',
+        'rgba(229, 233, 234, 0.6)'
+      ],
+      borderWidth: 0,
+      cutout: '70%'
+    }]
+  };
 
-    // تنظیمات نمودارها
-    window.addEventListener('DOMContentLoaded', function() {
-        // تنظیمات مشترک
-        Chart.defaults.color = '#e9ecef';
-        Chart.defaults.font.family = "'Vazirmatn', sans-serif";
-        
-        // نمودار فعالیت کاربران
-        const userActivityChart = new Chart(
-            document.getElementById('userActivityChart'),
-            {
-                type: 'line',
-                data: userActivityData,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.1)'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.1)'
-                            }
-                        }
-                    }
-                }
+  // تنظیمات نمودارها
+  window.addEventListener('DOMContentLoaded', function() {
+    // تنظیمات مشترک
+    Chart.defaults.color = '#e9ecef';
+    Chart.defaults.font.family = "'Vazirmatn', sans-serif";
+    
+    // نمودار فعالیت کاربران
+    const userActivityChart = new Chart(
+      document.getElementById('userActivityChart'),
+      {
+        type: 'line',
+        data: userActivityData,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              }
+            },
+            x: {
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              }
             }
-        );
-        
-        // نمودار تراکنش‌ها
-        const transactionsChart = new Chart(
-            document.getElementById('transactionsChart'),
-            {
-                type: 'bar',
-                data: transactionsData,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.1)'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.1)'
-                            }
-                        }
-                    }
-                }
+          }
+        }
+      }
+    );
+    
+    // نمودار تراکنش‌ها
+    const transactionsChart = new Chart(
+      document.getElementById('transactionsChart'),
+      {
+        type: 'bar',
+        data: transactionsData,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              }
+            },
+            x: {
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              }
             }
-        );
-        
-        // نمودار بازی‌ها
-        const gamesChart = new Chart(
-            document.getElementById('gamesChart'),
-            {
-                type: 'doughnut',
-                data: gamesData,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
-                        }
-                    }
-                }
+          }
+        }
+      }
+    );
+    
+    // نمودار بازی‌ها
+    const gamesChart = new Chart(
+      document.getElementById('gamesChart'),
+      {
+        type: 'doughnut',
+        data: gamesData,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom'
             }
-        );
-    });
+          }
+        }
+      }
+    );
+  });
 </script>
-`;
-%>
 
-<%- include('partials/footer', { pageScript }) %>
+<%- include('partials/footer') %>

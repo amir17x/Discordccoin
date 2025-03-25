@@ -534,10 +534,15 @@ function showNotification(message, type = 'info') {
   }
   
   const toastId = 'toast-' + Date.now();
+  let toastTitle = 'اطلاعات';
+  if (type === 'success') toastTitle = 'موفقیت';
+  else if (type === 'error') toastTitle = 'خطا';
+  else if (type === 'warning') toastTitle = 'هشدار';
+  
   const toastHTML = `
     <div id="${toastId}" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
       <div class="toast-header bg-${type} text-white">
-        <strong class="me-auto">${type === 'success' ? 'موفقیت' : type === 'error' ? 'خطا' : type === 'warning' ? 'هشدار' : 'اطلاعات'}</strong>
+        <strong class="me-auto">${toastTitle}</strong>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
       </div>
       <div class="toast-body">

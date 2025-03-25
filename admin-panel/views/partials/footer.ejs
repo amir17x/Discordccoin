@@ -1,10 +1,15 @@
-<footer class="bg-light mt-5 py-3 text-center">
-  <div class="container">
-    <p class="text-muted mb-0">
-      &copy; <%= new Date().getFullYear() %> Ccoin Bot - نسخه 1.0.0
-    </p>
-    <small class="text-muted">
-      ساخته شده با <i class="fas fa-heart text-danger"></i> توسط تیم توسعه Ccoin
-    </small>
+<footer class="glass-card footer mt-4">
+  <div class="footer-brand">
+    <img src="/img/coin.svg" alt="Ccoin" onerror="this.src='/img/logo.png'; this.onerror=null;">
+    <span class="ms-2">© <%= new Date().getFullYear() %> - پنل مدیریت Ccoin | نسخه ۱.۰.۰</span>
+  </div>
+  <div class="footer-links">
+    <a href="#">راهنما</a>
+    <a href="#">تماس با ما</a>
+    <a href="#">قوانین</a>
   </div>
 </footer>
+
+<% if (typeof pageScript !== 'undefined') { %>
+  <%- pageScript %>
+<% } %>
