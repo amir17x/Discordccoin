@@ -1,0 +1,877 @@
+/**
+ * Vision UI Dashboard Styles
+ * استایل‌های مخصوص داشبورد Vision UI
+ */
+
+:root {
+  /* گرادیان‌های رنگی Vision UI */
+  --vui-primary-gradient: linear-gradient(310deg, #2152ff, #21d4fd);
+  --vui-info-gradient: linear-gradient(310deg, #2152ff, #21d4fd);
+  --vui-success-gradient: linear-gradient(310deg, #17ad37, #98ec2d);
+  --vui-warning-gradient: linear-gradient(310deg, #f53939, #fbcf33);
+  --vui-danger-gradient: linear-gradient(310deg, #ea0606, #ff667c);
+  --vui-dark-gradient: linear-gradient(310deg, #141727, #3a416f);
+  --vui-light-gradient: linear-gradient(310deg, #ced4da, #ebeff4);
+  
+  /* رنگ‌های تخت */
+  --vui-primary: #0075ff;
+  --vui-info: #0075ff;
+  --vui-success: #01b574;
+  --vui-warning: #fb8c00;
+  --vui-danger: #e91e63;
+  --vui-dark: #141727;
+  --vui-light: #ebeff4;
+  
+  /* رنگ‌های پس‌زمینه */
+  --vui-body-bg: #061325;
+  --vui-card-bg: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.69) 76.65%);
+  
+  /* سایه‌ها */
+  --vui-box-shadow: 0 20px 27px 0 rgba(0, 0, 0, 0.05);
+  
+  /* سایدبار */
+  --vui-sidebar-width: 280px;
+  --vui-sidebar-collapsed-width: 80px;
+  --vui-card-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.2), 0 1px 5px 0 rgba(0, 0, 0, 0.12);
+  
+  /* زاویه‌های گرد */
+  --vui-border-radius-sm: 0.5rem;
+  --vui-border-radius: 0.75rem;
+  --vui-border-radius-lg: 1rem;
+  --vui-border-radius-xl: 1.5rem;
+}
+
+/* استایل کارت‌های آماری */
+.vui-stat-card {
+  position: relative;
+  padding: 1rem 1.5rem;
+  border-radius: var(--vui-border-radius);
+  background: var(--vui-card-bg);
+  backdrop-filter: blur(120px);
+  box-shadow: var(--vui-card-shadow);
+  overflow: hidden;
+  transition: all 0.2s ease;
+  height: 100%;
+}
+
+.vui-stat-card:hover {
+  transform: translateY(-5px);
+}
+
+.vui-stat-card .stat-icon {
+  position: absolute;
+  top: 1rem;
+  right: 1.5rem;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vui-stat-card .stat-icon i {
+  font-size: 1.5rem;
+  color: #fff;
+}
+
+.vui-stat-card .stat-title {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.vui-stat-card .stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.5rem;
+}
+
+.vui-stat-card .stat-sub {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.vui-stat-card .stat-sub.up {
+  color: #01b574;
+}
+
+.vui-stat-card .stat-sub.down {
+  color: #e91e63;
+}
+
+/* استایل کارت‌های عمومی */
+.vui-card {
+  position: relative;
+  padding: 1.5rem;
+  border-radius: var(--vui-border-radius);
+  background: var(--vui-card-bg);
+  backdrop-filter: blur(120px);
+  box-shadow: var(--vui-card-shadow);
+  transition: all 0.3s ease;
+  height: 100%;
+}
+
+/* استایل دکمه‌ها */
+.vui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  padding: 0.675rem 1.5rem;
+  border-radius: var(--vui-border-radius);
+  transition: all 0.15s ease-in;
+  cursor: pointer;
+  outline: none;
+  border: none;
+  color: white;
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+}
+
+.vui-btn:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.vui-btn:active {
+  transform: translateY(0);
+}
+
+.vui-btn-primary {
+  background: var(--vui-primary-gradient);
+  color: white;
+}
+
+.vui-btn-info {
+  background: var(--vui-info-gradient);
+  color: white;
+}
+
+.vui-btn-success {
+  background: var(--vui-success-gradient);
+  color: white;
+}
+
+.vui-btn-warning {
+  background: var(--vui-warning-gradient);
+  color: white;
+}
+
+.vui-btn-danger {
+  background: var(--vui-danger-gradient);
+  color: white;
+}
+
+.vui-btn-outline {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.vui-btn-outline:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: transparent;
+}
+
+/* استایل مدال */
+.vui-modal-content {
+  background: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.8) 76.65%);
+  backdrop-filter: blur(120px);
+  border: none;
+  border-radius: var(--vui-border-radius-lg);
+  box-shadow: 0 30px 50px -12px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+.vui-modal-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.vui-modal-body {
+  padding: 1.5rem;
+}
+
+.vui-modal-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.vui-modal-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  margin: 0 auto;
+}
+
+.vui-modal-icon i {
+  font-size: 2.5rem;
+  color: white;
+}
+
+.vui-modal-icon.primary {
+  background: var(--vui-primary-gradient);
+}
+
+.vui-modal-icon.success {
+  background: var(--vui-success-gradient);
+}
+
+.vui-modal-icon.warning {
+  background: var(--vui-warning-gradient);
+}
+
+.vui-modal-icon.danger {
+  background: var(--vui-danger-gradient);
+}
+
+.btn-close-light {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: color 0.15s ease-in-out;
+}
+
+.btn-close-light:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* پالس افکت برای دکمه‌ها */
+.pulse {
+  position: relative;
+  overflow: visible;
+}
+
+.pulse:before {
+  content: '';
+  display: block;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  border-radius: inherit;
+  animation: pulse-animation 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+  z-index: -1;
+}
+
+@keyframes pulse-animation {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+    box-shadow: 0 0 0 0 rgba(33, 82, 255, 0.7);
+  }
+  70% {
+    transform: scale(1.05);
+    opacity: 0;
+    box-shadow: 0 0 0 10px rgba(33, 82, 255, 0);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+/* استایل آیتم‌های دراپ‌داون */
+.vui-dropdown-header {
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.vui-dropdown-divider {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  margin: 0.25rem 0;
+}
+
+.vui-dropdown-item {
+  display: block;
+  padding: 0.75rem 1rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+  transition: all 0.15s ease;
+  background-color: transparent;
+}
+
+.vui-dropdown-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: white;
+  text-decoration: none;
+}
+
+.vui-dropdown-footer {
+  display: block;
+  text-align: center;
+  padding: 0.75rem 1rem;
+  color: var(--vui-primary);
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.vui-dropdown-footer:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  text-decoration: none;
+}
+
+/* استایل بج */
+.vui-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  border-radius: 0.375rem;
+}
+
+.vui-badge.primary {
+  background: var(--vui-primary-gradient);
+  color: white;
+}
+
+.vui-badge.info {
+  background: var(--vui-info-gradient);
+  color: white;
+}
+
+.vui-badge.success {
+  background: var(--vui-success-gradient);
+  color: white;
+}
+
+.vui-badge.warning {
+  background: var(--vui-warning-gradient);
+  color: white;
+}
+
+.vui-badge.danger {
+  background: var(--vui-danger-gradient);
+  color: white;
+}
+
+/* استایل آیتم‌های اعلان */
+.vui-notification-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 1rem;
+  transition: all 0.15s ease;
+  text-decoration: none;
+  position: relative;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.vui-notification-item:last-child {
+  border-bottom: none;
+}
+
+.vui-notification-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  text-decoration: none;
+}
+
+.vui-notification-item.unread {
+  background-color: rgba(0, 117, 255, 0.05);
+}
+
+.vui-notification-item .notification-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  margin-right: 1rem;
+  flex-shrink: 0;
+}
+
+.vui-notification-item .notification-icon i {
+  color: white;
+  font-size: 1.2rem;
+}
+
+.vui-notification-item .notification-content {
+  flex: 1;
+}
+
+.vui-notification-item .notification-title {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  color: white;
+}
+
+.vui-notification-item .notification-text {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.vui-notification-item .notification-time {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75rem;
+}
+
+/* استایل کامپوننت آواتار */
+.vui-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+}
+
+.vui-user-button {
+  display: flex;
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: white;
+  transition: all 0.15s ease;
+  padding: 0.5rem;
+  border-radius: var(--vui-border-radius);
+}
+
+.vui-user-button:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* استایل جستجو */
+.vui-search-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.vui-search-input input {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  padding: 0.5rem 1rem 0.5rem 2.5rem;
+  border-radius: var(--vui-border-radius);
+  width: 100%;
+  transition: all 0.2s ease;
+}
+
+.vui-search-input input:focus {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(0, 117, 255, 0.5);
+  outline: none;
+}
+
+.vui-search-input .search-icon {
+  position: absolute;
+  left: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+}
+
+/* استایل برای دکمه‌های آیکون */
+.vui-btn-icon {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  transition: all 0.15s ease;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.vui-btn-icon:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* استایل برای پاسخگویی */
+@media (max-width: 768px) {
+  .vui-stat-card .stat-icon {
+    width: 40px;
+    height: 40px;
+    top: 0.75rem;
+    right: 1rem;
+  }
+  
+  .vui-stat-card .stat-icon i {
+    font-size: 1.25rem;
+  }
+  
+  .vui-stat-card .stat-value {
+    font-size: 1.5rem;
+  }
+  
+  .vui-notification-item .notification-icon {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .vui-notification-item .notification-icon i {
+    font-size: 1rem;
+  }
+}
+
+/* استایل سایدبار */
+.vui-sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: var(--vui-sidebar-width);
+  background: var(--vui-card-bg);
+  backdrop-filter: blur(120px);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--vui-card-shadow);
+  transition: all 0.3s ease;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.vui-sidebar .sidebar-header {
+  display: flex;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.vui-sidebar .sidebar-header .logo-container {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 1rem;
+  overflow: hidden;
+}
+
+.vui-sidebar .sidebar-header .logo-container img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  filter: brightness(10);
+}
+
+.vui-sidebar .sidebar-header h4 {
+  flex: 1;
+  margin: 0;
+}
+
+.vui-user-card {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  margin: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--vui-border-radius);
+  backdrop-filter: blur(30px);
+}
+
+.vui-user-card .user-info {
+  margin-right: 1rem;
+  flex: 1;
+}
+
+.vui-user-card .user-name {
+  display: block;
+  font-weight: 600;
+  color: white;
+}
+
+.vui-user-card .user-role {
+  display: block;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.vui-sidebar-nav {
+  flex: 1;
+  padding: 1.5rem 1rem;
+  overflow-y: auto;
+}
+
+.vui-nav-heading {
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding: 0 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.vui-nav {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem;
+}
+
+.vui-nav-item {
+  margin-bottom: 0.25rem;
+}
+
+.vui-nav-link {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  color: rgba(255, 255, 255, 0.6);
+  border-radius: var(--vui-border-radius);
+  transition: all 0.15s ease;
+  text-decoration: none;
+  position: relative;
+}
+
+.vui-nav-link .icon-box {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0.75rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  transition: all 0.15s ease;
+}
+
+.vui-nav-link.active,
+.vui-nav-link:hover {
+  color: white;
+  background: linear-gradient(90deg, rgba(33, 212, 253, 0.1) 0%, rgba(183, 33, 255, 0.1) 100%);
+  border-right: 3px solid var(--vui-primary);
+}
+
+.vui-nav-link.active .icon-box,
+.vui-nav-link:hover .icon-box {
+  background: var(--vui-primary-gradient);
+}
+
+.vui-nav-link .vui-badge {
+  margin-right: auto;
+  background: var(--vui-primary-gradient);
+}
+
+.vui-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.05);
+  margin: 1rem 0;
+}
+
+.vui-sidebar-footer {
+  padding: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.vui-sidebar-footer .vui-version {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.vui-btn-gradient-primary {
+  background: var(--vui-primary-gradient);
+  color: white;
+  border: none;
+}
+
+.vui-btn-lg {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+}
+
+/* Sidebar responsive */
+@media (max-width: 992px) {
+  .vui-sidebar {
+    transform: translateX(var(--vui-sidebar-width));
+  }
+  
+  .vui-sidebar.show {
+    transform: translateX(0);
+  }
+}
+
+/* Sidebar overlay */
+.vui-sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  z-index: 999;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.vui-sidebar-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Classes for mobile view */
+.vui-mobile .vui-content-wrapper {
+  margin-right: 0;
+}
+
+/* استایل لیوت اصلی */
+.vui-dashboard {
+  background: var(--vui-body-bg);
+  color: white;
+  min-height: 100vh;
+  font-family: 'Vazirmatn', sans-serif;
+}
+
+.vui-layout {
+  display: flex;
+  position: relative;
+  min-height: 100vh;
+}
+
+.vui-content-wrapper {
+  flex: 1;
+  margin-right: var(--vui-sidebar-width);
+  transition: all 0.3s ease;
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.vui-main-content {
+  flex: 1;
+  padding: 2rem;
+  position: relative;
+}
+
+/* استایل هدر */
+.vui-header {
+  display: flex;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.vui-header .menu-toggle {
+  display: none;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1.25rem;
+  cursor: pointer;
+  margin-left: 1rem;
+}
+
+/* لیوت ریسپانسیو */
+@media (max-width: 992px) {
+  .vui-content-wrapper {
+    margin-right: 0;
+  }
+  
+  .vui-header .menu-toggle {
+    display: block;
+  }
+}
+
+/* استایل فوتر */
+.vui-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  background: var(--vui-card-bg);
+  backdrop-filter: blur(120px);
+  border-radius: var(--vui-border-radius);
+  margin-top: 2rem;
+}
+
+.vui-footer .footer-brand {
+  display: flex;
+  align-items: center;
+}
+
+.vui-footer .logo-container {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.vui-footer .logo-container img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  filter: brightness(10);
+}
+
+.vui-footer-link {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  margin-left: 1.5rem;
+  font-size: 0.875rem;
+  transition: all 0.15s ease;
+}
+
+.vui-footer-link:hover {
+  color: white;
+  text-decoration: none;
+}
+
+@media (max-width: 576px) {
+  .vui-modal-icon {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .vui-modal-icon i {
+    font-size: 2rem;
+  }
+  
+  .vui-avatar {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .vui-footer {
+    flex-direction: column;
+  }
+  
+  .vui-footer .footer-brand {
+    margin-bottom: 1rem;
+  }
+  
+  .vui-footer .footer-links {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+  
+  .vui-footer-link {
+    margin: 0 0.75rem;
+  }
+}

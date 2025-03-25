@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vazirmatn@33.0.3/Vazirmatn-font-face.css">
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/vision-ui-utilities.css">
+    <link rel="stylesheet" href="/css/vision-ui-styles.css">
     
     <!-- استایل‌های اضافی هر صفحه -->
     <% if (typeof styles !== 'undefined') { %>
@@ -23,28 +24,30 @@
         <% } %>
     <% } %>
 </head>
-<body>
+<body class="vui-dashboard">
     <% if (typeof isLoginPage === 'undefined' || !isLoginPage) { %>
         <!-- لیوت صفحات اصلی پنل -->
-        <div class="admin-layout">
+        <div class="vui-layout">
             <%- include('../partials/sidebar') %>
             
-            <div class="content-wrapper">
+            <div class="vui-content-wrapper">
                 <%- include('../partials/header') %>
                 
-                <main class="main-content">
+                <main class="vui-main-content">
                     <%- body %>
                 </main>
                 
-                <footer class="footer glass-card">
+                <footer class="vui-footer">
                     <div class="footer-brand">
-                        <img src="/img/logo.png" alt="Ccoin" onerror="this.src='/img/coin.svg'; this.onerror=null;">
-                        <span class="ms-2">© ۱۴۰۲ - پنل مدیریت Ccoin | نسخه ۱.۰.۰</span>
+                        <div class="logo-container" style="background: var(--vui-primary-gradient)">
+                            <img src="/img/logo.png" alt="Ccoin" onerror="this.src='/img/coin.svg'; this.onerror=null;">
+                        </div>
+                        <span class="ms-2 gradient-text-primary">© ۱۴۰۲ - پنل مدیریت Ccoin | نسخه ۱.۰.۰</span>
                     </div>
                     <div class="footer-links">
-                        <a href="#">راهنما</a>
-                        <a href="#">تماس با ما</a>
-                        <a href="#">قوانین</a>
+                        <a href="#" class="vui-footer-link">راهنما</a>
+                        <a href="#" class="vui-footer-link">تماس با ما</a>
+                        <a href="#" class="vui-footer-link">قوانین</a>
                     </div>
                 </footer>
             </div>
@@ -64,6 +67,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
     <script src="/js/dashboard.js"></script>
+    <script src="/js/counter-animations.js"></script>
     
     <!-- اسکریپت‌های اضافی هر صفحه -->
     <% if (typeof scripts !== 'undefined') { %>

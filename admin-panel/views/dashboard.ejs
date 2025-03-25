@@ -1,130 +1,117 @@
 <%- include('partials/header') %>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-5" id="dashboard-main">
     <h1 class="h3 gradient-text-primary fw-bold">داشبورد مدیریت</h1>
     <div>
-        <button type="button" class="btn-3d" data-bs-toggle="modal" data-bs-target="#refreshModal" style="background: var(--primary-gradient); color: white; border: none; padding: 10px 20px; border-radius: 10px;">
-            <i class="bi bi-arrow-clockwise me-1"></i> بروزرسانی
+        <button type="button" class="vui-btn vui-btn-primary pulse" data-bs-toggle="modal" data-bs-target="#refreshModal">
+            <i class="bi bi-arrow-clockwise me-2"></i> بروزرسانی
         </button>
     </div>
 </div>
 
-<!-- کارت‌های آمار -->
+<!-- کارت‌های آمار با استایل Vision UI -->
 <div class="row mb-4">
     <div class="col-md-3 mb-4">
-        <div class="stat-card glass-card floating-card">
-            <div class="stat-card-header">
-                <h6 class="stat-card-label">کاربران</h6>
-                <div class="stat-card-value"><%= stats.totalUsers.toLocaleString() %></div>
-                <div class="stat-card-icon primary">
-                    <i class="bi bi-people"></i>
-                </div>
+        <div class="vui-stat-card">
+            <div class="stat-icon" style="background: var(--vui-primary-gradient);">
+                <i class="bi bi-people"></i>
             </div>
-            <div class="stat-card-body">
-                <% if (stats.newUsers > 0) { %>
-                <div class="stat-card-trend up">
-                    <i class="bi bi-arrow-up-short"></i>
-                    <%= stats.newUsers %> کاربر جدید
-                    <span class="period">در 24 ساعت گذشته</span>
-                </div>
-                <% } else { %>
-                <div class="stat-card-trend">
-                    <i class="bi bi-dash"></i>
-                    بدون کاربر جدید
-                    <span class="period">در 24 ساعت گذشته</span>
-                </div>
-                <% } %>
+            <div class="stat-title">کاربران</div>
+            <div class="stat-value" data-value="<%= stats.totalUsers %>"><%= stats.totalUsers.toLocaleString() %></div>
+            <% if (stats.newUsers > 0) { %>
+            <div class="stat-sub up">
+                <i class="bi bi-arrow-up-short"></i>
+                <span data-value="<%= stats.newUsers %>"><%= stats.newUsers %></span> کاربر جدید
+                <span class="ms-1 text-light-50">(24 ساعت گذشته)</span>
             </div>
+            <% } else { %>
+            <div class="stat-sub">
+                <i class="bi bi-dash"></i>
+                بدون کاربر جدید
+                <span class="ms-1 text-light-50">(24 ساعت گذشته)</span>
+            </div>
+            <% } %>
         </div>
     </div>
     
     <div class="col-md-3 mb-4">
-        <div class="stat-card glass-card floating-card">
-            <div class="stat-card-header">
-                <h6 class="stat-card-label">مجموع Ccoin</h6>
-                <div class="stat-card-value"><%= stats.totalCcoin.toLocaleString() %></div>
-                <div class="stat-card-icon warning">
-                    <i class="bi bi-coin"></i>
-                </div>
+        <div class="vui-stat-card">
+            <div class="stat-icon" style="background: var(--vui-warning-gradient);">
+                <i class="bi bi-coin"></i>
             </div>
-            <div class="stat-card-body">
-                <% if (stats.economyChange > 0) { %>
-                <div class="stat-card-trend up">
-                    <i class="bi bi-arrow-up-short"></i>
-                    <%= stats.economyChange.toLocaleString() %> افزایش
-                    <span class="period">در 24 ساعت گذشته</span>
-                </div>
-                <% } else if (stats.economyChange < 0) { %>
-                <div class="stat-card-trend down">
-                    <i class="bi bi-arrow-down-short"></i>
-                    <%= Math.abs(stats.economyChange).toLocaleString() %> کاهش
-                    <span class="period">در 24 ساعت گذشته</span>
-                </div>
-                <% } else { %>
-                <div class="stat-card-trend">
-                    <i class="bi bi-dash"></i>
-                    بدون تغییر
-                    <span class="period">در 24 ساعت گذشته</span>
-                </div>
-                <% } %>
+            <div class="stat-title">مجموع Ccoin</div>
+            <div class="stat-value currency" data-value="<%= stats.totalCcoin %>"><%= stats.totalCcoin.toLocaleString() %></div>
+            <% if (stats.economyChange > 0) { %>
+            <div class="stat-sub up">
+                <i class="bi bi-arrow-up-short"></i>
+                <span data-value="<%= stats.economyChange %>" class="currency"><%= stats.economyChange.toLocaleString() %></span> افزایش
+                <span class="ms-1 text-light-50">(24 ساعت گذشته)</span>
             </div>
+            <% } else if (stats.economyChange < 0) { %>
+            <div class="stat-sub down">
+                <i class="bi bi-arrow-down-short"></i>
+                <span data-value="<%= Math.abs(stats.economyChange) %>" class="currency"><%= Math.abs(stats.economyChange).toLocaleString() %></span> کاهش
+                <span class="ms-1 text-light-50">(24 ساعت گذشته)</span>
+            </div>
+            <% } else { %>
+            <div class="stat-sub">
+                <i class="bi bi-dash"></i>
+                بدون تغییر
+                <span class="ms-1 text-light-50">(24 ساعت گذشته)</span>
+            </div>
+            <% } %>
         </div>
     </div>
     
     <div class="col-md-3 mb-4">
-        <div class="stat-card glass-card floating-card">
-            <div class="stat-card-header">
-                <h6 class="stat-card-label">تعداد کلن‌ها</h6>
-                <div class="stat-card-value"><%= stats.totalClans.toLocaleString() %></div>
-                <div class="stat-card-icon info">
-                    <i class="bi bi-building"></i>
-                </div>
+        <div class="vui-stat-card">
+            <div class="stat-icon" style="background: var(--vui-info-gradient);">
+                <i class="bi bi-building"></i>
             </div>
-            <div class="stat-card-body">
-                <% if (stats.newClans > 0) { %>
-                <div class="stat-card-trend up">
-                    <i class="bi bi-arrow-up-short"></i>
-                    <%= stats.newClans %> کلن جدید
-                    <span class="period">در 24 ساعت گذشته</span>
-                </div>
-                <% } else { %>
-                <div class="stat-card-trend">
-                    <i class="bi bi-dash"></i>
-                    بدون کلن جدید
-                    <span class="period">در 24 ساعت گذشته</span>
-                </div>
-                <% } %>
+            <div class="stat-title">تعداد کلن‌ها</div>
+            <div class="stat-value" data-value="<%= stats.totalClans %>"><%= stats.totalClans.toLocaleString() %></div>
+            <% if (stats.newClans > 0) { %>
+            <div class="stat-sub up">
+                <i class="bi bi-arrow-up-short"></i>
+                <span data-value="<%= stats.newClans %>"><%= stats.newClans %></span> کلن جدید
+                <span class="ms-1 text-light-50">(24 ساعت گذشته)</span>
             </div>
+            <% } else { %>
+            <div class="stat-sub">
+                <i class="bi bi-dash"></i>
+                بدون کلن جدید
+                <span class="ms-1 text-light-50">(24 ساعت گذشته)</span>
+            </div>
+            <% } %>
         </div>
     </div>
     
     <div class="col-md-3 mb-4">
-        <div class="stat-card glass-card floating-card">
-            <div class="stat-card-header">
-                <h6 class="stat-card-label">ماموریت‌های فعال</h6>
-                <div class="stat-card-value"><%= stats.activeQuests.toLocaleString() %></div>
-                <div class="stat-card-icon success">
-                    <i class="bi bi-journal-check"></i>
-                </div>
+        <div class="vui-stat-card">
+            <div class="stat-icon" style="background: var(--vui-success-gradient);">
+                <i class="bi bi-journal-check"></i>
             </div>
-            <div class="stat-card-body">
-                <div class="stat-card-trend">
-                    <i class="bi bi-check2-circle"></i>
-                    <%= stats.completedQuests.toLocaleString() %> ماموریت کامل شده
-                    <span class="period">در هفته گذشته</span>
-                </div>
+            <div class="stat-title">ماموریت‌های فعال</div>
+            <div class="stat-value" data-value="<%= stats.activeQuests %>"><%= stats.activeQuests.toLocaleString() %></div>
+            <div class="stat-sub">
+                <i class="bi bi-check2-circle"></i>
+                <span data-value="<%= stats.completedQuests %>"><%= stats.completedQuests.toLocaleString() %></span> ماموریت کامل شده
+                <span class="ms-1 text-light-50">(هفته گذشته)</span>
             </div>
         </div>
     </div>
 </div>
 
-<!-- نمودارها -->
+<!-- نمودارها با استایل Vision UI -->
 <div class="row mb-4">
     <!-- نمودار فعالیت کاربران -->
     <div class="col-md-6 mb-4">
-        <div class="glass-card h-100">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h6 class="mb-0 gradient-text-primary">فعالیت کاربران</h6>
+        <div class="vui-card h-100">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h6 class="mb-0 gradient-text-primary">فعالیت کاربران</h6>
+                    <p class="text-light-50 small mb-0">روند فعالیت کاربران در طول هفته</p>
+                </div>
                 <div class="dropdown">
                     <button class="btn-icon" type="button" id="userActivityDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-three-dots"></i>
@@ -136,26 +123,29 @@
                     </ul>
                 </div>
             </div>
-            <div class="card-body">
-                <div class="d-flex justify-content-between mb-2">
-                    <div class="text-light-50 small">
-                        دوره زمانی: <span class="text-light">7 روز گذشته</span>
-                    </div>
-                    <div class="custom-tooltip">
-                        <i class="bi bi-info-circle text-light-50"></i>
-                        <span class="tooltip-text">نمودار تعداد کاربران فعال روزانه</span>
-                    </div>
+            <div class="d-flex justify-content-between mb-3">
+                <div class="text-light-50 small">
+                    دوره زمانی: <span class="text-light">7 روز گذشته</span>
                 </div>
-                <canvas id="userActivityChart" height="250"></canvas>
+                <div class="custom-tooltip">
+                    <i class="bi bi-info-circle text-light-50"></i>
+                    <span class="tooltip-text">نمودار تعداد کاربران فعال روزانه</span>
+                </div>
+            </div>
+            <div style="height: 250px; position: relative;">
+                <canvas id="userActivityChart"></canvas>
             </div>
         </div>
     </div>
     
     <!-- نمودار تراکنش‌ها -->
     <div class="col-md-6 mb-4">
-        <div class="glass-card h-100">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h6 class="mb-0 gradient-text-warning">تراکنش‌های Ccoin</h6>
+        <div class="vui-card h-100">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h6 class="mb-0 gradient-text-warning">تراکنش‌های Ccoin</h6>
+                    <p class="text-light-50 small mb-0">واریز و برداشت در طول هفته</p>
+                </div>
                 <div class="dropdown">
                     <button class="btn-icon" type="button" id="transactionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-three-dots"></i>
@@ -167,60 +157,66 @@
                     </ul>
                 </div>
             </div>
-            <div class="card-body">
-                <div class="d-flex justify-content-between mb-2">
-                    <div class="text-light-50 small">
-                        دوره زمانی: <span class="text-light">7 روز گذشته</span>
+            <div class="d-flex justify-content-between mb-3">
+                <div class="text-light-50 small">
+                    دوره زمانی: <span class="text-light">7 روز گذشته</span>
+                </div>
+                <div class="d-flex">
+                    <div class="d-flex align-items-center me-3">
+                        <span class="status-dot" style="background-color: rgba(1, 181, 116, 0.7)"></span>
+                        <small class="ms-2 text-light-50">واریز</small>
                     </div>
-                    <div class="d-flex">
-                        <div class="d-flex align-items-center me-3">
-                            <span class="status-dot" style="background-color: rgba(67, 181, 129, 0.7)"></span>
-                            <small class="ms-2 text-light-50">واریز</small>
-                        </div>
-                        <div class="d-flex align-items-center">
-                            <span class="status-dot" style="background-color: rgba(240, 71, 71, 0.7)"></span>
-                            <small class="ms-2 text-light-50">برداشت</small>
-                        </div>
+                    <div class="d-flex align-items-center">
+                        <span class="status-dot" style="background-color: rgba(236, 64, 122, 0.7)"></span>
+                        <small class="ms-2 text-light-50">برداشت</small>
                     </div>
                 </div>
-                <canvas id="transactionsChart" height="250"></canvas>
+            </div>
+            <div style="height: 250px; position: relative;">
+                <canvas id="transactionsChart"></canvas>
             </div>
         </div>
     </div>
 </div>
 
 <div class="row mb-4">
-    <!-- آمار بازی‌ها -->
+    <!-- آمار بازی‌ها با استایل Vision UI -->
     <div class="col-md-4 mb-4">
-        <div class="glass-card h-100">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h6 class="mb-0 gradient-text-success">آمار بازی‌ها</h6>
+        <div class="vui-card h-100">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h6 class="mb-0 gradient-text-success">آمار بازی‌ها</h6>
+                    <p class="text-light-50 small mb-0">توزیع بازی‌های انجام شده</p>
+                </div>
                 <div class="custom-tooltip">
                     <i class="bi bi-info-circle text-light-50"></i>
-                    <span class="tooltip-text">توزیع بازی‌های انجام شده</span>
+                    <span class="tooltip-text">درصد استفاده از هر بازی</span>
                 </div>
             </div>
-            <div class="card-body">
-                <canvas id="gamesChart" height="250"></canvas>
+            <div style="height: 250px; position: relative;">
+                <canvas id="gamesChart"></canvas>
             </div>
         </div>
     </div>
     
-    <!-- کاربران فعال -->
+    <!-- کاربران فعال با استایل Vision UI -->
     <div class="col-md-4 mb-4">
-        <div class="glass-card h-100">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h6 class="mb-0 gradient-text-info">کاربران فعال اخیر</h6>
+        <div class="vui-card h-100">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h6 class="mb-0 gradient-text-info">کاربران فعال اخیر</h6>
+                    <p class="text-light-50 small mb-0">آخرین فعالیت‌های کاربران</p>
+                </div>
                 <a href="/admin/users" class="btn-icon">
                     <i class="bi bi-arrow-right"></i>
                 </a>
             </div>
-            <div class="card-body p-0">
+            <div class="px-0">
                 <div class="list-group list-group-flush">
                     <% recentUsers.forEach(user => { %>
                     <a href="/admin/users/<%= user.id %>" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center border-0 py-3">
                         <div class="d-flex align-items-center">
-                            <div class="gradient-primary rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                            <div style="background: var(--vui-primary-gradient)" class="rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
                                 <i class="bi bi-person text-light"></i>
                             </div>
                             <div>
@@ -239,38 +235,41 @@
         </div>
     </div>
     
-    <!-- آخرین رویدادها -->
+    <!-- آخرین رویدادها با استایل Vision UI -->
     <div class="col-md-4 mb-4">
-        <div class="glass-card h-100">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h6 class="mb-0 gradient-text-warning">آخرین رویدادها</h6>
+        <div class="vui-card h-100">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h6 class="mb-0 gradient-text-warning">آخرین رویدادها</h6>
+                    <p class="text-light-50 small mb-0">فعالیت‌های اخیر سیستم</p>
+                </div>
                 <a href="/admin/logs" class="btn-icon">
                     <i class="bi bi-arrow-right"></i>
                 </a>
             </div>
-            <div class="card-body p-0">
+            <div class="px-0">
                 <div class="list-group list-group-flush">
                     <% recentEvents.forEach(event => { %>
                     <div class="list-group-item border-0 py-3" style="background: transparent; border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;">
                         <div class="d-flex">
                             <% if (event.type === 'user') { %>
-                                <div class="gradient-primary rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                <div style="background: var(--vui-primary-gradient)" class="rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
                                     <i class="bi bi-person text-light"></i>
                                 </div>
                             <% } else if (event.type === 'transaction') { %>
-                                <div class="gradient-warning rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                <div style="background: var(--vui-warning-gradient)" class="rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
                                     <i class="bi bi-coin text-light"></i>
                                 </div>
                             <% } else if (event.type === 'game') { %>
-                                <div class="gradient-success rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                <div style="background: var(--vui-success-gradient)" class="rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
                                     <i class="bi bi-controller text-light"></i>
                                 </div>
                             <% } else if (event.type === 'clan') { %>
-                                <div class="gradient-info rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                <div style="background: var(--vui-info-gradient)" class="rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
                                     <i class="bi bi-building text-light"></i>
                                 </div>
                             <% } else { %>
-                                <div class="gradient-primary rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                <div style="background: var(--vui-primary-gradient)" class="rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
                                     <i class="bi bi-info-circle text-light"></i>
                                 </div>
                             <% } %>
@@ -291,28 +290,29 @@
     </div>
 </div>
 
-<!-- مدال بروزرسانی -->
+<!-- مدال بروزرسانی با استایل Vision UI -->
 <div class="modal fade" id="refreshModal" tabindex="-1" aria-labelledby="refreshModalLabel" aria-hidden="true">
     <div class="modal-dialog">
-        <div class="modal-content glass-card border-0">
-            <div class="modal-header border-bottom border-light border-opacity-10">
-                <h5 class="modal-title gradient-text-primary" id="refreshModalLabel">بروزرسانی داشبورد</h5>
-                <button type="button" class="btn-icon" data-bs-dismiss="modal" aria-label="Close">
+        <div class="vui-modal-content">
+            <div class="vui-modal-header">
+                <h5 class="gradient-text-primary fw-bold" id="refreshModalLabel">بروزرسانی داشبورد</h5>
+                <button type="button" class="btn-close-light" data-bs-dismiss="modal" aria-label="Close">
                     <i class="bi bi-x-lg"></i>
                 </button>
             </div>
-            <div class="modal-body">
+            <div class="vui-modal-body">
                 <div class="text-center py-3">
-                    <div class="mb-4">
-                        <i class="bi bi-arrow-clockwise text-light" style="font-size: 3rem;"></i>
+                    <div class="vui-modal-icon primary mb-4">
+                        <i class="bi bi-arrow-clockwise"></i>
                     </div>
-                    <p class="text-light mb-1">آیا می‌خواهید داشبورد را بروزرسانی کنید؟</p>
+                    <h6 class="text-light mb-3">بروزرسانی اطلاعات داشبورد</h6>
+                    <p class="text-light-50">آیا می‌خواهید داشبورد را بروزرسانی کنید؟</p>
                     <p class="text-light-50 small">این عملیات ممکن است چند ثانیه طول بکشد.</p>
                 </div>
             </div>
-            <div class="modal-footer border-top border-light border-opacity-10">
-                <button type="button" class="btn-icon" data-bs-dismiss="modal">انصراف</button>
-                <a href="/admin/dashboard?refresh=true" class="btn-3d" style="background: var(--primary-gradient); color: white; border: none; padding: 8px 20px; border-radius: 10px;">
+            <div class="vui-modal-footer">
+                <button type="button" class="vui-btn vui-btn-outline" data-bs-dismiss="modal">انصراف</button>
+                <a href="/admin/dashboard?refresh=true" class="vui-btn vui-btn-primary">
                     <i class="bi bi-arrow-clockwise me-2"></i>بروزرسانی
                 </a>
             </div>

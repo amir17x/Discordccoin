@@ -3,9 +3,9 @@
 :root {
   /* Primary colors and gradients */
   --primary: #0075FF;
-  --primary-dark: #005BC3;
+  --primary-dark: #004BA4;
   --primary-light: #5DADFF;
-  --primary-gradient: linear-gradient(310deg, #0075FF, #21D4FD);
+  --primary-gradient: linear-gradient(310deg, #7928CA, #0075FF);
   
   /* Info colors and gradients */
   --info: #21D4FD;
@@ -17,13 +17,13 @@
   --success: #01B574;
   --success-dark: #018C5A;
   --success-light: #40DCA0;
-  --success-gradient: linear-gradient(310deg, #01B574, #21D4FD);
+  --success-gradient: linear-gradient(310deg, #01B574, #0AE770);
   
   /* Warning colors and gradients */
-  --warning: #F53939;
-  --warning-dark: #D33;
-  --warning-light: #F86A6A;
-  --warning-gradient: linear-gradient(310deg, #FBCF33, #F53939);
+  --warning: #FFB547;
+  --warning-dark: #CC9139;
+  --warning-light: #FFCB7A;
+  --warning-gradient: linear-gradient(310deg, #FF8D3F, #FFB547);
   
   /* Danger colors and gradients */
   --danger: #FF5B5B;
@@ -31,10 +31,10 @@
   --danger-light: #FF8A8A;
   --danger-gradient: linear-gradient(310deg, #FF5B5B, #F53939);
   
-  /* Dark theme colors */
-  --card-bg: rgba(19, 21, 34, 0.7);
-  --body-bg: #0f1535;
-  --body-bg-gradient: linear-gradient(310deg, #0f1535, #212758);
+  /* Dark theme colors - Vision UI style */
+  --card-bg: rgba(22, 24, 39, 0.7);
+  --body-bg: #0f172a;
+  --body-bg-gradient: linear-gradient(310deg, #0f172a, #1E293B);
   
   /* Text colors */
   --text-light: #fff;
@@ -43,8 +43,32 @@
   
   /* Border and shadow */
   --glass-border: 1px solid rgba(255, 255, 255, 0.1);
-  --glass-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-  --card-border-radius: 15px;
+  --glass-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+  --card-border-radius: 16px;
+  
+  /* Vision UI specific variables */
+  --vui-primary-color: #4318FF;
+  --vui-secondary-color: #7551FF;
+  --vui-info-color: #39B8FF;
+  --vui-success-color: #01B574;
+  --vui-warning-color: #FFB547;
+  --vui-danger-color: #EC407A;
+  
+  --vui-primary-gradient: linear-gradient(310deg, #7928CA, #4318FF);
+  --vui-secondary-gradient: linear-gradient(310deg, #627594, #A8B8D8);
+  --vui-info-gradient: linear-gradient(310deg, #0AE7FF, #39B8FF);
+  --vui-success-gradient: linear-gradient(310deg, #01B574, #0AE770);
+  --vui-warning-gradient: linear-gradient(310deg, #FF8D3F, #FFB547);
+  --vui-danger-gradient: linear-gradient(310deg, #EC407A, #FF6A9C);
+  
+  --vui-card-bg: rgba(22, 24, 39, 0.7);
+  --vui-body-bg: #0f172a;
+  --vui-input-bg: rgba(22, 24, 39, 0.5);
+  --vui-input-focus-bg: rgba(34, 36, 49, 0.7);
+  --vui-border-color: rgba(255, 255, 255, 0.1);
+  --vui-card-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+  --vui-text-color: #fff;
+  --vui-text-muted: rgba(255, 255, 255, 0.6);
 }
 
 /* Global styles */
@@ -596,4 +620,272 @@ body {
 
 .footer-links a:hover {
   color: var(--text-light);
+}
+
+/* Vision UI enhanced components */
+
+/* Glassmorphism Cards with Depth */
+.vui-card {
+  background: rgba(22, 24, 39, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  padding: 20px;
+}
+
+.vui-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* Gradient Buttons */
+.vui-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  font-weight: 600;
+  border-radius: 12px;
+  border: none;
+  transition: all 0.3s;
+  overflow: hidden;
+  color: white;
+  cursor: pointer;
+}
+
+.vui-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: all 0.6s;
+}
+
+.vui-btn:hover::before {
+  left: 100%;
+}
+
+.vui-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 14px rgba(0, 0, 0, 0.3);
+}
+
+.vui-btn:active {
+  transform: translateY(1px);
+}
+
+.vui-btn-primary {
+  background: var(--vui-primary-gradient);
+  box-shadow: 0 5px 15px rgba(67, 24, 255, 0.4);
+}
+
+.vui-btn-info {
+  background: var(--vui-info-gradient);
+  box-shadow: 0 5px 15px rgba(57, 184, 255, 0.4);
+}
+
+.vui-btn-success {
+  background: var(--vui-success-gradient);
+  box-shadow: 0 5px 15px rgba(1, 181, 116, 0.4);
+}
+
+.vui-btn-warning {
+  background: var(--vui-warning-gradient);
+  box-shadow: 0 5px 15px rgba(255, 181, 71, 0.4);
+}
+
+.vui-btn-danger {
+  background: var(--vui-danger-gradient);
+  box-shadow: 0 5px 15px rgba(236, 64, 122, 0.4);
+}
+
+/* Input fields with glassmorphism */
+.vui-input {
+  background: rgba(22, 24, 39, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: var(--text-light);
+  padding: 12px 16px;
+  transition: all 0.3s;
+  width: 100%;
+}
+
+.vui-input:focus {
+  border-color: rgba(67, 24, 255, 0.5);
+  box-shadow: 0 0 0 3px rgba(67, 24, 255, 0.2);
+  background: rgba(34, 36, 49, 0.7);
+  outline: none;
+}
+
+.vui-input-group {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.vui-input-icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  right: 15px;
+  color: var(--text-light-50);
+}
+
+/* Stats Cards */
+.vui-stat-card {
+  background: rgba(22, 24, 39, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 20px;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+  position: relative;
+}
+
+.vui-stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+}
+
+.vui-stat-card .stat-icon {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: white;
+}
+
+.vui-stat-card .stat-title {
+  font-size: 0.875rem;
+  color: var(--text-light-50);
+  margin-bottom: 8px;
+}
+
+.vui-stat-card .stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  background: var(--vui-primary-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.vui-stat-card .stat-sub {
+  font-size: 0.875rem;
+  color: var(--text-light-50);
+  display: flex;
+  align-items: center;
+}
+
+.vui-stat-card .stat-sub.up {
+  color: var(--vui-success-color);
+}
+
+.vui-stat-card .stat-sub.down {
+  color: var(--vui-danger-color);
+}
+
+/* Pulse Animation */
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(67, 24, 255, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 5px rgba(67, 24, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(67, 24, 255, 0);
+  }
+}
+
+/* Loading Animation */
+.vui-loader {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: conic-gradient(transparent 0%, var(--vui-primary-color));
+  -webkit-mask: radial-gradient(circle closest-side, transparent 75%, #000 76%);
+  mask: radial-gradient(circle closest-side, transparent 75%, #000 76%);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Toast notification */
+.vui-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 15px 20px;
+  color: var(--text-light);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  z-index: 1050;
+  min-width: 300px;
+  max-width: 500px;
+  transform: translateX(150%);
+  transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.vui-toast.show {
+  transform: translateX(0);
+}
+
+.vui-toast .toast-title {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.vui-toast .toast-title i {
+  margin-left: 10px;
+  font-size: 1.2rem;
+}
+
+.vui-toast .toast-body {
+  font-size: 0.875rem;
+  color: var(--text-light-75);
+}
+
+.vui-toast.success .toast-title {
+  color: var(--vui-success-color);
+}
+
+.vui-toast.error .toast-title {
+  color: var(--vui-danger-color);
+}
+
+.vui-toast.warning .toast-title {
+  color: var(--vui-warning-color);
+}
+
+.vui-toast.info .toast-title {
+  color: var(--vui-info-color);
 }
