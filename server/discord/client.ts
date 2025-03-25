@@ -161,6 +161,46 @@ export async function initDiscordBot() {
           [{ name: '🤖 نام ربات', value: client.user?.tag || 'نامشخص', inline: true }]
         );
       }
+      
+      // پیام‌های طنز برای بخش Watching ربات
+      const watchingMessages = [
+        "کلن‌ها در حال جنگ! ⚔️ کی برنده می‌شه؟",
+        "چرخ شانس داره می‌چرخه! 🎡 کی خوش‌شانسه؟",
+        "بازار داغه! 📈 کی خرید می‌کنه؟",
+        "مافیا داره شروع می‌شه! 🕵️ کی گول می‌خوره؟",
+        "سهام‌ها بالا و پایین می‌رن! 📉📈",
+        "اژدها توی جهان فانتزی بیدار شد! 🐉",
+        "تورنمنت‌ها داغ شدن! 🏆 کی نفر اوله؟",
+        "پت‌ها گرسنه شدن! 🐶 کی غذا می‌ده؟",
+        "ماموریت‌ها منتظرن! 🎯 کی تنبل نیست؟",
+        "بانک‌ها پر از سکه! 🏦 کی دزدی می‌کنه؟"
+      ];
+      
+      // تنظیم اولین پیام watching
+      let currentMessageIndex = Math.floor(Math.random() * watchingMessages.length);
+      if (client.user) {
+        client.user.setActivity(watchingMessages[currentMessageIndex], { type: 3 }); // type: 3 = WATCHING
+      }
+      
+      // تغییر خودکار پیام‌های watching هر 30 دقیقه
+      setInterval(() => {
+        try {
+          // انتخاب یک پیام تصادفی غیر از پیام فعلی
+          let newIndex;
+          do {
+            newIndex = Math.floor(Math.random() * watchingMessages.length);
+          } while (newIndex === currentMessageIndex && watchingMessages.length > 1);
+          
+          currentMessageIndex = newIndex;
+          
+          if (client.user) {
+            client.user.setActivity(watchingMessages[currentMessageIndex], { type: 3 }); // type: 3 = WATCHING
+            log(`Updated watching status: ${watchingMessages[currentMessageIndex]}`, 'discord');
+          }
+        } catch (error) {
+          console.error('Error updating watching status:', error);
+        }
+      }, 30 * 60 * 1000); // هر 30 دقیقه (به میلی‌ثانیه)
     });
 
     // Command interaction
@@ -301,7 +341,8 @@ export async function initDiscordBot() {
           if (interaction.customId.includes('shop') || 
               interaction.customId.includes('inventory') || 
               interaction.customId.includes('game_select')) {
-            interactionCache.set(cacheKey, {
+            const menuCacheKey = `menu_${interaction.customId}_${interaction.user.id}`;
+            interactionCache.set(menuCacheKey, {
               timestamp: now,
               responseMessage: '⚠️ لطفاً کمی صبر کنید و سپس دوباره تلاش کنید.'
             });
