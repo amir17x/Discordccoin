@@ -1,0 +1,29 @@
+
+4:09:51 PM [discord] Started refreshing application (/) commands.
+4:09:51 PM [discord] Successfully reloaded application (/) commands.
+4:09:51 PM [discord] Attempting to login with Discord token...
+4:09:52 PM [discord] Successfully logged in to Discord
+4:09:52 PM [express] Discord bot initialized successfully
+4:09:52 PM [express] Server is running on port 5000
+4:09:52 PM [discord] Logged in as Ccoin#1873!
+4:09:58 PM [discord] Created new user: whysiks
+4:09:58 PM [discord] Executing command: menu
+(node:4251) Warning: Supplying "ephemeral" for interaction response options is deprecated. Utilize flags instead.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Failed to send initial reply for command menu: DiscordAPIError[10062]: Unknown interaction
+    at handleErrors (/home/runner/workspace/node_modules/@discordjs/rest/src/lib/handlers/Shared.ts:148:10)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async BurstHandler.runRequest (/home/runner/workspace/node_modules/@discordjs/rest/src/lib/handlers/BurstHandler.ts:144:20)
+    at async _REST.request (/home/runner/workspace/node_modules/@discordjs/rest/src/lib/REST.ts:210:20)
+    at async ChatInputCommandInteraction.reply (/home/runner/workspace/node_modules/discord.js/src/structures/interfaces/InteractionResponses.js:194:22)
+    at async executeWithTimeout (/home/runner/workspace/server/discord/client.ts:72:7)
+    at async Client.<anonymous> (/home/runner/workspace/server/discord/client.ts:247:11) {
+  requestBody: { files: [], json: { type: 4, data: [Object] } },
+  rawError: { message: 'Unknown interaction', code: 10062 },
+  code: 10062,
+  status: 404,
+  method: 'POST',
+  url: 'https://discord.com/api/v10/interactions/1354125168368418879/aW50ZXJhY3Rpb246MTM1NDEyNTE2ODM2ODQxODg3OTpKOWF5YU9YdVB2NzVuMUU3dnJNMzZacVZKa2x2ZjRoNWhDZHBwS1hKbXhrTDlUUGh1U2xHTjlFcEtQUVFHV0x5NUREUFFYOUxCN2J3djJWUE8zS1ZldWl2bWlodm0yU0x0TkFQeDRSNFczb3VkTkVGZUtlRjNON2JqNm5OQ3pSWA/callback?with_response=false'
+}
+Interaction command menu completely failed, likely expired
+4:09:59 PM [discord] Successfully executed command: menu

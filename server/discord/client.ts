@@ -55,52 +55,48 @@ client.commands = new Collection();
 
 export async function initDiscordBot() {
   // تابع کمکی برای اجرای یک عملیات با مدیریت بهینه‌شده interaction
+  /**
+   * تابع جدید برای مدیریت تعاملات دیسکورد
+   * این تابع به جای استفاده از setTimeout، از deferReply استفاده می‌کند
+   * که به ما اجازه می‌دهد زمان بیشتری برای اجرای عملیات داشته باشیم
+   */
   const executeWithTimeout = async (
     interaction: any, 
     operation: () => Promise<void>, 
     type: string,
     errorMessage: string
   ) => {
-    // بررسی کنیم آیا تعامل (interaction) قبلاً پاسخ داده شده یا نه
+    // بررسی وضعیت فعلی تعامل
     if (interaction.replied || interaction.deferred) {
       console.log(`${type}: interaction already handled, skipping execution`);
       return;
     }
     
     try {
-      // بجای استفاده از defer، مستقیماً پاسخ می‌دهیم تا از حالت "thinking" جلوگیری کنیم
-      await interaction.reply({ 
-        content: "👉 در حال پردازش درخواست شما...", 
-        ephemeral: true 
+      // استفاده از deferReply به جای reply برای به دست آوردن زمان بیشتر
+      await interaction.deferReply({ ephemeral: true }).catch((e: Error) => {
+        console.error(`Failed to defer reply for ${type}:`, e);
+        throw new Error('Failed to defer reply');
       });
       
-      // اجرای عملیات با زمان‌بندی مشخص
       try {
+        // اجرای عملیات اصلی
         await operation();
-      } catch (operationError) {
-        console.error(`Error in ${type} operation:`, operationError);
-        log(`Error in ${type}: ${operationError?.message || 'Unknown error'}`, 'error');
+      } catch (opError) {
+        console.error(`Operation failed in ${type}:`, opError);
         
-        // اگر عملیات با خطا مواجه شد، پیغام خطا را به کاربر نشان می‌دهیم
-        await interaction.editReply({ 
-          content: errorMessage 
-        }).catch(() => console.log(`Could not update reply with error for ${type}`));
-      }
-    } catch (replyError) {
-      // اگر نتوانستیم پاسخ اولیه را ارسال کنیم
-      console.error(`Failed to send initial reply for ${type}:`, replyError);
-      
-      // یک تلاش مجدد با پاسخ ساده‌تر انجام می‌دهیم
-      try {
-        if (!interaction.replied && !interaction.deferred) {
-          await interaction.reply({ 
-            content: errorMessage, 
-            ephemeral: true 
+        // نمایش خطا به کاربر
+        try {
+          await interaction.editReply({
+            content: errorMessage
           });
+        } catch (editError) {
+          console.error(`Failed to update reply with error for ${type}:`, editError);
         }
-      } catch (finalError) {
-        console.log(`Interaction ${type} completely failed, likely expired`);
       }
+    } catch (error) {
+      // در صورت خطا در پاسخ اولیه یا عملیات اصلی
+      console.error(`Critical error in ${type}:`, error);
     }
   };
 

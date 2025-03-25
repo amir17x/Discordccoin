@@ -12,18 +12,52 @@ const menu = {
   
   async execute(interaction: any) {
     try {
-      // ارسال یک پاسخ تاخیری برای جلوگیری از تایم‌اوت
-      await interaction.deferReply();
+      // برای جلوگیری از خطای Unknown interaction، از یک پاسخ مستقیم استفاده می‌کنیم
+      // به جای defer که گاهی باعث گیر کردن در حالت "thinking" می‌شود
       
-      // فراخوانی منوی اصلی
-      await mainMenu(interaction);
+      // بررسی وضعیت تعامل
+      if (interaction.replied || interaction.deferred) {
+        console.log('Menu command: interaction already handled');
+        return;
+      }
+      
+      // ارسال پاسخ اولیه سریع
+      try {
+        await interaction.reply({ 
+          content: "🏠 در حال بارگذاری منوی اصلی...",
+          ephemeral: true 
+        });
+      } catch (replyError) {
+        console.error("Failed to send initial reply for menu:", replyError);
+        throw replyError; // نمی‌توانیم بدون پاسخ اولیه ادامه دهیم
+      }
+      
+      // کمی صبر کنیم و سپس منوی اصلی را نمایش دهیم
+      setTimeout(async () => {
+        try {
+          await mainMenu(interaction);
+        } catch (menuError) {
+          console.error("Error in showing main menu:", menuError);
+          await interaction.editReply({ 
+            content: "⚠️ خطا در بارگذاری منو! لطفاً دوباره تلاش کنید." 
+          }).catch(() => {/* نادیده گرفتن خطاهای احتمالی */});
+        }
+      }, 100); // تاخیر کوتاه برای اطمینان از اینکه پاسخ اولیه ثبت شده است
+      
     } catch (error) {
-      console.error("Error in menu command:", error);
-      // اطمینان از ارسال پاسخ حتی در صورت وقوع خطا
-      if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply({ content: "در حال بارگذاری منو...", ephemeral: true });
-      } else if (interaction.deferred) {
-        await interaction.editReply({ content: "خطا در بارگذاری منو! لطفاً دوباره تلاش کنید." });
+      console.error("Critical error in menu command:", error);
+      
+      // آخرین تلاش برای پاسخ دادن
+      try {
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({ 
+            content: "❌ خطای سیستمی! لطفاً چند لحظه دیگر تلاش کنید.", 
+            ephemeral: true 
+          });
+        }
+      } catch (finalError) {
+        // نمی‌توانیم کاری بکنیم، احتمالاً تعامل منقضی شده است
+        console.log("Menu command interaction completely failed");
       }
     }
   }
@@ -132,32 +166,75 @@ const daily = {
     .setDescription('🎁 دریافت پاداش روزانه'),
   
   async execute(interaction: any) {
-    try {
-      const user = await storage.getUserByDiscordId(interaction.user.id);
+    // با استفاده از دستور editReply به جای reply، مشکل تداخل پاسخ‌ها را حل می‌کنیم
+    // چون در client.ts از deferred استفاده می‌کنیم، باید اینجا از editReply استفاده کنیم
+    
+    const user = await storage.getUserByDiscordId(interaction.user.id);
+    
+    if (!user) {
+      // Create new user if not exists
+      const newUser = await storage.createUser({
+        discordId: interaction.user.id,
+        username: interaction.user.username,
+      });
       
-      if (!user) {
-        // Create new user if not exists
-        const newUser = await storage.createUser({
-          discordId: interaction.user.id,
-          username: interaction.user.username,
-        });
+      // Give daily reward
+      await storage.addToWallet(newUser.id, 50);
+      await storage.updateUser(newUser.id, { lastDaily: new Date(), dailyStreak: 1 });
+      
+      // ایجاد Embed برای کاربر جدید
+      const newUserEmbed = new EmbedBuilder()
+        .setColor('#E91E63') // صورتی
+        .setTitle('🎁 پاداش روزانه دریافت شد!')
+        .setDescription(`**${interaction.user.username}** عزیز، خوش آمدید! اولین پاداش روزانه شما دریافت شد.`)
+        .setThumbnail('https://img.icons8.com/fluency/48/gift.png') // آیکون جعبه هدیه با سبک Fluency
+        .addFields(
+          { name: '💰 جایزه دریافتی', value: `\`50 Ccoin\``, inline: true },
+          { name: '🔄 استریک روزانه', value: `\`1 روز\``, inline: true },
+          { name: '⏰ جایزه بعدی', value: '`24 ساعت دیگر`', inline: true }
+        )
+        .setFooter({ text: '📌 برای افزایش مقدار پاداش، هر روز وارد شوید!' })
+        .setTimestamp();
+      
+      // دکمه برای دسترسی به منوی اصلی
+      const row = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('menu')
+            .setLabel('🏠 منوی اصلی')
+            .setStyle(ButtonStyle.Success),
+          new ButtonBuilder()
+            .setCustomId('balance')
+            .setLabel('💰 مشاهده موجودی')
+            .setStyle(ButtonStyle.Primary)
+        );
+      
+      await interaction.editReply({
+        embeds: [newUserEmbed],
+        components: [row]
+      });
+    } else {
+      // Check if daily reward already claimed
+      const now = new Date();
+      const lastDaily = user.lastDaily ? new Date(user.lastDaily) : null;
+      
+      if (lastDaily && now.getTime() - lastDaily.getTime() < 24 * 60 * 60 * 1000) {
+        const nextReset = new Date(lastDaily.getTime() + 24 * 60 * 60 * 1000);
+        const hours = Math.floor((nextReset.getTime() - now.getTime()) / (60 * 60 * 1000));
+        const minutes = Math.floor(((nextReset.getTime() - now.getTime()) % (60 * 60 * 1000)) / (60 * 1000));
         
-        // Give daily reward
-        await storage.addToWallet(newUser.id, 50);
-        await storage.updateUser(newUser.id, { lastDaily: new Date(), dailyStreak: 1 });
-        
-        // ایجاد Embed برای کاربر جدید
-        const newUserEmbed = new EmbedBuilder()
-          .setColor('#E91E63') // صورتی
-          .setTitle('🎁 پاداش روزانه دریافت شد!')
-          .setDescription(`**${interaction.user.username}** عزیز، خوش آمدید! اولین پاداش روزانه شما دریافت شد.`)
-          .setThumbnail('https://img.icons8.com/fluency/48/gift.png') // آیکون جعبه هدیه با سبک Fluency
+        // ایجاد امبد برای زمان باقی‌مانده
+        const cooldownEmbed = new EmbedBuilder()
+          .setColor('#F39C12') // نارنجی
+          .setTitle('⏳ پاداش روزانه در دسترس نیست')
+          .setDescription(`**${interaction.user.username}** عزیز، شما قبلاً پاداش روزانه خود را دریافت کرده‌اید!`)
+          .setThumbnail('https://img.icons8.com/fluency/48/hourglass.png') // آیکون ساعت شنی با سبک Fluency
           .addFields(
-            { name: '💰 جایزه دریافتی', value: `\`50 Ccoin\``, inline: true },
-            { name: '🔄 استریک روزانه', value: `\`1 روز\``, inline: true },
-            { name: '⏰ جایزه بعدی', value: '`24 ساعت دیگر`', inline: true }
+            { name: '⏱️ زمان باقی‌مانده', value: `\`${hours} ساعت و ${minutes} دقیقه\``, inline: false },
+            { name: '📆 استریک فعلی', value: `\`${user.dailyStreak} روز\``, inline: true },
+            { name: '⚠️ توجه', value: 'برای حفظ استریک خود، فراموش نکنید فردا دوباره مراجعه کنید!', inline: false }
           )
-          .setFooter({ text: '📌 برای افزایش مقدار پاداش، هر روز وارد شوید!' })
+          .setFooter({ text: 'استریک‌های بالاتر، جوایز بیشتری دارند!' })
           .setTimestamp();
         
         // دکمه برای دسترسی به منوی اصلی
@@ -166,161 +243,110 @@ const daily = {
             new ButtonBuilder()
               .setCustomId('menu')
               .setLabel('🏠 منوی اصلی')
-              .setStyle(ButtonStyle.Success),
-            new ButtonBuilder()
-              .setCustomId('balance')
-              .setLabel('💰 مشاهده موجودی')
-              .setStyle(ButtonStyle.Primary)
+              .setStyle(ButtonStyle.Success)
           );
         
-        await interaction.reply({
-          embeds: [newUserEmbed],
-          components: [row],
-          ephemeral: true
+        await interaction.editReply({
+          embeds: [cooldownEmbed],
+          components: [row]
         });
+        return;
+      }
+      
+      // Check streak
+      let streak = 0;
+      if (lastDaily && now.getTime() - lastDaily.getTime() < 48 * 60 * 60 * 1000) {
+        streak = user.dailyStreak + 1;
       } else {
-        // Check if daily reward already claimed
-        const now = new Date();
-        const lastDaily = user.lastDaily ? new Date(user.lastDaily) : null;
-        
-        if (lastDaily && now.getTime() - lastDaily.getTime() < 24 * 60 * 60 * 1000) {
-          const nextReset = new Date(lastDaily.getTime() + 24 * 60 * 60 * 1000);
-          const hours = Math.floor((nextReset.getTime() - now.getTime()) / (60 * 60 * 1000));
-          const minutes = Math.floor(((nextReset.getTime() - now.getTime()) % (60 * 60 * 1000)) / (60 * 1000));
-          
-          // ایجاد امبد برای زمان باقی‌مانده
-          const cooldownEmbed = new EmbedBuilder()
-            .setColor('#F39C12') // نارنجی
-            .setTitle('⏳ پاداش روزانه در دسترس نیست')
-            .setDescription(`**${interaction.user.username}** عزیز، شما قبلاً پاداش روزانه خود را دریافت کرده‌اید!`)
-            .setThumbnail('https://img.icons8.com/fluency/48/hourglass.png') // آیکون ساعت شنی با سبک Fluency
-            .addFields(
-              { name: '⏱️ زمان باقی‌مانده', value: `\`${hours} ساعت و ${minutes} دقیقه\``, inline: false },
-              { name: '📆 استریک فعلی', value: `\`${user.dailyStreak} روز\``, inline: true },
-              { name: '⚠️ توجه', value: 'برای حفظ استریک خود، فراموش نکنید فردا دوباره مراجعه کنید!', inline: false }
-            )
-            .setFooter({ text: 'استریک‌های بالاتر، جوایز بیشتری دارند!' })
-            .setTimestamp();
-          
-          // دکمه برای دسترسی به منوی اصلی
-          const row = new ActionRowBuilder<ButtonBuilder>()
-            .addComponents(
-              new ButtonBuilder()
-                .setCustomId('menu')
-                .setLabel('🏠 منوی اصلی')
-                .setStyle(ButtonStyle.Success)
-            );
-          
-          await interaction.reply({
-            embeds: [cooldownEmbed],
-            components: [row],
-            ephemeral: true
-          });
-          return;
-        }
-        
-        // Check streak
-        let streak = 0;
-        if (lastDaily && now.getTime() - lastDaily.getTime() < 48 * 60 * 60 * 1000) {
-          streak = user.dailyStreak + 1;
-        } else {
-          streak = 1;
-        }
-        
-        // Calculate reward
-        let reward = 50;
-        let streakBonus = 0;
-        
-        if (streak >= 7) {
-          streakBonus = 200; // Bonus for 7-day streak
-          reward += streakBonus;
-        } else if (streak >= 3) {
-          streakBonus = 50; // Smaller bonus for 3-day streak
-          reward += streakBonus;
-        }
-        
-        // Apply bonuses from active items
-        const inventory = user.inventory as Record<string, any>;
-        let bonusMultiplier = 1.0;
-        let bonusFromItems = 0;
-        
-        // Check for active items with dailyBonus effect
-        for (const itemIdStr in inventory) {
-          const inventoryItem = inventory[itemIdStr];
-          if (inventoryItem.active && inventoryItem.expires) {
-            const expires = new Date(inventoryItem.expires);
-            if (expires > now) {
-              const item = await storage.getItem(parseInt(itemIdStr));
-              if (item && item.effects && typeof item.effects === 'object') {
-                const effects = item.effects as Record<string, any>;
-                if (effects.dailyBonus) {
-                  bonusMultiplier += effects.dailyBonus / 100;
-                }
+        streak = 1;
+      }
+      
+      // Calculate reward
+      let reward = 50;
+      let streakBonus = 0;
+      
+      if (streak >= 7) {
+        streakBonus = 200; // Bonus for 7-day streak
+        reward += streakBonus;
+      } else if (streak >= 3) {
+        streakBonus = 50; // Smaller bonus for 3-day streak
+        reward += streakBonus;
+      }
+      
+      // Apply bonuses from active items
+      const inventory = user.inventory as Record<string, any>;
+      let bonusMultiplier = 1.0;
+      let bonusFromItems = 0;
+      
+      // Check for active items with dailyBonus effect
+      for (const itemIdStr in inventory) {
+        const inventoryItem = inventory[itemIdStr];
+        if (inventoryItem.active && inventoryItem.expires) {
+          const expires = new Date(inventoryItem.expires);
+          if (expires > now) {
+            const item = await storage.getItem(parseInt(itemIdStr));
+            if (item && item.effects && typeof item.effects === 'object') {
+              const effects = item.effects as Record<string, any>;
+              if (effects.dailyBonus) {
+                bonusMultiplier += effects.dailyBonus / 100;
               }
             }
           }
         }
-        
-        const baseReward = reward;
-        reward = Math.floor(reward * bonusMultiplier);
-        bonusFromItems = reward - baseReward;
-        
-        // Apply reward
-        await storage.addToWallet(user.id, reward);
-        await storage.updateUser(user.id, { lastDaily: now, dailyStreak: streak });
-        
-        // اُپن از نوع جایزه برای Embed
-        let rewardColor = '#2ECC71'; // سبز
-        let rewardTitle = '🎁 پاداش روزانه دریافت شد!';
-        let rewardThumbnail = 'https://img.icons8.com/fluency/48/gift.png'; // آیکون جعبه هدیه با سبک Fluency
-        
-        if (streak >= 7) {
-          rewardColor = '#9B59B6'; // بنفش برای استریک های بالا
-          rewardTitle = '🌟 پاداش روزانه ویژه دریافت شد!';
-          rewardThumbnail = 'https://img.icons8.com/fluency/48/prize.png'; // آیکون جایزه ویژه با سبک Fluency
-        }
-        
-        // ایجاد امبد برای دریافت جایزه
-        const rewardEmbed = new EmbedBuilder()
-          .setColor(rewardColor as ColorResolvable)
-          .setTitle(rewardTitle)
-          .setDescription(`**${interaction.user.username}** عزیز، پاداش روزانه شما با موفقیت دریافت شد!`)
-          .setThumbnail(rewardThumbnail)
-          .addFields(
-            { name: '💰 جایزه پایه', value: `\`${baseReward - streakBonus} Ccoin\``, inline: true },
-            { name: '🌟 پاداش استریک', value: `\`${streakBonus} Ccoin\``, inline: streakBonus > 0 },
-            { name: '🔮 بونوس آیتم ها', value: `\`${bonusFromItems} Ccoin\``, inline: bonusFromItems > 0 },
-            { name: '📊 مجموع جایزه', value: `\`${reward} Ccoin\``, inline: false },
-            { name: '🔄 استریک فعلی', value: `\`${streak} روز\``, inline: true },
-            { name: '⏰ جایزه بعدی', value: '`24 ساعت دیگر`', inline: true }
-          )
-          .setFooter({ text: streak >= 7 ? '🎊 تبریک! شما به استریک 7 روزه رسیده‌اید و پاداش ویژه دریافت کردید!' : '📌 برای دریافت پاداش ویژه، استریک 7 روزه را حفظ کنید!' })
-          .setTimestamp();
-        
-        // دکمه های دسترسی
-        const row = new ActionRowBuilder<ButtonBuilder>()
-          .addComponents(
-            new ButtonBuilder()
-              .setCustomId('menu')
-              .setLabel('🏠 منوی اصلی')
-              .setStyle(ButtonStyle.Success),
-            new ButtonBuilder()
-              .setCustomId('balance')
-              .setLabel('💰 مشاهده موجودی')
-              .setStyle(ButtonStyle.Primary)
-          );
-        
-        await interaction.reply({
-          embeds: [rewardEmbed],
-          components: [row],
-          ephemeral: true
-        });
       }
-    } catch (error) {
-      console.error('Error in daily command:', error);
-      await interaction.reply({
-        content: '⚠️ خطا در دریافت پاداش روزانه! لطفاً دوباره تلاش کنید.',
-        ephemeral: true
+      
+      const baseReward = reward;
+      reward = Math.floor(reward * bonusMultiplier);
+      bonusFromItems = reward - baseReward;
+      
+      // Apply reward
+      await storage.addToWallet(user.id, reward);
+      await storage.updateUser(user.id, { lastDaily: now, dailyStreak: streak });
+      
+      // اُپن از نوع جایزه برای Embed
+      let rewardColor = '#2ECC71'; // سبز
+      let rewardTitle = '🎁 پاداش روزانه دریافت شد!';
+      let rewardThumbnail = 'https://img.icons8.com/fluency/48/gift.png'; // آیکون جعبه هدیه با سبک Fluency
+      
+      if (streak >= 7) {
+        rewardColor = '#9B59B6'; // بنفش برای استریک های بالا
+        rewardTitle = '🌟 پاداش روزانه ویژه دریافت شد!';
+        rewardThumbnail = 'https://img.icons8.com/fluency/48/prize.png'; // آیکون جایزه ویژه با سبک Fluency
+      }
+      
+      // ایجاد امبد برای دریافت جایزه
+      const rewardEmbed = new EmbedBuilder()
+        .setColor(rewardColor as ColorResolvable)
+        .setTitle(rewardTitle)
+        .setDescription(`**${interaction.user.username}** عزیز، پاداش روزانه شما با موفقیت دریافت شد!`)
+        .setThumbnail(rewardThumbnail)
+        .addFields(
+          { name: '💰 جایزه پایه', value: `\`${baseReward - streakBonus} Ccoin\``, inline: true },
+          { name: '🌟 پاداش استریک', value: `\`${streakBonus} Ccoin\``, inline: streakBonus > 0 },
+          { name: '🔮 بونوس آیتم ها', value: `\`${bonusFromItems} Ccoin\``, inline: bonusFromItems > 0 },
+          { name: '📊 مجموع جایزه', value: `\`${reward} Ccoin\``, inline: false },
+          { name: '🔄 استریک فعلی', value: `\`${streak} روز\``, inline: true },
+          { name: '⏰ جایزه بعدی', value: '`24 ساعت دیگر`', inline: true }
+        )
+        .setFooter({ text: streak >= 7 ? '🎊 تبریک! شما به استریک 7 روزه رسیده‌اید و پاداش ویژه دریافت کردید!' : '📌 برای دریافت پاداش ویژه، استریک 7 روزه را حفظ کنید!' })
+        .setTimestamp();
+      
+      // دکمه های دسترسی
+      const row = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('menu')
+            .setLabel('🏠 منوی اصلی')
+            .setStyle(ButtonStyle.Success),
+          new ButtonBuilder()
+            .setCustomId('balance')
+            .setLabel('💰 مشاهده موجودی')
+            .setStyle(ButtonStyle.Primary)
+        );
+      
+      await interaction.editReply({
+        embeds: [rewardEmbed],
+        components: [row]
       });
     }
   }
@@ -374,11 +400,10 @@ const help = {
           .setStyle(ButtonStyle.Success)
       );
     
-    // ارسال پاسخ
-    await interaction.reply({
+    // ارسال پاسخ با استفاده از editReply به جای reply
+    await interaction.editReply({
       embeds: [helpEmbed],
-      components: [row],
-      ephemeral: true
+      components: [row]
     });
   }
 };
@@ -503,24 +528,15 @@ const friends = {
     .setDMPermission(false),
   
   async execute(interaction: any) {
-    try {
-      const user = await storage.getUserByDiscordId(interaction.user.id);
-      if (!user) {
-        return await interaction.reply({
-          content: "❌ حساب کاربری شما یافت نشد. لطفاً با دستور `/start` یک حساب بسازید.",
-          ephemeral: true
-        });
-      }
-      
-      // فراخوانی منوی اصلی دوستان
-      await friendsMainMenu(interaction);
-    } catch (error) {
-      console.error("Error in friends command:", error);
-      await interaction.reply({
-        content: "❌ خطایی رخ داد! لطفاً دوباره تلاش کنید.",
-        ephemeral: true
+    const user = await storage.getUserByDiscordId(interaction.user.id);
+    if (!user) {
+      return await interaction.editReply({
+        content: "❌ حساب کاربری شما یافت نشد. لطفاً با دستور `/start` یک حساب بسازید."
       });
     }
+    
+    // فراخوانی منوی اصلی دوستان
+    await friendsMainMenu(interaction);
   }
 };
 
