@@ -3,21 +3,16 @@
 <div class="container-fluid">
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">ویرایش ماموریت</h1>
-        <div>
-            <a href="/quests/<%= quest.id %>" class="d-sm-inline-block btn btn-sm btn-info shadow-sm">
-                <i class="fas fa-eye fa-sm text-white-50 ml-1"></i> مشاهده ماموریت
-            </a>
-            <a href="/quests" class="d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
-                <i class="fas fa-arrow-right fa-sm text-white-50 ml-1"></i> بازگشت به لیست ماموریت‌ها
-            </a>
-        </div>
+        <a href="/quests" class="d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
+            <i class="fas fa-arrow-right fa-sm text-white-50 ml-1"></i> بازگشت به لیست ماموریت‌ها
+        </a>
     </div>
 
     <div class="row">
         <div class="col-lg-8">
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">ویرایش ماموریت: <%= quest.title %></h6>
+                    <h6 class="m-0 font-weight-bold text-primary">اطلاعات ماموریت</h6>
                 </div>
                 <div class="card-body">
                     <form action="/quests/<%= quest.id %>/edit" method="POST">
@@ -31,7 +26,7 @@
                         <!-- توضیحات ماموریت -->
                         <div class="form-group">
                             <label for="description">توضیحات</label>
-                            <textarea class="form-control" id="description" name="description" rows="3"><%= quest.description || '' %></textarea>
+                            <textarea class="form-control" id="description" name="description" rows="3"><%= quest.description %></textarea>
                             <small class="form-text text-muted">توضیحات کامل‌تر درباره ماموریت و چگونگی انجام آن</small>
                         </div>
 
@@ -53,7 +48,7 @@
                         <div class="form-group">
                             <label for="category">دسته‌بندی</label>
                             <select class="form-control" id="category" name="category">
-                                <option value="general" <%= (quest.category === 'general' || !quest.category) ? 'selected' : '' %>>عمومی</option>
+                                <option value="general" <%= quest.category === 'general' ? 'selected' : '' %>>عمومی</option>
                                 <option value="economy" <%= quest.category === 'economy' ? 'selected' : '' %>>اقتصادی</option>
                                 <option value="game" <%= quest.category === 'game' ? 'selected' : '' %>>بازی</option>
                                 <option value="social" <%= quest.category === 'social' ? 'selected' : '' %>>اجتماعی</option>
@@ -93,7 +88,7 @@
                         <div class="form-group">
                             <div class="custom-control custom-checkbox">
                                 <input type="checkbox" class="custom-control-input" id="active" name="active" <%= quest.active ? 'checked' : '' %>>
-                                <label class="custom-control-label" for="active">ماموریت فعال است</label>
+                                <label class="custom-control-label" for="active">ماموریت فعال باشد</label>
                             </div>
                         </div>
 
@@ -107,88 +102,53 @@
         <div class="col-lg-4">
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">آمار ماموریت</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">راهنمای ویرایش ماموریت</h6>
                 </div>
                 <div class="card-body">
-                    <div class="row no-gutters align-items-center mb-3">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                کاربران فعال</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800"><%= quest.stats.activeUsers %></div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-users fa-2x text-gray-300"></i>
-                        </div>
+                    <div class="mb-3">
+                        <h5>انواع ماموریت</h5>
+                        <ul>
+                            <li><strong>روزانه:</strong> هر روز ریست می‌شود و کاربر می‌تواند آن را مجدداً انجام دهد.</li>
+                            <li><strong>هفتگی:</strong> هر هفته ریست می‌شود.</li>
+                            <li><strong>ماهانه:</strong> هر ماه ریست می‌شود.</li>
+                            <li><strong>یکبار مصرف:</strong> تنها یکبار می‌توان انجام داد.</li>
+                            <li><strong>ویژه:</strong> ماموریت‌های خاص با شرایط ویژه.</li>
+                            <li><strong>رویداد:</strong> مربوط به رویدادهای خاص و محدود به زمان.</li>
+                        </ul>
                     </div>
 
-                    <div class="row no-gutters align-items-center mb-3">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                تکمیل شده</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800"><%= quest.stats.completedCount %></div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
-                        </div>
+                    <div class="mb-3">
+                        <h5>دسته‌بندی‌های ماموریت</h5>
+                        <ul>
+                            <li><strong>عمومی:</strong> ماموریت‌های متنوع و عمومی.</li>
+                            <li><strong>اقتصادی:</strong> مرتبط با اقتصاد بات (انتقال سکه، پس‌انداز، و غیره).</li>
+                            <li><strong>بازی:</strong> مرتبط با بازی‌های بات.</li>
+                            <li><strong>اجتماعی:</strong> مرتبط با تعاملات اجتماعی.</li>
+                            <li><strong>کلنی:</strong> مرتبط با فعالیت‌های کلن.</li>
+                        </ul>
                     </div>
 
-                    <div class="mb-2">
-                        <div class="small font-weight-bold">نرخ تکمیل <span class="float-left"><%= quest.stats.completionRate.toFixed(1) %>%</span></div>
-                        <div class="progress mb-4">
-                            <div class="progress-bar bg-info" role="progressbar" style="width: <%= quest.stats.completionRate %>%" 
-                                 aria-valuenow="<%= quest.stats.completionRate %>" aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
+                    <div>
+                        <h5>نکات مهم</h5>
+                        <ul>
+                            <li>تغییر نوع ماموریت می‌تواند روی پیشرفت کاربران تأثیر بگذارد.</li>
+                            <li>کاهش مقدار هدف برای ماموریت‌های در حال انجام، باعث تکمیل شدن آنها می‌شود.</li>
+                            <li>افزایش جایزه برای ماموریت‌های قبلاً تکمیل شده، تأثیری روی جوایز پرداخت شده ندارد.</li>
+                            <li>غیرفعال کردن ماموریت، آن را از لیست ماموریت‌های فعال کاربران حذف می‌کند.</li>
+                        </ul>
                     </div>
                 </div>
             </div>
 
             <div class="card shadow mb-4">
-                <div class="card-header py-3">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
                     <h6 class="m-0 font-weight-bold text-primary">عملیات</h6>
                 </div>
                 <div class="card-body">
-                    <div class="mb-2">
-                        <form action="/quests/<%= quest.id %>/toggle-status" method="POST" class="d-inline">
-                            <% if (quest.active) { %>
-                                <button type="submit" class="btn btn-outline-secondary btn-block">
-                                    <i class="fas fa-times-circle"></i> غیرفعال کردن ماموریت
-                                </button>
-                            <% } else { %>
-                                <button type="submit" class="btn btn-outline-success btn-block">
-                                    <i class="fas fa-check-circle"></i> فعال کردن ماموریت
-                                </button>
-                            <% } %>
-                        </form>
-                    </div>
-                    <div class="mb-2">
-                        <button class="btn btn-danger btn-block" data-toggle="modal" data-target="#deleteModal">
-                            <i class="fas fa-trash"></i> حذف ماموریت
-                        </button>
-                    </div>
+                    <a href="/quests/<%= quest.id %>/delete" class="btn btn-danger btn-block" onclick="return confirm('آیا از حذف این ماموریت اطمینان دارید؟ این عمل قابل بازگشت نیست.')">
+                        <i class="fas fa-trash fa-sm text-white-50 ml-1"></i> حذف ماموریت
+                    </a>
                 </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- مودال حذف ماموریت -->
-<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="deleteModalLabel">تایید حذف ماموریت</h5>
-                <button class="close mr-auto ml-0" type="button" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">×</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                آیا از حذف ماموریت "<%= quest.title %>" اطمینان دارید؟ این عملیات غیرقابل بازگشت است و تمام رکوردهای مرتبط با این ماموریت نیز حذف خواهند شد.
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" type="button" data-dismiss="modal">انصراف</button>
-                <form action="/quests/<%= quest.id %>/delete" method="POST">
-                    <button type="submit" class="btn btn-danger">حذف</button>
-                </form>
             </div>
         </div>
     </div>

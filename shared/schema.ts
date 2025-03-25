@@ -180,6 +180,7 @@ export const quests = pgTable("quests", {
   requirement: text("requirement").notNull(),
   targetAmount: integer("target_amount").notNull(),
   reward: integer("reward").notNull(),
+  category: text("category").notNull().default("general"),
   active: boolean("active").notNull().default(true),
 });
 
@@ -291,6 +292,7 @@ export const insertQuestSchema = createInsertSchema(quests).pick({
   requirement: true,
   targetAmount: true,
   reward: true,
+  category: true,
 });
 
 export const insertItemSchema = createInsertSchema(items).pick({

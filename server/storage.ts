@@ -97,6 +97,7 @@ export interface IStorage {
   getAllQuests(): Promise<Quest[]>;
   getQuest(id: number): Promise<Quest | undefined>;
   createQuest(quest: InsertQuest): Promise<Quest>;
+  updateQuest(id: number, updates: Partial<Quest>): Promise<Quest | undefined>;
   getUserQuests(userId: number): Promise<{quest: Quest, userQuest: UserQuest}[]>;
   updateQuestProgress(userId: number, questId: number, progress: number): Promise<boolean>;
   
@@ -297,6 +298,7 @@ export class MemStorage implements IStorage {
         requirement: "message",
         targetAmount: 10,
         reward: 100,
+        category: "communication",
       },
       {
         title: "Game Winner",
@@ -305,6 +307,7 @@ export class MemStorage implements IStorage {
         requirement: "win",
         targetAmount: 1,
         reward: 50,
+        category: "games",
       },
       {
         title: "Competitive Player",
@@ -313,6 +316,7 @@ export class MemStorage implements IStorage {
         requirement: "competitive_win",
         targetAmount: 5,
         reward: 300,
+        category: "games",
       },
       {
         title: "Saver",
@@ -320,6 +324,7 @@ export class MemStorage implements IStorage {
         type: "monthly",
         requirement: "bank",
         targetAmount: 2000,
+        category: "economy",
         reward: 1000,
       },
     ];
@@ -854,11 +859,23 @@ export class MemStorage implements IStorage {
       requirement: insertQuest.requirement,
       targetAmount: insertQuest.targetAmount,
       reward: insertQuest.reward,
+      category: insertQuest.category || "general", // استفاده از مقدار پیش‌فرض اگر مقداری ارائه نشده باشد
       active: true,
     };
     
     this.quests.set(id, quest);
     return quest;
+  }
+  
+  async updateQuest(id: number, updates: Partial<Quest>): Promise<Quest | undefined> {
+    const quest = this.quests.get(id);
+    if (!quest) return undefined;
+    
+    // به‌روزرسانی ماموریت با مقادیر جدید
+    const updatedQuest = { ...quest, ...updates };
+    this.quests.set(id, updatedQuest);
+    
+    return updatedQuest;
   }
 
   async getUserQuests(userId: number): Promise<{quest: Quest, userQuest: UserQuest}[]> {
