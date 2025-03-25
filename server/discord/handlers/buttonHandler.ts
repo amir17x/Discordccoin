@@ -343,6 +343,20 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
           embeds: [helpEmbed],
           components: [helpButtonsRow1, helpButtonsRow2]
         });
+      } else if ('update' in interaction && typeof interaction.update === 'function') {
+        try {
+          await interaction.update({
+            embeds: [helpEmbed],
+            components: [helpButtonsRow1, helpButtonsRow2]
+          });
+        } catch (e) {
+          // اگر آپدیت با خطا مواجه شد، از reply استفاده کن
+          await interaction.reply({
+            embeds: [helpEmbed],
+            components: [helpButtonsRow1, helpButtonsRow2],
+            ephemeral: true
+          });
+        }
       } else {
         await interaction.reply({
           embeds: [helpEmbed],
@@ -796,7 +810,15 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
         embed.setDescription('⚠️ هیچ کاربر مناسبی برای دزدی پیدا نشد! بعداً دوباره امتحان کنید.');
       }
       
-      await interaction.reply({ embeds: [embed], ephemeral: true });
+      if ('update' in interaction && typeof interaction.update === 'function') {
+        try {
+          await interaction.update({ embeds: [embed] });
+        } catch (e) {
+          await interaction.reply({ embeds: [embed], ephemeral: true });
+        }
+      } else {
+        await interaction.reply({ embeds: [embed], ephemeral: true });
+      }
       return;
     }
     
@@ -826,7 +848,15 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
             .setStyle(ButtonStyle.Secondary)
         );
       
-      await interaction.reply({ embeds: [helpEmbed], components: [row], ephemeral: true });
+      if ('update' in interaction && typeof interaction.update === 'function') {
+        try {
+          await interaction.update({ embeds: [helpEmbed], components: [row] });
+        } catch (e) {
+          await interaction.reply({ embeds: [helpEmbed], components: [row], ephemeral: true });
+        }
+      } else {
+        await interaction.reply({ embeds: [helpEmbed], components: [row], ephemeral: true });
+      }
       return;
     }
     
@@ -890,7 +920,15 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
             .setStyle(ButtonStyle.Secondary)
         );
       
-      await interaction.reply({ embeds: [statsEmbed], components: [row], ephemeral: true });
+      if ('update' in interaction && typeof interaction.update === 'function') {
+        try {
+          await interaction.update({ embeds: [statsEmbed], components: [row] });
+        } catch (e) {
+          await interaction.reply({ embeds: [statsEmbed], components: [row], ephemeral: true });
+        }
+      } else {
+        await interaction.reply({ embeds: [statsEmbed], components: [row], ephemeral: true });
+      }
       return;
     }
     
@@ -986,7 +1024,15 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
           )
       ];
       
-      await interaction.reply({ embeds: [itemsEmbed], components: rows, ephemeral: true });
+      if ('update' in interaction && typeof interaction.update === 'function') {
+        try {
+          await interaction.update({ embeds: [itemsEmbed], components: rows });
+        } catch (e) {
+          await interaction.reply({ embeds: [itemsEmbed], components: rows, ephemeral: true });
+        }
+      } else {
+        await interaction.reply({ embeds: [itemsEmbed], components: rows, ephemeral: true });
+      }
       return;
     }
     
@@ -1048,7 +1094,15 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
             .setStyle(ButtonStyle.Danger)
         );
       
-      await interaction.reply({ embeds: [confirmEmbed], components: [row], ephemeral: true });
+      if ('update' in interaction && typeof interaction.update === 'function') {
+        try {
+          await interaction.update({ embeds: [confirmEmbed], components: [row] });
+        } catch (e) {
+          await interaction.reply({ embeds: [confirmEmbed], components: [row], ephemeral: true });
+        }
+      } else {
+        await interaction.reply({ embeds: [confirmEmbed], components: [row], ephemeral: true });
+      }
       return;
     }
     
@@ -1098,7 +1152,15 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
             .setStyle(ButtonStyle.Secondary)
         );
       
-      await interaction.reply({ embeds: [successEmbed], components: [row], ephemeral: true });
+      if ('update' in interaction && typeof interaction.update === 'function') {
+        try {
+          await interaction.update({ embeds: [successEmbed], components: [row] });
+        } catch (e) {
+          await interaction.reply({ embeds: [successEmbed], components: [row], ephemeral: true });
+        }
+      } else {
+        await interaction.reply({ embeds: [successEmbed], components: [row], ephemeral: true });
+      }
       return;
     }
 
