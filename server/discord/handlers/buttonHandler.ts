@@ -23,6 +23,8 @@ import { parallelWorldsMenu } from '../components/parallelWorldsMenu';
 import { petMenu, buyNewPet, feedPet, playWithPet, activatePet, renamePetModal } from '../components/petMenu';
 import { friendsMainMenu, friendsList, friendRequests, sendFriendRequest } from '../components/friendsMenu/friendsMainMenu';
 import { showFriendshipDetails } from '../components/friendsMenu/friendshipLevelMenu';
+import { blockedUsersList, searchUserToBlock, unblockUser, processUnblockUser, cancelUnblockProcess } from '../components/friendsMenu/blockedUsersMenu';
+import { AnonymousChatMenu } from '../components/anonymousChatMenu/anonymousChatMenu';
 import { handleCoinFlip } from '../games/coinFlip';
 import { handleRockPaperScissors } from '../games/rockPaperScissors';
 import { handleNumberGuess } from '../games/numberGuess';
@@ -1290,6 +1292,12 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       return;
     }
     
+    // بازگشت به منوی دوستان
+    if (action === 'friends_menu') {
+      await friendsMainMenu(interaction);
+      return;
+    }
+    
     // لیست دوستان
     if (action === 'friends_list') {
       await friendsList(interaction);
@@ -1329,6 +1337,92 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       if (targetUserId > 0) {
         await sendFriendRequest(interaction, targetUserId);
       }
+      return;
+    }
+    
+    // نمایش لیست کاربران مسدود شده
+    if (action === 'blocked_users') {
+      await blockedUsersList(interaction);
+      return;
+    }
+    
+    // جستجوی کاربر برای مسدود کردن
+    if (action === 'search_to_block') {
+      await searchUserToBlock(interaction);
+      return;
+    }
+    
+    // لغو عملیات رفع بلاک
+    if (action === 'cancel_unblock') {
+      await cancelUnblockProcess(interaction);
+      return;
+    }
+    
+    // تأیید رفع بلاک کاربر
+    if (customId.startsWith('confirm_unblock_')) {
+      const targetUserId = customId.replace('confirm_unblock_', '');
+      await processUnblockUser(interaction, targetUserId);
+      return;
+    }
+    
+    // رفع مسدودیت کاربر
+    if (action === 'unblock_user') {
+      const blockedUserId = params[0];
+      await unblockUser(interaction, blockedUserId);
+      return;
+    }
+    
+    // منوی چت ناشناس
+    if (action === 'anonymous_chat') {
+      await AnonymousChatMenu.showMainMenu(interaction);
+      return;
+    }
+    
+    // شروع چت ناشناس
+    if (action === 'start_anonymous_chat') {
+      await AnonymousChatMenu.handleInteraction(interaction);
+      return;
+    }
+    
+    // مشاهده چت ناشناس
+    if (action === 'view_anonymous_chat') {
+      await AnonymousChatMenu.handleInteraction(interaction);
+      return;
+    }
+    
+    // پایان چت ناشناس
+    if (action === 'end_anonymous_chat') {
+      await AnonymousChatMenu.handleInteraction(interaction);
+      return;
+    }
+    
+    // منوی چت ناشناس
+    if (action === 'anonymous_chat_menu') {
+      await AnonymousChatMenu.showMainMenu(interaction);
+      return;
+    }
+    
+    // لغو جستجوی چت ناشناس
+    if (action === 'cancel_anonymous_chat_search') {
+      await AnonymousChatMenu.cancelChatSearch(interaction);
+      return;
+    }
+    
+    // فاش کردن هویت در چت ناشناس
+    if (action === 'reveal_identity') {
+      await AnonymousChatMenu.handleInteraction(interaction);
+      return;
+    }
+    
+    // تایید فاش کردن هویت
+    if (action === 'confirm_reveal_identity') {
+      await AnonymousChatMenu.handleInteraction(interaction);
+      return;
+    }
+    
+    // تازه‌سازی چت فعال
+    if (action === 'refresh_chat') {
+      await AnonymousChatMenu.handleInteraction(interaction);
       return;
     }
     

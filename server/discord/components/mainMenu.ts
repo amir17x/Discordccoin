@@ -481,8 +481,8 @@ export async function mainMenu(
             .setLabel('💹 سرمایه‌گذاری')
             .setStyle(ButtonStyle.Success),
           new ButtonBuilder()
-            .setCustomId('marketplace')
-            .setLabel('🏪 بازار کاربران')
+            .setCustomId('friends')
+            .setLabel('👥 سیستم دوستان')
             .setStyle(ButtonStyle.Primary),
           new ButtonBuilder()
             .setCustomId('robbery')

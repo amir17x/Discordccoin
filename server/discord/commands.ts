@@ -2,7 +2,6 @@ import { SlashCommandBuilder, Collection, Client, PermissionFlagsBits, EmbedBuil
 import { storage } from '../storage';
 import { mainMenu } from './components/mainMenu';
 import { adminMenu } from '../discord/components/adminMenu';
-import { friendsMainMenu } from './components/friendsMenu/friendsMainMenu';
 
 // Command to display the main menu
 const menu = {
@@ -530,38 +529,6 @@ const ping = {
   }
 };
 
-// دستور دوستان
-const friends = {
-  data: new SlashCommandBuilder()
-    .setName('friends')
-    .setDescription('مدیریت دوستان و چت ناشناس')
-    .setDMPermission(false),
-  
-  async execute(interaction: any) {
-    try {
-      const user = await storage.getUserByDiscordId(interaction.user.id);
-      if (!user) {
-        return await interaction.reply({
-          content: "❌ حساب کاربری شما یافت نشد. لطفاً با دستور `/start` یک حساب بسازید.",
-          ephemeral: true
-        });
-      }
-      
-      // فراخوانی منوی اصلی دوستان
-      await friendsMainMenu(interaction);
-    } catch (error) {
-      console.error('Error in friends command:', error);
-      
-      if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply({
-          content: "❌ خطایی در اجرای دستور رخ داد! لطفاً دوباره تلاش کنید.",
-          ephemeral: true
-        });
-      }
-    }
-  }
-};
-
 // Export function to load commands
 export async function loadCommands(client: Client) {
   // Add commands to the collection
@@ -571,7 +538,6 @@ export async function loadCommands(client: Client) {
   client.commands.set(help.data.name, help);
   client.commands.set(admin.data.name, admin);
   client.commands.set(ping.data.name, ping);
-  client.commands.set(friends.data.name, friends);
 }
 
 export const commands = [
@@ -580,6 +546,5 @@ export const commands = [
   daily.data.toJSON(),
   help.data.toJSON(),
   admin.data.toJSON(),
-  ping.data.toJSON(),
-  friends.data.toJSON()
+  ping.data.toJSON()
 ];
