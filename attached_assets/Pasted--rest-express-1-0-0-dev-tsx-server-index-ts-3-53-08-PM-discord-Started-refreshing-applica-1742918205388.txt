@@ -1,0 +1,115 @@
+
+> rest-express@1.0.0 dev
+> tsx server/index.ts
+
+3:53:08 PM [discord] Started refreshing application (/) commands.
+3:53:09 PM [discord] Successfully reloaded application (/) commands.
+3:53:09 PM [discord] Attempting to login with Discord token...
+3:53:09 PM [discord] Successfully logged in to Discord
+3:53:09 PM [express] Discord bot initialized successfully
+3:53:09 PM [express] Server is running on port 5000
+3:53:10 PM [discord] Logged in as Ccoin#1873!
+3:53:48 PM [discord] Created new user: whysiks
+3:53:48 PM [discord] Executing command: ping
+(node:2553) Warning: Supplying "ephemeral" for interaction response options is deprecated. Utilize flags instead.
+(Use `node --trace-warnings ...` to show where the warning was created)
+3:53:48 PM [discord] Successfully executed command: ping
+3:53:58 PM [discord] Executing command: ping
+Error in ping command: DiscordAPIError[10062]: Unknown interaction
+    at handleErrors (/home/runner/workspace/node_modules/@discordjs/rest/src/lib/handlers/Shared.ts:148:10)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async BurstHandler.runRequest (/home/runner/workspace/node_modules/@discordjs/rest/src/lib/handlers/BurstHandler.ts:144:20)
+    at async _REST.request (/home/runner/workspace/node_modules/@discordjs/rest/src/lib/REST.ts:210:20)
+    at async ChatInputCommandInteraction.deferReply (/home/runner/workspace/node_modules/discord.js/src/structures/interfaces/InteractionResponses.js:123:22)
+    at async Object.execute (/home/runner/workspace/server/discord/commands.ts:429:7)
+    at async <anonymous> (/home/runner/workspace/server/discord/client.ts:248:27)
+    at async executeWithTimeout (/home/runner/workspace/server/discord/client.ts:79:7)
+    at async Client.<anonymous> (/home/runner/workspace/server/discord/client.ts:246:11) {
+  requestBody: { files: undefined, json: { type: 5, data: [Object] } },
+  rawError: { message: 'Unknown interaction', code: 10062 },
+  code: 10062,
+  status: 404,
+  method: 'POST',
+  url: 'https://discord.com/api/v10/interactions/1354121140238553108/aW50ZXJhY3Rpb246MTM1NDEyMTE0MDIzODU1MzEwODowbVhPRkxEYTE2Rm9hRkQ5ZDBMbm9Vek9UbTlkMGRJS3dlQnNpSGtKS3Bvb2hkZGNZTGQ4dTFzdWxadFgwU1dtbnpja0htb2NtY2I4QklIVmc0TXB5Y0FQUlhPcnhYSnNqWVlyMTJsbXdVOFFvak9rUmdNMEUwRGhJTmVDYUVXZA/callback?with_response=false'
+}
+Error in command ping: DiscordAPIError[40060]: Interaction has already been acknowledged.
+    at handleErrors (/home/runner/workspace/node_modules/@discordjs/rest/src/lib/handlers/Shared.ts:148:10)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async BurstHandler.runRequest (/home/runner/workspace/node_modules/@discordjs/rest/src/lib/handlers/BurstHandler.ts:144:20)
+    at async _REST.request (/home/runner/workspace/node_modules/@discordjs/rest/src/lib/REST.ts:210:20)
+    at async ChatInputCommandInteraction.reply (/home/runner/workspace/node_modules/discord.js/src/structures/interfaces/InteractionResponses.js:194:22)
+    at async Object.execute (/home/runner/workspace/server/discord/commands.ts:471:7)
+    at async <anonymous> (/home/runner/workspace/server/discord/client.ts:248:27)
+    at async executeWithTimeout (/home/runner/workspace/server/discord/client.ts:79:7)
+    at async Client.<anonymous> (/home/runner/workspace/server/discord/client.ts:246:11) {
+  requestBody: { files: [], json: { type: 4, data: [Object] } },
+  rawError: {
+    message: 'Interaction has already been acknowledged.',
+    code: 40060
+  },
+  code: 40060,
+  status: 400,
+  method: 'POST',
+  url: 'https://discord.com/api/v10/interactions/1354121140238553108/aW50ZXJhY3Rpb246MTM1NDEyMTE0MDIzODU1MzEwODowbVhPRkxEYTE2Rm9hRkQ5ZDBMbm9Vek9UbTlkMGRJS3dlQnNpSGtKS3Bvb2hkZGNZTGQ4dTFzdWxadFgwU1dtbnpja0htb2NtY2I4QklIVmc0TXB5Y0FQUlhPcnhYSnNqWVlyMTJsbXdVOFFvak9rUmdNMEUwRGhJTmVDYUVXZA/callback?with_response=false'
+}
+3:53:58 PM [error] Error in command ping: Interaction has already been acknowledged.
+Failed to send error message for command ping DiscordAPIError[40060]: Interaction has already been acknowledged.
+    at handleErrors (/home/runner/workspace/node_modules/@discordjs/rest/src/lib/handlers/Shared.ts:148:10)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async BurstHandler.runRequest (/home/runner/workspace/node_modules/@discordjs/rest/src/lib/handlers/BurstHandler.ts:144:20)
+    at async _REST.request (/home/runner/workspace/node_modules/@discordjs/rest/src/lib/REST.ts:210:20)
+    at async ChatInputCommandInteraction.reply (/home/runner/workspace/node_modules/discord.js/src/structures/interfaces/InteractionResponses.js:194:22)
+    at async executeWithTimeout (/home/runner/workspace/server/discord/client.ts:95:11)
+    at async Client.<anonymous> (/home/runner/workspace/server/discord/client.ts:246:11) {
+  requestBody: { files: [], json: { type: 4, data: [Object] } },
+  rawError: {
+    message: 'Interaction has already been acknowledged.',
+    code: 40060
+  },
+  code: 40060,
+  status: 400,
+  method: 'POST',
+  url: 'https://discord.com/api/v10/interactions/1354121140238553108/aW50ZXJhY3Rpb246MTM1NDEyMTE0MDIzODU1MzEwODowbVhPRkxEYTE2Rm9hRkQ5ZDBMbm9Vek9UbTlkMGRJS3dlQnNpSGtKS3Bvb2hkZGNZTGQ4dTFzdWxadFgwU1dtbnpja0htb2NtY2I4QklIVmc0TXB5Y0FQUlhPcnhYSnNqWVlyMTJsbXdVOFFvak9rUmdNMEUwRGhJTmVDYUVXZA/callback?with_response=false'
+}
+Error in daily reward handler: DiscordAPIError[40060]: Interaction has already been acknowledged.
+    at handleErrors (/home/runner/workspace/node_modules/@discordjs/rest/src/lib/handlers/Shared.ts:148:10)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async BurstHandler.runRequest (/home/runner/workspace/node_modules/@discordjs/rest/src/lib/handlers/BurstHandler.ts:144:20)
+    at async _REST.request (/home/runner/workspace/node_modules/@discordjs/rest/src/lib/REST.ts:210:20)
+    at async ButtonInteraction.deferReply (/home/runner/workspace/node_modules/discord.js/src/structures/interfaces/InteractionResponses.js:123:22)
+    at async handleDailyReward (/home/runner/workspace/server/discord/handlers/buttonHandler.ts:1507:7)
+    at async handleButtonInteraction (/home/runner/workspace/server/discord/handlers/buttonHandler.ts:530:7)
+    at async <anonymous> (/home/runner/workspace/server/discord/client.ts:296:27)
+    at async executeWithTimeout (/home/runner/workspace/server/discord/client.ts:79:7)
+    at async Client.<anonymous> (/home/runner/workspace/server/discord/client.ts:294:11) {
+  requestBody: { files: undefined, json: { type: 5, data: [Object] } },
+  rawError: {
+    message: 'Interaction has already been acknowledged.',
+    code: 40060
+  },
+  code: 40060,
+  status: 400,
+  method: 'POST',
+  url: 'https://discord.com/api/v10/interactions/1354121761884737549/aW50ZXJhY3Rpb246MTM1NDEyMTc2MTg4NDczNzU0OTprNVJZNlhMQm5zYVRxZHV2R2djYU9EM0VLUVRSOUl5b29tcnpzdmJTRHNheUk0b0tFZXhFdTZFOWxSd29iTFpnbWJFUW9ldENHZWhudlRIcjM4OEtkc2EwS2d5MVNvQ0hlTWZpVmNrODFQY2l2Tnd6T2V2a1V2bE1EemJ1NkJ5YQ/callback?with_response=false'
+}
+Error handling daily reward failure: DiscordAPIError[40060]: Interaction has already been acknowledged.
+    at handleErrors (/home/runner/workspace/node_modules/@discordjs/rest/src/lib/handlers/Shared.ts:148:10)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async BurstHandler.runRequest (/home/runner/workspace/node_modules/@discordjs/rest/src/lib/handlers/BurstHandler.ts:144:20)
+    at async _REST.request (/home/runner/workspace/node_modules/@discordjs/rest/src/lib/REST.ts:210:20)
+    at async ButtonInteraction.reply (/home/runner/workspace/node_modules/discord.js/src/structures/interfaces/InteractionResponses.js:194:22)
+    at async handleDailyReward (/home/runner/workspace/server/discord/handlers/buttonHandler.ts:1599:9)
+    at async handleButtonInteraction (/home/runner/workspace/server/discord/handlers/buttonHandler.ts:530:7)
+    at async <anonymous> (/home/runner/workspace/server/discord/client.ts:296:27)
+    at async executeWithTimeout (/home/runner/workspace/server/discord/client.ts:79:7)
+    at async Client.<anonymous> (/home/runner/workspace/server/discord/client.ts:294:11) {
+  requestBody: { files: [], json: { type: 4, data: [Object] } },
+  rawError: {
+    message: 'Interaction has already been acknowledged.',
+    code: 40060
+  },
+  code: 40060,
+  status: 400,
+  method: 'POST',
+  url: 'https://discord.com/api/v10/interactions/1354121761884737549/aW50ZXJhY3Rpb246MTM1NDEyMTc2MTg4NDczNzU0OTprNVJZNlhMQm5zYVRxZHV2R2djYU9EM0VLUVRSOUl5b29tcnpzdmJTRHNheUk0b0tFZXhFdTZFOWxSd29iTFpnbWJFUW9ldENHZWhudlRIcjM4OEtkc2EwS2d5MVNvQ0hlTWZpVmNrODFQY2l2Tnd6T2V2a1V2bE1EemJ1NkJ5YQ/callback?with_response=false'
+}

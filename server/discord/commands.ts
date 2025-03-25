@@ -416,62 +416,59 @@ const admin = {
   }
 };
 
-// Command for ping with fancy embed
+// Command for ping with simplified approach for better performance
 const ping = {
   data: new SlashCommandBuilder()
     .setName('ping')
-    .setDescription('🏓 پینگ پونگ! سرعت اتصال ربات را نشان می‌دهد'),
+    .setDescription('🏓 سرعت اتصال ربات را نشان می‌دهد'),
   
   async execute(interaction: any) {
     try {
-      // Calculate ping by measuring the time it takes to defer and then edit
-      const start = Date.now();
-      await interaction.deferReply({ ephemeral: true });
-      const end = Date.now();
+      // بجای دیفر و ادیت، مستقیماً پاسخ می‌دهیم تا از خطاهای همزمانی جلوگیری شود
+      const apiPing = interaction.client.ws.ping;
       
-      // Calculate latency
-      const latency = end - start;
+      // زمان آنلاین ربات به ساعت و دقیقه
+      const uptime = interaction.client.uptime;
+      const hours = Math.floor(uptime / 3600000);
+      const minutes = Math.floor((uptime % 3600000) / 60000);
       
-      // Create a fancy embedded message with EmbedBuilder
+      // وضعیت پینگ
+      const pingStatus = apiPing < 200 ? '🟢 عالی' : apiPing < 500 ? '🟡 متوسط' : '🔴 ضعیف';
+      
+      // ایجاد امبد ساده‌تر با اطلاعات ضروری
       const pingEmbed = new EmbedBuilder()
-        .setColor('#00FFFF') // آبی فیروزه‌ای برای ظاهر شیک
+        .setColor('#00FFFF')
         .setTitle('🏓 پونگ!')
-        .setDescription(`🚀 **زمان پاسخگویی:** \`${latency}ms\`\n🔌 **وضعیت API:** عالی\n⏱️ **زمان آنلاین ربات:** ${Math.floor(interaction.client.uptime / 3600000)} ساعت و ${Math.floor((interaction.client.uptime % 3600000) / 60000)} دقیقه`)
-        .setThumbnail('https://img.icons8.com/fluency/48/ping-pong.png') // آیکون پینگ پونگ با سبک Fluency
-        .addFields(
-          { name: '📡 وضعیت سرور', value: '`🟢 آنلاین`', inline: true },
-          { name: '🖥️ پینگ دیسکورد', value: `\`${interaction.client.ws.ping}ms\``, inline: true },
-          { name: '🔄 میزان تأخیر', value: latency < 200 ? '`🟢 عالی`' : latency < 500 ? '`🟡 متوسط`' : '`🔴 ضعیف`', inline: true }
-        )
+        .setDescription(`🚀 **پینگ شبکه:** \`${apiPing}ms\`\n⏱️ **زمان آنلاین ربات:** ${hours} ساعت و ${minutes} دقیقه\n🔄 **وضعیت:** ${pingStatus}`)
         .setFooter({ 
-          text: '🎮 ربات Ccoin | طراحی شده با ❤️',
+          text: '🎮 ربات Ccoin',
           iconURL: interaction.client.user.displayAvatarURL() 
-        })
-        .setTimestamp();
+        });
       
-      // دکمه‌های دسترسی سریع
+      // دکمه منوی اصلی
       const row = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
           new ButtonBuilder()
             .setCustomId('menu')
             .setLabel('🏠 منوی اصلی')
-            .setStyle(ButtonStyle.Success),
-          new ButtonBuilder()
-            .setCustomId('help')
-            .setLabel('📚 راهنما')
-            .setStyle(ButtonStyle.Primary)
+            .setStyle(ButtonStyle.Success)
         );
       
-      await interaction.editReply({ 
+      // پاسخ مستقیم با امبد ساده‌تر
+      await interaction.reply({ 
         embeds: [pingEmbed],
-        components: [row]
+        components: [row],
+        ephemeral: true
       });
     } catch (error) {
       console.error('Error in ping command:', error);
-      await interaction.reply({
-        content: '⚠️ خطا در اجرای دستور پینگ! لطفاً دوباره تلاش کنید.',
-        ephemeral: true
-      });
+      // در صورت خطا، پاسخ ساده می‌دهیم
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({
+          content: '⚠️ خطا در اجرای دستور پینگ!',
+          ephemeral: true
+        });
+      }
     }
   }
 };
