@@ -1502,20 +1502,20 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
 // Handler for daily reward
 async function handleDailyReward(interaction: ButtonInteraction) {
   try {
-    // برای اطمینان از عدم تایم‌اوت، یک پاسخ با تاخیر ارسال می‌کنیم
-    if (!interaction.deferred && !interaction.replied) {
-      await interaction.deferReply({ ephemeral: true });
+    // برای جلوگیری از خطای interaction، ابتدا بررسی می‌کنیم که آیا قبلاً پاسخ داده شده است
+    if (interaction.replied || interaction.deferred) {
+      console.log('Daily reward interaction already replied or deferred');
+      return;
     }
-    
+
+    // بجای defer، مستقیماً به interaction پاسخ می‌دهیم تا از خطای timeout جلوگیری شود
     const user = await storage.getUserByDiscordId(interaction.user.id);
     
     if (!user) {
-      const message = '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.';
-      if (interaction.deferred) {
-        await interaction.editReply({ content: message });
-      } else {
-        await interaction.reply({ content: message, ephemeral: true });
-      }
+      await interaction.reply({
+        content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.',
+        ephemeral: true
+      });
       return;
     }
     
@@ -1607,20 +1607,20 @@ async function handleDailyReward(interaction: ButtonInteraction) {
 // Handler for depositing money to bank
 async function handleDeposit(interaction: ButtonInteraction, amount: number) {
   try {
-    // برای اطمینان از عدم تایم‌اوت، یک پاسخ با تاخیر ارسال می‌کنیم
-    if (!interaction.deferred && !interaction.replied) {
-      await interaction.deferReply({ ephemeral: true });
+    // برای جلوگیری از خطای interaction، ابتدا بررسی می‌کنیم که آیا قبلاً پاسخ داده شده است
+    if (interaction.replied || interaction.deferred) {
+      console.log('Deposit interaction already replied or deferred');
+      return;
     }
     
+    // مستقیماً کاربر را دریافت و بررسی می‌کنیم
     const user = await storage.getUserByDiscordId(interaction.user.id);
     
     if (!user) {
-      const message = '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.';
-      if (interaction.deferred) {
-        await interaction.editReply({ content: message });
-      } else {
-        await interaction.reply({ content: message, ephemeral: true });
-      }
+      await interaction.reply({
+        content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.',
+        ephemeral: true
+      });
       return;
     }
     
@@ -1670,20 +1670,20 @@ async function handleDeposit(interaction: ButtonInteraction, amount: number) {
 // Handler for withdrawing money from bank
 async function handleWithdraw(interaction: ButtonInteraction, amount: number) {
   try {
-    // برای اطمینان از عدم تایم‌اوت، یک پاسخ با تاخیر ارسال می‌کنیم
-    if (!interaction.deferred && !interaction.replied) {
-      await interaction.deferReply({ ephemeral: true });
+    // برای جلوگیری از خطای interaction، ابتدا بررسی می‌کنیم که آیا قبلاً پاسخ داده شده است
+    if (interaction.replied || interaction.deferred) {
+      console.log('Withdraw interaction already replied or deferred');
+      return;
     }
     
+    // مستقیماً کاربر را دریافت و بررسی می‌کنیم
     const user = await storage.getUserByDiscordId(interaction.user.id);
     
     if (!user) {
-      const message = '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.';
-      if (interaction.deferred) {
-        await interaction.editReply({ content: message });
-      } else {
-        await interaction.reply({ content: message, ephemeral: true });
-      }
+      await interaction.reply({
+        content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.',
+        ephemeral: true
+      });
       return;
     }
     
@@ -2039,20 +2039,19 @@ export async function handleSetDefaultLogChannel(interaction: ButtonInteraction)
 // Handler for managing best friend status
 async function handleBestFriend(interaction: ButtonInteraction, friendId: string, action: 'set' | 'remove') {
   try {
-    // برای اطمینان از عدم تایم‌اوت، یک پاسخ با تاخیر ارسال می‌کنیم
-    if (!interaction.deferred && !interaction.replied) {
-      await interaction.deferReply({ ephemeral: true });
+    // برای جلوگیری از خطای interaction، ابتدا بررسی می‌کنیم که آیا قبلاً پاسخ داده شده است
+    if (interaction.replied || interaction.deferred) {
+      console.log('Best Friend interaction already replied or deferred');
+      return;
     }
     
-    // دریافت کاربر از دیتابیس
+    // مستقیماً کاربر را دریافت و بررسی می‌کنیم
     const user = await storage.getUserByDiscordId(interaction.user.id);
     if (!user) {
-      const message = '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور `/menu` استفاده نمایید.';
-      if (interaction.deferred) {
-        await interaction.editReply({ content: message });
-      } else {
-        await interaction.reply({ content: message, ephemeral: true });
-      }
+      await interaction.reply({
+        content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور `/menu` استفاده نمایید.',
+        ephemeral: true
+      });
       return;
     }
     

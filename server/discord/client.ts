@@ -54,29 +54,50 @@ const client = new Client({
 client.commands = new Collection();
 
 export async function initDiscordBot() {
-  // تابع کمکی برای اجرای یک عملیات با مهلت زمانی
-  // این تابع را خارج از try/catch اصلی تعریف می‌کنیم تا مشکل Strict Mode را حل کنیم
+  // تابع کمکی برای اجرای یک عملیات با مدیریت بهینه‌شده interaction
   const executeWithTimeout = async (
     interaction: any, 
     operation: () => Promise<void>, 
     type: string,
     errorMessage: string
   ) => {
-    // تنظیم مهلت زمانی
+    // کاهش زمان مهلت برای جلوگیری از خطاهای Unknown interaction
     const timeoutId = setTimeout(async () => {
       if (!interaction.replied && !interaction.deferred) {
         try {
-          await interaction.deferReply({ ephemeral: true });
-          log(`Deferred reply for ${type} due to timeout`, 'discord');
+          await interaction.deferReply({ ephemeral: true })
+            .catch(e => {
+              // اگر تایم‌اوت شده باشد، خطا را ثبت می‌کنیم اما اجازه می‌دهیم عملیات ادامه یابد
+              console.log(`Could not defer reply for ${type}, interaction may have expired:`, e?.message);
+            });
         } catch (e) {
           // نادیده گرفتن خطاهای احتمالی
         }
       }
-    }, 3000);
+    }, 1500); // کاهش زمان به 1.5 ثانیه برای اطمینان از پاسخگویی به موقع
 
     try {
-      // اجرای عملیات اصلی
-      await operation();
+      // اجرای عملیات اصلی با مهلت زمانی کمتر برای اطمینان از پاسخگویی
+      const operationPromise = operation();
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Operation timeout')), 2500);
+      });
+      
+      await Promise.race([operationPromise, timeoutPromise])
+        .catch(async (err) => {
+          if (err.message === 'Operation timeout' && !interaction.replied && !interaction.deferred) {
+            console.log(`Operation timed out for ${type}, using fallback response`);
+            // پاسخ پیش‌فرض در صورت طولانی شدن بیش از حد
+            try {
+              await interaction.reply({ content: "در حال پردازش درخواست شما...", ephemeral: true });
+            } catch (e) {
+              // نادیده گرفتن خطاهای احتمالی
+            }
+          } else {
+            throw err;
+          }
+        });
+      
       // لغو مهلت زمانی
       clearTimeout(timeoutId);
     } catch (error: any) {
@@ -86,20 +107,20 @@ export async function initDiscordBot() {
       log(`Error in ${type}: ${error?.message || 'Unknown error'}`, 'error');
       
       try {
-        // نمایش پیام خطا به کاربر
+        // نمایش پیام خطا به کاربر فقط اگر interaction هنوز معتبر است
         if (interaction.replied) {
-          await interaction.followUp({ content: errorMessage, ephemeral: true });
+          await interaction.followUp({ content: errorMessage, ephemeral: true })
+            .catch(() => console.log(`Could not follow up to ${type} due to expired interaction`));
         } else if (interaction.deferred) {
-          await interaction.editReply({ content: errorMessage });
+          await interaction.editReply({ content: errorMessage })
+            .catch(() => console.log(`Could not edit reply to ${type} due to expired interaction`));
         } else {
-          await interaction.reply({ content: errorMessage, ephemeral: true });
+          await interaction.reply({ content: errorMessage, ephemeral: true })
+            .catch(() => console.log(`Could not reply to ${type} due to expired interaction`));
         }
       } catch (followupError) {
         console.error(`Failed to send error message for ${type}`, followupError);
       }
-      
-      // بازارسال خطا برای پردازش بیشتر
-      throw error;
     }
   };
 
