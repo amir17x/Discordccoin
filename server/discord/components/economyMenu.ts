@@ -244,8 +244,7 @@ export async function economyMenu(
       .setColor(accountColor)
       .setTitle('💰 سیستم اقتصادی Ccoin')
       .setDescription(`**${interaction.user.username}** عزیز، به سیستم جامع اقتصادی Ccoin خوش آمدید!\n\n✅ در این بخش می‌توانید تمام امور مالی خود را مدیریت کنید، سکه انتقال دهید، از خدمات بانکی استفاده کنید و کریستال‌های ارزشمند را دریافت نمایید.`)
-      .setThumbnail('https://cdn-icons-png.flaticon.com/512/2830/2830284.png') // تصویر ساختمان بانک با سکه های طلا
-      .setImage('https://cdn-icons-png.flaticon.com/512/2474/2474450.png') // تصویر کیف پول و سکه‌های طلا
+      .setThumbnail('https://cdn-icons-png.flaticon.com/512/8769/8769705.png') // آیکون fi-sr-wallet برای بخش اقتصاد
       .addFields(
         { name: '💵 موجودی حساب‌ها', value: 
           `💳 **کیف پول**: \`${user.wallet.toLocaleString('fa-IR')} Ccoin\`\n` +
@@ -381,8 +380,7 @@ export async function economyMenu(
       .setColor('#4169E1')
       .setTitle('🏦 سیستم بانکی پیشرفته Ccoin')
       .setDescription('مدیریت حساب بانکی و سرمایه‌گذاری‌های خود را انجام دهید')
-      .setThumbnail('https://cdn-icons-png.flaticon.com/512/2830/2830305.png') // تصویر ساختمان بانک
-      .setImage('https://cdn-icons-png.flaticon.com/512/4021/4021708.png') // تصویر صندوق امانات و پول
+      .setThumbnail('https://cdn-icons-png.flaticon.com/512/8768/8768640.png') // آیکون fi-sr-bank برای بخش بانک
       .addFields(
         { name: '💳 موجودی کیف پول', value: `${user.wallet} Ccoin`, inline: true },
         { name: '🏦 موجودی بانک', value: `${user.bank} Ccoin`, inline: true },
@@ -436,8 +434,7 @@ export async function economyMenu(
       .setColor('#32CD32')
       .setTitle('💱 انتقال سکه به کاربران دیگر')
       .setDescription('می‌توانید به کاربران دیگر Ccoin انتقال دهید')
-      .setThumbnail('https://cdn-icons-png.flaticon.com/512/2936/2936580.png') // تصویر انتقال پول
-      .setImage('https://cdn-icons-png.flaticon.com/512/2640/2640448.png') // تصویر تراکنش بین کاربران
+      .setThumbnail('https://cdn-icons-png.flaticon.com/512/8768/8768683.png') // آیکون fi-sr-exchange برای بخش انتقال سکه
       .addFields(
         { name: '💳 موجودی کیف پول', value: `${user.wallet} Ccoin`, inline: true },
         { name: '💸 کارمزد انتقال', value: '1%', inline: true },
@@ -471,8 +468,7 @@ export async function economyMenu(
       .setColor('#9932CC')
       .setTitle('💎 تبدیل سکه به کریستال')
       .setDescription('کریستال ارز ویژه Ccoin است که با آن می‌توانید آیتم‌های منحصر به فرد خریداری کنید')
-      .setThumbnail('https://cdn-icons-png.flaticon.com/512/2482/2482945.png') // تصویر کریستال بنفش درخشان
-      .setImage('https://cdn-icons-png.flaticon.com/512/9350/9350620.png') // تصویر تبدیل سکه به کریستال
+      .setThumbnail('https://cdn-icons-png.flaticon.com/512/8770/8770204.png') // آیکون fi-sr-diamond برای بخش کریستال
       .addFields(
         { name: '💳 موجودی کیف پول', value: `${user.wallet} Ccoin`, inline: true },
         { name: '💎 موجودی کریستال', value: `${user.crystals}`, inline: true },

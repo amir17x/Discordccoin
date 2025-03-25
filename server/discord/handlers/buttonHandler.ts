@@ -810,7 +810,6 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
           { name: '🛡️ آیتم‌های دزدی', value: 'آیتم‌های مخصوص دزدی را مشاهده و مدیریت کنید.', inline: false },
           { name: '⚠️ نکات مهم', value: 'حداکثر مقدار دزدی 100 Ccoin است.\nدر صورت شکست، 200 Ccoin جریمه می‌شوید.\nبعد از هر دزدی، 4 ساعت باید صبر کنید.', inline: false }
         )
-        .setImage('https://cdn-icons-png.flaticon.com/512/6823/6823006.png') // تصویر دزد
         .setFooter({ text: 'برای بازگشت به منوی دزدی، دکمه بازگشت را بزنید.' })
         .setTimestamp();
       

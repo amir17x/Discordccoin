@@ -72,7 +72,6 @@ export async function handleCoinFlip(
           { name: '🏆 جایزه', value: `${REWARD_AMOUNT} Ccoin`, inline: true },
           { name: '👛 موجودی', value: `${user.wallet} Ccoin`, inline: true }
         )
-        .setImage('https://cdn.discordapp.com/attachments/1234567890/1234567890/coin_animation.gif')
         .setFooter({ text: 'شیر یا خط را انتخاب کنید!' })
         .setTimestamp();
       

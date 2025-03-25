@@ -38,8 +38,7 @@ export async function questsMenu(
       .setColor('#E74C3C')
       .setTitle('🎯 ماموریت‌ها')
       .setDescription('ماموریت‌ها را کامل کن و جوایز دریافت کن!')
-      .setThumbnail('https://cdn-icons-png.flaticon.com/512/6212/6212471.png') // تصویر طومار ماموریت‌ها
-      .setImage('https://cdn-icons-png.flaticon.com/512/5018/5018131.png') // تصویر نقشه گنج ماموریت
+      .setThumbnail('https://cdn-icons-png.flaticon.com/512/8768/8768209.png') // آیکون fi-sr-check-circle برای بخش کوئست ها
       .setFooter({ text: `${interaction.user.username} | برای دریافت جایزه روی دکمه کلیک کنید` })
       .setTimestamp();
     

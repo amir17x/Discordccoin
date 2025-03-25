@@ -78,7 +78,7 @@ export async function mainMenu(
         text: `🎮 Ccoin Bot v1.5 | ${new Date().toLocaleDateString('fa-IR')} | لذت بازی و کسب درآمد واقعی!`, 
         iconURL: interaction.client.user?.displayAvatarURL() 
       })
-      .setThumbnail('https://cdn-icons-png.flaticon.com/512/6699/6699156.png') // آیکون سکه طلایی با درخشش
+      .setThumbnail('https://cdn-icons-png.flaticon.com/512/9073/9073171.png') // آیکون fi-sr-crown برای منوی اصلی
       .setTimestamp();
     
     let components = [];
@@ -235,7 +235,7 @@ export async function mainMenu(
       // بروزرسانی Embed برای منوی امکانات بیشتر
       embed.setTitle('✨ امکانات بیشتر Ccoin ✨')
         .setDescription(`**${interaction.user.username}** عزیز، به صفحه امکانات پیشرفته Ccoin خوش آمدید!\n\nدر این بخش می‌توانید به ویژگی‌های بیشتری دسترسی داشته باشید و از قابلیت‌های پیشرفته‌تر ربات استفاده کنید.`)
-        .setThumbnail('https://cdn-icons-png.flaticon.com/512/6699/6699362.png');  // آیکون لوکس‌تر
+        .setThumbnail('https://cdn-icons-png.flaticon.com/512/9093/9093040.png');  // آیکون fi-sr-sparkles برای منوی امکانات بیشتر
 
       // Row 1: امکانات بخش سرگرمی و رقابت
       const row1 = new ActionRowBuilder<ButtonBuilder>()

@@ -33,8 +33,7 @@ export async function inventoryMenu(
       .setColor('#9B59B6')
       .setTitle('🎒 کوله‌پشتی')
       .setDescription('مدیریت آیتم‌های شما')
-      .setThumbnail('https://cdn-icons-png.flaticon.com/512/7613/7613882.png') // تصویر کوله پشتی زیبا
-      .setImage('https://cdn-icons-png.flaticon.com/512/2933/2933116.png') // تصویر آیتم‌های متنوع داخل کوله پشتی
+      .setThumbnail('https://cdn-icons-png.flaticon.com/512/8769/8769823.png') // آیکون fi-sr-backpack برای بخش کوله‌پشتی
       .setFooter({ text: `${interaction.user.username} | برای استفاده از آیتم روی دکمه کلیک کنید` })
       .setTimestamp();
     

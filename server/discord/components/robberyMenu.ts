@@ -63,13 +63,12 @@ export async function robberyMenu(
       .setColor('#800080') // رنگ بنفش طبق مستندات
       .setTitle('🕵️ بخش دزدی')
       .setDescription('از کاربران دیگر سکه بدزدید و موجودی خود را افزایش دهید!\nاما مراقب باشید، اگر دستگیر شوید، جریمه خواهید شد!')
-      .setThumbnail('https://cdn-icons-png.flaticon.com/512/4185/4185661.png') // تصویر دزد با نقاب و کیف پول
+      .setThumbnail('https://cdn-icons-png.flaticon.com/512/8768/8768960.png') // آیکون fi-sr-mask برای بخش دزدی
       .addFields(
         { name: '✨ نرخ موفقیت پایه', value: `${BASE_SUCCESS_RATE * 100}%`, inline: true },
         { name: '🔒 قفل زمانی', value: `${canRob ? '✅ آماده برای دزدی!' : cooldownText}`, inline: true },
         { name: '👛 موجودی شما', value: `${user.wallet} Ccoin`, inline: true }
       )
-      .setImage('https://cdn-icons-png.flaticon.com/512/6823/6823006.png') // تصویر دزد در حال دزدی از صندوق
       .setFooter({ text: `توجه: در صورت شکست، ${PENALTY_AMOUNT} Ccoin جریمه خواهید شد!` })
       .setTimestamp();
     
@@ -259,12 +258,11 @@ export async function handleRobbery(
         .setColor('#4CAF50')
         .setTitle('✅ دزدی موفق!')
         .setDescription(`شما با موفقیت ${robAmount} Ccoin از ${targetUser.username} دزدیدید!`)
-        .setThumbnail('https://cdn-icons-png.flaticon.com/512/1917/1917641.png') // تصویر دزد موفق با کیسه پول
+        .setThumbnail('https://cdn-icons-png.flaticon.com/512/8770/8770101.png') // آیکون fi-sr-money-bag برای دزدی موفق
         .addFields(
           { name: '💰 مقدار دزدیده شده', value: `${robAmount} Ccoin`, inline: true },
           { name: '👛 موجودی جدید شما', value: `${user.wallet + robAmount} Ccoin`, inline: true }
         )
-        .setImage('https://cdn-icons-png.flaticon.com/512/4185/4185731.png') // تصویر فرد در حال فرار با کیسه پول
         .setFooter({ text: `${new Date().toLocaleTimeString()}` })
         .setTimestamp();
       
@@ -308,12 +306,11 @@ export async function handleRobbery(
         .setColor('#F44336')
         .setTitle('❌ دزدی ناموفق!')
         .setDescription(`شما هنگام دزدی از ${targetUser.username} دستگیر شدید!`)
-        .setThumbnail('https://cdn-icons-png.flaticon.com/512/2665/2665326.png') // تصویر دستبند پلیس
+        .setThumbnail('https://cdn-icons-png.flaticon.com/512/8770/8770172.png') // آیکون fi-sr-handcuffs برای دزدی ناموفق
         .addFields(
           { name: '💸 جریمه', value: `${PENALTY_AMOUNT} Ccoin`, inline: true },
           { name: '👛 موجودی جدید شما', value: `${user.wallet - PENALTY_AMOUNT} Ccoin`, inline: true }
         )
-        .setImage('https://cdn-icons-png.flaticon.com/512/3575/3575120.png') // تصویر پلیس و دستگیری
         .setFooter({ text: `${new Date().toLocaleTimeString()}` })
         .setTimestamp();
       

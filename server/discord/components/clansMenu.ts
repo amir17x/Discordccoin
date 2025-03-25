@@ -41,8 +41,7 @@ export async function clansMenu(
       .setDescription(userClan 
         ? `به کلن **${userClan.name}** خوش آمدید! 🌟\nبا دوستانت متحد شو، وار بزن و کلنت رو به اوج برسون! 🚀`
         : '🏰 به بخش کلن‌ها خوش اومدی! 🌟\nبا دوستات متحد شو، وار بزن و کلنت رو به اوج برسون! 🚀')
-      .setThumbnail('https://cdn-icons-png.flaticon.com/512/1674/1674298.png') // تصویر قلعه کلن با نشان طلایی
-      .setImage('https://cdn-icons-png.flaticon.com/512/3522/3522446.png') // تصویر قلعه کلن بزرگ با پرچم
+      .setThumbnail('https://cdn-icons-png.flaticon.com/512/8769/8769862.png') // آیکون fi-sr-castle برای بخش کلن ها
       .setFooter({ text: `${interaction.user.username} | موجودی: ${user.wallet} Ccoin` })
       .setTimestamp();
     
