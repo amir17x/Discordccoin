@@ -1,653 +1,411 @@
-<!-- هدر صفحه مدیریت آیتم‌ها -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
-  <h1 class="h2 d-flex align-items-center animated-element">
-    <i class="fas fa-box me-2 text-primary"></i>
-    مدیریت آیتم‌ها
-  </h1>
-  <div class="btn-toolbar mb-2 mb-md-0">
-    <div class="btn-group me-2">
-      <button type="button" class="btn btn-sm btn-outline-secondary" id="exportItemsCSV">
-        <i class="fas fa-file-export me-1"></i>
-        خروجی CSV
-      </button>
-      <button type="button" class="btn btn-sm btn-outline-secondary" id="refreshItemList">
-        <i class="fas fa-sync-alt me-1"></i>
-        بروزرسانی
-      </button>
-    </div>
-    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addItemModal">
-      <i class="fas fa-plus me-1"></i>
-      آیتم جدید
+<!-- صفحه مدیریت آیتم‌ها -->
+<div class="page-header d-flex justify-content-between align-items-center">
+  <h4 class="page-title mb-0">مدیریت آیتم‌ها</h4>
+  <div>
+    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#newItemModal">
+      <i class="bi bi-plus-lg me-1"></i> آیتم جدید
     </button>
   </div>
 </div>
 
-<!-- آمار کلی آیتم‌ها -->
-<div class="row g-3 mb-4">
-  <div class="col-md-3 animated-element">
-    <div class="stat-card">
-      <div class="stat-card-header bg-primary">
-        <div class="d-flex justify-content-between align-items-center">
-          <h5 class="mb-0 d-flex align-items-center">
-            <i class="fas fa-box me-2"></i>
-            تعداد آیتم‌ها
-          </h5>
-          <i class="fas fa-question-circle help-tooltip" data-tooltip="تعداد کل آیتم‌های موجود در سیستم"></i>
-        </div>
-      </div>
-      <div class="stat-card-body">
-        <div class="d-flex align-items-center">
-          <h2 class="mb-0 me-2"><%= stats.totalItems %></h2>
-          <span class="text-muted">آیتم</span>
-        </div>
-        <p class="text-muted mt-2">
-          <small><%= stats.newItems24h || 0 %> آیتم جدید در 24 ساعت گذشته</small>
-        </p>
-      </div>
-    </div>
-  </div>
-  
-  <div class="col-md-3 animated-element">
-    <div class="stat-card">
-      <div class="stat-card-header bg-warning">
-        <div class="d-flex justify-content-between align-items-center">
-          <h5 class="mb-0 d-flex align-items-center text-dark">
-            <i class="fas fa-shopping-cart me-2"></i>
-            خریدها
-          </h5>
-          <i class="fas fa-question-circle help-tooltip" data-tooltip="تعداد کل خریدهای آیتم در 24 ساعت گذشته"></i>
-        </div>
-      </div>
-      <div class="stat-card-body">
-        <div class="d-flex align-items-center">
-          <h2 class="mb-0 me-2"><%= stats.itemPurchases24h || 0 %></h2>
-          <span class="text-muted">خرید</span>
-        </div>
-        <p class="text-muted mt-2">
-          <small><%= helpers.formatNumber(stats.itemPurchasesAmount24h || 0) %> Ccoin</small>
-        </p>
-      </div>
-    </div>
-  </div>
-  
-  <div class="col-md-3 animated-element">
-    <div class="stat-card">
-      <div class="stat-card-header bg-success">
-        <div class="d-flex justify-content-between align-items-center">
-          <h5 class="mb-0 d-flex align-items-center">
-            <i class="fas fa-chart-pie me-2"></i>
-            دسته‌بندی‌ها
-          </h5>
-          <i class="fas fa-question-circle help-tooltip" data-tooltip="تعداد دسته‌بندی‌های آیتم"></i>
-        </div>
-      </div>
-      <div class="stat-card-body">
-        <div class="d-flex align-items-center">
-          <h2 class="mb-0 me-2"><%= stats.itemCategories || 0 %></h2>
-          <span class="text-muted">دسته</span>
-        </div>
-        <p class="text-muted mt-2">
-          <small>پرفروش‌ترین: <%= stats.mostPopularCategory || 'بدون اطلاعات' %></small>
-        </p>
-      </div>
-    </div>
-  </div>
-  
-  <div class="col-md-3 animated-element">
-    <div class="stat-card">
-      <div class="stat-card-header bg-info">
-        <div class="d-flex justify-content-between align-items-center">
-          <h5 class="mb-0 d-flex align-items-center">
-            <i class="fas fa-gem me-2"></i>
-            آیتم‌های کمیاب
-          </h5>
-          <i class="fas fa-question-circle help-tooltip" data-tooltip="تعداد آیتم‌های کمیاب در سیستم"></i>
-        </div>
-      </div>
-      <div class="stat-card-body">
-        <div class="d-flex align-items-center">
-          <h2 class="mb-0 me-2"><%= stats.rareItems || 0 %></h2>
-          <span class="text-muted">آیتم</span>
-        </div>
-        <p class="text-muted mt-2">
-          <small><%= Math.round((stats.rareItems / stats.totalItems) * 100) || 0 %>% از کل آیتم‌ها</small>
-        </p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- بخش فیلتر و جستجو -->
-<div class="card mb-4 border-0 shadow-sm animated-element">
-  <div class="card-body">
-    <form id="itemFilterForm" class="row g-3">
-      <div class="col-md-3">
-        <label for="searchQuery" class="form-label">جستجو:</label>
-        <div class="input-group">
-          <span class="input-group-text"><i class="fas fa-search"></i></span>
-          <input type="text" class="form-control" id="searchQuery" name="query" placeholder="نام، توضیحات آیتم...">
-        </div>
-      </div>
-      
-      <div class="col-md-2">
-        <label for="sortBy" class="form-label">مرتب‌سازی:</label>
-        <select class="form-select" id="sortBy" name="sortBy">
-          <option value="name">نام آیتم</option>
-          <option value="price">قیمت</option>
-          <option value="createdAt">تاریخ ایجاد</option>
-          <option value="popularity">محبوبیت</option>
-          <option value="rarity">کمیابی</option>
-        </select>
-      </div>
-      
-      <div class="col-md-2">
-        <label for="category" class="form-label">دسته‌بندی:</label>
-        <select class="form-select" id="category" name="category">
-          <option value="">همه دسته‌ها</option>
-          <option value="booster">بوستر</option>
-          <option value="cosmetic">تزئینی</option>
-          <option value="tool">ابزار</option>
-          <option value="consumable">مصرفی</option>
-          <option value="collectible">کلکسیونی</option>
-          <option value="special">ویژه</option>
-        </select>
-      </div>
-      
-      <div class="col-md-2">
-        <label for="priceMin" class="form-label">حداقل قیمت:</label>
-        <input type="number" class="form-control" id="priceMin" name="priceMin" min="0" value="0">
-      </div>
-      
-      <div class="col-md-2">
-        <label for="priceMax" class="form-label">حداکثر قیمت:</label>
-        <input type="number" class="form-control" id="priceMax" name="priceMax" min="0">
-      </div>
-      
-      <div class="col-md-1 d-flex align-items-end">
-        <button type="submit" class="btn btn-primary w-100">
-          <i class="fas fa-filter me-1"></i>
-          فیلتر
+<div class="card mt-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="card-title mb-0">لیست آیتم‌ها</h5>
+    <div class="d-flex">
+      <div class="input-group input-group-sm me-2" style="width: 250px;">
+        <input type="text" class="form-control" id="searchItem" placeholder="جستجو...">
+        <button class="btn btn-outline-secondary" type="button">
+          <i class="bi bi-search"></i>
         </button>
       </div>
-    </form>
-  </div>
-</div>
-
-<!-- نمایش آیتم‌ها با کارت -->
-<div class="animated-element">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <div class="btn-group" role="group" aria-label="نمایش آیتم‌ها">
-      <button type="button" class="btn btn-outline-secondary active" data-view="grid">
-        <i class="fas fa-th-large me-1"></i>
-        نمایش کارتی
-      </button>
-      <button type="button" class="btn btn-outline-secondary" data-view="list">
-        <i class="fas fa-list me-1"></i>
-        نمایش لیستی
-      </button>
-    </div>
-    
-    <div class="text-muted">
-      نمایش <%= items ? items.length : 0 %> از <%= totalItems %> آیتم
-    </div>
-  </div>
-  
-  <!-- نمایش کارتی -->
-  <div id="gridView" class="row g-3">
-    <% if (items && items.length > 0) { %>
-      <% items.forEach(item => { %>
-        <div class="col-md-3 mb-3">
-          <div class="card h-100 border-0 shadow-sm item-card">
-            <div class="position-relative">
-              <div class="item-image-container bg-light d-flex align-items-center justify-content-center" style="height: 160px;">
-                <% if (item.imageUrl) { %>
-                  <img src="<%= item.imageUrl %>" alt="<%= item.name %>" class="item-image">
-                <% } else { %>
-                  <div class="item-icon rounded-circle bg-<%= getItemColor(item.category) %> text-white d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                    <i class="<%= getItemIcon(item.category) %> fa-2x"></i>
-                  </div>
-                <% } %>
-              </div>
-              
-              <% if (item.isRare) { %>
-                <span class="position-absolute top-0 end-0 badge bg-warning m-2" data-bs-toggle="tooltip" title="آیتم کمیاب">
-                  <i class="fas fa-gem"></i>
-                </span>
-              <% } %>
-              
-              <% if (item.isLimited) { %>
-                <span class="position-absolute top-0 start-0 badge bg-danger m-2" data-bs-toggle="tooltip" title="محدود">
-                  <i class="fas fa-clock"></i>
-                </span>
-              <% } %>
-            </div>
-            
-            <div class="card-body">
-              <h5 class="card-title mb-1"><%= item.name %></h5>
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="badge bg-<%= getItemColor(item.category) %> text-white">
-                  <%= getCategoryName(item.category) %>
-                </span>
-                <span class="text-muted small">ID: <%= item.id %></span>
-              </div>
-              <p class="card-text small text-muted mb-3">
-                <%= item.description ? (item.description.length > 80 ? item.description.substring(0, 80) + '...' : item.description) : 'بدون توضیحات' %>
-              </p>
-              <div class="d-flex justify-content-between align-items-center">
-                <div>
-                  <% if (item.price) { %>
-                    <span class="fw-bold"><%= helpers.formatNumber(item.price) %> <i class="fas fa-coins text-warning"></i></span>
-                  <% } %>
-                  <% if (item.crystalPrice) { %>
-                    <span class="ms-2 fw-bold"><%= item.crystalPrice %> <i class="fas fa-gem text-info"></i></span>
-                  <% } %>
-                </div>
-                <div class="action-buttons">
-                  <a href="/items/<%= item.id %>" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="مشاهده">
-                    <i class="fas fa-eye"></i>
-                  </a>
-                  <a href="/items/<%= item.id %>/edit" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" title="ویرایش">
-                    <i class="fas fa-edit"></i>
-                  </a>
-                  <button onclick="deleteItem('<%= item.id %>', '<%= item.name %>')" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="حذف">
-                    <i class="fas fa-trash"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-            
-            <div class="card-footer bg-white border-top-0 text-muted">
-              <small class="d-flex justify-content-between">
-                <span>خریداری شده: <%= item.purchaseCount || 0 %> بار</span>
-                <span>اخیراً: <%= item.recentPurchases || 0 %> خرید</span>
-              </small>
-            </div>
-          </div>
-        </div>
-      <% }) %>
-    <% } else { %>
-      <div class="col-12 text-center py-5">
-        <div class="empty-state">
-          <i class="fas fa-box-open fa-4x text-muted mb-3"></i>
-          <h5>هیچ آیتمی یافت نشد</h5>
-          <p class="text-muted">آیتم جدیدی ایجاد کنید یا فیلترهای جستجو را تغییر دهید.</p>
-          <button class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#addItemModal">
-            <i class="fas fa-plus me-1"></i>
-            ایجاد آیتم جدید
-          </button>
-        </div>
+      <div class="dropdown">
+        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="bi bi-funnel me-1"></i> فیلتر
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="filterDropdown">
+          <li><a class="dropdown-item" href="?sort=name">مرتب‌سازی بر اساس نام</a></li>
+          <li><a class="dropdown-item" href="?sort=price">مرتب‌سازی بر اساس قیمت</a></li>
+          <li><a class="dropdown-item" href="?sort=created">مرتب‌سازی بر اساس تاریخ ایجاد</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item" href="?type=consumable">فقط آیتم‌های مصرفی</a></li>
+          <li><a class="dropdown-item" href="?type=equipment">فقط تجهیزات</a></li>
+          <li><a class="dropdown-item" href="?type=collectible">فقط کلکسیونی</a></li>
+        </ul>
       </div>
-    <% } %>
+    </div>
   </div>
-  
-  <!-- نمایش لیستی (در ابتدا مخفی) -->
-  <div id="listView" class="d-none">
-    <div class="card border-0 shadow-sm">
-      <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0">
-            <thead>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>شناسه</th>
+            <th>نام</th>
+            <th>توضیحات</th>
+            <th>نوع</th>
+            <th>قیمت (Ccoin)</th>
+            <th>قیمت (کریستال)</th>
+            <th>تأثیرات</th>
+            <th>محدود‌یت زمانی</th>
+            <th>وضعیت</th>
+            <th>عملیات</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (items && items.length > 0) { %>
+            <% items.forEach(item => { %>
               <tr>
-                <th scope="col" width="5%">#</th>
-                <th scope="col" width="20%">نام آیتم</th>
-                <th scope="col" width="10%">دسته</th>
-                <th scope="col" width="20%">توضیحات</th>
-                <th scope="col" width="10%">قیمت</th>
-                <th scope="col" width="10%">کریستال</th>
-                <th scope="col" width="10%">خریدها</th>
-                <th scope="col" width="15%">عملیات</th>
+                <td><%= item.id %></td>
+                <td>
+                  <div class="d-flex align-items-center">
+                    <% if (item.iconUrl) { %>
+                      <img src="<%= item.iconUrl %>" alt="<%= item.name %>" width="24" height="24" class="me-2">
+                    <% } else { %>
+                      <div class="item-icon <%= item.type %> me-2">
+                        <i class="bi bi-<%= getItemIcon(item.type) %>"></i>
+                      </div>
+                    <% } %>
+                    <span><%= item.name %></span>
+                  </div>
+                </td>
+                <td><%= item.description.substring(0, 30) %><%= item.description.length > 30 ? '...' : '' %></td>
+                <td>
+                  <span class="badge bg-<%= getItemTypeColor(item.type) %>">
+                    <%= getItemTypeName(item.type) %>
+                  </span>
+                </td>
+                <td>
+                  <% if (item.price > 0) { %>
+                    <%= item.price.toLocaleString('fa-IR') %> <i class="bi bi-coin text-warning"></i>
+                  <% } else { %>
+                    -
+                  <% } %>
+                </td>
+                <td>
+                  <% if (item.crystalPrice > 0) { %>
+                    <%= item.crystalPrice.toLocaleString('fa-IR') %> <i class="bi bi-gem text-primary"></i>
+                  <% } else { %>
+                    -
+                  <% } %>
+                </td>
+                <td>
+                  <% if (item.effects) { %>
+                    <% if (item.effects.robberyChance) { %>
+                      <span class="badge bg-danger me-1" title="افزایش شانس دزدی">
+                        <i class="bi bi-box-arrow-in-up-left"></i> <%= item.effects.robberyChance %>%
+                      </span>
+                    <% } %>
+                    <% if (item.effects.shopDiscount) { %>
+                      <span class="badge bg-success me-1" title="تخفیف خرید از فروشگاه">
+                        <i class="bi bi-tag"></i> <%= item.effects.shopDiscount %>%
+                      </span>
+                    <% } %>
+                    <% if (item.effects.dailyBonus) { %>
+                      <span class="badge bg-info me-1" title="افزایش جایزه روزانه">
+                        <i class="bi bi-calendar-check"></i> <%= item.effects.dailyBonus %>%
+                      </span>
+                    <% } %>
+                    <% if (item.effects.wheelChance) { %>
+                      <span class="badge bg-warning me-1" title="افزایش شانس در چرخ شانس">
+                        <i class="bi bi-bullseye"></i> <%= item.effects.wheelChance %>%
+                      </span>
+                    <% } %>
+                  <% } else { %>
+                    -
+                  <% } %>
+                </td>
+                <td>
+                  <% if (item.expireDays > 0) { %>
+                    <%= item.expireDays %> روز
+                  <% } else { %>
+                    دائمی
+                  <% } %>
+                </td>
+                <td>
+                  <span class="badge bg-<%= item.isActive ? 'success' : 'secondary' %>">
+                    <%= item.isActive ? 'فعال' : 'غیرفعال' %>
+                  </span>
+                </td>
+                <td>
+                  <div class="action-buttons">
+                    <a href="/admin/items/<%= item.id %>" class="btn btn-sm btn-info" title="مشاهده جزئیات">
+                      <i class="bi bi-eye"></i>
+                    </a>
+                    <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editItemModal<%= item.id %>" title="ویرایش">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <% if (item.isActive) { %>
+                      <button class="btn btn-sm btn-danger" onclick="deactivateItem(<%= item.id %>)" title="غیرفعال‌سازی">
+                        <i class="bi bi-x-circle"></i>
+                      </button>
+                    <% } else { %>
+                      <button class="btn btn-sm btn-success" onclick="activateItem(<%= item.id %>)" title="فعال‌سازی">
+                        <i class="bi bi-check-circle"></i>
+                      </button>
+                    <% } %>
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              <% if (items && items.length > 0) { %>
-                <% items.forEach((item, index) => { %>
-                  <tr>
-                    <th scope="row"><%= (page - 1) * limit + index + 1 %></th>
-                    <td>
-                      <div class="d-flex align-items-center">
-                        <div class="item-icon-small rounded-circle bg-<%= getItemColor(item.category) %> text-white d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
-                          <i class="<%= getItemIcon(item.category) %> small"></i>
+
+              <!-- مدال ویرایش آیتم -->
+              <div class="modal fade" id="editItemModal<%= item.id %>" tabindex="-1" aria-labelledby="editItemModalLabel<%= item.id %>" aria-hidden="true">
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title" id="editItemModalLabel<%= item.id %>">ویرایش آیتم <%= item.name %></h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+                    </div>
+                    <form action="/admin/items/<%= item.id %>/update" method="POST">
+                      <div class="modal-body">
+                        <div class="mb-3">
+                          <label for="editName<%= item.id %>" class="form-label">نام آیتم</label>
+                          <input type="text" class="form-control" id="editName<%= item.id %>" name="name" value="<%= item.name %>" required>
                         </div>
-                        <div>
-                          <a href="/items/<%= item.id %>" class="text-decoration-none fw-bold">
-                            <%= item.name %>
-                          </a>
-                          <% if (item.isRare) { %>
-                            <i class="fas fa-gem text-warning ms-1" data-bs-toggle="tooltip" title="کمیاب"></i>
-                          <% } %>
-                          <% if (item.isLimited) { %>
-                            <i class="fas fa-clock text-danger ms-1" data-bs-toggle="tooltip" title="محدود"></i>
-                          <% } %>
+                        <div class="mb-3">
+                          <label for="editDescription<%= item.id %>" class="form-label">توضیحات</label>
+                          <textarea class="form-control" id="editDescription<%= item.id %>" name="description" rows="3"><%= item.description %></textarea>
+                        </div>
+                        <div class="mb-3">
+                          <label for="editType<%= item.id %>" class="form-label">نوع آیتم</label>
+                          <select class="form-select" id="editType<%= item.id %>" name="type" required>
+                            <option value="consumable" <%= item.type === 'consumable' ? 'selected' : '' %>>مصرفی</option>
+                            <option value="equipment" <%= item.type === 'equipment' ? 'selected' : '' %>>تجهیزات</option>
+                            <option value="collectible" <%= item.type === 'collectible' ? 'selected' : '' %>>کلکسیونی</option>
+                            <option value="special" <%= item.type === 'special' ? 'selected' : '' %>>ویژه</option>
+                          </select>
+                        </div>
+                        <div class="row">
+                          <div class="col-md-6">
+                            <div class="mb-3">
+                              <label for="editPrice<%= item.id %>" class="form-label">قیمت (Ccoin)</label>
+                              <input type="number" class="form-control" id="editPrice<%= item.id %>" name="price" value="<%= item.price %>" min="0">
+                            </div>
+                          </div>
+                          <div class="col-md-6">
+                            <div class="mb-3">
+                              <label for="editCrystalPrice<%= item.id %>" class="form-label">قیمت (کریستال)</label>
+                              <input type="number" class="form-control" id="editCrystalPrice<%= item.id %>" name="crystalPrice" value="<%= item.crystalPrice %>" min="0">
+                            </div>
+                          </div>
+                        </div>
+                        <div class="mb-3">
+                          <label for="editDays<%= item.id %>" class="form-label">مدت زمان استفاده (روز)</label>
+                          <input type="number" class="form-control" id="editDays<%= item.id %>" name="expireDays" value="<%= item.expireDays %>" min="0">
+                          <small class="text-muted">0 = دائمی</small>
+                        </div>
+                        <h6 class="mt-4 mb-3">تأثیرات آیتم</h6>
+                        <div class="row">
+                          <div class="col-md-6">
+                            <div class="mb-3">
+                              <label for="editRobberyChance<%= item.id %>" class="form-label">افزایش شانس دزدی (%)</label>
+                              <input type="number" class="form-control" id="editRobberyChance<%= item.id %>" name="effects.robberyChance" value="<%= item.effects?.robberyChance || 0 %>" min="0" max="100">
+                            </div>
+                          </div>
+                          <div class="col-md-6">
+                            <div class="mb-3">
+                              <label for="editShopDiscount<%= item.id %>" class="form-label">تخفیف خرید از فروشگاه (%)</label>
+                              <input type="number" class="form-control" id="editShopDiscount<%= item.id %>" name="effects.shopDiscount" value="<%= item.effects?.shopDiscount || 0 %>" min="0" max="100">
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row">
+                          <div class="col-md-6">
+                            <div class="mb-3">
+                              <label for="editDailyBonus<%= item.id %>" class="form-label">افزایش جایزه روزانه (%)</label>
+                              <input type="number" class="form-control" id="editDailyBonus<%= item.id %>" name="effects.dailyBonus" value="<%= item.effects?.dailyBonus || 0 %>" min="0" max="100">
+                            </div>
+                          </div>
+                          <div class="col-md-6">
+                            <div class="mb-3">
+                              <label for="editWheelChance<%= item.id %>" class="form-label">افزایش شانس در چرخ شانس (%)</label>
+                              <input type="number" class="form-control" id="editWheelChance<%= item.id %>" name="effects.wheelChance" value="<%= item.effects?.wheelChance || 0 %>" min="0" max="100">
+                            </div>
+                          </div>
+                        </div>
+                        <div class="mb-3 form-check">
+                          <input type="checkbox" class="form-check-input" id="editActive<%= item.id %>" name="isActive" <%= item.isActive ? 'checked' : '' %>>
+                          <label class="form-check-label" for="editActive<%= item.id %>">آیتم فعال است</label>
                         </div>
                       </div>
-                    </td>
-                    <td>
-                      <span class="badge bg-<%= getItemColor(item.category) %> text-white">
-                        <%= getCategoryName(item.category) %>
-                      </span>
-                    </td>
-                    <td>
-                      <span class="text-muted small">
-                        <%= item.description ? (item.description.length > 50 ? item.description.substring(0, 50) + '...' : item.description) : 'بدون توضیحات' %>
-                      </span>
-                    </td>
-                    <td>
-                      <% if (item.price) { %>
-                        <span class="fw-bold"><%= helpers.formatNumber(item.price) %> <i class="fas fa-coins text-warning"></i></span>
-                      <% } else { %>
-                        <span class="text-muted">-</span>
-                      <% } %>
-                    </td>
-                    <td>
-                      <% if (item.crystalPrice) { %>
-                        <span class="fw-bold"><%= item.crystalPrice %> <i class="fas fa-gem text-info"></i></span>
-                      <% } else { %>
-                        <span class="text-muted">-</span>
-                      <% } %>
-                    </td>
-                    <td>
-                      <span data-bs-toggle="tooltip" title="کل خریدها: <%= item.purchaseCount || 0 %>">
-                        <%= item.purchaseCount || 0 %> <small class="text-success">(<%= item.recentPurchases || 0 %>)</small>
-                      </span>
-                    </td>
-                    <td>
-                      <div class="action-buttons">
-                        <a href="/items/<%= item.id %>" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="مشاهده">
-                          <i class="fas fa-eye"></i>
-                        </a>
-                        <a href="/items/<%= item.id %>/edit" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" title="ویرایش">
-                          <i class="fas fa-edit"></i>
-                        </a>
-                        <button onclick="deleteItem('<%= item.id %>', '<%= item.name %>')" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="حذف">
-                          <i class="fas fa-trash"></i>
-                        </button>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                        <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
                       </div>
-                    </td>
-                  </tr>
-                <% }) %>
-              <% } else { %>
-                <tr>
-                  <td colspan="8" class="text-center py-3">
-                    <p class="text-muted mb-0">هیچ آیتمی یافت نشد.</p>
-                  </td>
-                </tr>
-              <% } %>
-            </tbody>
-          </table>
-        </div>
-      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            <% }); %>
+          <% } else { %>
+            <tr>
+              <td colspan="10" class="text-center py-4">
+                <div class="empty-state">
+                  <i class="bi bi-box fs-1 text-muted mb-3"></i>
+                  <h5>هیچ آیتمی یافت نشد</h5>
+                  <p class="text-muted">می‌توانید با کلیک بر روی دکمه "آیتم جدید" یک آیتم جدید ایجاد کنید.</p>
+                </div>
+              </td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
     </div>
   </div>
-</div>
-
-<!-- پاگینیشن -->
-<div class="d-flex justify-content-between align-items-center mt-4 animated-element">
-  <div>
-    <span class="text-muted">نمایش <%= (page - 1) * limit + 1 %> تا <%= Math.min(page * limit, totalItems) %> از <%= totalItems %> آیتم</span>
-  </div>
-  <nav aria-label="Page navigation">
-    <ul class="pagination">
-      <li class="page-item <%= page <= 1 ? 'disabled' : '' %>">
-        <a class="page-link" href="/items?page=<%= page - 1 %>&limit=<%= limit %>" aria-label="Previous">
-          <span aria-hidden="true">&laquo;</span>
-        </a>
-      </li>
-      
-      <% for(let i = Math.max(1, page - 2); i <= Math.min(Math.ceil(totalItems / limit), page + 2); i++) { %>
-        <li class="page-item <%= i === page ? 'active' : '' %>">
-          <a class="page-link" href="/items?page=<%= i %>&limit=<%= limit %>"><%= i %></a>
+  <div class="card-footer">
+    <nav aria-label="صفحه‌بندی آیتم‌ها">
+      <ul class="pagination justify-content-center mb-0">
+        <li class="page-item <%= currentPage <= 1 ? 'disabled' : '' %>">
+          <a class="page-link" href="?page=<%= currentPage - 1 %>" tabindex="-1" aria-disabled="<%= currentPage <= 1 %>">قبلی</a>
         </li>
-      <% } %>
-      
-      <li class="page-item <%= page >= Math.ceil(totalItems / limit) ? 'disabled' : '' %>">
-        <a class="page-link" href="/items?page=<%= page + 1 %>&limit=<%= limit %>" aria-label="Next">
-          <span aria-hidden="true">&raquo;</span>
-        </a>
-      </li>
-    </ul>
-  </nav>
+        <% for(let i = 1; i <= totalPages; i++) { %>
+          <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+            <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+          </li>
+        <% } %>
+        <li class="page-item <%= currentPage >= totalPages ? 'disabled' : '' %>">
+          <a class="page-link" href="?page=<%= currentPage + 1 %>">بعدی</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
 </div>
 
-<!-- مدال افزودن آیتم جدید -->
-<div class="modal fade" id="addItemModal" tabindex="-1" aria-labelledby="addItemModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
+<!-- مدال ایجاد آیتم جدید -->
+<div class="modal fade" id="newItemModal" tabindex="-1" aria-labelledby="newItemModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="addItemModalLabel">
-          <i class="fas fa-plus-circle me-1 text-primary"></i>
-          ایجاد آیتم جدید
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <h5 class="modal-title" id="newItemModalLabel">ایجاد آیتم جدید</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
       </div>
-      <form action="/items/add" method="POST" enctype="multipart/form-data">
+      <form action="/admin/items/create" method="POST">
         <div class="modal-body">
-          <div class="row g-3">
+          <div class="mb-3">
+            <label for="newName" class="form-label">نام آیتم</label>
+            <input type="text" class="form-control" id="newName" name="name" required>
+          </div>
+          <div class="mb-3">
+            <label for="newDescription" class="form-label">توضیحات</label>
+            <textarea class="form-control" id="newDescription" name="description" rows="3"></textarea>
+          </div>
+          <div class="mb-3">
+            <label for="newType" class="form-label">نوع آیتم</label>
+            <select class="form-select" id="newType" name="type" required>
+              <option value="consumable">مصرفی</option>
+              <option value="equipment">تجهیزات</option>
+              <option value="collectible">کلکسیونی</option>
+              <option value="special">ویژه</option>
+            </select>
+          </div>
+          <div class="row">
             <div class="col-md-6">
-              <label for="itemName" class="form-label">نام آیتم</label>
-              <input type="text" class="form-control" id="itemName" name="name" required>
-            </div>
-            
-            <div class="col-md-6">
-              <label for="itemCategory" class="form-label">دسته‌بندی</label>
-              <select class="form-select" id="itemCategory" name="category" required>
-                <option value="" selected disabled>انتخاب دسته...</option>
-                <option value="booster">بوستر</option>
-                <option value="cosmetic">تزئینی</option>
-                <option value="tool">ابزار</option>
-                <option value="consumable">مصرفی</option>
-                <option value="collectible">کلکسیونی</option>
-                <option value="special">ویژه</option>
-              </select>
-            </div>
-            
-            <div class="col-md-12">
-              <label for="itemDescription" class="form-label">توضیحات</label>
-              <textarea class="form-control" id="itemDescription" name="description" rows="3"></textarea>
-            </div>
-            
-            <div class="col-md-6">
-              <label for="itemPrice" class="form-label">قیمت (Ccoin)</label>
-              <div class="input-group">
-                <input type="number" class="form-control" id="itemPrice" name="price" min="0">
-                <span class="input-group-text"><i class="fas fa-coins"></i></span>
+              <div class="mb-3">
+                <label for="newPrice" class="form-label">قیمت (Ccoin)</label>
+                <input type="number" class="form-control" id="newPrice" name="price" value="0" min="0">
               </div>
             </div>
-            
             <div class="col-md-6">
-              <label for="itemCrystalPrice" class="form-label">قیمت کریستال</label>
-              <div class="input-group">
-                <input type="number" class="form-control" id="itemCrystalPrice" name="crystalPrice" min="0">
-                <span class="input-group-text"><i class="fas fa-gem"></i></span>
+              <div class="mb-3">
+                <label for="newCrystalPrice" class="form-label">قیمت (کریستال)</label>
+                <input type="number" class="form-control" id="newCrystalPrice" name="crystalPrice" value="0" min="0">
               </div>
             </div>
-            
+          </div>
+          <div class="mb-3">
+            <label for="newDays" class="form-label">مدت زمان استفاده (روز)</label>
+            <input type="number" class="form-control" id="newDays" name="expireDays" value="0" min="0">
+            <small class="text-muted">0 = دائمی</small>
+          </div>
+          <h6 class="mt-4 mb-3">تأثیرات آیتم</h6>
+          <div class="row">
             <div class="col-md-6">
-              <label for="itemEffects" class="form-label">تاثیرات</label>
-              <select class="form-select" id="itemEffects" name="effects" multiple>
-                <option value="robberyChance">افزایش شانس دزدی</option>
-                <option value="shopDiscount">تخفیف فروشگاه</option>
-                <option value="dailyBonus">افزایش پاداش روزانه</option>
-                <option value="wheelChance">افزایش شانس چرخ شانس</option>
-                <option value="xpBoost">افزایش تجربه</option>
-                <option value="protectionShield">محافظت در برابر دزدی</option>
-              </select>
-              <div class="form-text">می‌توانید چند مورد را انتخاب کنید.</div>
-            </div>
-            
-            <div class="col-md-6">
-              <label for="itemDuration" class="form-label">مدت زمان (روز)</label>
-              <div class="input-group">
-                <input type="number" class="form-control" id="itemDuration" name="duration" min="0">
-                <span class="input-group-text">روز</span>
-              </div>
-              <div class="form-text">برای آیتم‌های دائمی، مقدار 0 وارد کنید.</div>
-            </div>
-            
-            <div class="col-md-12">
-              <label for="itemImage" class="form-label">تصویر آیتم</label>
-              <input type="file" class="form-control" id="itemImage" name="image" accept="image/*">
-            </div>
-            
-            <div class="col-md-12">
-              <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="isRare" name="isRare">
-                <label class="form-check-label" for="isRare">آیتم کمیاب</label>
+              <div class="mb-3">
+                <label for="newRobberyChance" class="form-label">افزایش شانس دزدی (%)</label>
+                <input type="number" class="form-control" id="newRobberyChance" name="effects.robberyChance" value="0" min="0" max="100">
               </div>
             </div>
-            
-            <div class="col-md-12">
-              <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="isLimited" name="isLimited">
-                <label class="form-check-label" for="isLimited">آیتم محدود</label>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="newShopDiscount" class="form-label">تخفیف خرید از فروشگاه (%)</label>
+                <input type="number" class="form-control" id="newShopDiscount" name="effects.shopDiscount" value="0" min="0" max="100">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="newDailyBonus" class="form-label">افزایش جایزه روزانه (%)</label>
+                <input type="number" class="form-control" id="newDailyBonus" name="effects.dailyBonus" value="0" min="0" max="100">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="newWheelChance" class="form-label">افزایش شانس در چرخ شانس (%)</label>
+                <input type="number" class="form-control" id="newWheelChance" name="effects.wheelChance" value="0" min="0" max="100">
               </div>
             </div>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
-          <button type="submit" class="btn btn-primary">
-            <i class="fas fa-plus me-1"></i>
-            ایجاد آیتم
-          </button>
+          <button type="submit" class="btn btn-primary">ایجاد آیتم</button>
         </div>
       </form>
     </div>
   </div>
 </div>
 
-<!-- اسکریپت‌های صفحه آیتم‌ها -->
+<%- contentFor('scripts') %>
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // اسکریپت مرتب‌سازی و فیلتر کردن
-    const itemFilterForm = document.getElementById('itemFilterForm');
-    if (itemFilterForm) {
-      itemFilterForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const formData = new FormData(itemFilterForm);
-        const params = new URLSearchParams();
-        
-        for (const [key, value] of formData.entries()) {
-          if (value) {
-            params.append(key, value);
-          }
-        }
-        
-        window.location.href = `/items?${params.toString()}`;
-      });
+  // فعال/غیرفعال کردن آیتم
+  function activateItem(itemId) {
+    if (confirm('آیا از فعال‌سازی این آیتم اطمینان دارید؟')) {
+      window.location.href = `/admin/items/${itemId}/activate`;
     }
-    
-    // اسکریپت خروجی CSV
-    const exportBtn = document.getElementById('exportItemsCSV');
-    if (exportBtn) {
-      exportBtn.addEventListener('click', function() {
-        window.location.href = '/items/export-csv';
-      });
+  }
+  
+  function deactivateItem(itemId) {
+    if (confirm('آیا از غیرفعال‌سازی این آیتم اطمینان دارید؟')) {
+      window.location.href = `/admin/items/${itemId}/deactivate`;
     }
-    
-    // تغییر نوع نمایش (کارتی یا لیستی)
-    const viewButtons = document.querySelectorAll('[data-view]');
-    const gridView = document.getElementById('gridView');
-    const listView = document.getElementById('listView');
-    
-    viewButtons.forEach(button => {
-      button.addEventListener('click', function() {
-        const viewType = this.getAttribute('data-view');
-        
-        // غیرفعال کردن همه دکمه‌ها
-        viewButtons.forEach(btn => btn.classList.remove('active'));
-        this.classList.add('active');
-        
-        // نمایش/مخفی کردن ویوها
-        if (viewType === 'grid') {
-          gridView.classList.remove('d-none');
-          listView.classList.add('d-none');
-        } else {
-          gridView.classList.add('d-none');
-          listView.classList.remove('d-none');
-        }
-      });
-    });
-    
-    // فعال‌سازی تولتیپ‌ها
-    const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-    if (tooltips.length > 0) {
-      tooltips.forEach(tooltip => {
-        new bootstrap.Tooltip(tooltip);
-      });
+  }
+  
+  // جستجوی آیتم‌ها
+  document.getElementById('searchItem').addEventListener('keyup', function(e) {
+    if (e.key === 'Enter') {
+      const searchTerm = this.value.trim();
+      if (searchTerm) {
+        window.location.href = `/admin/items?search=${encodeURIComponent(searchTerm)}`;
+      }
     }
   });
-  
-  // فانکشن حذف آیتم
-  function deleteItem(itemId, itemName) {
-    if (confirm(`آیا از حذف آیتم "${itemName}" اطمینان دارید؟ این عملیات غیرقابل بازگشت است.`)) {
-      window.location.href = `/items/${itemId}/delete`;
-    }
-  }
-  
-  // تابع کمکی برای دریافت رنگ بر اساس دسته
-  function getItemColor(category) {
-    switch(category) {
-      case 'booster': return 'primary';
-      case 'cosmetic': return 'purple';
-      case 'tool': return 'success';
-      case 'consumable': return 'warning';
-      case 'collectible': return 'info';
-      case 'special': return 'danger';
-      default: return 'secondary';
-    }
-  }
-  
-  // تابع کمکی برای دریافت آیکون بر اساس دسته
-  function getItemIcon(category) {
-    switch(category) {
-      case 'booster': return 'fas fa-rocket';
-      case 'cosmetic': return 'fas fa-palette';
-      case 'tool': return 'fas fa-tools';
-      case 'consumable': return 'fas fa-cookie-bite';
-      case 'collectible': return 'fas fa-trophy';
-      case 'special': return 'fas fa-star';
-      default: return 'fas fa-box';
-    }
-  }
-  
-  // تابع کمکی برای دریافت نام فارسی دسته
-  function getCategoryName(category) {
-    switch(category) {
-      case 'booster': return 'بوستر';
-      case 'cosmetic': return 'تزئینی';
-      case 'tool': return 'ابزار';
-      case 'consumable': return 'مصرفی';
-      case 'collectible': return 'کلکسیونی';
-      case 'special': return 'ویژه';
-      default: return category;
-    }
-  }
 </script>
 
+<%- contentFor('styles') %>
 <style>
-  /* استایل‌های اضافی صفحه آیتم‌ها */
-  .item-card {
-    transition: var(--hover-transition);
+  .item-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
   }
   
-  .item-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+  .item-icon.consumable {
+    background-color: #4CAF50;
   }
   
-  .item-image {
-    max-height: 120px;
-    max-width: 80%;
-    object-fit: contain;
+  .item-icon.equipment {
+    background-color: #2196F3;
   }
   
-  /* رنگ‌های اضافی */
-  .bg-purple {
-    background-color: #7952b3 !important;
+  .item-icon.collectible {
+    background-color: #9C27B0;
   }
   
-  /* انیمیشن کارت‌ها */
-  .col-md-3 {
-    transition: transform 0.3s ease;
+  .item-icon.special {
+    background-color: #FF9800;
   }
 </style>

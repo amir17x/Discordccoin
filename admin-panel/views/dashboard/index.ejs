@@ -1,397 +1,174 @@
-<!-- هدر داشبورد با افکت‌های مدرن -->
+<!-- هدر صفحه داشبورد -->
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
   <h1 class="h2 d-flex align-items-center animated-element">
     <i class="fas fa-tachometer-alt me-2 text-primary"></i>
-    داشبورد مدیریت
-    <span class="badge bg-primary ms-2 fs-6">نسخه 2.0</span>
+    داشبورد
   </h1>
   <div class="btn-toolbar mb-2 mb-md-0">
     <div class="btn-group me-2">
-      <button type="button" class="btn btn-sm btn-outline-secondary" id="exportDashboardReport">
-        <i class="fas fa-file-export me-1"></i>
-        گزارش
-      </button>
       <button type="button" class="btn btn-sm btn-outline-secondary" id="refreshDashboard">
         <i class="fas fa-sync-alt me-1"></i>
         بروزرسانی
       </button>
-      <button type="button" class="btn btn-sm btn-outline-primary" id="customizeDashboard">
-        <i class="fas fa-cog me-1"></i>
-        شخصی‌سازی
-      </button>
     </div>
     <div class="dropdown">
-      <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+      <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
         <i class="fas fa-calendar me-1"></i>
-        <span id="date-range-text">امروز</span>
+        امروز
       </button>
       <ul class="dropdown-menu">
         <li><a class="dropdown-item" href="#" data-range="today">امروز</a></li>
-        <li><a class="dropdown-item" href="#" data-range="yesterday">دیروز</a></li>
-        <li><a class="dropdown-item" href="#" data-range="week">هفته جاری</a></li>
-        <li><a class="dropdown-item" href="#" data-range="month">ماه جاری</a></li>
-        <li><hr class="dropdown-divider"></li>
-        <li><a class="dropdown-item" href="#" data-range="custom">بازه سفارشی...</a></li>
+        <li><a class="dropdown-item" href="#" data-range="week">هفته اخیر</a></li>
+        <li><a class="dropdown-item" href="#" data-range="month">ماه اخیر</a></li>
+        <li><a class="dropdown-item" href="#" data-range="year">سال اخیر</a></li>
       </ul>
     </div>
   </div>
 </div>
 
-<!-- کانتینر توست‌ها -->
-<div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3"></div>
-
-<!-- نوار وضعیت سیستم -->
-<div class="system-status-bar bg-light p-2 rounded-3 mb-4 animated-element">
-  <div class="row g-0 align-items-center">
-    <div class="col-auto pe-3">
-      <span class="text-success d-flex align-items-center">
-        <i class="fas fa-circle fs-6 me-1"></i>
-        <span class="text-dark fw-500">وضعیت سیستم:</span>
-      </span>
-    </div>
-    <div class="col-auto px-2 border-start border-end">
-      <small class="text-muted">ربات: <span class="text-success">آنلاین</span></small>
-    </div>
-    <div class="col-auto px-2 border-end">
-      <small class="text-muted">دیتابیس: <span class="text-success">متصل</span></small>
-    </div>
-    <div class="col-auto px-2 border-end">
-      <small class="text-muted">کاربران آنلاین: <span class="fw-bold"><%= stats.onlineUsers || 0 %></span></small>
-    </div>
-    <div class="col-auto px-2 border-end">
-      <small class="text-muted">آپتایم: <span class="fw-bold"><%= stats.uptime || '0 ساعت' %></span></small>
-    </div>
-    <div class="col-auto px-2">
-      <small class="text-muted">آخرین بروزرسانی: <span class="fw-bold"><%= helpers.formatDate(new Date()) %></span></small>
-    </div>
-    <div class="col text-end">
-      <button class="btn btn-sm btn-link text-decoration-none" id="restore-widgets-btn" style="display: none;">
-        <i class="fas fa-undo-alt me-1"></i>
-        بازگرداندن ویجت‌ها
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- آمار کلی -->
-<div id="draggable-widgets" class="row g-3 mb-4">
-  <!-- کاربران -->
-  <div class="col-md-3 animated-element" id="widget-users">
-    <div class="dashboard-widget stat-card">
-      <div class="widget-header bg-primary d-flex justify-content-between p-2 text-white">
-        <div>
-          <i class="fas fa-users"></i>
-          <span class="ms-1">کاربران</span>
-        </div>
-        <div class="widget-controls">
-          <i class="fas fa-arrows-alt widget-handle" style="cursor: move;"></i>
-          <i class="fas fa-sync-alt widget-control" data-action="refresh"></i>
-          <i class="fas fa-minus widget-control" data-action="collapse"></i>
-        </div>
-      </div>
-      <div class="widget-body card-body">
-        <div class="d-flex align-items-center">
-          <div class="icon-container bg-primary me-3">
-            <i class="fas fa-users fa-2x text-white"></i>
-          </div>
-          <div>
-            <div class="d-flex align-items-center">
-              <h3 class="mb-0" id="totalUsers" data-value="<%= stats.totalUsers %>"><%= stats.totalUsers %></h3>
-              <span id="userChangeIndicator" class="ms-2 text-<%= stats.newUsers24h > 0 ? 'success' : 'secondary' %>">
-                <i class="fas fa-<%= stats.newUsers24h > 0 ? 'arrow-up' : 'minus' %>"></i>
-                <%= stats.newUsers24h %>
-              </span>
-            </div>
-            <div class="text-muted mt-2">
-              <small>
-                <i class="fas fa-user-plus text-success me-1"></i>
-                <%= stats.newUsers24h %> کاربر جدید امروز
-              </small>
-            </div>
-            <div class="progress mt-2" style="height: 6px;">
-              <div class="progress-bar" role="progressbar" style="width: <%= (stats.activeUsers / stats.totalUsers) * 100 %>%"></div>
-            </div>
-            <div class="d-flex justify-content-between mt-1">
-              <small class="text-muted"><%= stats.activeUsers %> کاربر فعال</small>
-              <small class="text-muted"><%= Math.round((stats.activeUsers / stats.totalUsers) * 100) %>% نرخ فعالیت</small>
-            </div>
-          </div>
-        </div>
-        <div class="mt-3 text-end">
-          <a href="/users" class="btn btn-sm btn-outline-primary">
-            <i class="fas fa-users me-1"></i>
-            مدیریت کاربران
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  <!-- کلن‌ها -->
-  <div class="col-md-3 animated-element" id="widget-clans">
-    <div class="dashboard-widget stat-card">
-      <div class="widget-header bg-success d-flex justify-content-between p-2 text-white">
-        <div>
-          <i class="fas fa-flag"></i>
-          <span class="ms-1">کلن‌ها</span>
-        </div>
-        <div class="widget-controls">
-          <i class="fas fa-arrows-alt widget-handle" style="cursor: move;"></i>
-          <i class="fas fa-sync-alt widget-control" data-action="refresh"></i>
-          <i class="fas fa-minus widget-control" data-action="collapse"></i>
-        </div>
-      </div>
-      <div class="widget-body card-body">
-        <div class="d-flex align-items-center">
-          <div class="icon-container bg-success me-3">
-            <i class="fas fa-flag fa-2x text-white"></i>
-          </div>
-          <div>
-            <div class="d-flex align-items-center">
-              <h3 class="mb-0" id="totalClans"><%= stats.totalClans %></h3>
-              <span class="ms-2 text-<%= stats.newClans24h > 0 ? 'success' : 'secondary' %>">
-                <i class="fas fa-<%= stats.newClans24h > 0 ? 'arrow-up' : 'minus' %>"></i>
-                <%= stats.newClans24h || 0 %>
-              </span>
-            </div>
-            <div class="text-muted mt-2">
-              <small>
-                <i class="fas fa-flag text-success me-1"></i>
-                <%= stats.newClans24h || 0 %> کلن جدید امروز
-              </small>
-            </div>
-            <div class="progress mt-2" style="height: 6px;">
-              <div class="progress-bar bg-success" role="progressbar" style="width: <%= (stats.totalClans / (stats.totalClans + 10)) * 100 %>%"></div>
-            </div>
-            <div class="d-flex justify-content-between mt-1">
-              <small class="text-muted">میانگین اعضا: <%= stats.avgClanMembers || 0 %></small>
-              <small class="text-muted"><%= stats.activeClanWars || 0 %> جنگ فعال</small>
-            </div>
-          </div>
-        </div>
-        <div class="mt-3 text-end">
-          <a href="/clans" class="btn btn-sm btn-outline-success">
-            <i class="fas fa-flag me-1"></i>
-            مدیریت کلن‌ها
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  <!-- Ccoin -->
-  <div class="col-md-3 animated-element" id="widget-economy">
-    <div class="dashboard-widget stat-card">
-      <div class="widget-header bg-warning d-flex justify-content-between p-2 text-dark">
-        <div>
-          <i class="fas fa-coins"></i>
-          <span class="ms-1">اقتصاد</span>
-        </div>
-        <div class="widget-controls">
-          <i class="fas fa-arrows-alt widget-handle" style="cursor: move;"></i>
-          <i class="fas fa-sync-alt widget-control" data-action="refresh"></i>
-          <i class="fas fa-minus widget-control" data-action="collapse"></i>
-        </div>
-      </div>
-      <div class="widget-body card-body">
-        <div class="d-flex align-items-center">
-          <div class="icon-container bg-warning me-3">
-            <i class="fas fa-coins fa-2x text-white"></i>
-          </div>
-          <div>
-            <div class="d-flex align-items-center">
-              <h3 class="mb-0" id="totalCcoin"><%= helpers.formatNumber(stats.totalCcoin) %></h3>
-              <span class="ms-2 text-<%= stats.economyChange > 0 ? 'success' : 'danger' %>">
-                <i class="fas fa-<%= stats.economyChange > 0 ? 'arrow-up' : 'arrow-down' %>"></i>
-                <%= helpers.formatNumber(Math.abs(stats.economyChange)) %>
-              </span>
-            </div>
-            <div class="text-muted mt-2">
-              <small>
-                <i class="fas fa-exchange-alt me-1"></i>
-                <%= helpers.formatNumber(stats.transactions24h || 0) %> تراکنش در 24 ساعت
-              </small>
-            </div>
-            <div class="progress mt-2" style="height: 6px;">
-              <div class="progress-bar bg-warning" role="progressbar" style="width: <%= (stats.totalWallet / stats.totalCcoin) * 100 %>%"></div>
-            </div>
-            <div class="d-flex justify-content-between mt-1">
-              <small class="text-muted">کیف پول: <%= helpers.formatNumber(stats.totalWallet || 0) %></small>
-              <small class="text-muted">بانک: <%= helpers.formatNumber(stats.totalBank || 0) %></small>
-            </div>
-          </div>
-        </div>
-        <div class="mt-3 text-end">
-          <a href="/economy" class="btn btn-sm btn-outline-warning">
-            <i class="fas fa-chart-line me-1"></i>
-            مدیریت اقتصاد
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  <!-- ماموریت‌ها -->
-  <div class="col-md-3 animated-element" id="widget-quests">
-    <div class="dashboard-widget stat-card">
-      <div class="widget-header bg-info d-flex justify-content-between p-2 text-white">
-        <div>
-          <i class="fas fa-tasks"></i>
-          <span class="ms-1">ماموریت‌ها</span>
-        </div>
-        <div class="widget-controls">
-          <i class="fas fa-arrows-alt widget-handle" style="cursor: move;"></i>
-          <i class="fas fa-sync-alt widget-control" data-action="refresh"></i>
-          <i class="fas fa-minus widget-control" data-action="collapse"></i>
-        </div>
-      </div>
-      <div class="widget-body card-body">
-        <div class="d-flex align-items-center">
-          <div class="icon-container bg-info me-3">
-            <i class="fas fa-tasks fa-2x text-white"></i>
-          </div>
-          <div>
-            <div class="d-flex align-items-center">
-              <h3 class="mb-0" id="activeQuests"><%= stats.activeQuests %></h3>
-              <span class="ms-2 text-info">
-                <i class="fas fa-list"></i>
-                فعال
-              </span>
-            </div>
-            <div class="text-muted mt-2">
-              <small>
-                <i class="fas fa-check text-success me-1"></i>
-                <%= stats.completedQuests7d || 0 %> ماموریت تکمیل شده در هفته
-              </small>
-            </div>
-            <div class="progress mt-2" style="height: 6px;">
-              <div class="progress-bar bg-info" role="progressbar" style="width: <%= (stats.completedQuests7d / (stats.completedQuests7d + stats.activeQuests)) * 100 %>%"></div>
-            </div>
-            <div class="d-flex justify-content-between mt-1">
-              <small class="text-muted">نرخ تکمیل: <%= Math.round((stats.completedQuests7d / (stats.completedQuests7d + stats.activeQuests)) * 100) %>%</small>
-              <small class="text-muted">کل: <%= stats.activeQuests + stats.completedQuests7d %></small>
-            </div>
-          </div>
-        </div>
-        <div class="mt-3 text-end">
-          <a href="/quests" class="btn btn-sm btn-outline-info">
-            <i class="fas fa-tasks me-1"></i>
-            مدیریت ماموریت‌ها
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
+<!-- کارت‌های آمار کلی -->
 <div class="row g-3 mb-4">
-  <!-- نمودار کاربران فعال -->
+  <div class="col-md-3 animated-element">
+    <div class="stat-card">
+      <div class="stat-card-header bg-primary">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="mb-0 d-flex align-items-center">
+            <i class="fas fa-users me-2"></i>
+            کاربران
+          </h5>
+          <i class="fas fa-question-circle help-tooltip" data-tooltip="تعداد کل کاربران ربات"></i>
+        </div>
+      </div>
+      <div class="stat-card-body">
+        <div class="d-flex align-items-center">
+          <h2 class="mb-0 me-2"><%= helpers.formatNumber(stats.totalUsers) %></h2>
+          <span class="badge bg-<%= stats.newUsers24h > 0 ? 'success' : 'secondary' %> fs-6">
+            <i class="fas fa-<%= stats.newUsers24h > 0 ? 'arrow-up' : 'minus' %>"></i>
+            <%= stats.newUsers24h || 0 %>
+          </span>
+        </div>
+        <p class="text-muted mt-2">
+          <small><%= stats.activeUsers || 0 %> کاربر فعال در 24 ساعت اخیر</small>
+        </p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-3 animated-element">
+    <div class="stat-card">
+      <div class="stat-card-header bg-success">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="mb-0 d-flex align-items-center">
+            <i class="fas fa-coins me-2"></i>
+            Ccoin
+          </h5>
+          <i class="fas fa-question-circle help-tooltip" data-tooltip="مجموع Ccoin موجود در اقتصاد"></i>
+        </div>
+      </div>
+      <div class="stat-card-body">
+        <div class="d-flex align-items-center">
+          <h2 class="mb-0 me-2"><%= helpers.formatNumber(stats.totalCcoin) %></h2>
+          <span class="text-muted">Ccoin</span>
+        </div>
+        <p class="text-muted mt-2">
+          <small>میانگین هر کاربر: <%= helpers.formatNumber(Math.round((stats.totalCcoin || 0) / (stats.totalUsers || 1))) %> Ccoin</small>
+        </p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-3 animated-element">
+    <div class="stat-card">
+      <div class="stat-card-header bg-info">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="mb-0 d-flex align-items-center">
+            <i class="fas fa-flag me-2"></i>
+            کلن‌ها
+          </h5>
+          <i class="fas fa-question-circle help-tooltip" data-tooltip="تعداد کل کلن‌های ایجاد شده"></i>
+        </div>
+      </div>
+      <div class="stat-card-body">
+        <div class="d-flex align-items-center">
+          <h2 class="mb-0 me-2"><%= stats.totalClans %></h2>
+          <span class="text-muted">کلن</span>
+        </div>
+        <p class="text-muted mt-2">
+          <small>نسبت کاربر به کلن: <%= stats.totalUsers && stats.totalClans ? Math.round(stats.totalUsers / stats.totalClans) : 0 %> به 1</small>
+        </p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-3 animated-element">
+    <div class="stat-card">
+      <div class="stat-card-header bg-warning">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="mb-0 d-flex align-items-center text-dark">
+            <i class="fas fa-tasks me-2"></i>
+            کوئست‌ها
+          </h5>
+          <i class="fas fa-question-circle help-tooltip" data-tooltip="تعداد کوئست‌های فعال"></i>
+        </div>
+      </div>
+      <div class="stat-card-body">
+        <div class="d-flex align-items-center">
+          <h2 class="mb-0 me-2"><%= stats.activeQuests || 0 %></h2>
+          <span class="text-muted">فعال</span>
+        </div>
+        <p class="text-muted mt-2">
+          <small><%= stats.completedQuests7d || 0 %> کوئست تکمیل شده در 7 روز اخیر</small>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- نمودار کاربران فعال -->
+<div class="row g-3 mb-4">
   <div class="col-md-8 animated-element">
     <div class="card border-0 shadow-sm h-100">
-      <div class="card-header bg-white d-flex justify-content-between align-items-center">
-        <h5 class="card-title mb-0 d-flex align-items-center">
-          <i class="fas fa-chart-line me-2 text-primary"></i>
-          کاربران فعال (7 روز اخیر)
-          <i class="fas fa-question-circle help-tooltip ms-2" data-tooltip="این نمودار تعداد کاربران فعال را در 7 روز گذشته نشان می‌دهد"></i>
-        </h5>
-        <div class="btn-group">
-          <button type="button" class="btn btn-sm btn-outline-secondary active" data-chart-period="week">7 روز</button>
-          <button type="button" class="btn btn-sm btn-outline-secondary" data-chart-period="month">30 روز</button>
-          <button type="button" class="btn btn-sm btn-outline-secondary" data-chart-period="custom">سفارشی</button>
+      <div class="card-header bg-white border-0">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">آمار کاربران فعال</h5>
+          <div class="chart-actions">
+            <button class="btn btn-sm btn-outline-secondary">
+              <i class="fas fa-download"></i>
+            </button>
+          </div>
         </div>
       </div>
       <div class="card-body">
-        <div class="chart-container">
-          <canvas id="activeUsersChart"></canvas>
-        </div>
-      </div>
-      <div class="card-footer bg-white border-0 d-flex justify-content-between">
-        <div class="d-flex">
-          <div class="me-3 text-center">
-            <div class="small text-muted">میانگین روزانه</div>
-            <div class="fs-5 fw-bold text-success">
-              <%= Math.round(activeUsersHistory.reduce((sum, item) => sum + item.count, 0) / activeUsersHistory.length) %>
-            </div>
-          </div>
-          <div class="me-3 text-center">
-            <div class="small text-muted">بیشترین</div>
-            <div class="fs-5 fw-bold text-primary">
-              <%= Math.max(...activeUsersHistory.map(item => item.count)) %>
-            </div>
-          </div>
-          <div class="text-center">
-            <div class="small text-muted">کمترین</div>
-            <div class="fs-5 fw-bold text-secondary">
-              <%= Math.min(...activeUsersHistory.map(item => item.count)) %>
-            </div>
-          </div>
-        </div>
-        <div>
-          <button class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="دانلود داده‌های نمودار">
-            <i class="fas fa-download"></i>
-          </button>
-        </div>
+        <canvas id="activeUsersChart" height="250"></canvas>
       </div>
     </div>
   </div>
   
-  <!-- نمودار بازی‌ها و آمار سریع -->
   <div class="col-md-4 animated-element">
     <div class="card border-0 shadow-sm h-100">
-      <div class="card-header bg-white d-flex justify-content-between align-items-center">
-        <h5 class="card-title mb-0 d-flex align-items-center">
-          <i class="fas fa-gamepad me-2 text-success"></i>
-          آمار بازی‌ها
-          <i class="fas fa-question-circle help-tooltip ms-2" data-tooltip="این نمودار توزیع بازی‌های انجام شده را نشان می‌دهد"></i>
-        </h5>
-        <div class="dropdown">
-          <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-            امروز
-          </button>
-          <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="#">امروز</a></li>
-            <li><a class="dropdown-item" href="#">هفته جاری</a></li>
-            <li><a class="dropdown-item" href="#">ماه جاری</a></li>
-          </ul>
-        </div>
+      <div class="card-header bg-white border-0">
+        <h5 class="mb-0">آمار بازی‌ها</h5>
       </div>
-      <div class="card-body">
-        <div class="chart-container">
-          <canvas id="gamesChart"></canvas>
-        </div>
+      <div class="card-body d-flex align-items-center justify-content-center">
+        <canvas id="gamesChart" height="250"></canvas>
       </div>
       <div class="card-footer bg-white border-0">
-        <div class="row g-2 text-center">
-          <div class="col-4">
-            <div class="bg-light rounded p-2">
-              <div class="small text-muted">تعداد کل</div>
-              <div class="fs-5 fw-bold">
-                <%= gameStats.coinflip + gameStats.rps + gameStats.numberguess + gameStats.dice + gameStats.other %>
-              </div>
-            </div>
+        <div class="row text-center">
+          <div class="col">
+            <h6 class="mb-0 text-primary"><%= gameStats.coinflip || 0 %></h6>
+            <small class="text-muted">سکه</small>
           </div>
-          <div class="col-4">
-            <div class="bg-light rounded p-2">
-              <div class="small text-muted">محبوب‌ترین</div>
-              <div class="fs-5 fw-bold text-primary">
-                <% 
-                  let mostPopular = "سکه";
-                  let max = gameStats.coinflip;
-                  if (gameStats.rps > max) { mostPopular = "سنگ کاغذ قیچی"; max = gameStats.rps; }
-                  if (gameStats.numberguess > max) { mostPopular = "حدس عدد"; max = gameStats.numberguess; }
-                  if (gameStats.dice > max) { mostPopular = "تاس"; max = gameStats.dice; }
-                %>
-                <%= mostPopular %>
-              </div>
-            </div>
+          <div class="col">
+            <h6 class="mb-0 text-success"><%= gameStats.rps || 0 %></h6>
+            <small class="text-muted">سنگ کاغذ قیچی</small>
           </div>
-          <div class="col-4">
-            <div class="bg-light rounded p-2">
-              <div class="small text-muted">برد/باخت</div>
-              <div class="fs-5 fw-bold text-<%= stats.winRate > 50 ? 'success' : 'danger' %>">
-                <%= stats.winRate || 50 %>%
-              </div>
-            </div>
+          <div class="col">
+            <h6 class="mb-0 text-info"><%= gameStats.numberguess || 0 %></h6>
+            <small class="text-muted">حدس عدد</small>
+          </div>
+          <div class="col">
+            <h6 class="mb-0 text-warning"><%= gameStats.dice || 0 %></h6>
+            <small class="text-muted">تاس</small>
           </div>
         </div>
       </div>
@@ -399,170 +176,179 @@
   </div>
 </div>
 
+<!-- کاربران فعال اخیر و رویدادهای سیستم -->
 <div class="row g-3">
-  <!-- کاربران فعال اخیر -->
   <div class="col-md-6 animated-element">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-header bg-white d-flex justify-content-between align-items-center">
-        <h5 class="card-title mb-0 d-flex align-items-center">
-          <i class="fas fa-user-clock me-2 text-primary"></i>
-          کاربران فعال اخیر
-        </h5>
-        <a href="/users" class="btn btn-sm btn-primary">
-          <i class="fas fa-external-link-alt me-1"></i>
-          مشاهده همه
-        </a>
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">کاربران فعال اخیر</h5>
+        <a href="/admin/users" class="btn btn-sm btn-link">مشاهده همه</a>
       </div>
       <div class="card-body p-0">
         <div class="table-responsive">
-          <table class="table table-hover mb-0">
+          <table class="table table-hover align-middle mb-0">
             <thead>
               <tr>
-                <th scope="col">#</th>
-                <th scope="col">نام کاربری</th>
-                <th scope="col">آخرین فعالیت</th>
-                <th scope="col">موجودی</th>
+                <th scope="col" width="5%">#</th>
+                <th scope="col" width="30%">کاربر</th>
+                <th scope="col" width="15%">موجودی</th>
+                <th scope="col" width="20%">آخرین فعالیت</th>
+                <th scope="col" width="30%">عملیات</th>
               </tr>
             </thead>
-            <tbody id="recentUsersList">
+            <tbody>
               <% if (recentUsers && recentUsers.length > 0) { %>
                 <% recentUsers.forEach((user, index) => { %>
                   <tr>
                     <th scope="row"><%= index + 1 %></th>
                     <td>
-                      <a href="/users/<%= user.id %>" class="text-decoration-none d-flex align-items-center">
-                        <div class="user-avatar rounded-circle bg-light me-2 d-flex align-items-center justify-content-center" style="width: 30px; height: 30px;">
-                          <i class="fas fa-user text-primary"></i>
+                      <div class="d-flex align-items-center">
+                        <div class="avatar-sm bg-<%= user.isPremium ? 'warning' : 'primary' %> text-white rounded-circle me-2 d-flex align-items-center justify-content-center">
+                          <%= user.username.charAt(0).toUpperCase() %>
                         </div>
-                        <%= user.username %>
-                        <% if (user.isBanned) { %>
-                          <span class="badge bg-danger ms-1">مسدود</span>
-                        <% } %>
-                        <% if (user.isPremium) { %>
-                          <span class="badge bg-warning text-dark ms-1">
-                            <i class="fas fa-crown"></i>
-                          </span>
-                        <% } %>
-                      </a>
+                        <div>
+                          <a href="/admin/users/<%= user.id %>" class="text-decoration-none fw-bold">
+                            <%= user.username %>
+                          </a>
+                          <% if (user.isBanned) { %>
+                            <span class="badge bg-danger ms-1">مسدود</span>
+                          <% } %>
+                          <% if (user.isPremium) { %>
+                            <span class="badge bg-warning ms-1">VIP</span>
+                          <% } %>
+                        </div>
+                      </div>
                     </td>
-                    <td><span data-time="<%= user.lastSeen %>"><%= helpers.timeAgo(user.lastSeen) %></span></td>
-                    <td><%= helpers.formatNumber(user.wallet + user.bank) %> <i class="fas fa-coins text-warning"></i></td>
+                    <td>
+                      <%= helpers.formatNumber(user.wallet) %> <small class="text-muted">Ccoin</small>
+                    </td>
+                    <td>
+                      <small><%= helpers.timeAgo(user.lastSeen) %></small>
+                    </td>
+                    <td>
+                      <div class="action-buttons">
+                        <a href="/admin/users/<%= user.id %>" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="مشاهده">
+                          <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="/admin/users/<%= user.id %>/edit" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" title="ویرایش">
+                          <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="/admin/users/<%= user.id %>/transactions" class="btn btn-sm btn-outline-info" data-bs-toggle="tooltip" title="تراکنش‌ها">
+                          <i class="fas fa-exchange-alt"></i>
+                        </a>
+                        <% if (user.isBanned) { %>
+                          <button class="btn btn-sm btn-outline-success" data-bs-toggle="tooltip" title="رفع مسدودیت">
+                            <i class="fas fa-unlock"></i>
+                          </button>
+                        <% } else { %>
+                          <button class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="مسدودیت">
+                            <i class="fas fa-ban"></i>
+                          </button>
+                        <% } %>
+                      </div>
+                    </td>
                   </tr>
                 <% }) %>
               <% } else { %>
                 <tr>
-                  <td colspan="4" class="text-center py-4">
-                    <i class="fas fa-user-slash fa-2x mb-2 text-muted"></i>
-                    <p class="text-muted mb-0">هیچ کاربر فعالی یافت نشد.</p>
-                  </td>
+                  <td colspan="5" class="text-center py-4">هیچ کاربر فعالی یافت نشد</td>
                 </tr>
               <% } %>
             </tbody>
           </table>
-        </div>
-      </div>
-      <div class="card-footer bg-white">
-        <div class="d-flex justify-content-between align-items-center">
-          <small class="text-muted">یافت شده: <%= recentUsers ? recentUsers.length : 0 %> کاربر</small>
-          <div class="btn-group">
-            <button type="button" class="btn btn-sm btn-outline-secondary">
-              <i class="fas fa-sync-alt me-1"></i>
-              بروزرسانی
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-secondary">
-              <i class="fas fa-filter me-1"></i>
-              فیلتر
-            </button>
-          </div>
         </div>
       </div>
     </div>
   </div>
   
-  <!-- رویدادهای اخیر -->
   <div class="col-md-6 animated-element">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-header bg-white d-flex justify-content-between align-items-center">
-        <h5 class="card-title mb-0 d-flex align-items-center">
-          <i class="fas fa-history me-2 text-primary"></i>
-          رویدادهای اخیر
-        </h5>
-        <a href="/logs" class="btn btn-sm btn-primary">
-          <i class="fas fa-external-link-alt me-1"></i>
-          مشاهده همه
-        </a>
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">رویدادهای اخیر سیستم</h5>
+        <a href="/admin/logs" class="btn btn-sm btn-link">مشاهده همه</a>
       </div>
       <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-hover mb-0">
-            <thead>
-              <tr>
-                <th scope="col">#</th>
-                <th scope="col">نوع</th>
-                <th scope="col">پیام</th>
-                <th scope="col">زمان</th>
-              </tr>
-            </thead>
-            <tbody id="recentEventsList">
-              <% if (recentEvents && recentEvents.length > 0) { %>
-                <% recentEvents.forEach((event, index) => { %>
-                  <tr>
-                    <th scope="row"><%= index + 1 %></th>
-                    <td>
-                      <% 
-                        let badgeClass = 'bg-secondary';
-                        let iconClass = 'fas fa-info-circle';
-                        
-                        if (event.type === 'user') {
-                          badgeClass = 'bg-primary';
-                          iconClass = 'fas fa-user';
-                        } else if (event.type === 'transaction') {
-                          badgeClass = 'bg-success';
-                          iconClass = 'fas fa-exchange-alt';
-                        } else if (event.type === 'game') {
-                          badgeClass = 'bg-warning text-dark';
-                          iconClass = 'fas fa-gamepad';
-                        } else if (event.type === 'clan') {
-                          badgeClass = 'bg-info';
-                          iconClass = 'fas fa-flag';
-                        } else if (event.type === 'system') {
-                          badgeClass = 'bg-dark';
-                          iconClass = 'fas fa-cog';
-                        }
-                      %>
-                      <span class="badge <%= badgeClass %> d-flex align-items-center" style="width: fit-content;">
-                        <i class="<%= iconClass %> me-1"></i>
-                        <%= event.type %>
-                      </span>
-                    </td>
-                    <td><%= event.message %></td>
-                    <td><span data-time="<%= event.timestamp %>"><%= helpers.timeAgo(event.timestamp) %></span></td>
-                  </tr>
-                <% }) %>
-              <% } else { %>
-                <tr>
-                  <td colspan="4" class="text-center py-4">
-                    <i class="fas fa-inbox fa-2x mb-2 text-muted"></i>
-                    <p class="text-muted mb-0">هیچ رویدادی یافت نشد.</p>
-                  </td>
-                </tr>
-              <% } %>
-            </tbody>
-          </table>
+        <div class="event-list">
+          <% if (recentEvents && recentEvents.length > 0) { %>
+            <% recentEvents.forEach(event => { %>
+              <div class="event-item d-flex p-3 border-bottom">
+                <div class="event-icon me-3">
+                  <% if (event.type === 'user') { %>
+                    <div class="rounded-circle bg-primary text-white p-2">
+                      <i class="fas fa-user"></i>
+                    </div>
+                  <% } else if (event.type === 'transaction') { %>
+                    <div class="rounded-circle bg-success text-white p-2">
+                      <i class="fas fa-coins"></i>
+                    </div>
+                  <% } else if (event.type === 'system') { %>
+                    <div class="rounded-circle bg-info text-white p-2">
+                      <i class="fas fa-cog"></i>
+                    </div>
+                  <% } else if (event.type === 'error') { %>
+                    <div class="rounded-circle bg-danger text-white p-2">
+                      <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                  <% } else { %>
+                    <div class="rounded-circle bg-secondary text-white p-2">
+                      <i class="fas fa-info-circle"></i>
+                    </div>
+                  <% } %>
+                </div>
+                <div class="event-content flex-grow-1">
+                  <p class="mb-1"><%= event.message %></p>
+                  <small class="text-muted"><%= helpers.timeAgo(event.timestamp) %></small>
+                </div>
+              </div>
+            <% }) %>
+          <% } else { %>
+            <div class="text-center py-4">
+              <p class="text-muted mb-0">هیچ رویدادی ثبت نشده است</p>
+            </div>
+          <% } %>
         </div>
       </div>
-      <div class="card-footer bg-white">
-        <div class="d-flex justify-content-between align-items-center">
-          <small class="text-muted">یافت شده: <%= recentEvents ? recentEvents.length : 0 %> رویداد</small>
-          <div class="btn-group">
-            <button type="button" class="btn btn-sm btn-outline-secondary">
-              <i class="fas fa-sync-alt me-1"></i>
-              بروزرسانی
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-secondary">
-              <i class="fas fa-filter me-1"></i>
-              فیلتر
-            </button>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-4">
+  <div class="col-md-12 animated-element">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">وضعیت ربات</h5>
+      </div>
+      <div class="card-body">
+        <div class="row g-3 text-center">
+          <div class="col-md-3">
+            <div class="py-3">
+              <h6 class="text-muted mb-1">وضعیت</h6>
+              <div class="d-flex align-items-center justify-content-center">
+                <span class="status-dot bg-<%= botStatus.status === 'online' ? 'success' : 'danger' %> me-2"></span>
+                <h5 class="mb-0"><%= botStatus.status === 'online' ? 'آنلاین' : 'آفلاین' %></h5>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="py-3">
+              <h6 class="text-muted mb-1">نسخه</h6>
+              <h5 class="mb-0"><%= botStatus.version %></h5>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="py-3">
+              <h6 class="text-muted mb-1">زمان فعالیت</h6>
+              <h5 class="mb-0"><%= botStatus.uptime %></h5>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="py-3">
+              <h6 class="text-muted mb-1">عملیات</h6>
+              <a href="/admin/bot/restart" class="btn btn-outline-primary">
+                <i class="fas fa-redo me-1"></i>
+                راه‌اندازی مجدد
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -570,50 +356,230 @@
   </div>
 </div>
 
-<!-- اسکریپت‌های داشبورد -->
 <script>
-// داده‌های نمودارها
-const activeUsersData = {
-  labels: [
-    <% activeUsersHistory.forEach(item => { %>
-      '<%= item.date %>',
-    <% }) %>
-  ],
-  values: [
-    <% activeUsersHistory.forEach(item => { %>
-      <%= item.count %>,
-    <% }) %>
-  ]
-};
-
-const gamesData = {
-  labels: ['پرتاب سکه', 'سنگ کاغذ قیچی', 'حدس عدد', 'تاس', 'سایر'],
-  values: [
-    <%= gameStats.coinflip %>,
-    <%= gameStats.rps %>,
-    <%= gameStats.numberguess %>,
-    <%= gameStats.dice %>,
-    <%= gameStats.other %>
-  ]
-};
-
-const economyData = {
-  labels: ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه'],
-  wallet: [<%= stats.economyWeekData ? stats.economyWeekData.wallet.join(',') : '' %>],
-  bank: [<%= stats.economyWeekData ? stats.economyWeekData.bank.join(',') : '' %>]
-};
-
-const activityData = {
-  labels: ['بازی', 'تراکنش', 'ماموریت', 'دزدی', 'خرید', 'کلن'],
-  values: [<%= stats.activityData ? stats.activityData.join(',') : '' %>]
-};
-
-// لود اسکریپت داشبورد
-document.addEventListener('DOMContentLoaded', function() {
-  // فعال کردن اسکریپت داشبورد اصلی
-  // این فایل در public/js/dashboard.js قرار دارد
-});
+  document.addEventListener('DOMContentLoaded', function() {
+    // نمودار کاربران فعال
+    const activeUsersCtx = document.getElementById('activeUsersChart').getContext('2d');
+    const activeUsersChart = new Chart(activeUsersCtx, {
+      type: 'line',
+      data: {
+        labels: <%= JSON.stringify(activeUsersHistory.map(item => item.date)) %>,
+        datasets: [{
+          label: 'کاربران فعال',
+          data: <%= JSON.stringify(activeUsersHistory.map(item => item.count)) %>,
+          backgroundColor: 'rgba(114, 76, 255, 0.2)',
+          borderColor: 'rgba(114, 76, 255, 1)',
+          borderWidth: 2,
+          tension: 0.4,
+          pointRadius: 4,
+          pointBackgroundColor: 'rgba(114, 76, 255, 1)',
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            titleFont: {
+              family: "'Vazirmatn', 'sans-serif'"
+            },
+            bodyFont: {
+              family: "'Vazirmatn', 'sans-serif'"
+            },
+            padding: 10,
+            displayColors: false
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false
+            },
+            ticks: {
+              font: {
+                family: "'Vazirmatn', 'sans-serif'"
+              }
+            }
+          },
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: 'rgba(0, 0, 0, 0.05)'
+            },
+            ticks: {
+              font: {
+                family: "'Vazirmatn', 'sans-serif'"
+              },
+              precision: 0
+            }
+          }
+        }
+      }
+    });
+    
+    // نمودار بازی‌ها
+    const gamesCtx = document.getElementById('gamesChart').getContext('2d');
+    const gamesData = [
+      <%= gameStats.coinflip || 0 %>, 
+      <%= gameStats.rps || 0 %>, 
+      <%= gameStats.numberguess || 0 %>, 
+      <%= gameStats.dice || 0 %>, 
+      <%= gameStats.other || 0 %>
+    ];
+    const gamesChart = new Chart(gamesCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['سکه', 'سنگ کاغذ قیچی', 'حدس عدد', 'تاس', 'سایر'],
+        datasets: [{
+          data: gamesData,
+          backgroundColor: [
+            'rgba(114, 76, 255, 0.8)',
+            'rgba(40, 167, 69, 0.8)',
+            'rgba(23, 162, 184, 0.8)',
+            'rgba(255, 193, 7, 0.8)',
+            'rgba(108, 117, 125, 0.8)'
+          ],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false,
+            position: 'bottom',
+            labels: {
+              font: {
+                family: "'Vazirmatn', 'sans-serif'"
+              },
+              padding: 20
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            titleFont: {
+              family: "'Vazirmatn', 'sans-serif'"
+            },
+            bodyFont: {
+              family: "'Vazirmatn', 'sans-serif'"
+            },
+            padding: 10
+          }
+        },
+        cutout: '70%'
+      }
+    });
+    
+    // فعال‌سازی تولتیپ‌ها
+    const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    if (tooltips.length > 0) {
+      tooltips.forEach(tooltip => {
+        new bootstrap.Tooltip(tooltip);
+      });
+    }
+    
+    // دکمه بروزرسانی
+    const refreshBtn = document.getElementById('refreshDashboard');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', function() {
+        window.location.reload();
+      });
+    }
+  });
 </script>
 
-<!-- لینک به اسکریپت داشبورد -->
-<script src="/js/dashboard.js"></script>
+<style>
+  /* استایل‌های اضافی برای صفحه داشبورد */
+  .stat-card {
+    background-color: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  }
+  
+  .stat-card-header {
+    padding: 15px;
+    color: white;
+  }
+  
+  .stat-card-body {
+    padding: 15px;
+  }
+  
+  .event-list {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  
+  .event-icon .rounded-circle {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .action-buttons .btn {
+    padding: 0.25rem 0.5rem;
+    margin-right: 0.25rem;
+  }
+  
+  .avatar-sm {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+  
+  .status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  
+  .help-tooltip {
+    cursor: help;
+    opacity: 0.5;
+    transition: opacity 0.3s;
+  }
+  
+  .help-tooltip:hover {
+    opacity: 1;
+  }
+  
+  /* انیمیشن‌ها */
+  .animated-element {
+    animation: fadeInUp 0.5s ease-out forwards;
+    opacity: 0;
+  }
+  
+  .animated-element:nth-child(1) { animation-delay: 0.1s; }
+  .animated-element:nth-child(2) { animation-delay: 0.2s; }
+  .animated-element:nth-child(3) { animation-delay: 0.3s; }
+  .animated-element:nth-child(4) { animation-delay: 0.4s; }
+  .animated-element:nth-child(5) { animation-delay: 0.5s; }
+  
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>

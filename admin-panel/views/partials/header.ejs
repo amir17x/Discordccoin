@@ -1,29 +1,109 @@
-<header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
-  <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6" href="/dashboard">
-    <img src="/img/logo.png" alt="Ccoin" class="header-logo me-2">
-    <span>پنل مدیریت Ccoin</span>
-  </a>
-  <button class="navbar-toggler d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
-    <span class="navbar-toggler-icon"></span>
-  </button>
-  <div class="navbar-nav flex-row">
-    <div class="nav-item text-nowrap">
-      <a class="nav-link px-3" href="#" id="refreshData">
-        <i class="fas fa-sync-alt me-1"></i>
-        بروزرسانی
-      </a>
+<header class="topbar">
+  <div class="container-fluid d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center">
+      <button class="btn d-lg-none me-2" id="mobile-toggle">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="search-container">
+        <form>
+          <div class="input-group">
+            <span class="input-group-text bg-white border-end-0">
+              <i class="fas fa-search text-muted"></i>
+            </span>
+            <input type="text" class="form-control border-start-0 ps-0" placeholder="جستجو...">
+          </div>
+        </form>
+      </div>
     </div>
-    <div class="nav-item text-nowrap dropdown">
-      <a class="nav-link px-3 dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-        <i class="fas fa-user-circle me-1"></i>
-        <%= user.username %>
-      </a>
-      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-        <li><a class="dropdown-item" href="/profile"><i class="fas fa-id-card me-2"></i> پروفایل</a></li>
-        <li><a class="dropdown-item" href="/settings"><i class="fas fa-cog me-2"></i> تنظیمات</a></li>
-        <li><hr class="dropdown-divider"></li>
-        <li><a class="dropdown-item" href="/auth/logout"><i class="fas fa-sign-out-alt me-2"></i> خروج</a></li>
-      </ul>
+    
+    <div class="topbar-right d-flex align-items-center">
+      <div class="notification-bell me-4">
+        <div class="dropdown">
+          <button class="btn position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-bell"></i>
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+              3
+            </span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end notification-dropdown">
+            <li><h6 class="dropdown-header">اعلان‌ها</h6></li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item notification-item unread" href="#">
+                <div class="notification-icon bg-primary">
+                  <i class="fas fa-user-plus"></i>
+                </div>
+                <div class="notification-text">
+                  <p class="mb-1">کاربر جدید ثبت نام کرد</p>
+                  <span class="text-muted small">10 دقیقه پیش</span>
+                </div>
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item notification-item unread" href="#">
+                <div class="notification-icon bg-success">
+                  <i class="fas fa-coins"></i>
+                </div>
+                <div class="notification-text">
+                  <p class="mb-1">تراکنش جدید انجام شد</p>
+                  <span class="text-muted small">30 دقیقه پیش</span>
+                </div>
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item notification-item unread" href="#">
+                <div class="notification-icon bg-warning">
+                  <i class="fas fa-flag"></i>
+                </div>
+                <div class="notification-text">
+                  <p class="mb-1">کلن جدید ایجاد شد</p>
+                  <span class="text-muted small">1 ساعت پیش</span>
+                </div>
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-center view-all" href="#">نمایش همه اعلان‌ها</a></li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="user-dropdown">
+        <div class="dropdown">
+          <button class="btn p-0 d-flex align-items-center" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <div class="avatar me-2">
+              <div class="avatar-initial rounded-circle bg-primary text-white">
+                <%= user.name ? user.name.charAt(0) : user.username.charAt(0) %>
+              </div>
+            </div>
+            <div class="user-info d-none d-md-block">
+              <h6 class="mb-0"><%= user.name || user.username %></h6>
+              <small class="text-muted"><%= user.role === 'admin' ? 'مدیر سیستم' : 'مدیر' %></small>
+            </div>
+            <i class="fas fa-chevron-down ms-2 d-none d-md-block"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end user-dropdown-menu">
+            <li>
+              <a class="dropdown-item" href="/admin/profile">
+                <i class="fas fa-user me-2"></i>
+                پروفایل
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="/admin/settings">
+                <i class="fas fa-cog me-2"></i>
+                تنظیمات
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item text-danger" href="/admin/logout">
+                <i class="fas fa-sign-out-alt me-2"></i>
+                خروج
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
     </div>
   </div>
 </header>

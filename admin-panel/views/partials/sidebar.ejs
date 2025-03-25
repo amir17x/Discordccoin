@@ -1,115 +1,165 @@
 <div class="sidebar">
   <div class="sidebar-header">
-    <a href="/admin/dashboard" class="sidebar-logo">
-      <img src="https://i.imgur.com/K9wtXo6.png" alt="Ccoin Logo" class="logo-image">
-      <span class="logo-text">پنل مدیریت</span>
-    </a>
-    <button class="btn sidebar-toggle" id="sidebar-toggle">
-      <i class="fas fa-bars"></i>
+    <img src="https://i.imgur.com/K9wtXo6.png" alt="Ccoin Logo" class="logo">
+    <h4>Ccoin<span class="text-primary">Admin</span></h4>
+    <button class="btn-sidebar-close d-lg-none">
+      <i class="fas fa-times"></i>
     </button>
   </div>
   
-  <div class="sidebar-user">
-    <div class="user-avatar">
-      <i class="fas fa-user"></i>
+  <div class="user-info">
+    <div class="avatar">
+      <span class="avatar-text"><%= user.username.charAt(0).toUpperCase() %></span>
     </div>
-    <div class="user-info">
-      <h6 class="user-name"><%= user.name || user.username %></h6>
-      <span class="user-role"><%= user.role === 'admin' ? 'مدیر سیستم' : 'مدیر' %></span>
+    <div class="info">
+      <h6 class="mb-0"><%= user.name || user.username %></h6>
+      <span class="role"><%= user.role === 'admin' ? 'مدیر سیستم' : 'مدیر' %></span>
     </div>
   </div>
   
-  <div class="sidebar-menu">
-    <ul class="menu-list">
-      <li class="menu-item <%= active === 'dashboard' ? 'active' : '' %>">
-        <a href="/admin/dashboard" class="menu-link">
+  <div class="sidebar-nav">
+    <ul class="nav flex-column">
+      <li class="nav-item">
+        <a class="nav-link <%= activePage === 'dashboard' ? 'active' : '' %>" href="/admin/dashboard">
           <i class="fas fa-tachometer-alt"></i>
           <span>داشبورد</span>
         </a>
       </li>
       
-      <li class="menu-header">مدیریت</li>
-      
-      <li class="menu-item <%= active === 'users' ? 'active' : '' %>">
-        <a href="/admin/users" class="menu-link">
+      <li class="nav-item">
+        <a class="nav-link <%= activePage === 'users' ? 'active' : '' %>" href="/admin/users">
           <i class="fas fa-users"></i>
           <span>کاربران</span>
+          <% if (stats && stats.newUsers24h > 0) { %>
+            <span class="badge bg-primary"><%= stats.newUsers24h %></span>
+          <% } %>
         </a>
       </li>
       
-      <li class="menu-item <%= active === 'clans' ? 'active' : '' %>">
-        <a href="/admin/clans" class="menu-link">
+      <li class="nav-item">
+        <a class="nav-link <%= activePage === 'clans' ? 'active' : '' %>" href="/admin/clans">
           <i class="fas fa-flag"></i>
           <span>کلن‌ها</span>
         </a>
       </li>
       
-      <li class="menu-item <%= active === 'items' ? 'active' : '' %>">
-        <a href="/admin/items" class="menu-link">
-          <i class="fas fa-box"></i>
+      <li class="nav-item">
+        <a class="nav-link <%= activePage === 'items' ? 'active' : '' %>" href="/admin/items">
+          <i class="fas fa-box-open"></i>
           <span>آیتم‌ها</span>
         </a>
       </li>
       
-      <li class="menu-item <%= active === 'quests' ? 'active' : '' %>">
-        <a href="/admin/quests" class="menu-link">
+      <li class="nav-item">
+        <a class="nav-link <%= activePage === 'quests' ? 'active' : '' %>" href="/admin/quests">
           <i class="fas fa-tasks"></i>
           <span>ماموریت‌ها</span>
         </a>
       </li>
       
-      <li class="menu-header">رویدادها</li>
-      
-      <li class="menu-item <%= active === 'lottery' ? 'active' : '' %>">
-        <a href="/admin/lottery" class="menu-link">
-          <i class="fas fa-ticket-alt"></i>
-          <span>لاتاری</span>
+      <li class="nav-item">
+        <a class="nav-link <%= activePage === 'games' ? 'active' : '' %>" href="/admin/games">
+          <i class="fas fa-gamepad"></i>
+          <span>بازی‌ها</span>
         </a>
       </li>
       
-      <li class="menu-item <%= active === 'stocks' ? 'active' : '' %>">
-        <a href="/admin/stocks" class="menu-link">
-          <i class="fas fa-chart-line"></i>
-          <span>بازار سهام</span>
+      <li class="nav-item sidebar-dropdown">
+        <a class="nav-link dropdown-toggle <%= ['economy', 'transactions', 'stocks', 'lottery'].includes(activePage) ? 'active' : '' %>" href="#economySubmenu" data-bs-toggle="collapse" aria-expanded="<%= ['economy', 'transactions', 'stocks', 'lottery'].includes(activePage) ? 'true' : 'false' %>">
+          <i class="fas fa-coins"></i>
+          <span>اقتصاد</span>
+          <i class="dropdown-indicator fas fa-chevron-right"></i>
         </a>
+        <ul class="collapse <%= ['economy', 'transactions', 'stocks', 'lottery'].includes(activePage) ? 'show' : '' %>" id="economySubmenu">
+          <li>
+            <a class="<%= activePage === 'economy' ? 'active' : '' %>" href="/admin/economy">
+              <i class="fas fa-chart-line"></i>
+              <span>گزارش اقتصادی</span>
+            </a>
+          </li>
+          <li>
+            <a class="<%= activePage === 'transactions' ? 'active' : '' %>" href="/admin/transactions">
+              <i class="fas fa-exchange-alt"></i>
+              <span>تراکنش‌ها</span>
+            </a>
+          </li>
+          <li>
+            <a class="<%= activePage === 'stocks' ? 'active' : '' %>" href="/admin/stocks">
+              <i class="fas fa-chart-bar"></i>
+              <span>سهام</span>
+            </a>
+          </li>
+          <li>
+            <a class="<%= activePage === 'lottery' ? 'active' : '' %>" href="/admin/lottery">
+              <i class="fas fa-ticket-alt"></i>
+              <span>لاتاری</span>
+            </a>
+          </li>
+        </ul>
       </li>
       
-      <li class="menu-item <%= active === 'tournaments' ? 'active' : '' %>">
-        <a href="/admin/tournaments" class="menu-link">
+      <li class="nav-item sidebar-dropdown">
+        <a class="nav-link dropdown-toggle <%= ['tournaments', 'seasons', 'events'].includes(activePage) ? 'active' : '' %>" href="#eventsSubmenu" data-bs-toggle="collapse" aria-expanded="<%= ['tournaments', 'seasons', 'events'].includes(activePage) ? 'true' : 'false' %>">
           <i class="fas fa-trophy"></i>
-          <span>تورنمنت‌ها</span>
+          <span>رویدادها</span>
+          <i class="dropdown-indicator fas fa-chevron-right"></i>
         </a>
+        <ul class="collapse <%= ['tournaments', 'seasons', 'events'].includes(activePage) ? 'show' : '' %>" id="eventsSubmenu">
+          <li>
+            <a class="<%= activePage === 'tournaments' ? 'active' : '' %>" href="/admin/tournaments">
+              <i class="fas fa-medal"></i>
+              <span>تورنمنت‌ها</span>
+            </a>
+          </li>
+          <li>
+            <a class="<%= activePage === 'seasons' ? 'active' : '' %>" href="/admin/seasons">
+              <i class="fas fa-calendar-alt"></i>
+              <span>فصل‌ها</span>
+            </a>
+          </li>
+          <li>
+            <a class="<%= activePage === 'events' ? 'active' : '' %>" href="/admin/events">
+              <i class="fas fa-calendar-day"></i>
+              <span>ایونت‌ها</span>
+            </a>
+          </li>
+        </ul>
       </li>
       
-      <li class="menu-header">سیستمی</li>
+      <li class="nav-heading">تنظیمات</li>
       
-      <li class="menu-item <%= active === 'logs' ? 'active' : '' %>">
-        <a href="/admin/logs" class="menu-link">
+      <li class="nav-item">
+        <a class="nav-link <%= activePage === 'logs' ? 'active' : '' %>" href="/admin/logs">
           <i class="fas fa-history"></i>
-          <span>لاگ سیستم</span>
+          <span>لاگ‌ها</span>
         </a>
       </li>
       
-      <li class="menu-item <%= active === 'settings' ? 'active' : '' %>">
-        <a href="/admin/settings" class="menu-link">
+      <li class="nav-item">
+        <a class="nav-link <%= activePage === 'settings' ? 'active' : '' %>" href="/admin/settings">
           <i class="fas fa-cog"></i>
           <span>تنظیمات</span>
         </a>
       </li>
       
-      <li class="menu-item <%= active === 'status' ? 'active' : '' %>">
-        <a href="/admin/status" class="menu-link">
-          <i class="fas fa-heartbeat"></i>
-          <span>وضعیت ربات</span>
-        </a>
-      </li>
+      <% if (user.role === 'admin') { %>
+        <li class="nav-item">
+          <a class="nav-link <%= activePage === 'system' ? 'active' : '' %>" href="/admin/system">
+            <i class="fas fa-server"></i>
+            <span>سیستم</span>
+          </a>
+        </li>
+      <% } %>
     </ul>
   </div>
   
   <div class="sidebar-footer">
-    <a href="/admin/logout" class="btn btn-danger w-100">
-      <i class="fas fa-sign-out-alt me-1"></i>
-      خروج
+    <a href="/admin/logout" class="btn btn-logout">
+      <i class="fas fa-sign-out-alt"></i>
+      <span>خروج</span>
     </a>
+    <div class="version">
+      <small>نسخه v1.0.0</small>
+    </div>
   </div>
 </div>

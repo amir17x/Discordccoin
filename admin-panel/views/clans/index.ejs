@@ -1,273 +1,153 @@
-<!-- هدر صفحه مدیریت کلن‌ها -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
-  <h1 class="h2 d-flex align-items-center animated-element">
-    <i class="fas fa-flag me-2 text-success"></i>
-    مدیریت کلن‌ها
-  </h1>
-  <div class="btn-toolbar mb-2 mb-md-0">
-    <div class="btn-group me-2">
-      <button type="button" class="btn btn-sm btn-outline-secondary" id="exportClansCSV">
-        <i class="fas fa-file-export me-1"></i>
-        خروجی CSV
-      </button>
-      <button type="button" class="btn btn-sm btn-outline-secondary" id="refreshClanList">
-        <i class="fas fa-sync-alt me-1"></i>
-        بروزرسانی
-      </button>
-    </div>
-    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addClanModal">
-      <i class="fas fa-plus me-1"></i>
-      کلن جدید
+<!-- صفحه مدیریت کلن‌ها -->
+<div class="page-header d-flex justify-content-between align-items-center">
+  <h4 class="page-title mb-0">مدیریت کلن‌ها</h4>
+  <div>
+    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#newClanModal">
+      <i class="bi bi-plus-lg me-1"></i> کلن جدید
     </button>
   </div>
 </div>
 
-<!-- آمار کلی کلن‌ها -->
-<div class="row g-3 mb-4">
-  <div class="col-md-3 animated-element">
-    <div class="stat-card">
-      <div class="stat-card-header bg-primary">
-        <div class="d-flex justify-content-between align-items-center">
-          <h5 class="mb-0 d-flex align-items-center">
-            <i class="fas fa-users me-2"></i>
-            کل کلن‌ها
-          </h5>
-          <i class="fas fa-question-circle help-tooltip" data-tooltip="تعداد کل کلن‌های موجود در سیستم"></i>
-        </div>
-      </div>
-      <div class="stat-card-body">
-        <div class="d-flex align-items-center">
-          <h2 class="mb-0 me-2"><%= stats.totalClans %></h2>
-          <span class="badge bg-<%= stats.newClans24h > 0 ? 'success' : 'secondary' %> fs-6">
-            <i class="fas fa-<%= stats.newClans24h > 0 ? 'arrow-up' : 'minus' %>"></i>
-            <%= stats.newClans24h || 0 %>
-          </span>
-        </div>
-        <p class="text-muted mt-2">
-          <small><%= stats.newClans24h || 0 %> کلن جدید در 24 ساعت گذشته</small>
-        </p>
-      </div>
-    </div>
-  </div>
-  
-  <div class="col-md-3 animated-element">
-    <div class="stat-card">
-      <div class="stat-card-header bg-success">
-        <div class="d-flex justify-content-between align-items-center">
-          <h5 class="mb-0 d-flex align-items-center">
-            <i class="fas fa-user-friends me-2"></i>
-            متوسط اعضا
-          </h5>
-          <i class="fas fa-question-circle help-tooltip" data-tooltip="میانگین تعداد اعضای هر کلن"></i>
-        </div>
-      </div>
-      <div class="stat-card-body">
-        <div class="d-flex align-items-center">
-          <h2 class="mb-0 me-2"><%= stats.avgClanMembers || 0 %></h2>
-          <span class="text-muted">نفر</span>
-        </div>
-        <p class="text-muted mt-2">
-          <small>حداکثر ظرفیت: <%= stats.maxClanCapacity || 20 %> نفر</small>
-        </p>
-      </div>
-    </div>
-  </div>
-  
-  <div class="col-md-3 animated-element">
-    <div class="stat-card">
-      <div class="stat-card-header bg-warning">
-        <div class="d-flex justify-content-between align-items-center">
-          <h5 class="mb-0 d-flex align-items-center text-dark">
-            <i class="fas fa-coins me-2"></i>
-            خزانه کلن‌ها
-          </h5>
-          <i class="fas fa-question-circle help-tooltip" data-tooltip="مجموع Ccoin موجود در خزانه تمام کلن‌ها"></i>
-        </div>
-      </div>
-      <div class="stat-card-body">
-        <div class="d-flex align-items-center">
-          <h2 class="mb-0 me-2"><%= helpers.formatNumber(stats.totalClanTreasury || 0) %></h2>
-          <span class="text-muted">Ccoin</span>
-        </div>
-        <p class="text-muted mt-2">
-          <small>میانگین هر کلن: <%= helpers.formatNumber(Math.round((stats.totalClanTreasury || 0) / (stats.totalClans || 1))) %> Ccoin</small>
-        </p>
-      </div>
-    </div>
-  </div>
-  
-  <div class="col-md-3 animated-element">
-    <div class="stat-card">
-      <div class="stat-card-header bg-info">
-        <div class="d-flex justify-content-between align-items-center">
-          <h5 class="mb-0 d-flex align-items-center">
-            <i class="fas fa-bolt me-2"></i>
-            جنگ‌ها
-          </h5>
-          <i class="fas fa-question-circle help-tooltip" data-tooltip="تعداد جنگ‌های کلن فعال"></i>
-        </div>
-      </div>
-      <div class="stat-card-body">
-        <div class="d-flex align-items-center">
-          <h2 class="mb-0 me-2"><%= stats.activeClanWars || 0 %></h2>
-          <span class="badge bg-danger">فعال</span>
-        </div>
-        <p class="text-muted mt-2">
-          <small><%= stats.completedClanWars7d || 0 %> جنگ در 7 روز گذشته</small>
-        </p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- بخش فیلتر و جستجو -->
-<div class="card mb-4 border-0 shadow-sm animated-element">
-  <div class="card-body">
-    <form id="clanFilterForm" class="row g-3">
-      <div class="col-md-4">
-        <label for="searchQuery" class="form-label">جستجو:</label>
-        <div class="input-group">
-          <span class="input-group-text"><i class="fas fa-search"></i></span>
-          <input type="text" class="form-control" id="searchQuery" name="query" placeholder="نام کلن، شناسه، توضیحات...">
-        </div>
-      </div>
-      <div class="col-md-2">
-        <label for="sortBy" class="form-label">مرتب‌سازی:</label>
-        <select class="form-select" id="sortBy" name="sortBy">
-          <option value="name">نام کلن</option>
-          <option value="membersCount">تعداد اعضا</option>
-          <option value="createdAt">تاریخ ایجاد</option>
-          <option value="level">سطح کلن</option>
-          <option value="treasury">موجودی خزانه</option>
-        </select>
-      </div>
-      <div class="col-md-2">
-        <label for="filterBy" class="form-label">فیلتر:</label>
-        <select class="form-select" id="filterBy" name="filterBy">
-          <option value="all">همه کلن‌ها</option>
-          <option value="active">کلن‌های فعال</option>
-          <option value="inactive">کلن‌های غیرفعال</option>
-          <option value="war">در حال جنگ</option>
-          <option value="recruiting">در حال عضوگیری</option>
-        </select>
-      </div>
-      <div class="col-md-2">
-        <label for="membersMin" class="form-label">حداقل اعضا:</label>
-        <input type="number" class="form-control" id="membersMin" name="membersMin" min="0" value="0">
-      </div>
-      <div class="col-md-2 d-flex align-items-end">
-        <button type="submit" class="btn btn-primary w-100">
-          <i class="fas fa-filter me-1"></i>
-          اعمال فیلتر
+<div class="card mt-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="card-title mb-0">لیست کلن‌ها</h5>
+    <div class="d-flex">
+      <div class="input-group input-group-sm me-2" style="width: 250px;">
+        <input type="text" class="form-control" id="searchClan" placeholder="جستجو...">
+        <button class="btn btn-outline-secondary" type="button">
+          <i class="bi bi-search"></i>
         </button>
       </div>
-    </form>
+      <div class="dropdown">
+        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="bi bi-funnel me-1"></i> فیلتر
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="filterDropdown">
+          <li><a class="dropdown-item" href="?sort=name">مرتب‌سازی بر اساس نام</a></li>
+          <li><a class="dropdown-item" href="?sort=members">مرتب‌سازی بر اساس تعداد اعضا</a></li>
+          <li><a class="dropdown-item" href="?sort=created">مرتب‌سازی بر اساس تاریخ ایجاد</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item" href="?filter=active">فقط کلن‌های فعال</a></li>
+          <li><a class="dropdown-item" href="?filter=inactive">فقط کلن‌های غیرفعال</a></li>
+        </ul>
+      </div>
+    </div>
   </div>
-</div>
-
-<!-- جدول کلن‌ها -->
-<div class="card border-0 shadow-sm animated-element">
   <div class="card-body p-0">
     <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
+      <table class="table table-hover mb-0">
         <thead>
           <tr>
-            <th scope="col" width="5%">#</th>
-            <th scope="col" width="20%">نام کلن</th>
-            <th scope="col" width="10%">سطح</th>
-            <th scope="col" width="10%">اعضا</th>
-            <th scope="col" width="15%">موجودی خزانه</th>
-            <th scope="col" width="10%">وضعیت</th>
-            <th scope="col" width="15%">تاریخ ایجاد</th>
-            <th scope="col" width="15%">عملیات</th>
+            <th>شناسه</th>
+            <th>نام</th>
+            <th>توضیحات</th>
+            <th>سازنده</th>
+            <th>تعداد اعضا</th>
+            <th>سطح</th>
+            <th>تاریخ ایجاد</th>
+            <th>وضعیت</th>
+            <th>عملیات</th>
           </tr>
         </thead>
         <tbody>
           <% if (clans && clans.length > 0) { %>
-            <% clans.forEach((clan, index) => { %>
+            <% clans.forEach(clan => { %>
               <tr>
-                <th scope="row"><%= (page - 1) * limit + index + 1 %></th>
+                <td><%= clan.id %></td>
                 <td>
                   <div class="d-flex align-items-center">
-                    <div class="clan-icon rounded-circle bg-<%= getRandomColor(clan.id) %> text-white d-flex align-items-center justify-content-center me-2" style="width: 40px; height: 40px;">
-                      <%= clan.name.substring(0, 2).toUpperCase() %>
-                    </div>
-                    <div>
-                      <a href="/clans/<%= clan.id %>" class="text-decoration-none fw-bold">
-                        <%= clan.name %>
-                      </a>
-                      <% if (clan.tag) { %>
-                        <div class="small text-muted">#<%= clan.tag %></div>
-                      <% } %>
-                    </div>
+                    <% if (clan.iconUrl) { %>
+                      <img src="<%= clan.iconUrl %>" alt="<%= clan.name %>" width="24" height="24" class="rounded-circle me-2">
+                    <% } else { %>
+                      <div class="icon-circle bg-primary text-white me-2" style="width: 24px; height: 24px; font-size: 10px;">
+                        <%= clan.name.substring(0, 1) %>
+                      </div>
+                    <% } %>
+                    <span><%= clan.name %></span>
                   </div>
                 </td>
+                <td><%= clan.description.substring(0, 30) %><%= clan.description.length > 30 ? '...' : '' %></td>
+                <td><a href="/admin/users/<%= clan.ownerId %>"><%= clan.ownerName %></a></td>
+                <td><%= clan.memberCount %>/<%= clan.maxMembers %></td>
+                <td><span class="badge bg-primary"><%= clan.level %></span></td>
+                <td><%= new Date(clan.createdAt).toLocaleDateString('fa-IR') %></td>
                 <td>
-                  <div class="d-flex align-items-center">
-                    <span class="badge rounded-pill bg-primary me-1"><%= clan.level || 1 %></span>
-                    <div class="progress flex-grow-1" style="height: 5px; width: 50px;">
-                      <div class="progress-bar" role="progressbar" style="width: <%= clan.xp ? (clan.xp / (clan.level * 1000)) * 100 : 0 %>%"></div>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <div class="d-flex align-items-center">
-                    <i class="fas fa-users me-1 text-primary"></i>
-                    <%= clan.membersCount || 0 %>/<%= clan.maxMembers || 20 %>
-                  </div>
-                </td>
-                <td>
-                  <div class="d-flex align-items-center">
-                    <i class="fas fa-coins me-1 text-warning"></i>
-                    <%= helpers.formatNumber(clan.treasury || 0) %> Ccoin
-                  </div>
-                </td>
-                <td>
-                  <% if (clan.isInWar) { %>
-                    <span class="badge bg-danger">در حال جنگ</span>
-                  <% } else if (clan.isRecruiting) { %>
-                    <span class="badge bg-success">عضوگیری</span>
-                  <% } else if (clan.isActive) { %>
-                    <span class="badge bg-primary">فعال</span>
-                  <% } else { %>
-                    <span class="badge bg-secondary">غیرفعال</span>
-                  <% } %>
-                </td>
-                <td>
-                  <div class="d-flex align-items-center">
-                    <i class="far fa-calendar-alt me-1 text-muted"></i>
-                    <span><%= helpers.formatDate(clan.createdAt) %></span>
-                  </div>
+                  <span class="badge bg-<%= clan.isActive ? 'success' : 'secondary' %>">
+                    <%= clan.isActive ? 'فعال' : 'غیرفعال' %>
+                  </span>
                 </td>
                 <td>
                   <div class="action-buttons">
-                    <a href="/clans/<%= clan.id %>" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="مشاهده کلن">
-                      <i class="fas fa-eye"></i>
+                    <a href="/admin/clans/<%= clan.id %>" class="btn btn-sm btn-info" title="مشاهده جزئیات">
+                      <i class="bi bi-eye"></i>
                     </a>
-                    <a href="/clans/<%= clan.id %>/edit" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" title="ویرایش کلن">
-                      <i class="fas fa-edit"></i>
-                    </a>
-                    <a href="/clans/<%= clan.id %>/members" class="btn btn-sm btn-outline-info" data-bs-toggle="tooltip" title="مدیریت اعضا">
-                      <i class="fas fa-user-friends"></i>
-                    </a>
-                    <button onclick="deleteClan('<%= clan.id %>', '<%= clan.name %>')" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="حذف کلن">
-                      <i class="fas fa-trash-alt"></i>
+                    <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editClanModal<%= clan.id %>" title="ویرایش">
+                      <i class="bi bi-pencil"></i>
                     </button>
+                    <% if (clan.isActive) { %>
+                      <button class="btn btn-sm btn-danger" onclick="deactivateClan(<%= clan.id %>)" title="غیرفعال‌سازی">
+                        <i class="bi bi-x-circle"></i>
+                      </button>
+                    <% } else { %>
+                      <button class="btn btn-sm btn-success" onclick="activateClan(<%= clan.id %>)" title="فعال‌سازی">
+                        <i class="bi bi-check-circle"></i>
+                      </button>
+                    <% } %>
                   </div>
                 </td>
               </tr>
-            <% }) %>
+
+              <!-- مدال ویرایش کلن -->
+              <div class="modal fade" id="editClanModal<%= clan.id %>" tabindex="-1" aria-labelledby="editClanModalLabel<%= clan.id %>" aria-hidden="true">
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title" id="editClanModalLabel<%= clan.id %>">ویرایش کلن <%= clan.name %></h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+                    </div>
+                    <form action="/admin/clans/<%= clan.id %>/update" method="POST">
+                      <div class="modal-body">
+                        <div class="mb-3">
+                          <label for="editName<%= clan.id %>" class="form-label">نام کلن</label>
+                          <input type="text" class="form-control" id="editName<%= clan.id %>" name="name" value="<%= clan.name %>" required>
+                        </div>
+                        <div class="mb-3">
+                          <label for="editDescription<%= clan.id %>" class="form-label">توضیحات</label>
+                          <textarea class="form-control" id="editDescription<%= clan.id %>" name="description" rows="3"><%= clan.description %></textarea>
+                        </div>
+                        <div class="mb-3">
+                          <label for="editMaxMembers<%= clan.id %>" class="form-label">حداکثر تعداد اعضا</label>
+                          <input type="number" class="form-control" id="editMaxMembers<%= clan.id %>" name="maxMembers" value="<%= clan.maxMembers %>" min="5" max="100" required>
+                        </div>
+                        <div class="mb-3">
+                          <label for="editLevel<%= clan.id %>" class="form-label">سطح کلن</label>
+                          <input type="number" class="form-control" id="editLevel<%= clan.id %>" name="level" value="<%= clan.level %>" min="1" max="50" required>
+                        </div>
+                        <div class="mb-3">
+                          <label for="editCoins<%= clan.id %>" class="form-label">موجودی کلن (Ccoin)</label>
+                          <input type="number" class="form-control" id="editCoins<%= clan.id %>" name="coins" value="<%= clan.coins %>" min="0" required>
+                        </div>
+                        <div class="mb-3 form-check">
+                          <input type="checkbox" class="form-check-input" id="editActive<%= clan.id %>" name="isActive" <%= clan.isActive ? 'checked' : '' %>>
+                          <label class="form-check-label" for="editActive<%= clan.id %>">کلن فعال است</label>
+                        </div>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                        <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            <% }); %>
           <% } else { %>
             <tr>
-              <td colspan="8" class="text-center py-5">
+              <td colspan="9" class="text-center py-4">
                 <div class="empty-state">
-                  <i class="fas fa-flag fa-4x text-muted mb-3"></i>
+                  <i class="bi bi-flag fs-1 text-muted mb-3"></i>
                   <h5>هیچ کلنی یافت نشد</h5>
-                  <p class="text-muted">کلن جدیدی ایجاد کنید یا فیلترهای جستجو را تغییر دهید.</p>
-                  <button class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#addClanModal">
-                    <i class="fas fa-plus me-1"></i>
-                    ایجاد کلن جدید
-                  </button>
+                  <p class="text-muted">می‌توانید با کلیک بر روی دکمه "کلن جدید" یک کلن جدید ایجاد کنید.</p>
                 </div>
               </td>
             </tr>
@@ -276,182 +156,91 @@
       </table>
     </div>
   </div>
-</div>
-
-<!-- پاگینیشن -->
-<div class="d-flex justify-content-between align-items-center mt-4 animated-element">
-  <div>
-    <span class="text-muted">نمایش <%= (page - 1) * limit + 1 %> تا <%= Math.min(page * limit, totalClans) %> از <%= totalClans %> کلن</span>
-  </div>
-  <nav aria-label="Page navigation">
-    <ul class="pagination">
-      <li class="page-item <%= page <= 1 ? 'disabled' : '' %>">
-        <a class="page-link" href="/clans?page=<%= page - 1 %>&limit=<%= limit %>" aria-label="Previous">
-          <span aria-hidden="true">&laquo;</span>
-        </a>
-      </li>
-      
-      <% for(let i = Math.max(1, page - 2); i <= Math.min(Math.ceil(totalClans / limit), page + 2); i++) { %>
-        <li class="page-item <%= i === page ? 'active' : '' %>">
-          <a class="page-link" href="/clans?page=<%= i %>&limit=<%= limit %>"><%= i %></a>
+  <div class="card-footer">
+    <nav aria-label="صفحه‌بندی کلن‌ها">
+      <ul class="pagination justify-content-center mb-0">
+        <li class="page-item <%= currentPage <= 1 ? 'disabled' : '' %>">
+          <a class="page-link" href="?page=<%= currentPage - 1 %>" tabindex="-1" aria-disabled="<%= currentPage <= 1 %>">قبلی</a>
         </li>
-      <% } %>
-      
-      <li class="page-item <%= page >= Math.ceil(totalClans / limit) ? 'disabled' : '' %>">
-        <a class="page-link" href="/clans?page=<%= page + 1 %>&limit=<%= limit %>" aria-label="Next">
-          <span aria-hidden="true">&raquo;</span>
-        </a>
-      </li>
-    </ul>
-  </nav>
+        <% for(let i = 1; i <= totalPages; i++) { %>
+          <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+            <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+          </li>
+        <% } %>
+        <li class="page-item <%= currentPage >= totalPages ? 'disabled' : '' %>">
+          <a class="page-link" href="?page=<%= currentPage + 1 %>">بعدی</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
 </div>
 
-<!-- مدال افزودن کلن جدید -->
-<div class="modal fade" id="addClanModal" tabindex="-1" aria-labelledby="addClanModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
+<!-- مدال ایجاد کلن جدید -->
+<div class="modal fade" id="newClanModal" tabindex="-1" aria-labelledby="newClanModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="addClanModalLabel">
-          <i class="fas fa-plus-circle me-1 text-primary"></i>
-          ایجاد کلن جدید
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <h5 class="modal-title" id="newClanModalLabel">ایجاد کلن جدید</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
       </div>
-      <form action="/clans/add" method="POST">
+      <form action="/admin/clans/create" method="POST">
         <div class="modal-body">
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label for="clanName" class="form-label">نام کلن</label>
-              <div class="input-group">
-                <span class="input-group-text"><i class="fas fa-flag"></i></span>
-                <input type="text" class="form-control" id="clanName" name="name" required>
-              </div>
-              <div class="form-text">نام کلن باید منحصر به فرد باشد (حداقل 3 و حداکثر 20 کاراکتر).</div>
-            </div>
-            
-            <div class="col-md-6">
-              <label for="clanTag" class="form-label">برچسب کلن</label>
-              <div class="input-group">
-                <span class="input-group-text">#</span>
-                <input type="text" class="form-control" id="clanTag" name="tag">
-              </div>
-              <div class="form-text">برچسب کلن اختیاری است و می‌تواند شامل حروف و اعداد باشد.</div>
-            </div>
-            
-            <div class="col-md-12">
-              <label for="clanDescription" class="form-label">توضیحات کلن</label>
-              <textarea class="form-control" id="clanDescription" name="description" rows="3"></textarea>
-            </div>
-            
-            <div class="col-md-6">
-              <label for="clanOwnerId" class="form-label">مالک کلن</label>
-              <select class="form-select" id="clanOwnerId" name="ownerId" required>
-                <option value="" selected disabled>انتخاب کاربر...</option>
-                <% if (users && users.length > 0) { %>
-                  <% users.forEach(user => { %>
-                    <option value="<%= user.id %>"><%= user.username %> (#<%= user.id %>)</option>
-                  <% }) %>
-                <% } %>
-              </select>
-            </div>
-            
-            <div class="col-md-6">
-              <label for="maxMembers" class="form-label">حداکثر تعداد اعضا</label>
-              <input type="number" class="form-control" id="maxMembers" name="maxMembers" min="5" max="50" value="20">
-            </div>
-            
-            <div class="col-md-6">
-              <label for="joinFee" class="form-label">هزینه عضویت (Ccoin)</label>
-              <div class="input-group">
-                <input type="number" class="form-control" id="joinFee" name="joinFee" min="0" value="0">
-                <span class="input-group-text"><i class="fas fa-coins"></i></span>
-              </div>
-            </div>
-            
-            <div class="col-md-6">
-              <label for="initialTreasury" class="form-label">موجودی اولیه خزانه (Ccoin)</label>
-              <div class="input-group">
-                <input type="number" class="form-control" id="initialTreasury" name="initialTreasury" min="0" value="0">
-                <span class="input-group-text"><i class="fas fa-coins"></i></span>
-              </div>
-            </div>
-            
-            <div class="col-md-12">
-              <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="isRecruiting" name="isRecruiting" checked>
-                <label class="form-check-label" for="isRecruiting">در حال عضوگیری</label>
-              </div>
-            </div>
-            
-            <div class="col-md-12">
-              <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="isPrivate" name="isPrivate">
-                <label class="form-check-label" for="isPrivate">کلن خصوصی (نیاز به تأیید مالک برای عضویت)</label>
-              </div>
-            </div>
+          <div class="mb-3">
+            <label for="newName" class="form-label">نام کلن</label>
+            <input type="text" class="form-control" id="newName" name="name" required>
+          </div>
+          <div class="mb-3">
+            <label for="newDescription" class="form-label">توضیحات</label>
+            <textarea class="form-control" id="newDescription" name="description" rows="3"></textarea>
+          </div>
+          <div class="mb-3">
+            <label for="newOwnerId" class="form-label">شناسه سازنده (کاربر)</label>
+            <input type="number" class="form-control" id="newOwnerId" name="ownerId" required>
+          </div>
+          <div class="mb-3">
+            <label for="newMaxMembers" class="form-label">حداکثر تعداد اعضا</label>
+            <input type="number" class="form-control" id="newMaxMembers" name="maxMembers" value="10" min="5" max="100" required>
+          </div>
+          <div class="mb-3">
+            <label for="newLevel" class="form-label">سطح کلن</label>
+            <input type="number" class="form-control" id="newLevel" name="level" value="1" min="1" max="50" required>
+          </div>
+          <div class="mb-3">
+            <label for="newCoins" class="form-label">موجودی اولیه (Ccoin)</label>
+            <input type="number" class="form-control" id="newCoins" name="coins" value="0" min="0" required>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
-          <button type="submit" class="btn btn-primary">
-            <i class="fas fa-plus me-1"></i>
-            ایجاد کلن
-          </button>
+          <button type="submit" class="btn btn-primary">ایجاد کلن</button>
         </div>
       </form>
     </div>
   </div>
 </div>
 
-<!-- اسکریپت‌های صفحه کلن‌ها -->
+<%- contentFor('scripts') %>
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // اسکریپت مرتب‌سازی و فیلتر کردن
-    const clanFilterForm = document.getElementById('clanFilterForm');
-    if (clanFilterForm) {
-      clanFilterForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const formData = new FormData(clanFilterForm);
-        const params = new URLSearchParams();
-        
-        for (const [key, value] of formData.entries()) {
-          if (value) {
-            params.append(key, value);
-          }
-        }
-        
-        window.location.href = `/clans?${params.toString()}`;
-      });
+  // فعال/غیرفعال کردن کلن
+  function activateClan(clanId) {
+    if (confirm('آیا از فعال‌سازی این کلن اطمینان دارید؟')) {
+      window.location.href = `/admin/clans/${clanId}/activate`;
     }
-    
-    // اسکریپت خروجی CSV
-    const exportBtn = document.getElementById('exportClansCSV');
-    if (exportBtn) {
-      exportBtn.addEventListener('click', function() {
-        window.location.href = '/clans/export-csv';
-      });
+  }
+  
+  function deactivateClan(clanId) {
+    if (confirm('آیا از غیرفعال‌سازی این کلن اطمینان دارید؟')) {
+      window.location.href = `/admin/clans/${clanId}/deactivate`;
     }
-    
-    // فعال‌سازی تولتیپ‌ها
-    const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-    if (tooltips.length > 0) {
-      tooltips.forEach(tooltip => {
-        new bootstrap.Tooltip(tooltip);
-      });
+  }
+  
+  // جستجوی کلن‌ها
+  document.getElementById('searchClan').addEventListener('keyup', function(e) {
+    if (e.key === 'Enter') {
+      const searchTerm = this.value.trim();
+      if (searchTerm) {
+        window.location.href = `/admin/clans?search=${encodeURIComponent(searchTerm)}`;
+      }
     }
   });
-  
-  // فانکشن حذف کلن
-  function deleteClan(clanId, clanName) {
-    if (confirm(`آیا از حذف کلن "${clanName}" اطمینان دارید؟ این عملیات غیرقابل بازگشت است.`)) {
-      window.location.href = `/clans/${clanId}/delete`;
-    }
-  }
-  
-  // تابع کمکی برای تولید رنگ تصادفی بر اساس شناسه
-  function getRandomColor(id) {
-    const colors = ['primary', 'success', 'danger', 'warning', 'info'];
-    const numericId = parseInt(id.toString().replace(/[^0-9]/g, ''));
-    return colors[numericId % colors.length];
-  }
 </script>
