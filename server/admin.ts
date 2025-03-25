@@ -182,6 +182,14 @@ export function setupAdminPanel(app: Express) {
     res.locals.isAdmin = req.session.isAdmin || false;
     res.locals.currentPage = 1;
     res.locals.totalPages = 1;
+    
+    // اضافه کردن توابع formatters به res.locals
+    if (formatters) {
+      Object.keys(formatters).forEach(key => {
+        res.locals[key] = formatters[key];
+      });
+    }
+    
     next();
   });
   
@@ -261,7 +269,7 @@ function registerAdminRoutes(app: Express) {
   // پردازش ایجاد ماموریت جدید
   app.post('/admin/quests/create', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const { title, description, type, category, requirement, targetAmount, reward } = req.body;
+      const { title, description, type, category, requirement, targetAmount, reward, minLevel } = req.body;
       
       // بررسی اعتبار داده‌ها
       if (!title || !type || !targetAmount || !reward) {
@@ -278,6 +286,7 @@ function registerAdminRoutes(app: Express) {
         requirement,
         targetAmount: parseInt(targetAmount),
         reward: parseInt(reward),
+        minLevel: parseInt(minLevel || "1"),
         active: true
       });
       
@@ -306,9 +315,24 @@ function registerAdminRoutes(app: Express) {
       // دریافت کاربرانی که این ماموریت را دارند
       const userQuests = await db.getUsersWithQuest(questId);
       
+      // محاسبه آمار ماموریت
+      const completedCount = userQuests.filter(uq => uq.userQuest.completed).length;
+      const activeUsers = userQuests.length;
+      const completionRate = activeUsers > 0 ? (completedCount / activeUsers) * 100 : 0;
+      
+      // اضافه کردن آمار به اطلاعات ماموریت
+      const questWithStats = {
+        ...quest,
+        stats: {
+          activeUsers: activeUsers,
+          completedCount: completedCount,
+          completionRate: completionRate
+        }
+      };
+      
       res.render('quests/view', { 
         title: `ماموریت ${quest.title}`,
-        quest,
+        quest: questWithStats,
         userQuests,
         active: 'quests'
       });
@@ -357,7 +381,7 @@ function registerAdminRoutes(app: Express) {
         return res.redirect('/admin/quests');
       }
       
-      const { title, description, type, category, requirement, targetAmount, reward, active } = req.body;
+      const { title, description, type, category, requirement, targetAmount, reward, minLevel, active } = req.body;
       
       // بررسی اعتبار داده‌ها
       if (!title || !type || !targetAmount || !reward) {
@@ -376,6 +400,7 @@ function registerAdminRoutes(app: Express) {
         requirement,
         targetAmount: parseInt(targetAmount),
         reward: parseInt(reward),
+        minLevel: parseInt(minLevel || "1"),
         active: isActive
       });
       

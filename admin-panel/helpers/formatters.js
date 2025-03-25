@@ -94,11 +94,95 @@ export function progressBar(percent, length = 10) {
   return '█'.repeat(filled) + '▒'.repeat(empty) + ` ${percent}%`;
 }
 
+/**
+ * دریافت آیکون مناسب برای نوع آیتم
+ * @param {String} itemType نوع آیتم
+ * @returns {String} کلاس آیکون
+ */
+export function getItemIcon(itemType) {
+  const icons = {
+    'consumable': 'box',
+    'tool': 'tools',
+    'weapon': 'lightning',
+    'armor': 'shield',
+    'pet': 'egg',
+    'decoration': 'stars',
+    'material': 'gem',
+    'gem': 'gem',
+    'crystal': 'diamond',
+    'potion': 'droplet',
+    'scroll': 'file-text',
+    'food': 'egg-fried',
+    'key': 'key',
+    'collectible': 'collection',
+    'accessory': 'watch'
+  };
+  
+  return icons[itemType] || 'box';
+}
+
+/**
+ * دریافت رنگ مناسب برای نوع آیتم
+ * @param {String} itemType نوع آیتم
+ * @returns {String} کلاس رنگ بوت‌استرپ
+ */
+export function getItemTypeColor(itemType) {
+  const colors = {
+    'consumable': 'success',
+    'tool': 'secondary',
+    'weapon': 'danger',
+    'armor': 'primary',
+    'pet': 'warning',
+    'decoration': 'info',
+    'material': 'secondary',
+    'gem': 'info',
+    'crystal': 'info',
+    'potion': 'success',
+    'scroll': 'light',
+    'food': 'success',
+    'key': 'warning',
+    'collectible': 'warning',
+    'accessory': 'primary'
+  };
+  
+  return colors[itemType] || 'secondary';
+}
+
+/**
+ * دریافت نام فارسی نوع آیتم
+ * @param {String} itemType نوع آیتم
+ * @returns {String} نام فارسی نوع آیتم
+ */
+export function getItemTypeName(itemType) {
+  const names = {
+    'consumable': 'مصرفی',
+    'tool': 'ابزار',
+    'weapon': 'سلاح',
+    'armor': 'زره',
+    'pet': 'پت',
+    'decoration': 'تزئینی',
+    'material': 'ماده اولیه',
+    'gem': 'جواهر',
+    'crystal': 'کریستال',
+    'potion': 'معجون',
+    'scroll': 'طومار',
+    'food': 'غذا',
+    'key': 'کلید',
+    'collectible': 'کلکسیونی',
+    'accessory': 'زیورآلات'
+  };
+  
+  return names[itemType] || 'نامشخص';
+}
+
 // Define a default export for convenience
 export default {
   formatNumber,
   timeAgo,
   formatDate,
   formatDuration,
-  progressBar
+  progressBar,
+  getItemIcon,
+  getItemTypeColor,
+  getItemTypeName
 };

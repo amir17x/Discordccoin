@@ -181,6 +181,7 @@ export const quests = pgTable("quests", {
   targetAmount: integer("target_amount").notNull(),
   reward: integer("reward").notNull(),
   category: text("category").notNull().default("general"),
+  minLevel: integer("min_level").notNull().default(1),
   active: boolean("active").notNull().default(true),
 });
 
@@ -293,6 +294,7 @@ export const insertQuestSchema = createInsertSchema(quests).pick({
   targetAmount: true,
   reward: true,
   category: true,
+  minLevel: true,
 });
 
 export const insertItemSchema = createInsertSchema(items).pick({

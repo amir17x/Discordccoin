@@ -13,9 +13,13 @@
     
     <!-- استایل‌های اضافی هر صفحه -->
     <% if (typeof styles !== 'undefined') { %>
-        <% styles.forEach(function(style) { %>
-            <link rel="stylesheet" href="<%= style %>">
-        <% }); %>
+        <% if (Array.isArray(styles)) { %>
+            <% styles.forEach(function(style) { %>
+                <link rel="stylesheet" href="<%= style %>">
+            <% }); %>
+        <% } else if (typeof styles === 'string') { %>
+            <link rel="stylesheet" href="<%= styles %>">
+        <% } %>
     <% } %>
 </head>
 <body>
@@ -54,9 +58,13 @@
     
     <!-- اسکریپت‌های اضافی هر صفحه -->
     <% if (typeof scripts !== 'undefined') { %>
-        <% scripts.forEach(function(script) { %>
-            <script src="<%= script %>"></script>
-        <% }); %>
+        <% if (Array.isArray(scripts)) { %>
+            <% scripts.forEach(function(script) { %>
+                <script src="<%= script %>"></script>
+            <% }); %>
+        <% } else if (typeof scripts === 'string') { %>
+            <script src="<%= scripts %>"></script>
+        <% } %>
     <% } %>
     
     <!-- اسکریپت داخلی صفحه -->
