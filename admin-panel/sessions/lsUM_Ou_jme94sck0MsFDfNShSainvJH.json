@@ -1,1 +1,1 @@
-{"cookie":{"originalMaxAge":86400000,"expires":"2025-03-26T23:04:11.585Z","httpOnly":true,"path":"/"},"flash":{},"__lastAccess":1742943851585,"isAuthenticated":true,"isAdmin":true,"user":{"username":"admin","role":"admin"}}
+{"cookie":{"originalMaxAge":86399998,"expires":"2025-03-26T23:16:17.069Z","httpOnly":true,"path":"/"},"flash":{},"__lastAccess":1742944577072,"isAuthenticated":true,"isAdmin":true,"user":{"username":"admin","role":"admin"}}
