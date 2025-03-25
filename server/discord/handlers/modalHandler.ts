@@ -5,6 +5,7 @@ import { processBuyLotteryTicket } from '../components/lotteryMenu';
 import { buyGiveawayTickets } from '../components/giveawayBridge';
 import { processTransfer } from '../components/economyMenu';
 import { handleRobbery } from '../components/robberyMenu';
+import { processBuyPet, processRenamePet } from '../components/petMenu';
 import { LogType, getLogger } from '../utils/logger';
 import { botConfig } from '../utils/config';
 import { adminMenu } from '../components/adminMenu';
@@ -17,6 +18,40 @@ import { clansMenu } from '../components/clansMenu';
 export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
   try {
     const customId = interaction.customId;
+    
+    // Handle pet name modal for buying a new pet
+    if (customId.startsWith('pet_name_modal_')) {
+      const petType = customId.replace('pet_name_modal_', '');
+      const petName = interaction.fields.getTextInputValue('pet_name');
+      
+      if (!petName || petName.length < 2 || petName.length > 20) {
+        await interaction.reply({
+          content: '❌ نام پت باید بین 2 تا 20 کاراکتر باشد.',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      await processBuyPet(interaction, petType, petName);
+      return;
+    }
+    
+    // Handle pet rename modal
+    if (customId.startsWith('pet_rename_modal_')) {
+      const petId = customId.replace('pet_rename_modal_', '');
+      const newName = interaction.fields.getTextInputValue('pet_new_name');
+      
+      if (!newName || newName.length < 2 || newName.length > 20) {
+        await interaction.reply({
+          content: '❌ نام پت باید بین 2 تا 20 کاراکتر باشد.',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      await processRenamePet(interaction, petId, newName);
+      return;
+    }
     
     // Handle stock purchasing modal
     if (customId.startsWith('buy_stock_')) {

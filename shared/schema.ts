@@ -28,6 +28,8 @@ export const users = pgTable("users", {
   transactions: jsonb("transactions").$type<Transaction[]>().default([]),
   // سرمایه‌گذاری‌های کاربر
   investments: jsonb("investments").$type<Investment[]>().default([]),
+  // پت‌های (حیوانات خانگی) کاربر
+  pets: jsonb("pets").$type<Pet[]>().default([]),
   // آمار انتقال سکه به کاربران دیگر
   transferStats: jsonb("transfer_stats").$type<TransferStats>().default({
     dailyAmount: 0,
@@ -149,6 +151,7 @@ export const achievements = pgTable("achievements", {
   requirement: text("requirement").notNull(),
   targetAmount: integer("target_amount").notNull(),
   reward: integer("reward").notNull(),
+  category: text("category").notNull().default("general"),
 });
 
 // User Achievements table
@@ -497,4 +500,38 @@ export interface ClanMission {
   startTime: string;
   endTime: string;
   status: 'active' | 'completed' | 'failed';
+}
+
+/**
+ * مدل داده برای پت‌های (حیوانات خانگی) کاربران
+ */
+export interface Pet {
+  id: string;
+  name: string;                    // نام پت
+  type: 'dog' | 'cat' | 'rabbit' | 'dragon' | 'phoenix';  // نوع پت
+  level: number;                   // سطح پت
+  experience: number;              // تجربه پت
+  happiness: number;               // میزان خوشحالی (0-100)
+  hunger: number;                  // میزان گرسنگی (0-100)
+  health: number;                  // میزان سلامتی (0-100)
+  lastFed: string;                 // آخرین زمان غذا دادن
+  lastPlayed: string;              // آخرین زمان بازی کردن
+  acquiredDate: string;            // تاریخ به دست آوردن پت
+  abilities: {                     // توانایی‌های ویژه پت
+    economyBoost?: number;         // افزایش درصدی Ccoin دریافتی
+    luckBoost?: number;            // افزایش شانس در بازی‌ها و چرخ شانس
+    expBoost?: number;             // افزایش تجربه دریافتی
+    defenseBoost?: number;         // کاهش احتمال دزدیده شدن سکه
+  };
+  equipment?: {                    // تجهیزات پت
+    collar?: string;               // قلاده/گردنبند
+    toy?: string;                  // اسباب بازی
+    accessory?: string;            // لوازم جانبی
+  };
+  stats: {                         // آمار پت
+    gamesPlayed: number;           // تعداد بازی‌ها
+    treats: number;                // تعداد تشویقی‌ها
+    wins: number;                  // تعداد پیروزی‌ها
+  };
+  active: boolean;                 // آیا پت فعال است
 }

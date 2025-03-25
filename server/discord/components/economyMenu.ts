@@ -194,10 +194,25 @@ export async function economyMenu(
     const user = await storage.getUserByDiscordId(interaction.user.id);
     
     if (!user) {
-      await interaction.reply({
-        content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.',
-        ephemeral: true
-      });
+      if ('update' in interaction && typeof interaction.update === 'function') {
+        try {
+          await interaction.update({
+            content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.',
+            components: []
+          });
+        } catch (e) {
+          // اگر به‌روزرسانی نشد، پاسخ جدید ارسال کنید
+          await interaction.reply({
+            content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.',
+            ephemeral: true
+          });
+        }
+      } else {
+        await interaction.reply({
+          content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.',
+          ephemeral: true
+        });
+      }
       return;
     }
     
@@ -563,10 +578,25 @@ export async function economyMenu(
           ephemeral: true
         });
       } else {
-        await interaction.reply({
-          content: '❌ متأسفانه در نمایش منوی اقتصاد خطایی رخ داد!',
-          ephemeral: true
-        });
+        if ('update' in interaction && typeof interaction.update === 'function') {
+          try {
+            await interaction.update({
+              content: '❌ متأسفانه در نمایش منوی اقتصاد خطایی رخ داد!',
+              components: [],
+              embeds: []
+            });
+          } catch (e) {
+            await interaction.reply({
+              content: '❌ متأسفانه در نمایش منوی اقتصاد خطایی رخ داد!',
+              ephemeral: true
+            });
+          }
+        } else {
+          await interaction.reply({
+            content: '❌ متأسفانه در نمایش منوی اقتصاد خطایی رخ داد!',
+            ephemeral: true
+          });
+        }
       }
     } catch (e) {
       console.error('Error handling economy menu failure:', e);

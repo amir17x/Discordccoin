@@ -16,6 +16,11 @@ import { investmentMenu, processInvestment } from '../components/investmentMenu'
 import { stocksMenu, processBuyStock, processSellStock } from '../components/stocksMenu';
 import { lotteryMenu, processBuyLotteryTicket } from '../components/lotteryMenu';
 import { giveawayBridgeMenu, buyGiveawayTickets, checkGiveawayBalance } from '../components/giveawayBridge';
+import { tournamentsMenu, processJoinTournament } from '../components/tournamentsMenu';
+import { achievementsMenu, showCategoryAchievements } from '../components/achievementsMenu';
+import { seasonsMenu } from '../components/seasonsMenu';
+import { parallelWorldsMenu } from '../components/parallelWorldsMenu';
+import { petMenu, buyNewPet, feedPet, playWithPet, activatePet, renamePetModal } from '../components/petMenu';
 import { handleCoinFlip } from '../games/coinFlip';
 import { handleRockPaperScissors } from '../games/rockPaperScissors';
 import { handleNumberGuess } from '../games/numberGuess';
@@ -1197,6 +1202,52 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       return;
     }
     
+    // ---- منوهای جدید اضافه شده ----
+    
+    // منوی تورنمنت‌ها
+    if (action === 'tournaments') {
+      await tournamentsMenu(interaction);
+      return;
+    }
+    
+    // پیوستن به تورنمنت
+    if (action === 'join_tournament') {
+      const tournamentId = params[0];
+      await processJoinTournament(interaction, tournamentId);
+      return;
+    }
+    
+    // منوی دستاوردها
+    if (action === 'achievements') {
+      await achievementsMenu(interaction);
+      return;
+    }
+    
+    // مشاهده دستاوردهای یک دسته خاص
+    if (action === 'achievements_category') {
+      const category = params[0];
+      await showCategoryAchievements(interaction, category);
+      return;
+    }
+    
+    // منوی فصل‌ها
+    if (action === 'seasons') {
+      await seasonsMenu(interaction);
+      return;
+    }
+    
+    // منوی جهان‌های موازی
+    if (action === 'parallel_worlds') {
+      await parallelWorldsMenu(interaction);
+      return;
+    }
+    
+    // منوی حیوانات خانگی
+    if (action === 'pets') {
+      await petMenu(interaction);
+      return;
+    }
+    
     // Handle giveaway bridge menu
     if (action === 'giveaway_bridge') {
       await giveawayBridgeMenu(interaction);
@@ -1232,8 +1283,7 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     }
     
     // Handle other options menu buttons that are not yet implemented
-    if (action === 'marketplace' || action === 'tournaments' || action === 'achievements' || 
-        action === 'seasons' || action === 'parallel_worlds' || action === 'calendar') {
+    if (action === 'marketplace' || action === 'calendar') {
       await interaction.reply({
         content: '🔜 این ویژگی هنوز در حال توسعه است و به زودی اضافه خواهد شد!',
         ephemeral: true

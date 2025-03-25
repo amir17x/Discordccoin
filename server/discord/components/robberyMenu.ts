@@ -160,10 +160,25 @@ export async function robberyMenu(
           ephemeral: true
         });
       } else {
-        await interaction.reply({
-          content: 'متأسفانه در نمایش منوی سرقت خطایی رخ داد!',
-          ephemeral: true
-        });
+        if ('update' in interaction && typeof interaction.update === 'function') {
+          try {
+            await interaction.update({
+              content: 'متأسفانه در نمایش منوی سرقت خطایی رخ داد!',
+              components: [],
+              embeds: []
+            });
+          } catch (e) {
+            await interaction.reply({
+              content: 'متأسفانه در نمایش منوی سرقت خطایی رخ داد!',
+              ephemeral: true
+            });
+          }
+        } else {
+          await interaction.reply({
+            content: 'متأسفانه در نمایش منوی سرقت خطایی رخ داد!',
+            ephemeral: true
+          });
+        }
       }
     } catch (e) {
       console.error('Error handling robbery menu failure:', e);
@@ -178,10 +193,25 @@ export async function selectRobberyTarget(interaction: ButtonInteraction | Messa
     const user = await storage.getUserByDiscordId(interaction.user.id);
     
     if (!user) {
-      await interaction.reply({
-        content: '⚠️ حساب کاربری شما یافت نشد!',
-        ephemeral: true
-      });
+      if ('update' in interaction && typeof interaction.update === 'function') {
+        try {
+          await interaction.update({
+            content: '⚠️ حساب کاربری شما یافت نشد!',
+            components: [],
+            embeds: []
+          });
+        } catch (e) {
+          await interaction.reply({
+            content: '⚠️ حساب کاربری شما یافت نشد!',
+            ephemeral: true
+          });
+        }
+      } else {
+        await interaction.reply({
+          content: '⚠️ حساب کاربری شما یافت نشد!',
+          ephemeral: true
+        });
+      }
       return;
     }
     
@@ -195,10 +225,25 @@ export async function selectRobberyTarget(interaction: ButtonInteraction | Messa
       const hours = Math.floor((nextRob.getTime() - now.getTime()) / (60 * 60 * 1000));
       const minutes = Math.floor(((nextRob.getTime() - now.getTime()) % (60 * 60 * 1000)) / (60 * 1000));
       
-      await interaction.reply({
-        content: `⏳ باید ${hours}h ${minutes}m صبر کنید تا بتوانید دوباره سرقت کنید.`,
-        ephemeral: true
-      });
+      if ('update' in interaction && typeof interaction.update === 'function') {
+        try {
+          await interaction.update({
+            content: `⏳ باید ${hours}h ${minutes}m صبر کنید تا بتوانید دوباره سرقت کنید.`,
+            components: [],
+            embeds: []
+          });
+        } catch (e) {
+          await interaction.reply({
+            content: `⏳ باید ${hours}h ${minutes}m صبر کنید تا بتوانید دوباره سرقت کنید.`,
+            ephemeral: true
+          });
+        }
+      } else {
+        await interaction.reply({
+          content: `⏳ باید ${hours}h ${minutes}m صبر کنید تا بتوانید دوباره سرقت کنید.`,
+          ephemeral: true
+        });
+      }
       return;
     }
     
@@ -251,10 +296,26 @@ export async function selectRobberyTarget(interaction: ButtonInteraction | Messa
     
   } catch (error) {
     console.error('Error in robbery target modal:', error);
-    await interaction.reply({
-      content: '❌ متأسفانه در نمایش فرم انتخاب هدف دزدی خطایی رخ داد!',
-      ephemeral: true
-    });
+    
+    if ('update' in interaction && typeof interaction.update === 'function') {
+      try {
+        await interaction.update({
+          content: '❌ متأسفانه در نمایش فرم انتخاب هدف دزدی خطایی رخ داد!',
+          components: [],
+          embeds: []
+        });
+      } catch (e) {
+        await interaction.reply({
+          content: '❌ متأسفانه در نمایش فرم انتخاب هدف دزدی خطایی رخ داد!',
+          ephemeral: true
+        });
+      }
+    } else {
+      await interaction.reply({
+        content: '❌ متأسفانه در نمایش فرم انتخاب هدف دزدی خطایی رخ داد!',
+        ephemeral: true
+      });
+    }
   }
 }
 
@@ -268,10 +329,25 @@ export async function handleRobbery(
     const user = await storage.getUserByDiscordId(interaction.user.id);
     
     if (!user) {
-      await interaction.reply({
-        content: 'شما ابتدا باید یک حساب ایجاد کنید. از دستور /menu استفاده کنید.',
-        ephemeral: true
-      });
+      if (interaction.update && typeof interaction.update === 'function') {
+        try {
+          await interaction.update({
+            content: 'شما ابتدا باید یک حساب ایجاد کنید. از دستور /menu استفاده کنید.',
+            components: [],
+            embeds: []
+          });
+        } catch (e) {
+          await interaction.reply({
+            content: 'شما ابتدا باید یک حساب ایجاد کنید. از دستور /menu استفاده کنید.',
+            ephemeral: true
+          });
+        }
+      } else {
+        await interaction.reply({
+          content: 'شما ابتدا باید یک حساب ایجاد کنید. از دستور /menu استفاده کنید.',
+          ephemeral: true
+        });
+      }
       return;
     }
     
@@ -285,10 +361,25 @@ export async function handleRobbery(
       const hours = Math.floor((nextRob.getTime() - now.getTime()) / (60 * 60 * 1000));
       const minutes = Math.floor(((nextRob.getTime() - now.getTime()) % (60 * 60 * 1000)) / (60 * 1000));
       
-      await interaction.reply({
-        content: `باید ${hours}h ${minutes}m صبر کنید تا بتوانید دوباره سرقت کنید.`,
-        ephemeral: true
-      });
+      if ('update' in interaction && typeof interaction.update === 'function') {
+        try {
+          await interaction.update({
+            content: `باید ${hours}h ${minutes}m صبر کنید تا بتوانید دوباره سرقت کنید.`,
+            components: [],
+            embeds: []
+          });
+        } catch (e) {
+          await interaction.reply({
+            content: `باید ${hours}h ${minutes}m صبر کنید تا بتوانید دوباره سرقت کنید.`,
+            ephemeral: true
+          });
+        }
+      } else {
+        await interaction.reply({
+          content: `باید ${hours}h ${minutes}m صبر کنید تا بتوانید دوباره سرقت کنید.`,
+          ephemeral: true
+        });
+      }
       return;
     }
     
@@ -296,19 +387,49 @@ export async function handleRobbery(
     const targetUser = await storage.getUser(targetId);
     
     if (!targetUser) {
-      await interaction.reply({
-        content: 'کاربر هدف پیدا نشد.',
-        ephemeral: true
-      });
+      if (interaction.update && typeof interaction.update === 'function') {
+        try {
+          await interaction.update({
+            content: 'کاربر هدف پیدا نشد.',
+            components: [],
+            embeds: []
+          });
+        } catch (e) {
+          await interaction.reply({
+            content: 'کاربر هدف پیدا نشد.',
+            ephemeral: true
+          });
+        }
+      } else {
+        await interaction.reply({
+          content: 'کاربر هدف پیدا نشد.',
+          ephemeral: true
+        });
+      }
       return;
     }
     
     // Check if target has money
     if (targetUser.wallet <= 0) {
-      await interaction.reply({
-        content: `${targetUser.username} هیچ سکه‌ای در کیف پول خود ندارد!`,
-        ephemeral: true
-      });
+      if (interaction.update && typeof interaction.update === 'function') {
+        try {
+          await interaction.update({
+            content: `${targetUser.username} هیچ سکه‌ای در کیف پول خود ندارد!`,
+            components: [],
+            embeds: []
+          });
+        } catch (e) {
+          await interaction.reply({
+            content: `${targetUser.username} هیچ سکه‌ای در کیف پول خود ندارد!`,
+            ephemeral: true
+          });
+        }
+      } else {
+        await interaction.reply({
+          content: `${targetUser.username} هیچ سکه‌ای در کیف پول خود ندارد!`,
+          ephemeral: true
+        });
+      }
       return;
     }
     
@@ -423,9 +544,25 @@ export async function handleRobbery(
     
   } catch (error) {
     console.error('Error in robbery handler:', error);
-    await interaction.reply({
-      content: 'متأسفانه در انجام سرقت خطایی رخ داد!',
-      ephemeral: true
-    });
+    
+    if (interaction.update && typeof interaction.update === 'function') {
+      try {
+        await interaction.update({
+          content: 'متأسفانه در انجام سرقت خطایی رخ داد!',
+          components: [],
+          embeds: []
+        });
+      } catch (e) {
+        await interaction.reply({
+          content: 'متأسفانه در انجام سرقت خطایی رخ داد!',
+          ephemeral: true
+        });
+      }
+    } else {
+      await interaction.reply({
+        content: 'متأسفانه در انجام سرقت خطایی رخ داد!',
+        ephemeral: true
+      });
+    }
   }
 }

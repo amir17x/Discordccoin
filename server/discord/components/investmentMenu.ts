@@ -25,10 +25,25 @@ export async function investmentMenu(
     const user = await storage.getUserByDiscordId(interaction.user.id);
     
     if (!user) {
-      await interaction.reply({
-        content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.',
-        ephemeral: true
-      });
+      if ('update' in interaction && typeof interaction.update === 'function') {
+        try {
+          await interaction.update({
+            content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.',
+            components: [],
+            embeds: []
+          });
+        } catch (e) {
+          await interaction.reply({
+            content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.',
+            ephemeral: true
+          });
+        }
+      } else {
+        await interaction.reply({
+          content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.',
+          ephemeral: true
+        });
+      }
       return;
     }
     
@@ -275,10 +290,25 @@ export async function investmentMenu(
           ephemeral: true
         });
       } else {
-        await interaction.reply({
-          content: '❌ متأسفانه در نمایش منوی سرمایه‌گذاری خطایی رخ داد!',
-          ephemeral: true
-        });
+        if ('update' in interaction && typeof interaction.update === 'function') {
+          try {
+            await interaction.update({
+              content: '❌ متأسفانه در نمایش منوی سرمایه‌گذاری خطایی رخ داد!',
+              components: [],
+              embeds: []
+            });
+          } catch (e) {
+            await interaction.reply({
+              content: '❌ متأسفانه در نمایش منوی سرمایه‌گذاری خطایی رخ داد!',
+              ephemeral: true
+            });
+          }
+        } else {
+          await interaction.reply({
+            content: '❌ متأسفانه در نمایش منوی سرمایه‌گذاری خطایی رخ داد!',
+            ephemeral: true
+          });
+        }
       }
     } catch (e) {
       console.error('Error handling investment menu failure:', e);
@@ -301,19 +331,49 @@ export async function processInvestment(
     const user = await storage.getUserByDiscordId(interaction.user.id);
     
     if (!user) {
-      await interaction.reply({
-        content: '⚠️ حساب کاربری شما یافت نشد!',
-        ephemeral: true
-      });
+      if ('update' in interaction && typeof interaction.update === 'function') {
+        try {
+          await interaction.update({
+            content: '⚠️ حساب کاربری شما یافت نشد!',
+            components: [],
+            embeds: []
+          });
+        } catch (e) {
+          await interaction.reply({
+            content: '⚠️ حساب کاربری شما یافت نشد!',
+            ephemeral: true
+          });
+        }
+      } else {
+        await interaction.reply({
+          content: '⚠️ حساب کاربری شما یافت نشد!',
+          ephemeral: true
+        });
+      }
       return;
     }
     
     // بررسی اینکه کاربر به اندازه کافی سکه دارد
     if (user.wallet < amount) {
-      await interaction.reply({
-        content: `❌ موجودی کیف پول شما کافی نیست! شما به ${amount - user.wallet} سکه بیشتر نیاز دارید.`,
-        ephemeral: true
-      });
+      if ('update' in interaction && typeof interaction.update === 'function') {
+        try {
+          await interaction.update({
+            content: `❌ موجودی کیف پول شما کافی نیست! شما به ${amount - user.wallet} سکه بیشتر نیاز دارید.`,
+            components: [],
+            embeds: []
+          });
+        } catch (e) {
+          await interaction.reply({
+            content: `❌ موجودی کیف پول شما کافی نیست! شما به ${amount - user.wallet} سکه بیشتر نیاز دارید.`,
+            ephemeral: true
+          });
+        }
+      } else {
+        await interaction.reply({
+          content: `❌ موجودی کیف پول شما کافی نیست! شما به ${amount - user.wallet} سکه بیشتر نیاز دارید.`,
+          ephemeral: true
+        });
+      }
       return;
     }
     
@@ -392,10 +452,25 @@ export async function processInvestment(
     );
     
     // ارسال پیام موفقیت
-    await interaction.reply({
-      content: `✅ سرمایه‌گذاری شما با موفقیت انجام شد!\n\n💰 مبلغ: ${amount} Ccoin\n📈 سود مورد انتظار: ${expectedReturn - amount} Ccoin\n📆 تاریخ پایان: ${endDate.toLocaleDateString('fa-IR')}\n\n⚠️ توجه: این سرمایه‌گذاری تا پایان مدت قابل برداشت نیست.`,
-      ephemeral: true
-    });
+    if ('update' in interaction && typeof interaction.update === 'function') {
+      try {
+        await interaction.update({
+          content: `✅ سرمایه‌گذاری شما با موفقیت انجام شد!\n\n💰 مبلغ: ${amount} Ccoin\n📈 سود مورد انتظار: ${expectedReturn - amount} Ccoin\n📆 تاریخ پایان: ${endDate.toLocaleDateString('fa-IR')}\n\n⚠️ توجه: این سرمایه‌گذاری تا پایان مدت قابل برداشت نیست.`,
+          components: [],
+          embeds: []
+        });
+      } catch (e) {
+        await interaction.reply({
+          content: `✅ سرمایه‌گذاری شما با موفقیت انجام شد!\n\n💰 مبلغ: ${amount} Ccoin\n📈 سود مورد انتظار: ${expectedReturn - amount} Ccoin\n📆 تاریخ پایان: ${endDate.toLocaleDateString('fa-IR')}\n\n⚠️ توجه: این سرمایه‌گذاری تا پایان مدت قابل برداشت نیست.`,
+          ephemeral: true
+        });
+      }
+    } else {
+      await interaction.reply({
+        content: `✅ سرمایه‌گذاری شما با موفقیت انجام شد!\n\n💰 مبلغ: ${amount} Ccoin\n📈 سود مورد انتظار: ${expectedReturn - amount} Ccoin\n📆 تاریخ پایان: ${endDate.toLocaleDateString('fa-IR')}\n\n⚠️ توجه: این سرمایه‌گذاری تا پایان مدت قابل برداشت نیست.`,
+        ephemeral: true
+      });
+    }
     
     // نمایش منوی سرمایه‌گذاری بعد از 3 ثانیه
     setTimeout(async () => {
@@ -408,10 +483,26 @@ export async function processInvestment(
     
   } catch (error) {
     console.error('Error processing investment:', error);
-    await interaction.reply({
-      content: '❌ در پردازش سرمایه‌گذاری خطایی رخ داد!',
-      ephemeral: true
-    });
+    
+    if ('update' in interaction && typeof interaction.update === 'function') {
+      try {
+        await interaction.update({
+          content: '❌ در پردازش سرمایه‌گذاری خطایی رخ داد!',
+          components: [],
+          embeds: []
+        });
+      } catch (e) {
+        await interaction.reply({
+          content: '❌ در پردازش سرمایه‌گذاری خطایی رخ داد!',
+          ephemeral: true
+        });
+      }
+    } else {
+      await interaction.reply({
+        content: '❌ در پردازش سرمایه‌گذاری خطایی رخ داد!',
+        ephemeral: true
+      });
+    }
   }
 }
 

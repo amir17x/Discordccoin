@@ -303,7 +303,7 @@ export async function mainMenu(
       // بروزرسانی Embed برای منوی امکانات بیشتر
       embed.setTitle('✨ امکانات بیشتر Ccoin ✨')
         .setDescription(`**${interaction.user.username}** عزیز، به صفحه امکانات پیشرفته Ccoin خوش آمدید!\n\nدر این بخش می‌توانید به ویژگی‌های بیشتری دسترسی داشته باشید و از قابلیت‌های پیشرفته‌تر ربات استفاده کنید.`)
-        .setThumbnail('https://img.icons8.com/fluency/48/mission-of-a-company.png');  // آیکون mission-of-a-company برای منوی امکانات بیشتر
+        .setThumbnail('https://img.icons8.com/fluency/48/menu--v1.png');  // آیکون menu--v1 از Fluency برای منوی امکانات بیشتر
 
       // Row 1: امکانات بخش سرگرمی و رقابت
       const row1 = new ActionRowBuilder<ButtonBuilder>()
@@ -351,25 +351,38 @@ export async function mainMenu(
             .setLabel('📅 فصل‌ها')
             .setStyle(ButtonStyle.Primary),
           new ButtonBuilder()
-            .setCustomId('blackjack')
-            .setLabel('🃏 بلک‌جک')
+            .setCustomId('parallel_worlds')
+            .setLabel('🌀 جهان‌های موازی')
             .setStyle(ButtonStyle.Danger),
         );
       
-      // Row 4: دکمه بازگشت و راهنما
+      // Row 4: امکانات اضافی
       const row4 = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
+          new ButtonBuilder()
+            .setCustomId('pets')
+            .setLabel('🐾 پت‌های من')
+            .setStyle(ButtonStyle.Success),
+          new ButtonBuilder()
+            .setCustomId('blackjack')
+            .setLabel('🃏 بلک‌جک')
+            .setStyle(ButtonStyle.Primary),
           new ButtonBuilder()
             .setCustomId('donate')
             .setLabel('❤️ حمایت از ربات')
             .setStyle(ButtonStyle.Secondary),
+        );
+      
+      // Row 5: دکمه بازگشت
+      const row5 = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
           new ButtonBuilder()
             .setCustomId('menu')
             .setLabel('🔙 بازگشت به منوی اصلی')
             .setStyle(ButtonStyle.Primary),
         );
       
-      components = [row1, row2, row3, row4];
+      components = [row1, row2, row3, row4, row5];
     }
     
     // Send or update the message - همیشه به صورت ephemeral (فقط برای کاربر قابل مشاهده)

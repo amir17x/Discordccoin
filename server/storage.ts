@@ -15,6 +15,9 @@ import {
   Transaction,
   TransferStats,
   InsertStock,
+  Pet,
+  Investment,
+  UserStock,
 } from "@shared/schema";
 
 // کلاس‌های موقت برای استاک که بعدا باید با اسکیما جایگزین شوند
@@ -100,6 +103,14 @@ export interface IStorage {
   // Stock operations
   getAllStocks(): Promise<StockData[]>;
   getUserStocks(userId: number): Promise<UserStockData[]>;
+  
+  // Pet operations
+  getUserPets(userId: number): Promise<Pet[]>;
+  buyPet(userId: number, petType: string, petName: string): Promise<Pet | null>;
+  feedPet(userId: number, petId: string): Promise<Pet | null>;
+  playWithPet(userId: number, petId: string): Promise<Pet | null>;
+  activatePet(userId: number, petId: string): Promise<boolean>;
+  renamePet(userId: number, petId: string, newName: string): Promise<Pet | null>;
 }
 
 export class MemStorage implements IStorage {
@@ -1454,6 +1465,273 @@ export class MemStorage implements IStorage {
     lottery.status = 'completed';
     
     return true;
+  }
+  
+  // Pet operations
+  private pets: Map<string, Pet> = new Map();
+  private currentPetId = 1;
+  
+  async getUserPets(userId: number): Promise<Pet[]> {
+    const user = this.users.get(userId);
+    if (!user) return [];
+    
+    // اگر کاربر دارای فیلد pets نیست، آن را اضافه می‌کنیم
+    if (!user.pets) {
+      user.pets = [];
+    }
+    
+    return user.pets;
+  }
+  
+  async buyPet(userId: number, petType: string, petName: string): Promise<Pet | null> {
+    const user = this.users.get(userId);
+    if (!user) return null;
+    
+    // بررسی اعتبار نوع پت
+    if (!['dog', 'cat', 'rabbit', 'dragon', 'phoenix'].includes(petType)) {
+      return null;
+    }
+    
+    // محاسبه قیمت پت
+    let price = 0;
+    let useCrystals = false;
+    
+    switch (petType) {
+      case 'dog':
+      case 'cat':
+      case 'rabbit':
+        price = 2000; // قیمت به سکه
+        break;
+      case 'dragon':
+      case 'phoenix':
+        price = 50; // قیمت به کریستال
+        useCrystals = true;
+        break;
+    }
+    
+    // بررسی کافی بودن موجودی
+    if (useCrystals) {
+      if (user.crystals < price) {
+        return null;
+      }
+    } else {
+      if (user.wallet < price) {
+        return null;
+      }
+    }
+    
+    // ایجاد پت جدید
+    const now = new Date();
+    const petId = `pet_${this.currentPetId++}_${Date.now()}`;
+    
+    // مقادیر پایه توانایی‌ها بر اساس نوع پت
+    const abilities: any = {};
+    
+    switch (petType) {
+      case 'dog':
+        abilities.economyBoost = 5; // افزایش 5% درآمد
+        break;
+      case 'cat':
+        abilities.luckBoost = 5; // افزایش 5% شانس
+        break;
+      case 'rabbit':
+        abilities.expBoost = 5; // افزایش 5% تجربه
+        break;
+      case 'dragon':
+        abilities.economyBoost = 8; // افزایش 8% درآمد
+        abilities.defenseBoost = 10; // کاهش 10% احتمال دزدی
+        break;
+      case 'phoenix':
+        abilities.luckBoost = 8; // افزایش 8% شانس
+        abilities.expBoost = 8; // افزایش 8% تجربه
+        break;
+    }
+    
+    const newPet: Pet = {
+      id: petId,
+      name: petName,
+      type: petType as any, // تبدیل به نوع مناسب
+      level: 1,
+      experience: 0,
+      happiness: 100,
+      hunger: 0,
+      health: 100,
+      lastFed: now.toISOString(),
+      lastPlayed: now.toISOString(),
+      acquiredDate: now.toISOString(),
+      abilities: abilities,
+      equipment: {},
+      stats: {
+        gamesPlayed: 0,
+        treats: 0,
+        wins: 0
+      },
+      active: true // پت جدید به صورت پیش‌فرض فعال است
+    };
+    
+    // بروزرسانی موجودی کاربر
+    if (useCrystals) {
+      user.crystals -= price;
+    } else {
+      user.wallet -= price;
+    }
+    
+    // غیرفعال کردن همه پت‌های قبلی
+    if (!user.pets) {
+      user.pets = [];
+    } else {
+      user.pets.forEach(pet => {
+        pet.active = false;
+      });
+    }
+    
+    // افزودن پت جدید
+    user.pets.push(newPet);
+    
+    // ثبت تراکنش خرید
+    if (!user.transactions) user.transactions = [];
+    user.transactions.push({
+      type: useCrystals ? 'item_purchase_crystal' : 'item_purchase',
+      amount: price,
+      fee: 0,
+      timestamp: now,
+      itemName: `${petName} (${petType})`,
+    });
+    
+    return newPet;
+  }
+  
+  async feedPet(userId: number, petId: string): Promise<Pet | null> {
+    const user = this.users.get(userId);
+    if (!user || !user.pets) return null;
+    
+    // یافتن پت
+    const petIndex = user.pets.findIndex(p => p.id === petId);
+    if (petIndex === -1) return null;
+    
+    // بررسی هزینه غذا (50 سکه)
+    const foodCost = 50;
+    if (user.wallet < foodCost) return null;
+    
+    // بروزرسانی مقادیر پت
+    const pet = user.pets[petIndex];
+    
+    // کاهش گرسنگی (حداقل 0)
+    pet.hunger = Math.max(0, pet.hunger - 30);
+    
+    // افزایش سلامتی (حداکثر 100)
+    pet.health = Math.min(100, pet.health + 10);
+    
+    // افزایش خوشحالی (حداکثر 100)
+    pet.happiness = Math.min(100, pet.happiness + 5);
+    
+    // بروزرسانی زمان آخرین غذا
+    pet.lastFed = new Date().toISOString();
+    
+    // افزایش آمار تشویقی‌ها
+    pet.stats.treats++;
+    
+    // کم کردن هزینه غذا
+    user.wallet -= foodCost;
+    
+    // ثبت تراکنش
+    if (!user.transactions) user.transactions = [];
+    user.transactions.push({
+      type: 'item_purchase',
+      amount: foodCost,
+      fee: 0,
+      timestamp: new Date(),
+      itemName: `غذای پت (${pet.name})`,
+    });
+    
+    return pet;
+  }
+  
+  async playWithPet(userId: number, petId: string): Promise<Pet | null> {
+    const user = this.users.get(userId);
+    if (!user || !user.pets) return null;
+    
+    // یافتن پت
+    const petIndex = user.pets.findIndex(p => p.id === petId);
+    if (petIndex === -1) return null;
+    
+    const pet = user.pets[petIndex];
+    
+    // افزایش خوشحالی (حداکثر 100)
+    pet.happiness = Math.min(100, pet.happiness + 20);
+    
+    // افزایش گرسنگی (حداکثر 100)
+    pet.hunger = Math.min(100, pet.hunger + 10);
+    
+    // افزایش تجربه
+    pet.experience += 10;
+    
+    // بررسی ارتقاء سطح (هر 100 تجربه به ازای هر سطح)
+    const experienceNeeded = pet.level * 100;
+    if (pet.experience >= experienceNeeded) {
+      pet.level++;
+      pet.experience -= experienceNeeded;
+      
+      // افزایش توانایی‌ها با ارتقاء سطح
+      if (pet.abilities.economyBoost) {
+        pet.abilities.economyBoost += 1;
+      }
+      if (pet.abilities.luckBoost) {
+        pet.abilities.luckBoost += 1;
+      }
+      if (pet.abilities.expBoost) {
+        pet.abilities.expBoost += 1;
+      }
+      if (pet.abilities.defenseBoost) {
+        pet.abilities.defenseBoost += 1;
+      }
+    }
+    
+    // بروزرسانی زمان آخرین بازی
+    pet.lastPlayed = new Date().toISOString();
+    
+    // افزایش آمار بازی‌ها
+    pet.stats.gamesPlayed++;
+    
+    return pet;
+  }
+  
+  async activatePet(userId: number, petId: string): Promise<boolean> {
+    const user = this.users.get(userId);
+    if (!user || !user.pets) return false;
+    
+    // یافتن پت
+    const petIndex = user.pets.findIndex(p => p.id === petId);
+    if (petIndex === -1) return false;
+    
+    // غیرفعال کردن تمام پت‌ها
+    user.pets.forEach(p => {
+      p.active = false;
+    });
+    
+    // فعال کردن پت انتخاب شده
+    user.pets[petIndex].active = true;
+    
+    return true;
+  }
+  
+  async renamePet(userId: number, petId: string, newName: string): Promise<Pet | null> {
+    const user = this.users.get(userId);
+    if (!user || !user.pets) return null;
+    
+    // بررسی اعتبار نام جدید
+    if (!newName || newName.length < 2 || newName.length > 20) {
+      return null;
+    }
+    
+    // یافتن پت
+    const petIndex = user.pets.findIndex(p => p.id === petId);
+    if (petIndex === -1) return null;
+    
+    // تغییر نام پت
+    user.pets[petIndex].name = newName;
+    
+    return user.pets[petIndex];
   }
 }
 
