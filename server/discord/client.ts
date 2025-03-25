@@ -56,9 +56,8 @@ client.commands = new Collection();
 export async function initDiscordBot() {
   // تابع کمکی برای اجرای یک عملیات با مدیریت بهینه‌شده interaction
   /**
-   * تابع جدید برای مدیریت تعاملات دیسکورد
-   * این تابع به جای استفاده از setTimeout، از deferReply استفاده می‌کند
-   * که به ما اجازه می‌دهد زمان بیشتری برای اجرای عملیات داشته باشیم
+   * تابع جدید برای مدیریت تعاملات دیسکورد 
+   * یک رویکرد کاملاً ساده و مستقیم بدون پیچیدگی‌های اضافی
    */
   const executeWithTimeout = async (
     interaction: any, 
@@ -66,37 +65,29 @@ export async function initDiscordBot() {
     type: string,
     errorMessage: string
   ) => {
-    // بررسی وضعیت فعلی تعامل
+    // فقط بررسی می‌کنیم که آیا قبلاً پاسخ داده شده
     if (interaction.replied || interaction.deferred) {
       console.log(`${type}: interaction already handled, skipping execution`);
       return;
     }
     
     try {
-      // استفاده از deferReply به جای reply برای به دست آوردن زمان بیشتر
-      await interaction.deferReply({ ephemeral: true }).catch((e: Error) => {
-        console.error(`Failed to defer reply for ${type}:`, e);
-        throw new Error('Failed to defer reply');
-      });
+      // مستقیم اجرای عملیات - بدون تأخیر یا پاسخ اولیه
+      await operation();
+    } catch (error) {
+      console.error(`Error in ${type}:`, error);
       
-      try {
-        // اجرای عملیات اصلی
-        await operation();
-      } catch (opError) {
-        console.error(`Operation failed in ${type}:`, opError);
-        
-        // نمایش خطا به کاربر
+      // اگر هنوز پاسخی داده نشده، خطا را نمایش می‌دهیم
+      if (!interaction.replied && !interaction.deferred) {
         try {
-          await interaction.editReply({
-            content: errorMessage
+          await interaction.reply({
+            content: errorMessage,
+            ephemeral: true
           });
-        } catch (editError) {
-          console.error(`Failed to update reply with error for ${type}:`, editError);
+        } catch (replyError) {
+          console.error(`Failed to send error message for ${type}:`, replyError);
         }
       }
-    } catch (error) {
-      // در صورت خطا در پاسخ اولیه یا عملیات اصلی
-      console.error(`Critical error in ${type}:`, error);
     }
   };
 
