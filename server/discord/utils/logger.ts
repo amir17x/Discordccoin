@@ -20,6 +20,39 @@ export enum LogType {
   ERROR = 'error'
 }
 
+/**
+ * تابع کمکی بهینه‌سازی شده برای فرمت تاریخ
+ * از کش استفاده می‌کند تا از ایجاد مکرر فرمتر جلوگیری کند
+ */
+const dateFormatterCache: Record<string, Intl.DateTimeFormat> = {};
+
+function formatDate(date: Date, full: boolean = true): string {
+  const cacheKey = full ? 'full' : 'simple';
+  
+  // اگر فرمتر در کش نباشد، آن را ایجاد و ذخیره کنید
+  if (!dateFormatterCache[cacheKey]) {
+    dateFormatterCache[cacheKey] = full 
+      ? new Intl.DateTimeFormat('fa-IR', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        })
+      : new Intl.DateTimeFormat('fa-IR', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+  }
+  
+  // استفاده از فرمتر کش شده
+  return dateFormatterCache[cacheKey].format(date);
+}
+
 // تنظیمات پیش‌فرض برای کانال‌های لاگ
 interface LogChannels {
   [LogType.TRANSACTION]: string | null;
@@ -31,27 +64,24 @@ interface LogChannels {
   [LogType.ERROR]: string | null;
 }
 
-// رنگ‌های مختلف برای هر نوع لاگ
-const LOG_COLORS: { [key in LogType]: ColorResolvable } = {
-  [LogType.TRANSACTION]: '#2ECC71', // سبز
-  [LogType.GAME]: '#3498DB',        // آبی
-  [LogType.USER]: '#9B59B6',        // بنفش
-  [LogType.ADMIN]: '#F1C40F',       // زرد
-  [LogType.SECURITY]: '#E74C3C',    // قرمز
-  [LogType.SYSTEM]: '#1ABC9C',      // فیروزه‌ای
-  [LogType.ERROR]: '#E74C3C',       // قرمز
+// رنگ‌ها و آیکون‌های مختلف برای هر نوع لاگ - بهینه‌سازی با ترکیب دو آبجکت در یک آبجکت
+interface LogFormatOptions {
+  color: ColorResolvable;
+  icon: string;
+}
+
+// ترکیب رنگ و آیکون در یک آبجکت واحد برای پردازش سریع‌تر
+const LOG_FORMAT: { [key in LogType]: LogFormatOptions } = {
+  [LogType.TRANSACTION]: { color: '#2ECC71', icon: '💰' }, // سبز
+  [LogType.GAME]: { color: '#3498DB', icon: '🎮' },        // آبی
+  [LogType.USER]: { color: '#9B59B6', icon: '👤' },        // بنفش
+  [LogType.ADMIN]: { color: '#F1C40F', icon: '⚙️' },       // زرد
+  [LogType.SECURITY]: { color: '#E74C3C', icon: '🔒' },    // قرمز
+  [LogType.SYSTEM]: { color: '#1ABC9C', icon: '🤖' },      // فیروزه‌ای
+  [LogType.ERROR]: { color: '#E74C3C', icon: '⚠️' },       // قرمز
 };
 
-// آیکون‌ها برای هر نوع لاگ
-const LOG_ICONS: { [key in LogType]: string } = {
-  [LogType.TRANSACTION]: '💰',
-  [LogType.GAME]: '🎮',
-  [LogType.USER]: '👤',
-  [LogType.ADMIN]: '⚙️',
-  [LogType.SECURITY]: '🔒',
-  [LogType.SYSTEM]: '🤖',
-  [LogType.ERROR]: '⚠️',
-};
+// حذف توابع و متغیرهای تکراری
 
 /**
  * کلاس اصلی لاگر - برای ارسال لاگ‌ها به کانال‌های دیسکورد
@@ -69,6 +99,8 @@ export class DiscordLogger {
   };
   private isEnabled: boolean = true;
   private defaultChannel: string | null = null;
+  // کش کانال‌ها برای کاهش جستجوهای مکرر
+  private channelCache: Map<string, TextChannel> = new Map();
 
   constructor(client: Client) {
     this.client = client;
@@ -99,7 +131,7 @@ export class DiscordLogger {
   }
 
   /**
-   * ارسال یک لاگ به کانال مربوطه
+   * ارسال یک لاگ به کانال مربوطه - بهینه‌سازی شده برای عملکرد بهتر
    * @param type نوع لاگ
    * @param title عنوان لاگ
    * @param description توضیحات لاگ
@@ -114,89 +146,74 @@ export class DiscordLogger {
     footer?: string,
     includeViewDetailsButton: boolean = false
   ): Promise<void> {
+    // بررسی سریع شرایط لازم - از بررسی‌های متوالی استفاده کنید تا عملیات سنگین را به تأخیر بیندازید
     if (!this.isEnabled) return;
 
+    // بررسی کانال در یک خط
+    const channelId = this.logChannels[type] || this.defaultChannel;
+    if (!channelId) return;
+
     try {
-      // پیدا کردن کانال مناسب
-      const channelId = this.logChannels[type] || this.defaultChannel;
-      if (!channelId) {
-        // Silent fail - only show debug messages in development
-        if (process.env.NODE_ENV === 'development') {
-          console.debug(`کانالی برای لاگ نوع ${type} تنظیم نشده است.`);
-        }
-        return;
-      }
-
-      const channel = this.client.channels.cache.get(channelId) as TextChannel;
-      if (!channel) {
-        console.error(`کانال با آی‌دی ${channelId} یافت نشد.`);
-        return;
-      }
-
-      // ساخت یک شناسه منحصر به فرد برای لاگ
-      const logId = `log_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 7)}`;
+      // استفاده از کش داخلی برای دسترسی سریع‌تر به کانال‌ها و کاهش فراخوانی‌های API دیسکورد
+      let channel: TextChannel | undefined;
       
-      // ایجاد امبد با استایل بهتر
+      // بررسی کش داخلی
+      if (this.channelCache.has(channelId)) {
+        channel = this.channelCache.get(channelId);
+      } else {
+        // اگر در کش نباشد، آن را از دیسکورد دریافت و ذخیره کنیم
+        channel = this.client.channels.cache.get(channelId) as TextChannel;
+        if (channel?.isTextBased()) {
+          this.channelCache.set(channelId, channel);
+        }
+      }
+      
+      // بررسی معتبر بودن کانال
+      if (!channel?.isTextBased()) return;
+
+      // استفاده از فرمت‌های ترکیبی از پیش تعریف شده
+      const format = LOG_FORMAT[type];
+      const logId = `log_${Date.now().toString(36)}`;
+      
+      // ساخت امبد با کمترین عملیات ممکن
       const embed = new EmbedBuilder()
-        .setColor(LOG_COLORS[type])
-        .setTitle(`${LOG_ICONS[type]} ${title}`)
+        .setColor(format.color)
+        .setTitle(`${format.icon} ${title}`)
         .setDescription(description)
         .setTimestamp();
       
-      // اضافه کردن خط جداکننده بین توضیحات و فیلدها
+      // افزودن مستقیم فیلدها اگر وجود داشته باشند - حذف بررسی‌های اضافه
       if (fields.length > 0) {
-        embed.addFields({ name: '┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄', value: '**جزئیات**', inline: false });
-        
-        // گروه‌بندی فیلدها برای نمایش بهتر
-        // فیلدهای inline را در یک ردیف و فیلدهای غیر inline را جداگانه نمایش می‌دهیم
-        const inlineFields = fields.filter(f => f.inline !== false);
-        const nonInlineFields = fields.filter(f => f.inline === false);
-        
-        // افزودن فیلدهای inline
-        embed.addFields(...inlineFields);
-        
-        // اگر فیلدهای inline داریم و همچنین فیلدهای غیر inline، یک خط جدا کننده اضافه می‌کنیم
-        if (inlineFields.length > 0 && nonInlineFields.length > 0) {
-          embed.addFields({ name: '\u200B', value: '\u200B', inline: false });
-        }
-        
-        // افزودن فیلدهای غیر inline
-        embed.addFields(...nonInlineFields);
+        // افزودن تمام فیلدها در یک عملیات
+        embed.addFields(
+          { name: '┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄', value: '**جزئیات**', inline: false },
+          ...fields
+        );
       }
 
-      // افزودن پاورقی با استایل بهتر
-      if (footer) {
-        embed.setFooter({ 
-          text: `${footer} • شناسه لاگ: ${logId.substring(4, 10)}` 
-        });
-      } else {
-        embed.setFooter({ 
-          text: `شناسه لاگ: ${logId.substring(4, 10)} • ${new Date().toLocaleString('fa-IR')}` 
-        });
-      }
-
-      // اضافه کردن دکمه "مشاهده جزئیات بیشتر" در صورت نیاز
-      let components = undefined;
-      if (includeViewDetailsButton) {
-        const detailsButton = new ButtonBuilder()
-          .setCustomId(`log_details_${logId}`)
-          .setLabel('مشاهده جزئیات بیشتر')
-          .setStyle(ButtonStyle.Secondary)
-          .setEmoji('🔍');
-          
-        const row = new ActionRowBuilder<ButtonBuilder>()
-          .addComponents(detailsButton);
-          
-        components = [row];
-      }
-
-      // ارسال به کانال
-      await channel.send({ 
-        embeds: [embed],
-        components: components
+      // افزودن پاورقی - ترکیب عملیات‌های رشته‌ای
+      embed.setFooter({ 
+        text: footer ? `${footer} • ${logId.substring(4, 10)}` : `${logId.substring(4, 10)}`
       });
-    } catch (error) {
-      console.error(`خطا در ارسال لاگ ${type}:`, error);
+
+      // ساخت کامپوننت‌ها فقط در صورت نیاز با عملیات مشروط کوتاه
+      const components = includeViewDetailsButton ? [
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          new ButtonBuilder()
+            .setCustomId(`log_details_${logId}`)
+            .setLabel('مشاهده جزئیات بیشتر')
+            .setStyle(ButtonStyle.Secondary)
+            .setEmoji('🔍')
+        )
+      ] : undefined;
+
+      // ارسال به کانال با یک عملیات واحد
+      await channel.send({ embeds: [embed], components });
+    } catch {
+      // کاهش لاگ - فقط در محیط توسعه لاگ خواهیم کرد
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`خطا در لاگ ${type}`);
+      }
     }
   }
 
@@ -239,16 +256,8 @@ export class DiscordLogger {
     const timestampMs = Date.now();
     const transactionId = `TX_${timestampMs.toString(36)}`;
     
-    // Add timestamp and formatted date to the footer
-    const timestamp = new Date();
-    const persianDate = timestamp.toLocaleString('fa-IR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
+    // استفاده از تابع formatDate برای کاهش سربار فرمت‌کننده تاریخ
+    const persianDate = formatDate(new Date(), true);
     
     // Color the amount based on whether it's positive or negative
     const amountDisplay = amount >= 0 
@@ -306,15 +315,8 @@ export class DiscordLogger {
       `✅ ${outcome}` : outcome.toLowerCase().includes('باخت') ? 
       `❌ ${outcome}` : `⚖️ ${outcome}`;
     
-    // Format the timestamp
-    const timestamp = new Date();
-    const persianDate = timestamp.toLocaleString('fa-IR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    // استفاده از تابع formatDate برای کاهش سربار
+    const persianDate = formatDate(new Date(), false);
     
     // Format the bet amount
     const betFormatted = bet.toLocaleString('fa-IR');
@@ -385,15 +387,8 @@ export class DiscordLogger {
     // Get the icon, or use a default if not found
     const actionIcon = actionIcons[action] || '👤';
     
-    // Format the timestamp
-    const timestamp = new Date();
-    const persianDate = timestamp.toLocaleString('fa-IR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    // استفاده از تابع formatDate برای کاهش سربار
+    const persianDate = formatDate(new Date(), false);
     
     // Create a unique activity ID
     const activityId = `ACT_${Date.now().toString(36)}`;
@@ -466,16 +461,8 @@ export class DiscordLogger {
     // Get the icon, or use a default if not found
     const actionIcon = actionIcons[action] || '⚙️';
     
-    // Format the timestamp with more detail
-    const timestamp = new Date();
-    const persianDate = timestamp.toLocaleString('fa-IR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
+    // استفاده از تابع formatDate برای کاهش سربار
+    const persianDate = formatDate(new Date(), true);
     
     // Create a unique admin action ID
     const adminActionId = `ADMIN_${Date.now().toString(36)}`;

@@ -52,9 +52,6 @@ export default function Home() {
             <Link href="/admin">
               <Button variant="secondary">Admin Panel</Button>
             </Link>
-            <Link href="/simulator">
-              <Button variant="outline">Bot Simulator</Button>
-            </Link>
           </nav>
         </div>
       </header>

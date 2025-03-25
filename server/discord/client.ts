@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, Events, Collection } from 'discord.js';
+import { Client, GatewayIntentBits, Events, Collection, ButtonInteraction, StringSelectMenuInteraction, ModalSubmitInteraction, CommandInteraction } from 'discord.js';
 import { deployCommands } from './deploy-commands';
 import { loadCommands } from './commands';
 import { handleButtonInteraction } from './handlers/buttonHandler';
@@ -8,6 +8,16 @@ import { log } from '../vite';
 import { storage } from '../storage';
 import { getLogger, LogType } from './utils/logger';
 import { botConfig } from './utils/config';
+
+// کش برای برهم‌کنش‌های پرتکرار
+type InteractionCache = {
+  timestamp: number;
+  responseMessage: string;
+};
+
+// کش برای کاهش پردازش‌های تکراری
+const interactionCache = new Map<string, InteractionCache>();
+const INTERACTION_CACHE_TTL = 3000; // 3 ثانیه
 
 /**
  * Helper function to create a button-like interaction from a modal interaction
@@ -44,6 +54,55 @@ const client = new Client({
 client.commands = new Collection();
 
 export async function initDiscordBot() {
+  // تابع کمکی برای اجرای یک عملیات با مهلت زمانی
+  // این تابع را خارج از try/catch اصلی تعریف می‌کنیم تا مشکل Strict Mode را حل کنیم
+  const executeWithTimeout = async (
+    interaction: any, 
+    operation: () => Promise<void>, 
+    type: string,
+    errorMessage: string
+  ) => {
+    // تنظیم مهلت زمانی
+    const timeoutId = setTimeout(async () => {
+      if (!interaction.replied && !interaction.deferred) {
+        try {
+          await interaction.deferReply({ ephemeral: true });
+          log(`Deferred reply for ${type} due to timeout`, 'discord');
+        } catch (e) {
+          // نادیده گرفتن خطاهای احتمالی
+        }
+      }
+    }, 3000);
+
+    try {
+      // اجرای عملیات اصلی
+      await operation();
+      // لغو مهلت زمانی
+      clearTimeout(timeoutId);
+    } catch (error: any) {
+      // لغو مهلت زمانی
+      clearTimeout(timeoutId);
+      console.error(`Error in ${type}:`, error);
+      log(`Error in ${type}: ${error?.message || 'Unknown error'}`, 'error');
+      
+      try {
+        // نمایش پیام خطا به کاربر
+        if (interaction.replied) {
+          await interaction.followUp({ content: errorMessage, ephemeral: true });
+        } else if (interaction.deferred) {
+          await interaction.editReply({ content: errorMessage });
+        } else {
+          await interaction.reply({ content: errorMessage, ephemeral: true });
+        }
+      } catch (followupError) {
+        console.error(`Failed to send error message for ${type}`, followupError);
+      }
+      
+      // بازارسال خطا برای پردازش بیشتر
+      throw error;
+    }
+  };
+
   try {
     // Load commands
     await loadCommands(client);
@@ -71,53 +130,27 @@ export async function initDiscordBot() {
       // Initialize Logger
       const logger = getLogger(client);
       
-      // Set default log channel from config if exists
+      // تنظیم کانال‌های لاگ به شکل بهینه
       const config = botConfig.getConfig();
+      
+      // تنظیم کانال پیش‌فرض
       if (config.logChannels.default) {
         logger.setDefaultChannel(config.logChannels.default);
       }
       
-      // Set specific log channels from config
-      if (config.logChannels[LogType.TRANSACTION]) {
-        logger.setChannels({
-          [LogType.TRANSACTION]: config.logChannels[LogType.TRANSACTION]
-        });
-      }
+      // تنظیم همه کانال‌ها در یک مرحله
+      const logChannels: Partial<Record<LogType, string>> = {};
       
-      if (config.logChannels[LogType.GAME]) {
-        logger.setChannels({
-          [LogType.GAME]: config.logChannels[LogType.GAME]
-        });
-      }
+      // تنظیم کانال‌ها در یک شی واحد
+      Object.keys(config.logChannels).forEach(key => {
+        if (key !== 'default' && key in LogType && config.logChannels[key as keyof typeof config.logChannels]) {
+          logChannels[key as LogType] = config.logChannels[key as keyof typeof config.logChannels];
+        }
+      });
       
-      if (config.logChannels[LogType.USER]) {
-        logger.setChannels({
-          [LogType.USER]: config.logChannels[LogType.USER]
-        });
-      }
-      
-      if (config.logChannels[LogType.ADMIN]) {
-        logger.setChannels({
-          [LogType.ADMIN]: config.logChannels[LogType.ADMIN]
-        });
-      }
-      
-      if (config.logChannels[LogType.SECURITY]) {
-        logger.setChannels({
-          [LogType.SECURITY]: config.logChannels[LogType.SECURITY]
-        });
-      }
-      
-      if (config.logChannels[LogType.ERROR]) {
-        logger.setChannels({
-          [LogType.ERROR]: config.logChannels[LogType.ERROR]
-        });
-      }
-      
-      if (config.logChannels[LogType.SYSTEM]) {
-        logger.setChannels({
-          [LogType.SYSTEM]: config.logChannels[LogType.SYSTEM]
-        });
+      // اعمال همه تنظیمات در یک مرحله
+      if (Object.keys(logChannels).length > 0) {
+        logger.setChannels(logChannels);
       }
       
       // Log bot startup only if a system log channel or default channel is configured
@@ -133,68 +166,66 @@ export async function initDiscordBot() {
     // Command interaction
     client.on(Events.InteractionCreate, async (interaction) => {
       try {
+        // ثبت کاربر جدید اگر وجود نداشته باشد
+        if (interaction.user && !interaction.user.bot) {
+          const existingUser = await storage.getUserByDiscordId(interaction.user.id);
+          if (!existingUser) {
+            await storage.createUser({
+              discordId: interaction.user.id,
+              username: interaction.user.username,
+            });
+            log(`Created new user: ${interaction.user.username}`, 'discord');
+          }
+        }
+        
+        // پردازش انواع برهم‌کنش
         if (interaction.isChatInputCommand()) {
           const command = client.commands.get(interaction.commandName);
           if (!command) return;
-
-          // Register user if not exists
-          if (interaction.user && !interaction.user.bot) {
-            const existingUser = await storage.getUserByDiscordId(interaction.user.id);
-            if (!existingUser) {
-              await storage.createUser({
-                discordId: interaction.user.id,
-                username: interaction.user.username,
-              });
-              log(`Created new user: ${interaction.user.username}`, 'discord');
-            }
+          
+          // کش موقتاً غیرفعال شده برای بررسی مشکلات راه‌اندازی
+  // این بخش در آینده دوباره فعال خواهد شد
+  /*
+          const cacheKey = `cmd_${interaction.commandName}_${interaction.user.id}`;
+          const cachedData = interactionCache.get(cacheKey);
+          const now = Date.now();
+          
+          if (cachedData && (now - cachedData.timestamp < INTERACTION_CACHE_TTL)) {
+            // استفاده از کش برای جلوگیری از اجرای مکرر دستور
+            await interaction.reply({
+              content: cachedData.responseMessage || '⚠️ لطفاً کمی صبر کنید و سپس دوباره تلاش کنید.',
+              ephemeral: true
+            });
+            return;
           }
-
-          try {
-            log(`Executing command: ${interaction.commandName}`, 'discord');
-            
-            // تنظیم مهلت زمانی برای پاسخگویی به دستور
-            // اگر پس از 3 ثانیه پاسخی ارسال نشده باشد، یک پاسخ موقت ارسال می‌کنیم
-            const replyTimeout = setTimeout(async () => {
-              if (!interaction.replied && !interaction.deferred) {
-                try {
-                  await interaction.deferReply({ ephemeral: true });
-                  log(`Deferred reply for command ${interaction.commandName} due to timeout`, 'discord');
-                } catch (e) {
-                  // اگر همزمان با این عملیات، دستور اصلی پاسخ داده باشد، ممکن است خطا رخ دهد که آن را نادیده می‌گیریم
-                  log(`Failed to defer reply for command ${interaction.commandName}`, 'error');
-                }
-              }
-            }, 3000);
-            
-            // اجرای دستور
-            await command.execute(interaction);
-            
-            // پاسخ ارسال شد، پس مهلت زمانی را لغو می‌کنیم
-            clearTimeout(replyTimeout);
-            
-            log(`Successfully executed command: ${interaction.commandName}`, 'discord');
-          } catch (error: any) {
-            console.error(`Error executing command ${interaction.commandName}:`, error);
-            log(`Error executing command ${interaction.commandName}: ${error?.message || 'Unknown error'}`, 'error');
-            
-            try {
-              if (interaction.replied) {
-                await interaction.followUp({ content: 'خطایی در اجرای این دستور رخ داده است!', ephemeral: true });
-              } else if (interaction.deferred) {
-                await interaction.editReply({ content: 'خطایی در اجرای این دستور رخ داده است!' });
-              } else {
-                await interaction.reply({ content: 'خطایی در اجرای این دستور رخ داده است!', ephemeral: true });
-              }
-            } catch (followupError) {
-              console.error(`Failed to send error message for ${interaction.commandName}:`, followupError);
-            }
-          }
+  */
+          const now = Date.now(); // متغیر now برای استفاده بعدی
+          
+          log(`Executing command: ${interaction.commandName}`, 'discord');
+          
+          await executeWithTimeout(
+            interaction,
+            async () => { await command.execute(interaction); },
+            `command ${interaction.commandName}`,
+            'خطایی در اجرای این دستور رخ داده است!'
+          );
+          
+          // ذخیره در کش موقتاً غیرفعال شده
+          /*
+          const cmdCacheKey = `cmd_${interaction.commandName}_${interaction.user.id}`;
+          interactionCache.set(cmdCacheKey, {
+            timestamp: now,
+            responseMessage: '⚠️ لطفاً کمی صبر کنید و سپس دوباره تلاش کنید.'
+          });
+          */
+          
+          log(`Successfully executed command: ${interaction.commandName}`, 'discord');
+          
         } else if (interaction.isButton()) {
-          // Handle log detail buttons
+          // پردازش دکمه‌های جزئیات لاگ
           if (interaction.customId.startsWith('log_details_')) {
             const logId = interaction.customId.replace('log_details_', '');
             
-            // Create a message with more detailed information
             await interaction.reply({
               content: `🔍 **نمایش جزئیات بیشتر**\nشناسه لاگ: \`${logId}\`\n\nایمنی داده‌ها را در نظر بگیرید. این اطلاعات فقط برای شما قابل مشاهده است.`,
               ephemeral: true
@@ -202,151 +233,224 @@ export async function initDiscordBot() {
             return;
           }
           
-          // تنظیم مهلت زمانی برای پاسخگویی به تعامل دکمه
-          const buttonReplyTimeout = setTimeout(async () => {
-            if (!interaction.replied && !interaction.deferred) {
-              try {
-                await interaction.deferReply({ ephemeral: true });
-                log(`Deferred reply for button interaction ${interaction.customId} due to timeout`, 'discord');
-              } catch (e) {
-                log(`Failed to defer reply for button interaction ${interaction.customId}`, 'error');
-              }
-            }
-          }, 3000);
+          // بررسی کش برای دکمه‌های پر کاربرد - موقتاً غیرفعال
+          /*
+          const cacheKey = `btn_${interaction.customId}_${interaction.user.id}`;
+          const cachedData = interactionCache.get(cacheKey);
+          const now = Date.now();
           
-          // Handle regular button interactions
-          try {
-            await handleButtonInteraction(interaction);
-            clearTimeout(buttonReplyTimeout);
-          } catch (buttonError: any) {
-            clearTimeout(buttonReplyTimeout);
-            console.error(`Error handling button interaction ${interaction.customId}:`, buttonError);
-            log(`Error in button handler: ${buttonError?.message || 'Unknown error'}`, 'error');
-            
-            try {
-              if (interaction.replied) {
-                await interaction.followUp({ content: 'خطایی در اجرای دکمه رخ داده است!', ephemeral: true });
-              } else if (interaction.deferred) {
-                await interaction.editReply({ content: 'خطایی در اجرای دکمه رخ داده است!' });
-              } else {
-                await interaction.reply({ content: 'خطایی در اجرای دکمه رخ داده است!', ephemeral: true });
-              }
-            } catch (followupError) {
-              console.error(`Failed to send error message for button interaction:`, followupError);
-            }
+          if (cachedData && (now - cachedData.timestamp < INTERACTION_CACHE_TTL)) {
+            // از کش استفاده کنید تا از فشار بیش از حد بر API جلوگیری شود
+            await interaction.reply({
+              content: cachedData.responseMessage || '⚠️ لطفاً کمی صبر کنید و سپس دوباره تلاش کنید.',
+              ephemeral: true
+            });
+            return;
           }
+          */
+          const now = Date.now(); // برای استفاده در کد بعدی
+          
+          // پردازش سایر دکمه‌ها
+          await executeWithTimeout(
+            interaction,
+            async () => { await handleButtonInteraction(interaction); },
+            `button ${interaction.customId}`,
+            'خطایی در اجرای دکمه رخ داده است!'
+          );
+          
+          // ذخیره در کش موقتاً غیرفعال
+          /*
+          if (interaction.customId.includes('daily') || 
+              interaction.customId.includes('wheel') || 
+              interaction.customId.includes('game')) {
+            const btnCacheKey = `btn_${interaction.customId}_${interaction.user.id}`;
+            interactionCache.set(btnCacheKey, {
+              timestamp: now,
+              responseMessage: '⚠️ لطفاً کمی صبر کنید و سپس دوباره تلاش کنید.'
+            });
+          }
+          */
+          
         } else if (interaction.isStringSelectMenu()) {
-          // تنظیم مهلت زمانی برای پاسخگویی به تعامل منوی انتخاب
-          const menuReplyTimeout = setTimeout(async () => {
-            if (!interaction.replied && !interaction.deferred) {
-              try {
-                await interaction.deferReply({ ephemeral: true });
-                log(`Deferred reply for menu interaction ${interaction.customId} due to timeout`, 'discord');
-              } catch (e) {
-                log(`Failed to defer reply for menu interaction ${interaction.customId}`, 'error');
-              }
-            }
-          }, 3000);
+          // بررسی کش برای منوهای انتخاب - موقتاً غیرفعال
+          /*
+          const cacheKey = `menu_${interaction.customId}_${interaction.user.id}`;
+          const cachedData = interactionCache.get(cacheKey);
+          const now = Date.now();
           
-          try {
-            await handleSelectMenuInteraction(interaction);
-            clearTimeout(menuReplyTimeout);
-          } catch (menuError: any) {
-            clearTimeout(menuReplyTimeout);
-            console.error(`Error handling menu interaction ${interaction.customId}:`, menuError);
-            log(`Error in menu handler: ${menuError?.message || 'Unknown error'}`, 'error');
-            
-            try {
-              if (interaction.replied) {
-                await interaction.followUp({ content: 'خطایی در منوی انتخاب رخ داده است!', ephemeral: true });
-              } else if (interaction.deferred) {
-                await interaction.editReply({ content: 'خطایی در منوی انتخاب رخ داده است!' });
-              } else {
-                await interaction.reply({ content: 'خطایی در منوی انتخاب رخ داده است!', ephemeral: true });
-              }
-            } catch (followupError) {
-              console.error(`Failed to send error message for menu interaction:`, followupError);
-            }
+          if (cachedData && (now - cachedData.timestamp < INTERACTION_CACHE_TTL)) {
+            // استفاده از کش برای کاهش درخواست‌های تکراری به API
+            await interaction.reply({
+              content: cachedData.responseMessage || '⚠️ لطفاً کمی صبر کنید و سپس دوباره تلاش کنید.',
+              ephemeral: true
+            });
+            return;
           }
-        } else if (interaction.isModalSubmit()) {
-          // تنظیم مهلت زمانی برای پاسخگویی به تعامل مودال
-          const modalReplyTimeout = setTimeout(async () => {
-            if (!interaction.replied && !interaction.deferred) {
-              try {
-                await interaction.deferReply({ ephemeral: true });
-                log(`Deferred reply for modal interaction ${interaction.customId} due to timeout`, 'discord');
-              } catch (e) {
-                log(`Failed to defer reply for modal interaction ${interaction.customId}`, 'error');
-              }
-            }
-          }, 3000);
+          */
+          const now = Date.now(); // برای استفاده در کد بعدی
           
-          try {
-            // Handle special case for number guess to maintain backward compatibility
-            if (interaction.customId === 'guess_number_modal') {
-              const { handleNumberGuessModalSubmit } = await import('./games/numberGuess');
-              await handleNumberGuessModalSubmit(interaction);
-            }
-            // Use the dedicated modal handler for all other cases
-            else {
-              await handleModalSubmit(interaction);
-            }
-            clearTimeout(modalReplyTimeout);
-          } catch (modalError: any) {
-            clearTimeout(modalReplyTimeout);
-            console.error(`Error handling modal interaction ${interaction.customId}:`, modalError);
-            log(`Error in modal handler: ${modalError?.message || 'Unknown error'}`, 'error');
+          // پردازش منوهای انتخاب
+          await executeWithTimeout(
+            interaction,
+            async () => { await handleSelectMenuInteraction(interaction); },
+            `menu ${interaction.customId}`,
+            'خطایی در منوی انتخاب رخ داده است!'
+          );
+          
+          // ذخیره در کش فقط برای منوهای پرکاربرد
+          if (interaction.customId.includes('shop') || 
+              interaction.customId.includes('inventory') || 
+              interaction.customId.includes('game_select')) {
+            interactionCache.set(cacheKey, {
+              timestamp: now,
+              responseMessage: '⚠️ لطفاً کمی صبر کنید و سپس دوباره تلاش کنید.'
+            });
+          }
+          
+        } else if (interaction.isModalSubmit()) {
+          // بررسی کش برای فرم‌های مودال (مخصوصا برای بازی حدس عدد که ممکن است اسپم شود)
+          if (interaction.customId === 'guess_number_modal') {
+            const cacheKey = `modal_guess_number_${interaction.user.id}`;
+            const cachedData = interactionCache.get(cacheKey);
+            const now = Date.now();
             
-            try {
-              if (interaction.replied) {
-                await interaction.followUp({ content: 'خطایی در فرم ورودی رخ داده است!', ephemeral: true });
-              } else if (interaction.deferred) {
-                await interaction.editReply({ content: 'خطایی در فرم ورودی رخ داده است!' });
-              } else {
-                await interaction.reply({ content: 'خطایی در فرم ورودی رخ داده است!', ephemeral: true });
-              }
-            } catch (followupError) {
-              console.error(`Failed to send error message for modal interaction:`, followupError);
+            if (cachedData && (now - cachedData.timestamp < INTERACTION_CACHE_TTL)) {
+              // استفاده از کش برای کاهش درخواست‌های تکراری
+              await interaction.reply({
+                content: cachedData.responseMessage || '⚠️ لطفاً کمی صبر کنید و سپس دوباره تلاش کنید.',
+                ephemeral: true
+              });
+              return;
             }
+            
+            // اجرای عملیات و ذخیره در کش
+            await executeWithTimeout(
+              interaction,
+              async () => {
+                const { handleNumberGuessModalSubmit } = await import('./games/numberGuess');
+                await handleNumberGuessModalSubmit(interaction);
+              },
+              `modal ${interaction.customId}`,
+              'خطایی در فرم ورودی رخ داده است!'
+            );
+            
+            // ذخیره در کش
+            interactionCache.set(cacheKey, {
+              timestamp: now,
+              responseMessage: '⚠️ لطفاً بین حدس‌های خود کمی صبر کنید!'
+            });
+          } else {
+            // پردازش عمومی برای سایر فرم‌ها
+            await executeWithTimeout(
+              interaction,
+              async () => {
+                await handleModalSubmit(interaction);
+              },
+              `modal ${interaction.customId}`,
+              'خطایی در فرم ورودی رخ داده است!'
+            );
           }
         }
       } catch (error) {
-        console.error('Error handling interaction:', error);
+        // این خطاها قبلاً در executeWithTimeout مدیریت شده‌اند
+        // فقط در صورت بروز خطا در بخش‌های دیگر اینجا لاگ می‌شود
+        if (!interaction.isChatInputCommand() && 
+            !interaction.isButton() && 
+            !interaction.isStringSelectMenu() && 
+            !interaction.isModalSubmit()) {
+          console.error('Error handling interaction:', error);
+        }
       }
     });
 
+    // کش کاربران برای بهینه‌سازی عملکرد در رویداد پیام
+    const userCache = new Map<string, { id: number, lastCheck: number }>();
+    const CACHE_TTL = 5 * 60 * 1000; // 5 دقیقه TTL برای کش
+    
     // Message event for passive XP, quest tracking, etc.
     client.on(Events.MessageCreate, async (message) => {
       // Ignore bot messages
       if (message.author.bot) return;
 
       try {
-        // Register user if not exists
-        const existingUser = await storage.getUserByDiscordId(message.author.id);
-        if (!existingUser) {
-          await storage.createUser({
-            discordId: message.author.id,
-            username: message.author.username,
-          });
-          log(`Created new user: ${message.author.username}`, 'discord');
+        const discordId = message.author.id;
+        const now = Date.now();
+        let userId: number;
+        
+        // کش کاربر را بررسی کنید
+        const cachedUser = userCache.get(discordId);
+        if (cachedUser && (now - cachedUser.lastCheck) < CACHE_TTL) {
+          // اگر کاربر در کش باشد و TTL منقضی نشده باشد، از آن استفاده کنید
+          userId = cachedUser.id;
         } else {
-          // Update message-related quests
-          const quests = await storage.getUserQuests(existingUser.id);
-          for (const { quest, userQuest } of quests) {
-            if (quest.requirement === 'message' && !userQuest.completed) {
-              await storage.updateQuestProgress(
-                existingUser.id,
-                quest.id,
-                userQuest.progress + 1
-              );
+          // در غیر این صورت، کاربر را از دیتابیس دریافت کنید
+          const existingUser = await storage.getUserByDiscordId(discordId);
+          if (!existingUser) {
+            // کاربر جدید ایجاد کنید
+            const newUser = await storage.createUser({
+              discordId: discordId,
+              username: message.author.username,
+            });
+            userId = newUser.id;
+            userCache.set(discordId, { id: userId, lastCheck: now });
+            log(`Created new user: ${message.author.username}`, 'discord');
+            return; // کاربران جدید نیازی به بررسی کوئست ندارند
+          } else {
+            // کاربر موجود را در کش ذخیره کنید
+            userId = existingUser.id;
+            userCache.set(discordId, { id: userId, lastCheck: now });
+          }
+          
+          // فقط بررسی کوئست‌ها را برای کاربران فعال در چت انجام دهید
+          // و با استفاده از پردازش تصادفی برای کاهش فشار
+          if (Math.random() < 0.25) { // فقط ~25% از پیام‌ها را پردازش کنید
+            // Update message-related quests
+            const quests = await storage.getUserQuests(userId);
+            for (const { quest, userQuest } of quests) {
+              if (quest.requirement === 'message' && !userQuest.completed) {
+                await storage.updateQuestProgress(
+                  userId,
+                  quest.id,
+                  userQuest.progress + 1
+                );
+              }
             }
           }
         }
       } catch (error) {
-        console.error('Error handling message:', error);
+        // کاهش لاگ‌ها برای کاهش فشار سیستم
+        console.error('Error in MessageCreate handler');
       }
     });
 
+    // اضافه کردن مکانیزم پاکسازی خودکار کش‌ها برای جلوگیری از نشت حافظه
+    // این مکانیزم با تاخیر اجرا می‌شود تا از تاثیر منفی بر زمان راه‌اندازی جلوگیری شود
+    setTimeout(() => {
+      setInterval(() => {
+        const now = Date.now();
+        
+        // پاکسازی کش برهم‌کنش‌ها - با پردازش محدود برای جلوگیری از تاثیر منفی بر عملکرد
+        let count = 0;
+        interactionCache.forEach((value, key) => {
+          if (count > 100) return; // محدود کردن تعداد حذف‌ها در هر مرحله
+          if (now - value.timestamp > INTERACTION_CACHE_TTL * 2) {
+            interactionCache.delete(key);
+            count++;
+          }
+        });
+        
+        // پاکسازی کش کاربران - با پردازش محدود 
+        count = 0;
+        userCache.forEach((value, key) => {
+          if (count > 100) return; // محدود کردن تعداد حذف‌ها در هر مرحله
+          if (now - value.lastCheck > CACHE_TTL * 2) {
+            userCache.delete(key);
+            count++;
+          }
+        });
+      }, 30 * 60 * 1000); // هر 30 دقیقه پاکسازی شود برای کاهش سربار
+    }, 60 * 1000); // تاخیر 60 ثانیه برای شروع اولین پاکسازی
+    
     // Try to login with token
     try {
       // Login the client

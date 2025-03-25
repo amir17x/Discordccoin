@@ -3,7 +3,6 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
 import { insertUserSchema, insertClanSchema, insertQuestSchema, insertItemSchema } from "@shared/schema";
-import { simulateCommand, simulateButtonClick } from "./simulateBot";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes prefix
@@ -248,14 +247,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
-  // Bot simulator endpoints
-  app.post(`${apiPrefix}/bot/simulate`, async (req: Request, res: Response) => {
-    await simulateCommand(req, res);
-  });
-  
-  app.post(`${apiPrefix}/bot/simulate/button`, async (req: Request, res: Response) => {
-    await simulateButtonClick(req, res);
-  });
+  // API routes end here
 
   const httpServer = createServer(app);
   return httpServer;
