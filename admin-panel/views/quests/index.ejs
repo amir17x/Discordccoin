@@ -1,0 +1,243 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">مدیریت ماموریت‌ها</h1>
+        <a href="/quests/create" class="d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+            <i class="fas fa-plus fa-sm text-white-50 ml-1"></i> ایجاد ماموریت جدید
+        </a>
+    </div>
+
+    <!-- آمار ماموریت‌ها -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-right-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                تعداد کل ماموریت‌ها</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800"><%= stats.total %></div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-tasks fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-right-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                ماموریت‌های فعال</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800"><%= stats.active %></div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-right-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                ماموریت‌های کامل شده (۳۰ روز)</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800"><%= stats.completed %></div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-right-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                ماموریت‌های کامل شده (امروز)</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800"><%= stats.dailyCompleted %></div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-trophy fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- لیست ماموریت‌ها -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">لیست ماموریت‌ها</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="questsTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>شناسه</th>
+                            <th>عنوان</th>
+                            <th>نوع</th>
+                            <th>جایزه</th>
+                            <th>کاربران فعال</th>
+                            <th>تکمیل شده</th>
+                            <th>نرخ تکمیل</th>
+                            <th>وضعیت</th>
+                            <th>عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (quests && quests.length > 0) { %>
+                            <% quests.forEach(quest => { %>
+                                <tr>
+                                    <td><%= quest.id %></td>
+                                    <td><%= quest.title %></td>
+                                    <td><%= quest.type %></td>
+                                    <td><%= quest.reward %> Ccoin</td>
+                                    <td><%= quest.stats.activeUsers %></td>
+                                    <td><%= quest.stats.completedCount %></td>
+                                    <td><%= quest.stats.completionRate.toFixed(1) %>%</td>
+                                    <td>
+                                        <% if (quest.active) { %>
+                                            <span class="badge badge-success">فعال</span>
+                                        <% } else { %>
+                                            <span class="badge badge-secondary">غیرفعال</span>
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <a href="/quests/<%= quest.id %>" class="btn btn-info btn-sm">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="/quests/<%= quest.id %>/edit" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button class="btn btn-danger btn-sm" 
+                                                data-toggle="modal" 
+                                                data-target="#deleteModal" 
+                                                data-quest-id="<%= quest.id %>" 
+                                                data-quest-title="<%= quest.title %>">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="9" class="text-center">هیچ ماموریتی یافت نشد</td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- پاگینیشن -->
+            <% if (pagination.totalPages > 1) { %>
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        <% if (pagination.hasPrev) { %>
+                            <li class="page-item">
+                                <a class="page-link" href="/quests?page=<%= pagination.currentPage - 1 %>" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                        <% } else { %>
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                        <% } %>
+
+                        <% for (let i = 1; i <= pagination.totalPages; i++) { %>
+                            <% if (i === pagination.currentPage) { %>
+                                <li class="page-item active">
+                                    <a class="page-link" href="/quests?page=<%= i %>"><%= i %></a>
+                                </li>
+                            <% } else { %>
+                                <li class="page-item">
+                                    <a class="page-link" href="/quests?page=<%= i %>"><%= i %></a>
+                                </li>
+                            <% } %>
+                        <% } %>
+
+                        <% if (pagination.hasNext) { %>
+                            <li class="page-item">
+                                <a class="page-link" href="/quests?page=<%= pagination.currentPage + 1 %>" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        <% } else { %>
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        <% } %>
+                    </ul>
+                </nav>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<!-- مودال حذف ماموریت -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">تایید حذف ماموریت</h5>
+                <button class="close mr-auto ml-0" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                آیا از حذف ماموریت "<span id="questTitle"></span>" اطمینان دارید؟ این عملیات غیرقابل بازگشت است.
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">انصراف</button>
+                <form id="deleteForm" action="" method="POST">
+                    <button type="submit" class="btn btn-danger">حذف</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        // DataTable تنظیمات
+        $('#questsTable').DataTable({
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Persian.json"
+            },
+            "order": [[0, "desc"]]
+        });
+
+        // مودال حذف ماموریت
+        $('#deleteModal').on('show.bs.modal', function (event) {
+            const button = $(event.relatedTarget);
+            const questId = button.data('quest-id');
+            const questTitle = button.data('quest-title');
+            
+            const modal = $(this);
+            modal.find('#questTitle').text(questTitle);
+            modal.find('#deleteForm').attr('action', `/quests/${questId}/delete`);
+        });
+    });
+</script>
+
+<%- include('../partials/footer') %>

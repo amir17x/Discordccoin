@@ -766,6 +766,63 @@ function registerAdminRoutes(app: Express) {
       res.redirect('/admin/users');
     }
   });
+  
+  /**
+   * حذف آیتم از انبار کاربر
+   */
+  app.post("/admin/users/:id/remove-item", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const itemId = parseInt(req.body.itemId);
+      const quantity = parseInt(req.body.quantity) || 1;
+      
+      // دریافت اطلاعات کاربر
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        req.flash('error', 'کاربر مورد نظر یافت نشد.');
+        return res.redirect('/admin/users');
+      }
+      
+      // دریافت اطلاعات آیتم
+      const item = await storage.getItem(itemId);
+      
+      if (!item) {
+        req.flash('error', 'آیتم مورد نظر یافت نشد.');
+        return res.redirect(`/admin/users/${userId}/inventory`);
+      }
+      
+      // دریافت انبار کاربر برای بررسی موجودی
+      const inventory = await storage.getInventoryItems(userId);
+      const userItem = inventory.find(inv => inv.item.id === itemId);
+      
+      if (!userItem) {
+        req.flash('error', 'این آیتم در انبار کاربر وجود ندارد.');
+        return res.redirect(`/admin/users/${userId}/inventory`);
+      }
+      
+      if (userItem.inventoryItem.quantity < quantity) {
+        req.flash('error', `تعداد آیتم درخواستی برای حذف (${quantity}) بیشتر از موجودی کاربر (${userItem.inventoryItem.quantity}) است.`);
+        return res.redirect(`/admin/users/${userId}/inventory`);
+      }
+      
+      // حذف آیتم از انبار کاربر - فعلاً یک تابع فرضی است که باید پیاده‌سازی شود
+      // در صورتی که این تابع در storage.ts موجود نیست، باید آن را اضافه کنید
+      const success = await storage.removeItemFromInventory(userId, itemId, quantity);
+      
+      if (success) {
+        req.flash('success', `${quantity} عدد ${item.name} از انبار کاربر ${user.username} حذف شد.`);
+      } else {
+        req.flash('error', 'خطا در حذف آیتم از انبار کاربر');
+      }
+      
+      res.redirect(`/admin/users/${userId}/inventory`);
+    } catch (error) {
+      console.error('خطا در حذف آیتم از کاربر:', error);
+      req.flash('error', 'خطا در حذف آیتم از کاربر');
+      res.redirect('/admin/users');
+    }
+  });
 
   /**
    * لیست کلن‌ها

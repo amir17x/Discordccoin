@@ -1,0 +1,146 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">ایجاد ماموریت جدید</h1>
+        <a href="/quests" class="d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
+            <i class="fas fa-arrow-right fa-sm text-white-50 ml-1"></i> بازگشت به لیست ماموریت‌ها
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">اطلاعات ماموریت</h6>
+                </div>
+                <div class="card-body">
+                    <form action="/quests/create" method="POST">
+                        <!-- عنوان ماموریت -->
+                        <div class="form-group">
+                            <label for="title">عنوان ماموریت <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="title" name="title" required>
+                            <small class="form-text text-muted">عنوان ماموریت باید گویا و خلاصه باشد</small>
+                        </div>
+
+                        <!-- توضیحات ماموریت -->
+                        <div class="form-group">
+                            <label for="description">توضیحات</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                            <small class="form-text text-muted">توضیحات کامل‌تر درباره ماموریت و چگونگی انجام آن</small>
+                        </div>
+
+                        <!-- نوع ماموریت -->
+                        <div class="form-group">
+                            <label for="type">نوع ماموریت <span class="text-danger">*</span></label>
+                            <select class="form-control" id="type" name="type" required>
+                                <option value="">انتخاب کنید...</option>
+                                <option value="daily">روزانه</option>
+                                <option value="weekly">هفتگی</option>
+                                <option value="monthly">ماهانه</option>
+                                <option value="one_time">یکبار مصرف</option>
+                                <option value="special">ویژه</option>
+                                <option value="event">رویداد</option>
+                            </select>
+                        </div>
+
+                        <!-- دسته‌بندی ماموریت -->
+                        <div class="form-group">
+                            <label for="category">دسته‌بندی</label>
+                            <select class="form-control" id="category" name="category">
+                                <option value="general">عمومی</option>
+                                <option value="economy">اقتصادی</option>
+                                <option value="game">بازی</option>
+                                <option value="social">اجتماعی</option>
+                                <option value="clan">کلنی</option>
+                            </select>
+                        </div>
+
+                        <!-- حداقل سطح کاربر -->
+                        <div class="form-group">
+                            <label for="minLevel">حداقل سطح کاربر</label>
+                            <input type="number" class="form-control" id="minLevel" name="minLevel" min="1" value="1">
+                            <small class="form-text text-muted">حداقل سطح کاربر برای دسترسی به این ماموریت</small>
+                        </div>
+
+                        <!-- شرط ماموریت -->
+                        <div class="form-group">
+                            <label for="requirement">شرط انجام ماموریت <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="requirement" name="requirement" required>
+                            <small class="form-text text-muted">شرطی که کاربر باید برای کامل کردن ماموریت انجام دهد (مثلاً: انجام بازی، ارسال پیام، و غیره)</small>
+                        </div>
+
+                        <!-- مقدار هدف -->
+                        <div class="form-group">
+                            <label for="targetAmount">مقدار هدف <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="targetAmount" name="targetAmount" min="1" required>
+                            <small class="form-text text-muted">تعداد دفعاتی که کاربر باید شرط ماموریت را انجام دهد</small>
+                        </div>
+
+                        <!-- جایزه ماموریت -->
+                        <div class="form-group">
+                            <label for="reward">جایزه (Ccoin) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="reward" name="reward" min="1" required>
+                            <small class="form-text text-muted">مقدار سکه‌ای که کاربر پس از اتمام ماموریت دریافت می‌کند</small>
+                        </div>
+
+                        <!-- وضعیت ماموریت -->
+                        <div class="form-group">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="active" name="active" checked>
+                                <label class="custom-control-label" for="active">ماموریت فعال باشد</label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-success">ایجاد ماموریت</button>
+                        <a href="/quests" class="btn btn-secondary">انصراف</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">راهنمای ایجاد ماموریت</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h5>انواع ماموریت</h5>
+                        <ul>
+                            <li><strong>روزانه:</strong> هر روز ریست می‌شود و کاربر می‌تواند آن را مجدداً انجام دهد.</li>
+                            <li><strong>هفتگی:</strong> هر هفته ریست می‌شود.</li>
+                            <li><strong>ماهانه:</strong> هر ماه ریست می‌شود.</li>
+                            <li><strong>یکبار مصرف:</strong> تنها یکبار می‌توان انجام داد.</li>
+                            <li><strong>ویژه:</strong> ماموریت‌های خاص با شرایط ویژه.</li>
+                            <li><strong>رویداد:</strong> مربوط به رویدادهای خاص و محدود به زمان.</li>
+                        </ul>
+                    </div>
+
+                    <div class="mb-3">
+                        <h5>دسته‌بندی‌های ماموریت</h5>
+                        <ul>
+                            <li><strong>عمومی:</strong> ماموریت‌های متنوع و عمومی.</li>
+                            <li><strong>اقتصادی:</strong> مرتبط با اقتصاد بات (انتقال سکه، پس‌انداز، و غیره).</li>
+                            <li><strong>بازی:</strong> مرتبط با بازی‌های بات.</li>
+                            <li><strong>اجتماعی:</strong> مرتبط با تعاملات اجتماعی.</li>
+                            <li><strong>کلنی:</strong> مرتبط با فعالیت‌های کلن.</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h5>نکات مهم</h5>
+                        <ul>
+                            <li>جایزه ماموریت باید متناسب با دشواری آن باشد.</li>
+                            <li>از توضیحات واضح و روشن استفاده کنید.</li>
+                            <li>شرط ماموریت باید به‌راحتی قابل فهم باشد.</li>
+                            <li>ماموریت‌های بسیار دشوار می‌تواند باعث دلسردی کاربران شود.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

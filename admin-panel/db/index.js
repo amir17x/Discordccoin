@@ -580,6 +580,354 @@ async function getRecentEvents(limit = 5) {
     }
 }
 
+/**
+ * دریافت تعداد کل ماموریت‌ها
+ * @returns {Promise<number>} تعداد ماموریت‌ها
+ */
+async function getQuestsCount() {
+    try {
+        const result = await db.select({ count: sql`count(*)` }).from(quests);
+        return parseInt(result[0].count);
+    } catch (error) {
+        console.error('خطا در دریافت تعداد ماموریت‌ها:', error);
+        throw error;
+    }
+}
+
+/**
+ * دریافت لیست ماموریت‌ها با پاگینیشن
+ * @param {number} skip تعداد نتایجی که باید رد شود
+ * @param {number} limit تعداد نتایج در هر صفحه
+ * @returns {Promise<Array>} لیست ماموریت‌ها
+ */
+async function getAllQuests(skip = 0, limit = 10) {
+    try {
+        const questList = await db.select().from(quests).limit(limit).offset(skip);
+        
+        // افزودن آمار به هر ماموریت
+        for (const quest of questList) {
+            quest.stats = {
+                activeUsers: await getActiveUsersForQuest(quest.id),
+                completedCount: await getCompletedCountForQuest(quest.id),
+                completionRate: await getCompletionRateForQuest(quest.id)
+            };
+        }
+        
+        return questList;
+    } catch (error) {
+        console.error('خطا در دریافت لیست ماموریت‌ها:', error);
+        throw error;
+    }
+}
+
+/**
+ * جستجوی ماموریت‌ها
+ * @param {string} term عبارت جستجو
+ * @returns {Promise<Array>} لیست ماموریت‌های یافت شده
+ */
+async function searchQuests(term) {
+    try {
+        return await db.select().from(quests).where(
+            or(
+                like(quests.title, `%${term}%`),
+                like(quests.description, `%${term}%`),
+                like(quests.type, `%${term}%`),
+                like(quests.requirement, `%${term}%`)
+            )
+        );
+    } catch (error) {
+        console.error('خطا در جستجوی ماموریت‌ها:', error);
+        throw error;
+    }
+}
+
+/**
+ * دریافت اطلاعات ماموریت با شناسه
+ * @param {number} id شناسه ماموریت
+ * @returns {Promise<Object|null>} اطلاعات ماموریت
+ */
+async function getQuest(id) {
+    try {
+        const result = await db.select().from(quests).where(eq(quests.id, id)).limit(1);
+        if (result.length === 0) return null;
+        
+        const quest = result[0];
+        
+        // افزودن آمار به ماموریت
+        quest.stats = {
+            activeUsers: await getActiveUsersForQuest(id),
+            completedCount: await getCompletedCountForQuest(id),
+            completionRate: await getCompletionRateForQuest(id)
+        };
+        
+        return quest;
+    } catch (error) {
+        console.error(`خطا در دریافت اطلاعات ماموریت با شناسه ${id}:`, error);
+        throw error;
+    }
+}
+
+/**
+ * ایجاد ماموریت جدید
+ * @param {Object} questData اطلاعات ماموریت جدید
+ * @returns {Promise<Object>} ماموریت ایجاد شده
+ */
+async function createQuest(questData) {
+    try {
+        // ایجاد ماموریت جدید
+        const [result] = await db.insert(quests).values({
+            title: questData.title,
+            description: questData.description || null,
+            type: questData.type,
+            requirement: questData.requirement,
+            targetAmount: questData.targetAmount,
+            reward: questData.reward,
+            minLevel: questData.minLevel || 1,
+            active: questData.active !== undefined ? questData.active : true,
+            category: questData.category || 'general'
+        }).returning();
+        
+        return result;
+    } catch (error) {
+        console.error('خطا در ایجاد ماموریت جدید:', error);
+        throw error;
+    }
+}
+
+/**
+ * بروزرسانی اطلاعات ماموریت
+ * @param {number} id شناسه ماموریت
+ * @param {Object} updates داده‌های بروزرسانی
+ * @returns {Promise<Object>} اطلاعات بروزرسانی شده ماموریت
+ */
+async function updateQuest(id, updates) {
+    try {
+        await db.update(quests).set(updates).where(eq(quests.id, id));
+        return await getQuest(id);
+    } catch (error) {
+        console.error(`خطا در بروزرسانی اطلاعات ماموریت با شناسه ${id}:`, error);
+        throw error;
+    }
+}
+
+/**
+ * حذف ماموریت
+ * @param {number} id شناسه ماموریت
+ * @returns {Promise<boolean>} آیا عملیات موفق بود؟
+ */
+async function deleteQuest(id) {
+    try {
+        // ابتدا تمام رکوردهای userQuests مرتبط را حذف می‌کنیم
+        await db.delete(userQuests).where(eq(userQuests.questId, id));
+        
+        // سپس ماموریت را حذف می‌کنیم
+        await db.delete(quests).where(eq(quests.id, id));
+        
+        return true;
+    } catch (error) {
+        console.error(`خطا در حذف ماموریت با شناسه ${id}:`, error);
+        throw error;
+    }
+}
+
+/**
+ * دریافت کاربرانی که این ماموریت را دارند
+ * @param {number} questId شناسه ماموریت
+ * @returns {Promise<Array>} لیست کاربران با این ماموریت
+ */
+async function getUsersWithQuest(questId) {
+    try {
+        // ابتدا اطلاعات userQuests را دریافت می‌کنیم
+        const userQuestRecords = await db.select().from(userQuests).where(eq(userQuests.questId, questId));
+        
+        // سپس اطلاعات کاربران مرتبط را دریافت می‌کنیم
+        const result = [];
+        for (const uq of userQuestRecords) {
+            const user = await getUserById(uq.userId);
+            if (user) {
+                result.push({
+                    user,
+                    userQuest: uq
+                });
+            }
+        }
+        
+        return result;
+    } catch (error) {
+        console.error(`خطا در دریافت کاربران با ماموریت ${questId}:`, error);
+        throw error;
+    }
+}
+
+/**
+ * اختصاص ماموریت به کاربر
+ * @param {number} questId شناسه ماموریت
+ * @param {number} userId شناسه کاربر
+ * @returns {Promise<boolean>} آیا عملیات موفق بود؟
+ */
+async function assignQuestToUser(questId, userId) {
+    try {
+        // بررسی وجود ماموریت
+        const quest = await getQuest(questId);
+        if (!quest) {
+            throw new Error(`ماموریت با شناسه ${questId} یافت نشد`);
+        }
+        
+        // بررسی وجود کاربر
+        const user = await getUserById(userId);
+        if (!user) {
+            throw new Error(`کاربر با شناسه ${userId} یافت نشد`);
+        }
+        
+        // بررسی اینکه آیا کاربر قبلاً این ماموریت را دارد
+        const existingUserQuest = await db.select()
+            .from(userQuests)
+            .where(and(
+                eq(userQuests.userId, userId),
+                eq(userQuests.questId, questId)
+            ))
+            .limit(1);
+        
+        if (existingUserQuest.length > 0) {
+            throw new Error(`کاربر با شناسه ${userId} قبلاً این ماموریت را دریافت کرده است`);
+        }
+        
+        // ایجاد رکورد userQuest جدید
+        await db.insert(userQuests).values({
+            userId,
+            questId,
+            progress: 0,
+            completed: false,
+            updatedAt: new Date()
+        });
+        
+        return true;
+    } catch (error) {
+        console.error(`خطا در اختصاص ماموریت ${questId} به کاربر ${userId}:`, error);
+        throw error;
+    }
+}
+
+/**
+ * بروزرسانی پیشرفت ماموریت کاربر
+ * @param {number} userId شناسه کاربر
+ * @param {number} questId شناسه ماموریت
+ * @param {number} progress میزان پیشرفت جدید
+ * @param {boolean} completed آیا ماموریت تکمیل شده است؟
+ * @returns {Promise<boolean>} آیا عملیات موفق بود؟
+ */
+async function updateUserQuestProgress(userId, questId, progress, completed = false) {
+    try {
+        // بررسی وجود رکورد userQuest
+        const existingUserQuest = await db.select()
+            .from(userQuests)
+            .where(and(
+                eq(userQuests.userId, userId),
+                eq(userQuests.questId, questId)
+            ))
+            .limit(1);
+        
+        if (existingUserQuest.length === 0) {
+            throw new Error(`رکورد ماموریت برای کاربر ${userId} و ماموریت ${questId} یافت نشد`);
+        }
+        
+        // بروزرسانی پیشرفت
+        const updates = {
+            progress,
+            completed,
+            updatedAt: new Date()
+        };
+        
+        // اگر ماموریت تکمیل شده است، تاریخ تکمیل را تنظیم می‌کنیم
+        if (completed && !existingUserQuest[0].completed) {
+            updates.completedAt = new Date();
+        }
+        
+        await db.update(userQuests)
+            .set(updates)
+            .where(and(
+                eq(userQuests.userId, userId),
+                eq(userQuests.questId, questId)
+            ));
+        
+        return true;
+    } catch (error) {
+        console.error(`خطا در بروزرسانی پیشرفت ماموریت ${questId} برای کاربر ${userId}:`, error);
+        throw error;
+    }
+}
+
+/**
+ * دریافت تعداد کاربران فعال برای یک ماموریت
+ * @param {number} questId شناسه ماموریت
+ * @returns {Promise<number>} تعداد کاربران فعال
+ */
+async function getActiveUsersForQuest(questId) {
+    try {
+        const result = await db.select({ count: sql`count(*)` })
+            .from(userQuests)
+            .where(and(
+                eq(userQuests.questId, questId),
+                eq(userQuests.completed, false)
+            ));
+            
+        return parseInt(result[0].count) || 0;
+    } catch (error) {
+        console.error(`خطا در دریافت تعداد کاربران فعال برای ماموریت ${questId}:`, error);
+        return 0;
+    }
+}
+
+/**
+ * دریافت تعداد تکمیل‌ها برای یک ماموریت
+ * @param {number} questId شناسه ماموریت
+ * @returns {Promise<number>} تعداد تکمیل‌ها
+ */
+async function getCompletedCountForQuest(questId) {
+    try {
+        const result = await db.select({ count: sql`count(*)` })
+            .from(userQuests)
+            .where(and(
+                eq(userQuests.questId, questId),
+                eq(userQuests.completed, true)
+            ));
+            
+        return parseInt(result[0].count) || 0;
+    } catch (error) {
+        console.error(`خطا در دریافت تعداد تکمیل‌ها برای ماموریت ${questId}:`, error);
+        return 0;
+    }
+}
+
+/**
+ * دریافت نرخ تکمیل برای یک ماموریت
+ * @param {number} questId شناسه ماموریت
+ * @returns {Promise<number>} نرخ تکمیل (0-100)
+ */
+async function getCompletionRateForQuest(questId) {
+    try {
+        const totalCount = await db.select({ count: sql`count(*)` })
+            .from(userQuests)
+            .where(eq(userQuests.questId, questId));
+            
+        const completedCount = await db.select({ count: sql`count(*)` })
+            .from(userQuests)
+            .where(and(
+                eq(userQuests.questId, questId),
+                eq(userQuests.completed, true)
+            ));
+            
+        const total = parseInt(totalCount[0].count) || 0;
+        const completed = parseInt(completedCount[0].count) || 0;
+        
+        if (total === 0) return 0;
+        return (completed / total) * 100;
+    } catch (error) {
+        console.error(`خطا در دریافت نرخ تکمیل برای ماموریت ${questId}:`, error);
+        return 0;
+    }
+}
+
 module.exports = {
     getClansCount,
     getClans,
@@ -605,5 +953,16 @@ module.exports = {
     getDailyTransactions,
     getGameStats,
     getRecentActiveUsers,
-    getRecentEvents
+    getRecentEvents,
+    // توابع جدید ماموریت‌ها
+    getQuestsCount,
+    getAllQuests,
+    searchQuests,
+    getQuest,
+    createQuest,
+    updateQuest,
+    deleteQuest,
+    getUsersWithQuest,
+    assignQuestToUser,
+    updateUserQuestProgress
 };

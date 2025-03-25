@@ -87,6 +87,7 @@ export interface IStorage {
   useItem(userId: number, itemId: number): Promise<boolean>;
   getInventoryItems(userId: number): Promise<{item: Item, inventoryItem: InventoryItem}[]>;
   addItemToInventory(userId: number, itemId: number, quantity?: number): Promise<boolean>;
+  removeItemFromInventory(userId: number, itemId: number, quantity: number): Promise<boolean>;
   
   // Game operations
   recordGame(userId: number, type: string, bet: number, won: boolean, reward: number): Promise<Game>;
@@ -746,6 +747,34 @@ export class MemStorage implements IStorage {
         itemId,
         quantity,
       };
+    }
+    
+    return true;
+  }
+
+  async removeItemFromInventory(userId: number, itemId: number, quantity: number = 1): Promise<boolean> {
+    const user = this.users.get(userId);
+    if (!user) return false;
+    
+    const inventory = user.inventory as Record<string, InventoryItem>;
+    const itemIdStr = itemId.toString();
+    
+    // اگر آیتم در انبار موجود نباشد
+    if (!inventory[itemIdStr]) {
+      return false;
+    }
+    
+    // اگر تعداد آیتم کمتر از مقدار درخواستی باشد
+    if (inventory[itemIdStr].quantity < quantity) {
+      return false;
+    }
+    
+    // کاهش تعداد آیتم
+    inventory[itemIdStr].quantity -= quantity;
+    
+    // اگر تعداد آیتم به صفر رسید، آیتم را از انبار حذف کنیم
+    if (inventory[itemIdStr].quantity <= 0) {
+      delete inventory[itemIdStr];
     }
     
     return true;

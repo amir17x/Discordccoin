@@ -1,0 +1,429 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">جزئیات ماموریت: <%= quest.title %></h1>
+        <div>
+            <a href="/quests/<%= quest.id %>/edit" class="d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+                <i class="fas fa-edit fa-sm text-white-50 ml-1"></i> ویرایش ماموریت
+            </a>
+            <a href="/quests" class="d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
+                <i class="fas fa-arrow-right fa-sm text-white-50 ml-1"></i> بازگشت به لیست ماموریت‌ها
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- اطلاعات ماموریت -->
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">اطلاعات ماموریت</h6>
+                    <form action="/quests/<%= quest.id %>/toggle-status" method="POST" class="d-inline">
+                        <% if (quest.active) { %>
+                            <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-times-circle"></i> غیرفعال کردن
+                            </button>
+                        <% } else { %>
+                            <button type="submit" class="btn btn-outline-success btn-sm">
+                                <i class="fas fa-check-circle"></i> فعال کردن
+                            </button>
+                        <% } %>
+                    </form>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <span class="badge <%= quest.active ? 'badge-success' : 'badge-secondary' %> mb-2">
+                            <%= quest.active ? 'فعال' : 'غیرفعال' %>
+                        </span>
+                        <span class="badge badge-info mb-2">
+                            نوع: <%= quest.type %>
+                        </span>
+                        <span class="badge badge-primary mb-2">
+                            دسته‌بندی: <%= quest.category || 'عمومی' %>
+                        </span>
+                    </div>
+
+                    <table class="table table-bordered">
+                        <tbody>
+                            <tr>
+                                <th style="width: 30%">شناسه</th>
+                                <td><%= quest.id %></td>
+                            </tr>
+                            <tr>
+                                <th>عنوان</th>
+                                <td><%= quest.title %></td>
+                            </tr>
+                            <tr>
+                                <th>توضیحات</th>
+                                <td><%= quest.description || 'ندارد' %></td>
+                            </tr>
+                            <tr>
+                                <th>شرط انجام</th>
+                                <td><%= quest.requirement %></td>
+                            </tr>
+                            <tr>
+                                <th>مقدار هدف</th>
+                                <td><%= quest.targetAmount %></td>
+                            </tr>
+                            <tr>
+                                <th>جایزه</th>
+                                <td><%= quest.reward %> Ccoin</td>
+                            </tr>
+                            <tr>
+                                <th>حداقل سطح کاربر</th>
+                                <td><%= quest.minLevel || 1 %></td>
+                            </tr>
+                            <tr>
+                                <th>تاریخ ایجاد</th>
+                                <td><%= quest.createdAt ? new Date(quest.createdAt).toLocaleString('fa-IR') : 'نامشخص' %></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <!-- دکمه‌های عملیات -->
+                    <div class="mt-3">
+                        <button class="btn btn-danger" data-toggle="modal" data-target="#deleteModal">
+                            <i class="fas fa-trash"></i> حذف ماموریت
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- آمار ماموریت -->
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">آمار ماموریت</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="card border-left-primary shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                                کاربران فعال</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800"><%= quest.stats.activeUsers %></div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-4">
+                            <div class="card border-left-success shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                                تکمیل شده</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800"><%= quest.stats.completedCount %></div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h4 class="small font-weight-bold">نرخ تکمیل <span class="float-left"><%= quest.stats.completionRate.toFixed(1) %>%</span></h4>
+                        <div class="progress mb-4">
+                            <div class="progress-bar bg-info" role="progressbar" style="width: <%= quest.stats.completionRate %>%" 
+                                 aria-valuenow="<%= quest.stats.completionRate %>" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+
+                    <!-- نمودار کاربران فعال و تکمیل کننده -->
+                    <div class="chart-area">
+                        <canvas id="questStatsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- لیست کاربران با این ماموریت -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">کاربران با این ماموریت</h6>
+            <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#assignQuestModal">
+                <i class="fas fa-plus"></i> اختصاص به کاربر جدید
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="usersQuestTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>شناسه کاربر</th>
+                            <th>نام کاربری</th>
+                            <th>پیشرفت</th>
+                            <th>وضعیت</th>
+                            <th>آخرین بروزرسانی</th>
+                            <th>عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (userQuests && userQuests.length > 0) { %>
+                            <% userQuests.forEach(uq => { %>
+                                <tr>
+                                    <td><%= uq.user.id %></td>
+                                    <td>
+                                        <a href="/users/<%= uq.user.id %>"><%= uq.user.username %></a>
+                                    </td>
+                                    <td>
+                                        <div class="progress">
+                                            <div class="progress-bar <%= uq.userQuest.completed ? 'bg-success' : 'bg-info' %>" 
+                                                 role="progressbar" 
+                                                 style="width: <%= Math.min(100, (uq.userQuest.progress / quest.targetAmount) * 100) %>%" 
+                                                 aria-valuenow="<%= uq.userQuest.progress %>" 
+                                                 aria-valuemin="0" 
+                                                 aria-valuemax="<%= quest.targetAmount %>">
+                                                <%= uq.userQuest.progress %>/<%= quest.targetAmount %>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <% if (uq.userQuest.completed) { %>
+                                            <span class="badge badge-success">تکمیل شده</span>
+                                        <% } else { %>
+                                            <span class="badge badge-warning">در حال انجام</span>
+                                        <% } %>
+                                    </td>
+                                    <td><%= uq.userQuest.updatedAt ? new Date(uq.userQuest.updatedAt).toLocaleString('fa-IR') : 'نامشخص' %></td>
+                                    <td>
+                                        <button class="btn btn-info btn-sm" 
+                                                data-toggle="modal" 
+                                                data-target="#updateProgressModal"
+                                                data-user-id="<%= uq.user.id %>"
+                                                data-username="<%= uq.user.username %>"
+                                                data-progress="<%= uq.userQuest.progress %>"
+                                                data-completed="<%= uq.userQuest.completed %>">
+                                            <i class="fas fa-edit"></i> بروزرسانی پیشرفت
+                                        </button>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="6" class="text-center">هیچ کاربری این ماموریت را ندارد</td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- مودال حذف ماموریت -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">تایید حذف ماموریت</h5>
+                <button class="close mr-auto ml-0" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                آیا از حذف ماموریت "<%= quest.title %>" اطمینان دارید؟ این عملیات غیرقابل بازگشت است و تمام رکوردهای مرتبط با این ماموریت نیز حذف خواهند شد.
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">انصراف</button>
+                <form action="/quests/<%= quest.id %>/delete" method="POST">
+                    <button type="submit" class="btn btn-danger">حذف</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- مودال اختصاص ماموریت به کاربر -->
+<div class="modal fade" id="assignQuestModal" tabindex="-1" role="dialog" aria-labelledby="assignQuestModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="assignQuestModalLabel">اختصاص ماموریت به کاربر</h5>
+                <button class="close mr-auto ml-0" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="assignQuestForm" action="/quests/<%= quest.id %>/assign" method="POST">
+                    <div class="form-group">
+                        <label for="userId">انتخاب کاربر</label>
+                        <input type="text" class="form-control" id="userSearch" placeholder="جستجوی کاربر با نام کاربری یا شناسه">
+                        <select class="form-control mt-2" id="userId" name="userId" required>
+                            <option value="">انتخاب کنید...</option>
+                            <!-- گزینه‌ها با جاوااسکریپت اضافه می‌شوند -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="setInitialProgress" name="setInitialProgress">
+                            <label class="custom-control-label" for="setInitialProgress">تنظیم پیشرفت اولیه</label>
+                        </div>
+                    </div>
+                    <div class="form-group initial-progress-group" style="display: none;">
+                        <label for="initialProgress">پیشرفت اولیه</label>
+                        <input type="number" class="form-control" id="initialProgress" name="initialProgress" min="0" max="<%= quest.targetAmount %>" value="0">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">انصراف</button>
+                <button type="submit" form="assignQuestForm" class="btn btn-primary">اختصاص ماموریت</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- مودال بروزرسانی پیشرفت ماموریت -->
+<div class="modal fade" id="updateProgressModal" tabindex="-1" role="dialog" aria-labelledby="updateProgressModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="updateProgressModalLabel">بروزرسانی پیشرفت ماموریت</h5>
+                <button class="close mr-auto ml-0" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="updateProgressForm" action="/quests/<%= quest.id %>/update-progress/0" method="POST">
+                    <p>بروزرسانی پیشرفت ماموریت برای کاربر <span id="updateUsername"></span></p>
+                    
+                    <div class="form-group">
+                        <label for="progress">میزان پیشرفت</label>
+                        <input type="number" class="form-control" id="progress" name="progress" min="0" max="<%= quest.targetAmount %>" required>
+                        <small class="form-text text-muted">مقدار پیشرفت فعلی از <%= quest.targetAmount %></small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="completed" name="completed">
+                            <label class="custom-control-label" for="completed">ماموریت تکمیل شده است</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">انصراف</button>
+                <button type="submit" form="updateProgressForm" class="btn btn-primary">ذخیره تغییرات</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        // تنظیمات جدول کاربران
+        $('#usersQuestTable').DataTable({
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Persian.json"
+            }
+        });
+
+        // نمودار آمار ماموریت
+        var ctx = document.getElementById("questStatsChart");
+        var myPieChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ["در حال انجام", "تکمیل شده"],
+                datasets: [{
+                    data: [<%= quest.stats.activeUsers %>, <%= quest.stats.completedCount %>],
+                    backgroundColor: ['#4e73df', '#1cc88a'],
+                    hoverBackgroundColor: ['#2e59d9', '#17a673'],
+                    hoverBorderColor: "rgba(234, 236, 244, 1)",
+                }],
+            },
+            options: {
+                maintainAspectRatio: false,
+                tooltips: {
+                    backgroundColor: "rgb(255,255,255)",
+                    bodyFontColor: "#858796",
+                    borderColor: '#dddfeb',
+                    borderWidth: 1,
+                    xPadding: 15,
+                    yPadding: 15,
+                    displayColors: false,
+                    caretPadding: 10,
+                },
+                legend: {
+                    display: true,
+                    position: 'bottom'
+                },
+                cutoutPercentage: 70,
+            },
+        });
+
+        // نمایش/مخفی کردن فیلد پیشرفت اولیه
+        $('#setInitialProgress').change(function() {
+            if($(this).is(':checked')) {
+                $('.initial-progress-group').show();
+            } else {
+                $('.initial-progress-group').hide();
+            }
+        });
+
+        // تنظیم فرم بروزرسانی پیشرفت
+        $('#updateProgressModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            var userId = button.data('user-id');
+            var username = button.data('username');
+            var progress = button.data('progress');
+            var completed = button.data('completed');
+            
+            var modal = $(this);
+            modal.find('#updateUsername').text(username);
+            modal.find('#progress').val(progress);
+            modal.find('#completed').prop('checked', completed === 'true');
+            modal.find('#updateProgressForm').attr('action', `/quests/<%= quest.id %>/update-progress/${userId}`);
+        });
+
+        // جستجوی کاربر
+        $('#userSearch').on('input', function() {
+            var searchTerm = $(this).val().toLowerCase();
+            
+            // در اینجا می‌توان با استفاده از AJAX جستجو را انجام داد
+            // اما برای سادگی، مثال ساده‌ای از اضافه کردن کاربران نمایش داده می‌شود
+            
+            if (searchTerm.length > 2) {
+                // پاک کردن گزینه‌های قبلی
+                $('#userId').empty().append('<option value="">در حال جستجو...</option>');
+                
+                // جستجوی AJAX
+                $.ajax({
+                    url: '/api/users/search',
+                    data: { term: searchTerm },
+                    method: 'GET',
+                    success: function(response) {
+                        $('#userId').empty();
+                        
+                        if (response && response.length > 0) {
+                            response.forEach(function(user) {
+                                $('#userId').append(`<option value="${user.id}">${user.username} (${user.id})</option>`);
+                            });
+                        } else {
+                            $('#userId').append('<option value="">هیچ کاربری یافت نشد</option>');
+                        }
+                    },
+                    error: function() {
+                        $('#userId').empty().append('<option value="">خطا در جستجو</option>');
+                    }
+                });
+            }
+        });
+    });
+</script>
+
+<%- include('../partials/footer') %>
