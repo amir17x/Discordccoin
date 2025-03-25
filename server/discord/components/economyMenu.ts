@@ -201,25 +201,76 @@ export async function economyMenu(
       return;
     }
     
-    // Check if daily reward is available
+    // تعریف متغیرهای زمانی برای استفاده در تمام بخش‌ها
     const now = new Date();
+    
+    // Check if daily reward is available
     const lastDaily = user.lastDaily ? new Date(user.lastDaily) : null;
     const dailyAvailable = !lastDaily || (now.getTime() - lastDaily.getTime() >= 24 * 60 * 60 * 1000);
     
-    // Create the economy embed
+    // متغیرهای لازم برای اطلاعات پیشرفته‌تر
+    const totalMoney = user.wallet + user.bank;
+    const bankInterestDate = user.lastBankInterest ? new Date(user.lastBankInterest) : null;
+    const millisecondsInMonth = 30 * 24 * 60 * 60 * 1000;
+    const nextInterestDate = bankInterestDate ? new Date(bankInterestDate.getTime() + millisecondsInMonth) : null;
+    const daysUntilInterest = nextInterestDate ? Math.max(0, Math.ceil((nextInterestDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000))) : 30;
+    const interestAmount = Math.floor(user.bank * 0.02); // محاسبه 2% سود بانکی
+
+    // تعیین رنگ و نماد وضعیت حساب
+    let accountStatus = '⚪ عادی';
+    let accountColor = 0x2ECC71; // سبز روشن - با فرمت عددی به جای هگز
+
+    if (totalMoney > 50000) {
+      accountStatus = '💠 الماس';
+      accountColor = 0x9b59b6; // بنفش
+    } else if (totalMoney > 20000) {
+      accountStatus = '🥇 طلایی';
+      accountColor = 0xf1c40f; // زرد طلایی
+    } else if (totalMoney > 10000) {
+      accountStatus = '🥈 نقره‌ای';
+      accountColor = 0x95a5a6; // نقره‌ای
+    } else if (totalMoney > 5000) {
+      accountStatus = '🥉 برنزی';
+      accountColor = 0xe67e22; // نارنجی
+    }
+
+    // محاسبه رتبه اقتصادی
+    const economicRank = user.economyLevel > 5 ? 'سرمایه‌دار 💼' :
+                         user.economyLevel > 3 ? 'ثروتمند 💵' :
+                         user.economyLevel > 1 ? 'میانه رو 💱' : 'تازه‌کار 🔰';
+
+    // Create the economy embed with enhanced styling and information
     const embed = new EmbedBuilder()
-      .setColor('#2ECC71')
-      .setTitle('💰 بخش اقتصاد')
-      .setDescription('مدیریت سکه‌ها و اقتصاد شخصی')
+      .setColor(accountColor)
+      .setTitle('💰 سیستم اقتصادی Ccoin')
+      .setDescription(`**${interaction.user.username}** عزیز، به سیستم جامع اقتصادی Ccoin خوش آمدید!\n\n✅ در این بخش می‌توانید تمام امور مالی خود را مدیریت کنید، سکه انتقال دهید، از خدمات بانکی استفاده کنید و کریستال‌های ارزشمند را دریافت نمایید.`)
+      .setThumbnail('https://cdn-icons-png.flaticon.com/512/6699/6699382.png') // آیکون کیف پول طلایی
       .addFields(
-        { name: '💳 کیف پول', value: `${user.wallet} Ccoin`, inline: true },
-        { name: '🏦 بانک', value: `${user.bank} Ccoin`, inline: true },
-        { name: '💎 کریستال', value: `${user.crystals}`, inline: true },
-        { name: '📊 لِوِل اقتصادی', value: `${user.economyLevel}`, inline: true },
-        { name: '📈 سود بانکی', value: `2% ماهانه`, inline: true },
-        { name: '💸 کارمزد انتقال', value: '1%', inline: true }
+        { name: '💵 موجودی حساب‌ها', value: 
+          `💳 **کیف پول**: \`${user.wallet.toLocaleString('fa-IR')} Ccoin\`\n` +
+          `🏦 **بانک**: \`${user.bank.toLocaleString('fa-IR')} Ccoin\`\n` +
+          `💎 **کریستال**: \`${user.crystals.toLocaleString('fa-IR')}\``, inline: true },
+        
+        { name: '📊 وضعیت اقتصادی', value: 
+          `🏆 **رتبه**: \`${economicRank}\`\n` +
+          `💹 **سطح**: \`${user.economyLevel}\`\n` +
+          `🏅 **وضعیت**: \`${accountStatus}\``, inline: true },
+        
+        { name: '🏦 اطلاعات بانکی', value: 
+          `💰 **کل دارایی**: \`${totalMoney.toLocaleString('fa-IR')} Ccoin\`\n` +
+          `📈 **سود بانکی بعدی**: \`${interestAmount.toLocaleString('fa-IR')} Ccoin\`\n` +
+          `⏱️ **زمان سود بعدی**: \`${daysUntilInterest} روز دیگر\``, inline: false },
+        
+        { name: '💡 راهنمای سریع', value: 
+          `• برای محافظت از سرقت، پول خود را در بانک نگهداری کنید\n` +
+          `• با تبدیل سکه به کریستال، می‌توانید آیتم‌های ویژه خریداری کنید\n` +
+          `• سود 2% ماهانه به موجودی بانکی شما تعلق می‌گیرد`
+        }
       )
-      .setFooter({ text: `${interaction.user.username} | رکورد روزانه: ${user.dailyStreak} روز` })
+      .setFooter({ 
+        text: `رکورد ورود روزانه: ${user.dailyStreak} روز | کارمزد انتقال: 1% | به‌روزرسانی: ${new Date().toLocaleDateString('fa-IR')}`,
+        iconURL: interaction.user.displayAvatarURL()
+      })
       .setTimestamp();
     
     // Daily reward button

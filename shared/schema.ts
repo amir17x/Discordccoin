@@ -11,10 +11,14 @@ export const users = pgTable("users", {
   bank: integer("bank").notNull().default(0),
   crystals: integer("crystals").notNull().default(0),
   economyLevel: integer("economy_level").notNull().default(1),
+  points: integer("points").notNull().default(0), // امتیاز کاربر برای رتبه‌بندی
+  level: integer("level").notNull().default(1), // سطح کاربر
+  experience: integer("experience").notNull().default(0), // تجربه کاربر
   lastDaily: timestamp("last_daily"),
   lastRob: timestamp("last_rob"),
   lastWheelSpin: timestamp("last_wheel_spin"),
   lastBankInterest: timestamp("last_bank_interest"), // تاریخ آخرین پرداخت سود بانکی
+  lastSeen: timestamp("last_seen").defaultNow(), // آخرین زمان فعالیت
   inventory: jsonb("inventory").notNull().default({}),
   dailyStreak: integer("daily_streak").notNull().default(0),
   totalGamesPlayed: integer("total_games_played").notNull().default(0),

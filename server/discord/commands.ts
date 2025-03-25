@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, Collection, Client, PermissionFlagsBits } from 'discord.js';
+import { SlashCommandBuilder, Collection, Client, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { storage } from '../storage';
 import { mainMenu } from './components/mainMenu';
 import { adminMenu } from '../discord/components/adminMenu';
@@ -32,7 +32,7 @@ const menu = {
 const balance = {
   data: new SlashCommandBuilder()
     .setName('balance')
-    .setDescription('بررسی موجودی حساب شما'),
+    .setDescription('💰 بررسی موجودی حساب شما'),
   
   async execute(interaction: any) {
     try {
@@ -45,20 +45,79 @@ const balance = {
           username: interaction.user.username,
         });
         
+        // ایجاد Embed برای کاربر جدید
+        const newUserEmbed = new EmbedBuilder()
+          .setColor('#2ECC71') // سبز روشن
+          .setTitle('🎉 به دنیای Ccoin خوش آمدید!')
+          .setDescription(`**${interaction.user.username}** عزیز، حساب شما با موفقیت ساخته شد.`)
+          .setThumbnail(interaction.user.displayAvatarURL() || interaction.client.user?.displayAvatarURL())
+          .addFields(
+            { name: '💰 موجودی کیف پول', value: `\`${newUser.wallet} Ccoin\``, inline: true },
+            { name: '🏦 موجودی بانک', value: `\`${newUser.bank} Ccoin\``, inline: true },
+            { name: '💎 کریستال', value: `\`${newUser.crystals}\``, inline: true }
+          )
+          .setFooter({ text: '📌 برای دریافت جایزه روزانه از دستور /daily استفاده کنید!' })
+          .setTimestamp();
+        
+        // دکمه برای دسترسی به منوی اصلی
+        const row = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('menu')
+              .setLabel('🏠 منوی اصلی')
+              .setStyle(ButtonStyle.Success),
+            new ButtonBuilder()
+              .setCustomId('daily')
+              .setLabel('🎁 دریافت جایزه روزانه')
+              .setStyle(ButtonStyle.Primary)
+          );
+        
         await interaction.reply({
-          content: `🎉 خوش آمدید! موجودی اولیه شما ${newUser.wallet} سکه در کیف پول و ${newUser.bank} سکه در بانک است.`,
+          embeds: [newUserEmbed],
+          components: [row],
           ephemeral: true
         });
       } else {
+        // ایجاد امبد برای کاربر موجود
+        const balanceEmbed = new EmbedBuilder()
+          .setColor('#F1C40F') // زرد طلایی
+          .setTitle('💰 اطلاعات حساب کاربری')
+          .setDescription(`**${interaction.user.username}** عزیز، اطلاعات حساب شما به شرح زیر است:`)
+          .setThumbnail(interaction.user.displayAvatarURL() || interaction.client.user?.displayAvatarURL())
+          .addFields(
+            { name: '💰 موجودی کیف پول', value: `\`${user.wallet} Ccoin\``, inline: true },
+            { name: '🏦 موجودی بانک', value: `\`${user.bank} Ccoin\``, inline: true },
+            { name: '💎 کریستال', value: `\`${user.crystals}\``, inline: true },
+            { name: '🏆 امتیاز', value: `\`${user.points || 0}\``, inline: true },
+            { name: '🌟 سطح', value: `\`${user.level || 1}\``, inline: true },
+            { name: '📊 مجموع دارایی', value: `\`${user.wallet + user.bank} Ccoin\``, inline: true }
+          )
+          .setFooter({ text: '📌 برای مشاهده جزئیات بیشتر، از منوی اصلی بخش اقتصاد را انتخاب کنید!' })
+          .setTimestamp();
+        
+        // ساخت دکمه برای دسترسی به منوی اقتصاد
+        const row = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('economy')
+              .setLabel('💰 منوی اقتصاد')
+              .setStyle(ButtonStyle.Success),
+            new ButtonBuilder()
+              .setCustomId('deposit_menu')
+              .setLabel('🏦 انتقال به بانک')
+              .setStyle(ButtonStyle.Primary)
+          );
+        
         await interaction.reply({
-          content: `💰 موجودی شما: ${user.wallet} سکه در کیف پول، ${user.bank} سکه در بانک، و ${user.crystals} کریستال 💎`,
+          embeds: [balanceEmbed],
+          components: [row],
           ephemeral: true
         });
       }
     } catch (error) {
       console.error('Error in balance command:', error);
       await interaction.reply({
-        content: '❌ متأسفانه در بررسی موجودی شما خطایی رخ داد!',
+        content: '⚠️ خطا در بررسی موجودی! لطفاً دوباره تلاش کنید.',
         ephemeral: true
       });
     }
@@ -69,7 +128,7 @@ const balance = {
 const daily = {
   data: new SlashCommandBuilder()
     .setName('daily')
-    .setDescription('دریافت پاداش روزانه'),
+    .setDescription('🎁 دریافت پاداش روزانه'),
   
   async execute(interaction: any) {
     try {
@@ -86,8 +145,36 @@ const daily = {
         await storage.addToWallet(newUser.id, 50);
         await storage.updateUser(newUser.id, { lastDaily: new Date(), dailyStreak: 1 });
         
+        // ایجاد Embed برای کاربر جدید
+        const newUserEmbed = new EmbedBuilder()
+          .setColor('#E91E63') // صورتی
+          .setTitle('🎁 پاداش روزانه دریافت شد!')
+          .setDescription(`**${interaction.user.username}** عزیز، خوش آمدید! اولین پاداش روزانه شما دریافت شد.`)
+          .setThumbnail('https://cdn-icons-png.flaticon.com/512/2111/2111712.png') // آیکون جعبه هدیه
+          .addFields(
+            { name: '💰 جایزه دریافتی', value: `\`50 Ccoin\``, inline: true },
+            { name: '🔄 استریک روزانه', value: `\`1 روز\``, inline: true },
+            { name: '⏰ جایزه بعدی', value: '`24 ساعت دیگر`', inline: true }
+          )
+          .setFooter({ text: '📌 برای افزایش مقدار پاداش، هر روز وارد شوید!' })
+          .setTimestamp();
+        
+        // دکمه برای دسترسی به منوی اصلی
+        const row = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('menu')
+              .setLabel('🏠 منوی اصلی')
+              .setStyle(ButtonStyle.Success),
+            new ButtonBuilder()
+              .setCustomId('balance')
+              .setLabel('💰 مشاهده موجودی')
+              .setStyle(ButtonStyle.Primary)
+          );
+        
         await interaction.reply({
-          content: `🎉 خوش آمدید! شما اولین پاداش روزانه خود به مقدار 50 سکه را دریافت کردید!`,
+          embeds: [newUserEmbed],
+          components: [row],
           ephemeral: true
         });
       } else {
@@ -100,8 +187,32 @@ const daily = {
           const hours = Math.floor((nextReset.getTime() - now.getTime()) / (60 * 60 * 1000));
           const minutes = Math.floor(((nextReset.getTime() - now.getTime()) % (60 * 60 * 1000)) / (60 * 1000));
           
+          // ایجاد امبد برای زمان باقی‌مانده
+          const cooldownEmbed = new EmbedBuilder()
+            .setColor('#F39C12') // نارنجی
+            .setTitle('⏳ پاداش روزانه در دسترس نیست')
+            .setDescription(`**${interaction.user.username}** عزیز، شما قبلاً پاداش روزانه خود را دریافت کرده‌اید!`)
+            .setThumbnail('https://cdn-icons-png.flaticon.com/512/3490/3490461.png') // آیکون ساعت شنی
+            .addFields(
+              { name: '⏱️ زمان باقی‌مانده', value: `\`${hours} ساعت و ${minutes} دقیقه\``, inline: false },
+              { name: '📆 استریک فعلی', value: `\`${user.dailyStreak} روز\``, inline: true },
+              { name: '⚠️ توجه', value: 'برای حفظ استریک خود، فراموش نکنید فردا دوباره مراجعه کنید!', inline: false }
+            )
+            .setFooter({ text: 'استریک‌های بالاتر، جوایز بیشتری دارند!' })
+            .setTimestamp();
+          
+          // دکمه برای دسترسی به منوی اصلی
+          const row = new ActionRowBuilder<ButtonBuilder>()
+            .addComponents(
+              new ButtonBuilder()
+                .setCustomId('menu')
+                .setLabel('🏠 منوی اصلی')
+                .setStyle(ButtonStyle.Success)
+            );
+          
           await interaction.reply({
-            content: `⏳ شما قبلاً پاداش روزانه خود را دریافت کرده‌اید! پاداش بعدی در ${hours} ساعت و ${minutes} دقیقه دیگر قابل دریافت است.`,
+            embeds: [cooldownEmbed],
+            components: [row],
             ephemeral: true
           });
           return;
@@ -117,13 +228,20 @@ const daily = {
         
         // Calculate reward
         let reward = 50;
+        let streakBonus = 0;
+        
         if (streak >= 7) {
-          reward += 200; // Bonus for 7-day streak
+          streakBonus = 200; // Bonus for 7-day streak
+          reward += streakBonus;
+        } else if (streak >= 3) {
+          streakBonus = 50; // Smaller bonus for 3-day streak
+          reward += streakBonus;
         }
         
         // Apply bonuses from active items
         const inventory = user.inventory as Record<string, any>;
         let bonusMultiplier = 1.0;
+        let bonusFromItems = 0;
         
         // Check for active items with dailyBonus effect
         for (const itemIdStr in inventory) {
@@ -142,31 +260,65 @@ const daily = {
           }
         }
         
+        const baseReward = reward;
         reward = Math.floor(reward * bonusMultiplier);
+        bonusFromItems = reward - baseReward;
         
         // Apply reward
         await storage.addToWallet(user.id, reward);
         await storage.updateUser(user.id, { lastDaily: now, dailyStreak: streak });
         
-        let message = `🎁 شما پاداش روزانه خود به مقدار ${reward} سکه را دریافت کردید!`;
-        if (bonusMultiplier > 1.0) {
-          message += ` (شامل امتیاز اضافی از آیتم‌های فعال)`;
-        }
+        // اُپن از نوع جایزه برای Embed
+        let rewardColor = '#2ECC71'; // سبز
+        let rewardTitle = '🎁 پاداش روزانه دریافت شد!';
+        let rewardThumbnail = 'https://cdn-icons-png.flaticon.com/512/2111/2111712.png'; // آیکون جعبه هدیه
+        
         if (streak >= 7) {
-          message += ` (شامل پاداش ویژه 200 سکه‌ای برای 7 روز متوالی!)`;
-        } else if (streak > 1) {
-          message += ` روزهای متوالی فعالیت شما: ${streak} روز.`;
+          rewardColor = '#9B59B6'; // بنفش برای استریک های بالا
+          rewardTitle = '🌟 پاداش روزانه ویژه دریافت شد!';
+          rewardThumbnail = 'https://cdn-icons-png.flaticon.com/512/2906/2906961.png'; // آیکون جایزه ویژه
         }
         
+        // ایجاد امبد برای دریافت جایزه
+        const rewardEmbed = new EmbedBuilder()
+          .setColor(rewardColor)
+          .setTitle(rewardTitle)
+          .setDescription(`**${interaction.user.username}** عزیز، پاداش روزانه شما با موفقیت دریافت شد!`)
+          .setThumbnail(rewardThumbnail)
+          .addFields(
+            { name: '💰 جایزه پایه', value: `\`${baseReward - streakBonus} Ccoin\``, inline: true },
+            { name: '🌟 پاداش استریک', value: `\`${streakBonus} Ccoin\``, inline: streakBonus > 0 },
+            { name: '🔮 بونوس آیتم ها', value: `\`${bonusFromItems} Ccoin\``, inline: bonusFromItems > 0 },
+            { name: '📊 مجموع جایزه', value: `\`${reward} Ccoin\``, inline: false },
+            { name: '🔄 استریک فعلی', value: `\`${streak} روز\``, inline: true },
+            { name: '⏰ جایزه بعدی', value: '`24 ساعت دیگر`', inline: true }
+          )
+          .setFooter({ text: streak >= 7 ? '🎊 تبریک! شما به استریک 7 روزه رسیده‌اید و پاداش ویژه دریافت کردید!' : '📌 برای دریافت پاداش ویژه، استریک 7 روزه را حفظ کنید!' })
+          .setTimestamp();
+        
+        // دکمه های دسترسی
+        const row = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('menu')
+              .setLabel('🏠 منوی اصلی')
+              .setStyle(ButtonStyle.Success),
+            new ButtonBuilder()
+              .setCustomId('balance')
+              .setLabel('💰 مشاهده موجودی')
+              .setStyle(ButtonStyle.Primary)
+          );
+        
         await interaction.reply({
-          content: message,
+          embeds: [rewardEmbed],
+          components: [row],
           ephemeral: true
         });
       }
     } catch (error) {
       console.error('Error in daily command:', error);
       await interaction.reply({
-        content: '❌ متأسفانه در دریافت پاداش روزانه شما خطایی رخ داد!',
+        content: '⚠️ خطا در دریافت پاداش روزانه! لطفاً دوباره تلاش کنید.',
         ephemeral: true
       });
     }
@@ -279,26 +431,44 @@ const ping = {
       // Calculate latency
       const latency = end - start;
       
-      // Create a fancy embedded message
-      const embed = {
-        title: '🏓 پونگ!',
-        description: `🚀 **زمان پاسخگویی:** ${latency}ms\n🔌 **وضعیت API:** عالی\n⏱️ **زمان آنلاین ربات:** ${Math.floor(interaction.client.uptime / 3600000)} ساعت و ${Math.floor((interaction.client.uptime % 3600000) / 60000)} دقیقه`,
-        color: 0x00FFFF, // آبی فیروزه‌ای برای ظاهر شیک
-        thumbnail: {
-          url: 'https://cdn-icons-png.flaticon.com/512/2097/2097276.png' // آیکون پینگ پونگ
-        },
-        footer: {
+      // Create a fancy embedded message with EmbedBuilder
+      const pingEmbed = new EmbedBuilder()
+        .setColor('#00FFFF') // آبی فیروزه‌ای برای ظاهر شیک
+        .setTitle('🏓 پونگ!')
+        .setDescription(`🚀 **زمان پاسخگویی:** \`${latency}ms\`\n🔌 **وضعیت API:** عالی\n⏱️ **زمان آنلاین ربات:** ${Math.floor(interaction.client.uptime / 3600000)} ساعت و ${Math.floor((interaction.client.uptime % 3600000) / 60000)} دقیقه`)
+        .setThumbnail('https://cdn-icons-png.flaticon.com/512/2097/2097276.png') // آیکون پینگ پونگ
+        .addFields(
+          { name: '📡 وضعیت سرور', value: '`🟢 آنلاین`', inline: true },
+          { name: '🖥️ پینگ دیسکورد', value: `\`${interaction.client.ws.ping}ms\``, inline: true },
+          { name: '🔄 میزان تأخیر', value: latency < 200 ? '`🟢 عالی`' : latency < 500 ? '`🟡 متوسط`' : '`🔴 ضعیف`', inline: true }
+        )
+        .setFooter({ 
           text: '🎮 ربات Ccoin | طراحی شده با ❤️',
-          icon_url: interaction.client.user.displayAvatarURL()
-        },
-        timestamp: new Date().toISOString()
-      };
+          iconURL: interaction.client.user.displayAvatarURL() 
+        })
+        .setTimestamp();
       
-      await interaction.editReply({ embeds: [embed] });
+      // دکمه‌های دسترسی سریع
+      const row = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('menu')
+            .setLabel('🏠 منوی اصلی')
+            .setStyle(ButtonStyle.Success),
+          new ButtonBuilder()
+            .setCustomId('help')
+            .setLabel('📚 راهنما')
+            .setStyle(ButtonStyle.Primary)
+        );
+      
+      await interaction.editReply({ 
+        embeds: [pingEmbed],
+        components: [row]
+      });
     } catch (error) {
       console.error('Error in ping command:', error);
       await interaction.reply({
-        content: '❌ متأسفانه در اجرای دستور پینگ خطایی رخ داد!',
+        content: '⚠️ خطا در اجرای دستور پینگ! لطفاً دوباره تلاش کنید.',
         ephemeral: true
       });
     }
