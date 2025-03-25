@@ -566,6 +566,7 @@ export interface Friend {
   addedAt: string;                 // تاریخ اضافه شدن
   lastInteraction: string;         // آخرین تعامل
   favoriteStatus: boolean;         // وضعیت علاقه‌مندی
+  isBestFriend: boolean;           // وضعیت بهترین دوست
   notes?: string;                  // یادداشت‌های خصوصی
 }
 

@@ -263,6 +263,17 @@ export async function showFriendshipDetails(interaction: MessageComponentInterac
       inline: false 
     });
     
+    // اضافه کردن وضعیت بهترین دوست
+    const bestFriendStatus = friendship.isBestFriend ? 
+      '✅ این کاربر بهترین دوست شما است' : 
+      '❌ این کاربر بهترین دوست شما نیست';
+    
+    embed.addFields({ 
+      name: '💖 وضعیت بهترین دوست', 
+      value: bestFriendStatus, 
+      inline: false 
+    });
+    
     // اضافه کردن دکمه‌های عملیات
     const row1 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
@@ -276,12 +287,29 @@ export async function showFriendshipDetails(interaction: MessageComponentInterac
           .setStyle(ButtonStyle.Primary)
       );
     
+    // دکمه تنظیم/حذف بهترین دوست
+    const bestFriendButton = new ButtonBuilder()
+      .setCustomId(`set_best_friend_${friend.discordId}`)
+      .setLabel(friendship.isBestFriend ? '💔 حذف بهترین دوست' : '💖 انتخاب به‌عنوان بهترین دوست')
+      .setStyle(friendship.isBestFriend ? ButtonStyle.Danger : ButtonStyle.Success);
+    
+    // برای انتخاب بهترین دوست، لول دوستی باید حداقل 3 باشد
+    if (currentLevel < 3 && !friendship.isBestFriend) {
+      bestFriendButton.setDisabled(true)
+        .setLabel('💖 نیاز به لول دوستی 3 یا بالاتر');
+    }
+    
     const row2 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
           .setCustomId(`chat_with_friend_${friend.id}`)
           .setLabel('💬 چت خصوصی')
           .setStyle(ButtonStyle.Secondary),
+        bestFriendButton
+      );
+      
+    const row3 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
         new ButtonBuilder()
           .setCustomId('friendship_level_menu')
           .setLabel('🔙 بازگشت')
@@ -291,7 +319,7 @@ export async function showFriendshipDetails(interaction: MessageComponentInterac
     // ارسال پاسخ
     await interaction.update({
       embeds: [embed],
-      components: [row1, row2]
+      components: [row1, row2, row3]
     });
     
   } catch (error) {

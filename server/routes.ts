@@ -3,7 +3,6 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
 import { insertUserSchema, insertClanSchema, insertQuestSchema, insertItemSchema } from "@shared/schema";
-import { setupAdminPanel } from "./admin";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes prefix
@@ -249,9 +248,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // API routes end here
-  
-  // Setup admin panel routes
-  setupAdminPanel(app);
 
   const httpServer = createServer(app);
   return httpServer;
