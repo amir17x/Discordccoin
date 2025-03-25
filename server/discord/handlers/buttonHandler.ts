@@ -149,6 +149,16 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       return;
     }
     
+    if (action === 'wheel') {
+      await wheelOfFortuneMenu(interaction);
+      return;
+    }
+    
+    if (action === 'wheel_spin') {
+      await spinWheel(interaction);
+      return;
+    }
+    
     if (action === 'solo_games') {
       await gamesMenu(interaction);
       return;
@@ -199,16 +209,6 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     if (action === 'profile_stats' || action === 'profile_achievements' || 
         action === 'profile_items' || action === 'profile_transactions') {
       await profileMenu(interaction);
-      return;
-    }
-    
-    if (action === 'wheel') {
-      await wheelOfFortuneMenu(interaction);
-      return;
-    }
-    
-    if (action === 'wheel_spin') {
-      await spinWheel(interaction);
       return;
     }
     
@@ -934,11 +934,7 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       return;
     }
     
-    // Test logs
-    if (action === 'admin_test_logs') {
-      await handleTestLogs(interaction);
-      return;
-    }
+    // کد تست لاگ‌ها حذف شد - بهینه‌سازی کد
     
     // Clan resource gathering
     if (action === 'clan_gather') {

@@ -170,8 +170,29 @@ export async function spinWheel(
     
     // Charge the user or use a ticket
     if (usingTicket) {
-      // TODO: Remove one ticket from inventory
-      // This functionality would depend on your item system
+      // Find wheel ticket item and remove one from inventory
+      const wheelTicketItem = inventory.find(item => item.item.type === 'ticket' && item.item.name.includes('Wheel'));
+      if (wheelTicketItem) {
+        // Remove one ticket
+        const ticketId = wheelTicketItem.item.id;
+        const ticketInventoryItem = wheelTicketItem.inventoryItem;
+        
+        // Update inventory with one less ticket
+        if (ticketInventoryItem.quantity > 1) {
+          // Reduce quantity by 1
+          ticketInventoryItem.quantity -= 1;
+          // Save updated inventory
+          // We need to create a proper inventory object that matches the structure expected by storage
+          const updatedInventory = { ...user.inventory as Record<string, any> };
+          updatedInventory[ticketId] = ticketInventoryItem;
+          await storage.updateUser(user.id, { inventory: updatedInventory });
+        } else {
+          // Remove the ticket item completely if it was the last one
+          const newInventory = { ...user.inventory as Record<string, any> };
+          delete newInventory[ticketId];
+          await storage.updateUser(user.id, { inventory: newInventory });
+        }
+      }
     } else {
       // Deduct spin cost
       await storage.addToWallet(user.id, -SPIN_COST);
@@ -288,7 +309,7 @@ function getRandomReward() {
 }
 
 // Helper function to count wheel spin tickets in inventory
-function countInventoryTickets(inventory: any): number {
+function countInventoryTickets(inventory: Array<{item: any, inventoryItem: any}>): number {
   for (const item of inventory) {
     if (item.item.type === 'ticket' && item.item.name.includes('Wheel')) {
       return item.inventoryItem.quantity;

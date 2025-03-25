@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, Collection, Client, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { SlashCommandBuilder, Collection, Client, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ColorResolvable } from 'discord.js';
 import { storage } from '../storage';
 import { mainMenu } from './components/mainMenu';
 import { adminMenu } from '../discord/components/adminMenu';
@@ -281,7 +281,7 @@ const daily = {
         
         // ایجاد امبد برای دریافت جایزه
         const rewardEmbed = new EmbedBuilder()
-          .setColor(rewardColor)
+          .setColor(rewardColor as ColorResolvable)
           .setTitle(rewardTitle)
           .setDescription(`**${interaction.user.username}** عزیز، پاداش روزانه شما با موفقیت دریافت شد!`)
           .setThumbnail(rewardThumbnail)

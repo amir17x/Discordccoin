@@ -89,9 +89,10 @@ class MatchmakingSystem {
       }
     } else {
       // حذف از همه صف‌ها
-      for (const [type, queue] of this.queues.entries()) {
-        this.queues.set(type, queue.filter(item => item.userId !== userId));
-      }
+      // از Array.from برای تبدیل Map entries به آرایه استفاده می‌کنیم تا مشکل عدم پشتیبانی از Iterator حل شود
+      Array.from(this.queues.entries()).forEach(([type, queue]) => {
+        this.queues.set(type, queue.filter((item: {userId: string, username: string, timestamp: number}) => item.userId !== userId));
+      });
     }
   }
   

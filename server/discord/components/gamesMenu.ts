@@ -66,7 +66,6 @@ export async function gamesMenu(
           .setCustomId('group_games')
           .setLabel('👥 بازی‌های گروهی')
           .setStyle(ButtonStyle.Secondary) // خاکستری برای بخش‌های در حال توسعه
-          .setDisabled(true) // Not implemented yet
       );
     
     const row2 = new ActionRowBuilder<ButtonBuilder>()
@@ -97,10 +96,9 @@ export async function gamesMenu(
           .setLabel('🔢 حدس عدد')
           .setStyle(ButtonStyle.Primary), // آبی برای بازی‌های منطقی
         new ButtonBuilder()
-          .setCustomId('game:wheel:start')
+          .setCustomId('wheel')
           .setLabel('🎡 گردونه شانس')
           .setStyle(ButtonStyle.Secondary) // خاکستری برای بخش‌های در حال توسعه
-          .setDisabled(true) // Not implemented yet
       );
       
     const soloGameRow3 = new ActionRowBuilder<ButtonBuilder>()
@@ -251,31 +249,99 @@ export async function gamesMenu(
         }
       }
     } else if (state === 'group') {
-      // Group games not implemented yet
-      const notImplementedMessage = '🔜 بازی‌های گروهی در به‌روزرسانی‌های آینده اضافه خواهند شد!';
+      // Group games menu - با رنگ بنفش برای بازی‌های گروهی (دوستانه و جمعی)
+      embed.setColor('#9B59B6') // رنگ بنفش برای بازی‌های گروهی
+        .setTitle('👥 بازی‌های گروهی')
+        .setDescription('🎮 سرگرمی دسته‌جمعی با دوستان و اعضای سرور! 🎉')
+        .setFields(
+          { name: '📝 توضیحات', value: 'بازی‌های گروهی برای 3 تا 10 نفر طراحی شده‌اند. هیچ هزینه‌ای برای شرکت در این بازی‌ها نیاز نیست و هدف اصلی سرگرمی است.', inline: false },
+          { name: '💰 موجودی', value: `${user.wallet} Ccoin`, inline: true },
+          { name: '👥 بازیکنان حاضر', value: 'در حال بارگذاری...', inline: true }
+        );
       
+      // Create group games buttons - با منطق رنگی برای بازی‌های گروهی
+      const groupGameRow1 = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('game:mafia:create')
+            .setLabel('🕵️‍♂️ مافیا')
+            .setStyle(ButtonStyle.Danger), // قرمز برای بازی‌های مبارزه‌ای
+          new ButtonBuilder()
+            .setCustomId('game:werewolf:create')
+            .setLabel('🐺 گرگینه')
+            .setStyle(ButtonStyle.Danger), // قرمز برای بازی‌های مبارزه‌ای
+          new ButtonBuilder()
+            .setCustomId('game:spyfall:create')
+            .setLabel('🕴️ جاسوس مخفی')
+            .setStyle(ButtonStyle.Primary) // آبی برای بازی‌های کارتی
+        );
+        
+      const groupGameRow2 = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('game:quiz:create')
+            .setLabel('❓ مسابقه اطلاعات عمومی')
+            .setStyle(ButtonStyle.Success), // سبز برای بازی‌های دانشی
+          new ButtonBuilder()
+            .setCustomId('game:uno:create')
+            .setLabel('🃏 اونو')
+            .setStyle(ButtonStyle.Primary), // آبی برای بازی‌های کارتی
+          new ButtonBuilder()
+            .setCustomId('game:pictionary:create')
+            .setLabel('🎨 نقاشی حدس بزن')
+            .setStyle(ButtonStyle.Success) // سبز برای بازی‌های خلاقانه
+        );
+      
+      const groupGameRow3 = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('game:truth_or_dare:create')
+            .setLabel('🎯 جرات یا حقیقت')
+            .setStyle(ButtonStyle.Primary), // آبی برای بازی‌های اجتماعی
+          new ButtonBuilder()
+            .setCustomId('game:word_chain:create')
+            .setLabel('📝 زنجیره کلمات')
+            .setStyle(ButtonStyle.Success), // سبز برای بازی‌های فکری
+          new ButtonBuilder()
+            .setCustomId('game:bingo:create')
+            .setLabel('🎲 بینگو')
+            .setStyle(ButtonStyle.Primary) // آبی برای بازی‌های شانسی
+        );
+      
+      const groupGameRow4 = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('game:active_sessions')
+            .setLabel('🎮 جلسات فعال')
+            .setStyle(ButtonStyle.Secondary),
+          new ButtonBuilder()
+            .setCustomId('menu')
+            .setLabel('🔙 بازگشت')
+            .setStyle(ButtonStyle.Secondary)
+        );
+      
+      // Send the group games menu
       if (interaction.deferred) {
-        await interaction.editReply({ content: notImplementedMessage });
-      } else if (interaction.replied) {
-        await interaction.followUp({ content: notImplementedMessage, ephemeral: true });
-      } else {
-        await interaction.reply({ content: notImplementedMessage, ephemeral: true });
-      }
-      
-      // Return to main games menu
-      setTimeout(async () => {
+        await interaction.editReply({ embeds: [embed], components: [groupGameRow1, groupGameRow2, groupGameRow3, groupGameRow4] });
+      } else if (followUp) {
+        await interaction.followUp({ embeds: [embed], components: [groupGameRow1, groupGameRow2, groupGameRow3, groupGameRow4], ephemeral: true });
+      } else if ('update' in interaction && typeof interaction.update === 'function') {
         try {
-          if (interaction.deferred) {
-            await interaction.editReply({ embeds: [embed], components: [row1, row2] });
-          } else if (followUp) {
-            await interaction.followUp({ embeds: [embed], components: [row1, row2], ephemeral: true });
-          } else if ('update' in interaction && typeof interaction.update === 'function') {
-            await interaction.update({ embeds: [embed], components: [row1, row2] });
-          }
+          await interaction.update({ embeds: [embed], components: [groupGameRow1, groupGameRow2, groupGameRow3, groupGameRow4] });
         } catch (e) {
-          console.error("Error returning to main games menu:", e);
+          if (!interaction.replied && !interaction.deferred) {
+            await interaction.reply({ embeds: [embed], components: [groupGameRow1, groupGameRow2, groupGameRow3, groupGameRow4], ephemeral: true });
+          } else {
+            await interaction.followUp({ embeds: [embed], components: [groupGameRow1, groupGameRow2, groupGameRow3, groupGameRow4], ephemeral: true });
+          }
         }
-      }, 2000);
+      } else {
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({ embeds: [embed], components: [groupGameRow1, groupGameRow2, groupGameRow3, groupGameRow4], ephemeral: true });
+        } else {
+          await interaction.followUp({ embeds: [embed], components: [groupGameRow1, groupGameRow2, groupGameRow3, groupGameRow4], ephemeral: true });
+        }
+      }
     } else {
       // Main games menu
       if (interaction.deferred) {
