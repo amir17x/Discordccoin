@@ -59,7 +59,7 @@ export async function stocksMenu(
                          '🔹 قیمت‌ها به صورت دوره‌ای تغییر می‌کنند\n' +
                          '🔹 در زمان مناسب بفروشید و سود کنید\n' +
                          '🔹 سهام بخش مالی سود سهام پرداخت می‌کنند')
-          .setThumbnail('https://cdn-icons-png.flaticon.com/512/8768/8768830.png') // آیکون fi-sr-chart-line برای بخش بازار سهام
+          .setThumbnail('https://cdn-icons-png.flaticon.com/512/9040/9040787.png') // آیکون fi-rr-chart-line-up برای بخش بازار سهام
 
         // Calculate portfolio value and profit/loss
         if (userStocks.length > 0) {
@@ -121,7 +121,7 @@ export async function stocksMenu(
         embed
           .setTitle('🏢 بازار سهام')
           .setDescription('لیست سهام موجود برای خرید. برای خرید سهام، روی دکمه خرید کلیک کنید.')
-          .setThumbnail('https://cdn-icons-png.flaticon.com/512/8768/8768894.png') // آیکون fi-sr-building برای بخش بازار سهام
+          .setThumbnail('https://cdn-icons-png.flaticon.com/512/9041/9041064.png') // آیکون fi-rr-building برای بخش بازار سهام
 
         // Show all available stocks
         if (stocks.length > 0) {
@@ -184,7 +184,8 @@ export async function stocksMenu(
         // Display user's stocks
         embed
           .setTitle('💼 پورتفولیو سهام')
-          .setDescription('سهام‌هایی که شما خریداری کرده‌اید. برای فروش سهام، از منوی پایین انتخاب کنید.');
+          .setDescription('سهام‌هایی که شما خریداری کرده‌اید. برای فروش سهام، از منوی پایین انتخاب کنید.')
+          .setThumbnail('https://cdn-icons-png.flaticon.com/512/1214/1214510.png'); // آیکون fi-rr-folder-open برای پورتفولیو
 
         if (userStocks.length > 0) {
           // Create a select menu for selling stocks
@@ -249,6 +250,7 @@ export async function stocksMenu(
         embed
           .setTitle('ℹ️ راهنمای بازار سهام')
           .setDescription('راهنمای استفاده از بازار سهام Ccoin:')
+          .setThumbnail('https://cdn-icons-png.flaticon.com/512/1214/1214428.png') // آیکون fi-rr-interrogation برای راهنما
           .addFields(
             { 
               name: '📋 نحوه خرید سهام', 

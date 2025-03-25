@@ -223,7 +223,7 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
         .setColor('#FFFF99') // رنگ زرد روشن برای حس شادابی و انرژی
         .setTitle('📖 راهنمای جامع ربات Ccoin 🌟')
         .setDescription('به دنیای مجازی اقتصاد و سرگرمی Ccoin خوش اومدی! اینجا میتونی با تمام ویژگی‌های ربات آشنا بشی و بیشترین استفاده رو ازش ببری! 😊')
-        .setThumbnail(interaction.client.user?.displayAvatarURL() || '')
+        .setThumbnail('https://cdn-icons-png.flaticon.com/512/9041/9041217.png') // آیکون fi-rr-interrogation برای راهنما
         .addFields(
           { 
             name: '💸 **بخش اقتصاد و مدیریت Ccoin**', 
@@ -605,6 +605,7 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
         .setColor('#4169E1')
         .setTitle('📋 تاریخچه تراکنش‌های بانکی')
         .setDescription('آخرین تراکنش‌های شما در سیستم بانکی')
+        .setThumbnail('https://cdn-icons-png.flaticon.com/512/9040/9040952.png') // آیکون fi-rr-money-check برای تاریخچه تراکنش ها
         .setFooter({ text: `${interaction.user.username} | صفحه 1` })
         .setTimestamp();
       
@@ -697,6 +698,7 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
         .setColor('#9932CC')
         .setTitle('💎 تبدیل سکه به کریستال')
         .setDescription('کریستال ارز ویژه Ccoin است که با آن می‌توانید آیتم‌های منحصر به فرد خریداری کنید')
+        .setThumbnail('https://cdn-icons-png.flaticon.com/512/9041/9041166.png') // آیکون fi-rr-exchange برای تبدیل ارز
         .addFields(
           { name: '💳 موجودی کیف پول', value: `${user.wallet} Ccoin`, inline: true },
           { name: '💎 موجودی کریستال', value: `${user.crystals}`, inline: true },
@@ -774,7 +776,7 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
         .setColor('#800080')
         .setTitle('📡 رادار دزدی')
         .setDescription('🔍 کاربران زیر برای دزدی شناسایی شدند:')
-        .setThumbnail('https://cdn-icons-png.flaticon.com/512/3622/3622039.png') // تصویر رادار
+        .setThumbnail('https://cdn-icons-png.flaticon.com/512/9041/9041253.png') // تصویر رادار (fi-rr-radar)
         .setTimestamp();
       
       if (targets.length > 0) {
@@ -801,7 +803,7 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
         .setColor('#800080')
         .setTitle('📘 راهنمای دزدی')
         .setDescription('در این بخش می‌توانید از کاربران دیگر Ccoin دزدی کنید.')
-        .setThumbnail('https://cdn-icons-png.flaticon.com/512/3557/3557302.png') // آیکون راهنما
+        .setThumbnail('https://cdn-icons-png.flaticon.com/512/9041/9041217.png') // آیکون راهنما (fi-rr-interrogation)
         .addFields(
           { name: '📡 رادار', value: 'کاربران را برای دزدی اسکن می‌کند.', inline: false },
           { name: '✅ انتخاب', value: 'یک هدف برای دزدی انتخاب می‌کنید.', inline: false },
@@ -858,7 +860,7 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       const statsEmbed = new EmbedBuilder()
         .setColor('#800080')
         .setTitle('📊 آمار دزدی')
-        .setThumbnail('https://cdn-icons-png.flaticon.com/512/2737/2737626.png') // آیکون آمار
+        .setThumbnail('https://cdn-icons-png.flaticon.com/512/9041/9041054.png') // آیکون آمار (fi-rr-stats)
         .setTimestamp();
       
       if (totalRobs > 0) {
@@ -916,7 +918,7 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
         .setColor('#800080')
         .setTitle('🛡️ آیتم‌های دزدی')
         .setDescription('آیتم‌های مخصوص دزدی که می‌توانید از فروشگاه خریداری کنید:')
-        .setThumbnail('https://cdn-icons-png.flaticon.com/512/4616/4616279.png') // آیکون آیتم‌ها
+        .setThumbnail('https://cdn-icons-png.flaticon.com/512/9041/9041457.png') // آیکون آیتم‌ها (fi-rr-box)
         .setTimestamp();
       
       if (robberyItems.length > 0) {
@@ -999,7 +1001,7 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
           { name: '💎 موجودی شما', value: `${user.crystals} کریستال`, inline: true },
           { name: '⚠️ توجه', value: 'این افزایش شانس فقط برای یک بار دزدی معتبر است.', inline: false }
         )
-        .setThumbnail('https://cdn-icons-png.flaticon.com/512/4616/4616114.png') // آیکون تغییر چهره
+        .setThumbnail('https://cdn-icons-png.flaticon.com/512/9041/9041065.png') // آیکون تغییر چهره (fi-rr-masks-theater)
         .setTimestamp();
       
       const row = new ActionRowBuilder<ButtonBuilder>()
@@ -1048,7 +1050,7 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
         .setColor('#4CAF50')
         .setTitle('✅ تغییر چهره موفق!')
         .setDescription('تغییر چهره با موفقیت انجام شد. شانس موفقیت دزدی بعدی شما 25% افزایش یافت!')
-        .setThumbnail('https://cdn-icons-png.flaticon.com/512/1917/1917641.png') // آیکون موفقیت
+        .setThumbnail('https://cdn-icons-png.flaticon.com/512/9041/9041242.png') // آیکون موفقیت (fi-rr-badge-check)
         .addFields(
           { name: '💎 موجودی جدید کریستال', value: `${user.crystals - 50} کریستال`, inline: true },
           { name: '🎯 شانس جدید موفقیت', value: '65% (40% + 25%)', inline: true }

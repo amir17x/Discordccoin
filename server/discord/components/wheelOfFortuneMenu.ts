@@ -63,6 +63,7 @@ export async function wheelOfFortuneMenu(
       .setColor('#9B59B6')
       .setTitle('🎡 چرخ شانس')
       .setDescription('چرخ شانس را بچرخانید و جوایز هیجان‌انگیز ببرید!\nشما می‌توانید سکه، کریستال، آیتم‌های مختلف و حتی جوایز ویژه برنده شوید.')
+      .setThumbnail('https://cdn-icons-png.flaticon.com/512/9041/9041275.png') // آیکون fi-rr-spinner برای چرخ شانس
       .addFields(
         { name: '💰 هزینه چرخاندن', value: `${SPIN_COST} Ccoin`, inline: true },
         { name: '👛 موجودی شما', value: `${user.wallet} Ccoin`, inline: true },
@@ -210,6 +211,7 @@ export async function spinWheel(
       .setColor('#9B59B6')
       .setTitle('🎡 چرخ شانس')
       .setDescription(`🎊 *چرخ شانس در حال چرخش است...* 🎊\n\n**تبریک!**\nشما برنده **${reward.description}** شدید!`)
+      .setThumbnail('https://cdn-icons-png.flaticon.com/512/9041/9041275.png') // آیکون fi-rr-spinner برای چرخ شانس
       .setTimestamp();
     
     // Apply the reward

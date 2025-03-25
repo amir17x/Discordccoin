@@ -33,7 +33,7 @@ export async function shopMenu(
       .setColor('#F1C40F')
       .setTitle('🛒 فروشگاه')
       .setDescription('خرید آیتم‌ها با سکه (Ccoin) و کریستال')
-      .setThumbnail('https://cdn-icons-png.flaticon.com/512/8770/8770086.png') // آیکون fi-sr-shopping-bag برای بخش فروشگاه
+      .setThumbnail('https://cdn-icons-png.flaticon.com/512/9040/9040826.png') // آیکون fi-rr-shopping-bag برای بخش فروشگاه
       .addFields(
         { name: '💰 موجودی شما', value: `${user.wallet} Ccoin`, inline: true },
         { name: '💎 کریستال شما', value: `${user.crystals}`, inline: true }
