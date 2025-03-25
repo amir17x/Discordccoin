@@ -435,6 +435,12 @@ const ping = {
       // وضعیت پینگ
       const pingStatus = apiPing < 200 ? '🟢 عالی' : apiPing < 500 ? '🟡 متوسط' : '🔴 ضعیف';
       
+      // بررسی وضعیت interaction قبل از پاسخ
+      if (interaction.replied || interaction.deferred) {
+        console.log('Ping command: interaction already handled');
+        return;
+      }
+      
       // ایجاد امبد ساده‌تر با اطلاعات ضروری
       const pingEmbed = new EmbedBuilder()
         .setColor('#00FFFF')
@@ -454,12 +460,16 @@ const ping = {
             .setStyle(ButtonStyle.Success)
         );
       
-      // پاسخ مستقیم با امبد ساده‌تر
-      await interaction.reply({ 
-        embeds: [pingEmbed],
-        components: [row],
-        ephemeral: true
-      });
+      try {
+        // پاسخ مستقیم با امبد ساده‌تر - استفاده از try/catch برای مدیریت خطاهای احتمالی
+        await interaction.reply({ 
+          embeds: [pingEmbed],
+          components: [row],
+          ephemeral: true
+        });
+      } catch (e) {
+        console.log('Failed to reply in ping command:', e);
+      }
     } catch (error) {
       console.error('Error in ping command:', error);
       // در صورت خطا، پاسخ ساده می‌دهیم

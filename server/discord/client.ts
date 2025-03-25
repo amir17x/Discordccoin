@@ -61,65 +61,45 @@ export async function initDiscordBot() {
     type: string,
     errorMessage: string
   ) => {
-    // کاهش زمان مهلت برای جلوگیری از خطاهای Unknown interaction
-    const timeoutId = setTimeout(async () => {
-      if (!interaction.replied && !interaction.deferred) {
-        try {
-          await interaction.deferReply({ ephemeral: true })
-            .catch(e => {
-              // اگر تایم‌اوت شده باشد، خطا را ثبت می‌کنیم اما اجازه می‌دهیم عملیات ادامه یابد
-              console.log(`Could not defer reply for ${type}, interaction may have expired:`, e?.message);
-            });
-        } catch (e) {
-          // نادیده گرفتن خطاهای احتمالی
-        }
-      }
-    }, 1500); // کاهش زمان به 1.5 ثانیه برای اطمینان از پاسخگویی به موقع
-
+    // بررسی کنیم آیا تعامل (interaction) قبلاً پاسخ داده شده یا نه
+    if (interaction.replied || interaction.deferred) {
+      console.log(`${type}: interaction already handled, skipping execution`);
+      return;
+    }
+    
     try {
-      // اجرای عملیات اصلی با مهلت زمانی کمتر برای اطمینان از پاسخگویی
-      const operationPromise = operation();
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Operation timeout')), 2500);
+      // بجای استفاده از defer، مستقیماً پاسخ می‌دهیم تا از حالت "thinking" جلوگیری کنیم
+      await interaction.reply({ 
+        content: "👉 در حال پردازش درخواست شما...", 
+        ephemeral: true 
       });
       
-      await Promise.race([operationPromise, timeoutPromise])
-        .catch(async (err) => {
-          if (err.message === 'Operation timeout' && !interaction.replied && !interaction.deferred) {
-            console.log(`Operation timed out for ${type}, using fallback response`);
-            // پاسخ پیش‌فرض در صورت طولانی شدن بیش از حد
-            try {
-              await interaction.reply({ content: "در حال پردازش درخواست شما...", ephemeral: true });
-            } catch (e) {
-              // نادیده گرفتن خطاهای احتمالی
-            }
-          } else {
-            throw err;
-          }
-        });
-      
-      // لغو مهلت زمانی
-      clearTimeout(timeoutId);
-    } catch (error: any) {
-      // لغو مهلت زمانی
-      clearTimeout(timeoutId);
-      console.error(`Error in ${type}:`, error);
-      log(`Error in ${type}: ${error?.message || 'Unknown error'}`, 'error');
-      
+      // اجرای عملیات با زمان‌بندی مشخص
       try {
-        // نمایش پیام خطا به کاربر فقط اگر interaction هنوز معتبر است
-        if (interaction.replied) {
-          await interaction.followUp({ content: errorMessage, ephemeral: true })
-            .catch(() => console.log(`Could not follow up to ${type} due to expired interaction`));
-        } else if (interaction.deferred) {
-          await interaction.editReply({ content: errorMessage })
-            .catch(() => console.log(`Could not edit reply to ${type} due to expired interaction`));
-        } else {
-          await interaction.reply({ content: errorMessage, ephemeral: true })
-            .catch(() => console.log(`Could not reply to ${type} due to expired interaction`));
+        await operation();
+      } catch (operationError) {
+        console.error(`Error in ${type} operation:`, operationError);
+        log(`Error in ${type}: ${operationError?.message || 'Unknown error'}`, 'error');
+        
+        // اگر عملیات با خطا مواجه شد، پیغام خطا را به کاربر نشان می‌دهیم
+        await interaction.editReply({ 
+          content: errorMessage 
+        }).catch(() => console.log(`Could not update reply with error for ${type}`));
+      }
+    } catch (replyError) {
+      // اگر نتوانستیم پاسخ اولیه را ارسال کنیم
+      console.error(`Failed to send initial reply for ${type}:`, replyError);
+      
+      // یک تلاش مجدد با پاسخ ساده‌تر انجام می‌دهیم
+      try {
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({ 
+            content: errorMessage, 
+            ephemeral: true 
+          });
         }
-      } catch (followupError) {
-        console.error(`Failed to send error message for ${type}`, followupError);
+      } catch (finalError) {
+        console.log(`Interaction ${type} completely failed, likely expired`);
       }
     }
   };
