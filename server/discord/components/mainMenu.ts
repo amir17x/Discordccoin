@@ -372,14 +372,14 @@ export async function mainMenu(
       components = [row1, row2, row3, row4];
     }
     
-    // Send or update the message
+    // Send or update the message - همیشه به صورت ephemeral (فقط برای کاربر قابل مشاهده)
     if (interaction.deferred) {
       await interaction.editReply({ embeds: [embed], components: components });
     } else if (interaction instanceof ChatInputCommandInteraction) {
       if (!interaction.replied) {
-        await interaction.reply({ embeds: [embed], components: components, ephemeral: false });
+        await interaction.reply({ embeds: [embed], components: components, ephemeral: true });
       } else {
-        await interaction.followUp({ embeds: [embed], components: components, ephemeral: false });
+        await interaction.followUp({ embeds: [embed], components: components, ephemeral: true });
       }
     } else if ('update' in interaction && typeof interaction.update === 'function') {
       try {
@@ -387,16 +387,16 @@ export async function mainMenu(
       } catch (e) {
         // If update fails (might be due to deferred interaction), send a new message
         if (!interaction.replied && !interaction.deferred) {
-          await interaction.reply({ embeds: [embed], components: components, ephemeral: false });
+          await interaction.reply({ embeds: [embed], components: components, ephemeral: true });
         } else {
-          await interaction.followUp({ embeds: [embed], components: components, ephemeral: false });
+          await interaction.followUp({ embeds: [embed], components: components, ephemeral: true });
         }
       }
     } else {
       if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply({ embeds: [embed], components: components, ephemeral: false });
+        await interaction.reply({ embeds: [embed], components: components, ephemeral: true });
       } else {
-        await interaction.followUp({ embeds: [embed], components: components, ephemeral: false });
+        await interaction.followUp({ embeds: [embed], components: components, ephemeral: true });
       }
     }
     
