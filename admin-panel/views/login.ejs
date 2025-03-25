@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="fa" dir="rtl" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,6 +18,7 @@
   
   <!-- استایل‌های سفارشی -->
   <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/vision-ui-utilities.css">
   
   <style>
     body {
@@ -25,36 +26,58 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background-color: #f8f9fa;
+      background: var(--body-bg-gradient);
       overflow: hidden;
+      color: var(--text-light);
     }
     
     .login-card {
       max-width: 400px;
       width: 100%;
-      box-shadow: var(--shadow-md);
-      border-radius: var(--border-radius);
+      border-radius: var(--card-border-radius);
       animation: fadeIn 0.5s ease-in-out;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
     }
     
     .login-header {
-      background-color: var(--primary-color);
+      background: var(--primary-gradient);
       color: white;
       padding: 2rem;
       text-align: center;
-      border-radius: var(--border-radius) var(--border-radius) 0 0;
+      position: relative;
+      border-radius: var(--card-border-radius) var(--card-border-radius) 0 0;
+      overflow: hidden;
+    }
+    
+    .login-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.1);
+      z-index: 0;
+    }
+    
+    .login-header * {
+      position: relative;
+      z-index: 1;
     }
     
     .login-body {
       padding: 2rem;
-      background-color: white;
-      border-radius: 0 0 var(--border-radius) var(--border-radius);
+      background: var(--card-bg);
+      border-radius: 0 0 var(--card-border-radius) var(--card-border-radius);
+      border: var(--glass-border);
     }
     
     .login-logo {
       width: 80px;
       height: 80px;
       margin-bottom: 1rem;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
     }
     
     .background-animation {
@@ -70,33 +93,35 @@
     .background-circle {
       position: absolute;
       border-radius: 50%;
-      opacity: 0.05;
-      background: var(--primary-color);
+      opacity: 0.1;
+      background: var(--primary-gradient);
       animation: float 15s infinite ease-in-out;
     }
     
     .circle-1 {
-      width: 300px;
-      height: 300px;
-      top: -150px;
-      left: -100px;
+      width: 500px;
+      height: 500px;
+      top: -250px;
+      left: -200px;
       animation-delay: 0s;
     }
     
     .circle-2 {
-      width: 600px;
-      height: 600px;
-      bottom: -300px;
-      right: -200px;
+      width: 800px;
+      height: 800px;
+      bottom: -400px;
+      right: -300px;
       animation-delay: 2s;
+      background: var(--info-gradient);
     }
     
     .circle-3 {
-      width: 200px;
-      height: 200px;
+      width: 300px;
+      height: 300px;
       top: 40%;
       left: 30%;
       animation-delay: 1s;
+      background: var(--success-gradient);
     }
     
     @keyframes float {
@@ -108,14 +133,46 @@
       }
     }
     
-    .btn-primary {
-      background-color: var(--primary-color);
-      border-color: var(--primary-color);
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
     
-    .btn-primary:hover {
-      background-color: var(--secondary-color);
-      border-color: var(--secondary-color);
+    .form-control, .input-group-text {
+      background-color: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.1);
+      color: var(--text-light);
+    }
+    
+    .form-control:focus {
+      background-color: rgba(255, 255, 255, 0.1);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 0.25rem rgba(33, 212, 253, 0.25);
+      color: var(--text-light);
+    }
+    
+    .form-label {
+      color: var(--text-light-75);
+    }
+    
+    .form-check-label {
+      color: var(--text-light-75);
+    }
+    
+    .form-check-input {
+      background-color: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    .form-check-input:checked {
+      background-color: var(--primary);
+      border-color: var(--primary);
     }
     
     .message-toast {
@@ -126,12 +183,51 @@
       z-index: 1050;
       min-width: 300px;
     }
+    
+    .message-toast.alert-danger {
+      background: var(--danger-gradient);
+      border: none;
+      color: white;
+    }
+    
+    .message-toast.alert-success {
+      background: var(--success-gradient);
+      border: none;
+      color: white;
+    }
+    
+    .login-btn {
+      background: var(--primary-gradient);
+      border: none;
+      color: white;
+      font-weight: 600;
+      padding: 0.75rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 117, 255, 0.4);
+      transition: all 0.3s ease;
+    }
+    
+    .login-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(0, 117, 255, 0.6);
+    }
+    
+    .input-group .btn {
+      color: var(--text-light-50);
+      border-color: rgba(255, 255, 255, 0.1);
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    .input-group .btn:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+      color: var(--text-light);
+    }
   </style>
 </head>
 <body>
   <!-- پیغام‌های فلش -->
   <% if (locals.error_messages && error_messages.length > 0) { %>
-    <div class="alert alert-danger alert-dismissible fade show message-toast" role="alert">
+    <div class="alert alert-dismissible fade show message-toast" role="alert" style="background: var(--danger-gradient); color: white; border: none;">
       <i class="bi bi-exclamation-triangle-fill me-2"></i>
       <%= error_messages %>
       <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="بستن"></button>
@@ -139,7 +235,7 @@
   <% } %>
   
   <% if (locals.success_messages && success_messages.length > 0) { %>
-    <div class="alert alert-success alert-dismissible fade show message-toast" role="alert">
+    <div class="alert alert-dismissible fade show message-toast" role="alert" style="background: var(--success-gradient); color: white; border: none;">
       <i class="bi bi-check-circle-fill me-2"></i>
       <%= success_messages %>
       <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="بستن"></button>
@@ -153,15 +249,15 @@
     <div class="background-circle circle-3"></div>
   </div>
 
-  <div class="login-card">
+  <div class="login-card floating-card">
     <div class="login-header">
-      <img src="/img/logo.png" alt="Ccoin" class="login-logo">
-      <h3>پنل مدیریت Ccoin</h3>
+      <img src="/img/coin.svg" alt="Ccoin" class="login-logo" onerror="this.src='/img/logo.png'">
+      <h3 class="fw-bold mb-2">پنل مدیریت Ccoin</h3>
       <p class="mb-0">برای دسترسی به پنل مدیریت وارد شوید</p>
     </div>
     <div class="login-body">
       <form action="/admin/login" method="POST">
-        <div class="mb-3">
+        <div class="mb-4">
           <label for="username" class="form-label">نام کاربری</label>
           <div class="input-group">
             <span class="input-group-text">
@@ -177,17 +273,17 @@
               <i class="bi bi-lock"></i>
             </span>
             <input type="password" class="form-control" id="password" name="password" required>
-            <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+            <button class="btn" type="button" id="togglePassword">
               <i class="bi bi-eye"></i>
             </button>
           </div>
         </div>
-        <div class="mb-3 form-check">
+        <div class="mb-4 form-check">
           <input type="checkbox" class="form-check-input" id="remember" name="remember">
           <label class="form-check-label" for="remember">مرا به خاطر بسپار</label>
         </div>
         <div class="d-grid">
-          <button type="submit" class="btn btn-primary">ورود</button>
+          <button type="submit" class="login-btn btn-3d">ورود به پنل مدیریت</button>
         </div>
       </form>
     </div>

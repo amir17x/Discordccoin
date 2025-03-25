@@ -1,20 +1,20 @@
-<div class="sidebar">
+<div class="sidebar glass-card">
     <!-- هدر منو -->
     <div class="sidebar-header">
-        <img src="https://api.iconify.design/cryptocurrency-color:coin.svg" alt="Ccoin Logo" class="logo">
-        <h4 class="mb-0">پنل مدیریت Ccoin</h4>
-        <button class="btn-sidebar-close">
+        <img src="/img/coin.svg" alt="Ccoin Logo" class="logo" onerror="this.src='https://api.iconify.design/cryptocurrency-color:coin.svg'">
+        <h4 class="mb-0 gradient-text-primary">پنل مدیریت</h4>
+        <button class="btn-icon btn-sidebar-close">
             <i class="bi bi-x-lg"></i>
         </button>
     </div>
     
     <!-- اطلاعات کاربر -->
-    <div class="user-info">
-        <div class="avatar">
+    <div class="user-info gradient-border">
+        <div class="avatar gradient-primary">
             <div class="avatar-text">A</div>
         </div>
         <div class="info">
-            <span class="fw-bold">ادمین</span>
+            <span class="fw-bold text-light">ادمین</span>
             <small class="role d-block">مدیر سیستم</small>
         </div>
     </div>
@@ -24,16 +24,16 @@
         <h6 class="nav-heading">اصلی</h6>
         <ul class="nav flex-column">
             <li class="nav-item">
-                <a href="/admin/dashboard" class="nav-link <%= currentPage === 'dashboard' ? 'active' : '' %>">
+                <a href="/admin/dashboard" class="nav-link <%= currentPage === 'dashboard' ? 'active' : '' %> glow-on-hover">
                     <i class="bi bi-speedometer2"></i>
                     <span>داشبورد</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="/admin/users" class="nav-link <%= currentPage === 'users' || currentPage === 'user-details' ? 'active' : '' %>">
+                <a href="/admin/users" class="nav-link <%= currentPage === 'users' || currentPage === 'user-details' ? 'active' : '' %> glow-on-hover">
                     <i class="bi bi-people"></i>
                     <span>کاربران</span>
-                    <span class="badge bg-primary rounded-pill ms-auto">
+                    <span class="badge-gradient badge-primary rounded-pill ms-auto px-2 py-1" style="font-size: 0.7rem">
                         <% if (typeof usersCount !== 'undefined') { %>
                             <%= usersCount %>
                         <% } else { %>
@@ -44,82 +44,90 @@
             </li>
         </ul>
         
+        <div class="glass-divider"></div>
+        
         <h6 class="nav-heading">بازی</h6>
         <ul class="nav flex-column">
             <li class="nav-item">
-                <a href="/admin/clans" class="nav-link <%= currentPage === 'clans' ? 'active' : '' %>">
+                <a href="/admin/clans" class="nav-link <%= currentPage === 'clans' ? 'active' : '' %> glow-on-hover">
                     <i class="bi bi-flag"></i>
                     <span>کلن‌ها</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="/admin/items" class="nav-link <%= currentPage === 'items' ? 'active' : '' %>">
+                <a href="/admin/items" class="nav-link <%= currentPage === 'items' ? 'active' : '' %> glow-on-hover">
                     <i class="bi bi-box"></i>
                     <span>آیتم‌ها</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="/admin/quests" class="nav-link <%= currentPage === 'quests' ? 'active' : '' %>">
+                <a href="/admin/quests" class="nav-link <%= currentPage === 'quests' ? 'active' : '' %> glow-on-hover">
                     <i class="bi bi-journal-check"></i>
                     <span>ماموریت‌ها</span>
                 </a>
             </li>
         </ul>
         
+        <div class="glass-divider"></div>
+        
         <h6 class="nav-heading">اقتصاد</h6>
         <ul class="nav flex-column">
             <li class="nav-item">
-                <a href="/admin/transactions" class="nav-link <%= currentPage === 'transactions' ? 'active' : '' %>">
+                <a href="/admin/transactions" class="nav-link <%= currentPage === 'transactions' ? 'active' : '' %> glow-on-hover">
                     <i class="bi bi-arrow-left-right"></i>
                     <span>تراکنش‌ها</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="/admin/stocks" class="nav-link <%= currentPage === 'stocks' ? 'active' : '' %>">
+                <a href="/admin/stocks" class="nav-link <%= currentPage === 'stocks' ? 'active' : '' %> glow-on-hover">
                     <i class="bi bi-graph-up"></i>
                     <span>سهام</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="/admin/lottery" class="nav-link <%= currentPage === 'lottery' ? 'active' : '' %>">
+                <a href="/admin/lottery" class="nav-link <%= currentPage === 'lottery' ? 'active' : '' %> glow-on-hover">
                     <i class="bi bi-ticket-perforated"></i>
                     <span>لاتاری</span>
                 </a>
             </li>
         </ul>
         
+        <div class="glass-divider"></div>
+        
         <h6 class="nav-heading">اجتماعی</h6>
         <ul class="nav flex-column">
             <li class="nav-item">
-                <a href="/admin/friendships" class="nav-link <%= currentPage === 'friendships' ? 'active' : '' %>">
+                <a href="/admin/friendships" class="nav-link <%= currentPage === 'friendships' ? 'active' : '' %> glow-on-hover">
                     <i class="bi bi-people-fill"></i>
                     <span>سیستم دوستی</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="/admin/blocked-users" class="nav-link <%= currentPage === 'blocked-users' ? 'active' : '' %>">
+                <a href="/admin/blocked-users" class="nav-link <%= currentPage === 'blocked-users' ? 'active' : '' %> glow-on-hover">
                     <i class="bi bi-person-x-fill"></i>
                     <span>کاربران بلاک شده</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="/admin/private-chats" class="nav-link <%= currentPage === 'private-chats' ? 'active' : '' %>">
+                <a href="/admin/private-chats" class="nav-link <%= currentPage === 'private-chats' ? 'active' : '' %> glow-on-hover">
                     <i class="bi bi-chat-dots-fill"></i>
                     <span>چت‌های خصوصی</span>
                 </a>
             </li>
         </ul>
 
+        <div class="glass-divider"></div>
+
         <h6 class="nav-heading">سیستم</h6>
         <ul class="nav flex-column">
             <li class="nav-item">
-                <a href="/admin/logs" class="nav-link <%= currentPage === 'logs' ? 'active' : '' %>">
+                <a href="/admin/logs" class="nav-link <%= currentPage === 'logs' ? 'active' : '' %> glow-on-hover">
                     <i class="bi bi-list-ul"></i>
                     <span>لاگ‌ها</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="/admin/settings" class="nav-link <%= currentPage === 'settings' ? 'active' : '' %>">
+                <a href="/admin/settings" class="nav-link <%= currentPage === 'settings' ? 'active' : '' %> glow-on-hover">
                     <i class="bi bi-gear"></i>
                     <span>تنظیمات</span>
                 </a>
@@ -129,11 +137,11 @@
     
     <!-- فوتر منو -->
     <div class="sidebar-footer">
-        <a href="/admin/logout" class="btn btn-logout">
+        <a href="/admin/logout" class="btn-3d btn-logout">
             <i class="bi bi-box-arrow-right"></i> خروج از سیستم
         </a>
         <div class="version">
-            نسخه ۱.۰.۰
+            <span class="badge-gradient badge-primary px-2 py-1">نسخه ۱.۰.۰</span>
         </div>
     </div>
 </div>

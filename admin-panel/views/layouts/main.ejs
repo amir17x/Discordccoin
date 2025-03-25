@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl" data-theme="light">
+<html lang="fa" dir="rtl" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vazirmatn@33.0.3/Vazirmatn-font-face.css">
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/vision-ui-utilities.css">
     
     <!-- استایل‌های اضافی هر صفحه -->
     <% if (typeof styles !== 'undefined') { %>
@@ -35,8 +36,16 @@
                     <%- body %>
                 </main>
                 
-                <footer class="footer">
-                    <span>&copy; ۱۴۰۲ - پنل مدیریت Ccoin | نسخه ۱.۰.۰</span>
+                <footer class="footer glass-card">
+                    <div class="footer-brand">
+                        <img src="/img/logo.png" alt="Ccoin" onerror="this.src='/img/coin.svg'; this.onerror=null;">
+                        <span class="ms-2">&copy; ۱۴۰۲ - پنل مدیریت Ccoin | نسخه ۱.۰.۰</span>
+                    </div>
+                    <div class="footer-links">
+                        <a href="#">راهنما</a>
+                        <a href="#">تماس با ما</a>
+                        <a href="#">قوانین</a>
+                    </div>
                 </footer>
             </div>
         </div>
