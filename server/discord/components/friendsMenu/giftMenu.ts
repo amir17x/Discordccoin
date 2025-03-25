@@ -615,7 +615,7 @@ export async function increaseFriendshipXP(userId: number, friendId: number, xpA
       const newLevel = updateResult1.newLevel || updateResult2.newLevel;
       
       // اعطای پاداش سطح دوستی به هر دو کاربر
-      await grantFriendshipLevelRewards(userId, friendId, newLevel);
+      await grantFriendshipLevelRewards(userId, friendId, newLevel || 1);
       
       // ثبت فعالیت افزایش سطح دوستی
       await storage.recordFriendshipActivity(userId, friendId, 'level_up', `سطح دوستی به ${newLevel} رسید`, 0);

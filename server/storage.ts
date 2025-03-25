@@ -120,7 +120,13 @@ export interface IStorage {
   rejectFriendRequest(requestId: string): Promise<boolean>;
   removeFriend(userId: number, friendId: number): Promise<boolean>;
   getFriendshipLevel(userId: number, friendId: number): Promise<number>;
-  updateFriendshipXP(userId: number, friendId: number, xp: number): Promise<boolean>;
+  updateFriendshipXP(userId: number, friendId: string, xp: number): Promise<{ leveledUp: boolean, newLevel?: number }>;
+  recordFriendshipActivity(userId: number, friendId: number, type: string, details: string, xpEarned: number): Promise<boolean>;
+  getFriendshipActivities(userId: number, friendId: number, limit?: number): Promise<any[]>;
+  getFriendshipLeaderboard(limit?: number): Promise<any[]>;
+  hasSentDailyGift(userId: number, friendId: number): Promise<boolean>;
+  recordDailyGift(userId: number, friendId: number): Promise<boolean>;
+  updateClaimedRewards(userId: number, rewardType: string): Promise<boolean>;
   
   // Private & Anonymous Chat operations
   getPrivateChats(userId: number): Promise<PrivateChat[]>;
@@ -1954,14 +1960,27 @@ export class MemStorage implements IStorage {
     return friendship ? friendship.friendshipLevel : 0;
   }
 
-  async updateFriendshipXP(userId: number, friendId: number, xp: number): Promise<boolean> {
+  async updateFriendshipXP(userId: number, friendId: string, xp: number): Promise<{ leveledUp: boolean, newLevel?: number }> {
     const user = this.users.get(userId);
-    const friend = this.users.get(friendId);
+    // تبدیل friendId از string به number برای پیدا کردن کاربر
+    let friendObject: User | undefined;
     
-    if (!user || !friend || !user.friends) return false;
+    // تلاش برای پیدا کردن کاربر با discordId یا با id
+    for (const u of this.users.values()) {
+      if (u.discordId === friendId || u.id.toString() === friendId) {
+        friendObject = u;
+        break;
+      }
+    }
     
-    const friendshipIndex = user.friends.findIndex(f => f.friendId === friend.discordId);
-    if (friendshipIndex < 0) return false;
+    if (!user || !friendObject || !user.friends) {
+      return { leveledUp: false };
+    }
+    
+    const friendshipIndex = user.friends.findIndex(f => f.friendId === friendObject!.discordId);
+    if (friendshipIndex < 0) {
+      return { leveledUp: false };
+    }
     
     const friendship = user.friends[friendshipIndex];
     
@@ -1971,29 +1990,38 @@ export class MemStorage implements IStorage {
     
     // بررسی ارتقای سطح
     const oldLevel = friendship.friendshipLevel;
+    let newLevel = oldLevel;
+    
     if (friendship.friendshipXP >= 5000) {
-      friendship.friendshipLevel = 5; // استاد دوستی
+      newLevel = 5; // استاد دوستی
     } else if (friendship.friendshipXP >= 2000) {
-      friendship.friendshipLevel = 4; // حرفه‌ای
+      newLevel = 4; // حرفه‌ای
     } else if (friendship.friendshipXP >= 1000) {
-      friendship.friendshipLevel = 3; // پیشرفته
+      newLevel = 3; // پیشرفته
     } else if (friendship.friendshipXP >= 500) {
-      friendship.friendshipLevel = 2; // متوسط
+      newLevel = 2; // متوسط
     } else {
-      friendship.friendshipLevel = 1; // مبتدی
+      newLevel = 1; // مبتدی
     }
     
+    // اعمال سطح جدید
+    friendship.friendshipLevel = newLevel;
+    
     // بروزرسانی دوستی در لیست دوست هم
-    if (friend.friends) {
-      const reverseFriendshipIndex = friend.friends.findIndex(f => f.friendId === user.discordId);
+    if (friendObject.friends) {
+      const reverseFriendshipIndex = friendObject.friends.findIndex(f => f.friendId === user.discordId);
       if (reverseFriendshipIndex >= 0) {
-        friend.friends[reverseFriendshipIndex].friendshipXP = friendship.friendshipXP;
-        friend.friends[reverseFriendshipIndex].friendshipLevel = friendship.friendshipLevel;
-        friend.friends[reverseFriendshipIndex].lastInteraction = friendship.lastInteraction;
+        friendObject.friends[reverseFriendshipIndex].friendshipXP = friendship.friendshipXP;
+        friendObject.friends[reverseFriendshipIndex].friendshipLevel = newLevel;
+        friendObject.friends[reverseFriendshipIndex].lastInteraction = friendship.lastInteraction;
       }
     }
     
-    return friendship.friendshipLevel > oldLevel;
+    const leveledUp = newLevel > oldLevel;
+    return { 
+      leveledUp,
+      newLevel: leveledUp ? newLevel : undefined
+    };
   }
 
   // Private & Anonymous Chat operations
@@ -2236,6 +2264,131 @@ export class MemStorage implements IStorage {
     
     // برگرداندن کاربران مشابه با محدودیت تعداد
     return similarUsers.slice(0, limit).map(item => item.user);
+  }
+  
+  async recordFriendshipActivity(userId: number, friendId: number, type: string, details: string, xpEarned: number): Promise<boolean> {
+    const user = this.users.get(userId);
+    const friendObject = this.users.get(friendId);
+    
+    if (!user || !friendObject) return false;
+    
+    // اطمینان از وجود آرایه فعالیت‌های دوستی
+    if (!user.friendshipActivities) {
+      user.friendshipActivities = [];
+    }
+    
+    // ایجاد رکورد جدید
+    const activity = {
+      id: `${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      type,
+      details,
+      xpEarned,
+      timestamp: new Date().toISOString(),
+      friendId: friendObject.discordId,
+      friendName: friendObject.username
+    };
+    
+    // افزودن به لیست فعالیت‌ها
+    user.friendshipActivities.push(activity);
+    
+    // بروزرسانی XP دوستی
+    const result = await this.updateFriendshipXP(userId, friendId.toString(), xpEarned);
+    
+    return true;
+  }
+
+  async getFriendshipActivities(userId: number, friendId: number, limit: number = 10): Promise<any[]> {
+    const user = this.users.get(userId);
+    const friend = this.users.get(friendId);
+    
+    if (!user || !friend || !user.friendshipActivities) return [];
+    
+    // فیلتر کردن فعالیت‌های مربوط به دوست مورد نظر
+    const activities = user.friendshipActivities.filter(
+      activity => activity.friendId === friend.discordId
+    );
+    
+    // مرتب‌سازی از جدید به قدیم
+    activities.sort((a, b) => 
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+    
+    // اعمال محدودیت تعداد
+    return activities.slice(0, limit);
+  }
+
+  async getFriendshipLeaderboard(limit: number = 10): Promise<any[]> {
+    const leaderboard: {userId: number, username: string, totalFriendshipXP: number}[] = [];
+    
+    // محاسبه مجموع XP دوستی برای هر کاربر
+    for (const user of this.users.values()) {
+      if (!user.friends || user.friends.length === 0) continue;
+      
+      // محاسبه مجموع XP دوستی
+      const totalXP = user.friends.reduce((sum, friend) => sum + friend.friendshipXP, 0);
+      
+      // اضافه کردن به لیدربورد
+      leaderboard.push({
+        userId: user.id,
+        username: user.username,
+        totalFriendshipXP: totalXP
+      });
+    }
+    
+    // مرتب‌سازی بر اساس XP دوستی (نزولی)
+    leaderboard.sort((a, b) => b.totalFriendshipXP - a.totalFriendshipXP);
+    
+    // اعمال محدودیت تعداد
+    return leaderboard.slice(0, limit);
+  }
+
+  async hasSentDailyGift(userId: number, friendId: number): Promise<boolean> {
+    const user = this.users.get(userId);
+    const friend = this.users.get(friendId);
+    
+    if (!user || !friend) return false;
+    
+    // بررسی آرایه هدایای روزانه
+    if (!user.dailyGifts) {
+      user.dailyGifts = {};
+      return false;
+    }
+    
+    const today = new Date().toDateString();
+    return user.dailyGifts[friend.discordId] === today;
+  }
+
+  async recordDailyGift(userId: number, friendId: number): Promise<boolean> {
+    const user = this.users.get(userId);
+    const friend = this.users.get(friendId);
+    
+    if (!user || !friend) return false;
+    
+    // اطمینان از وجود آرایه هدایای روزانه
+    if (!user.dailyGifts) {
+      user.dailyGifts = {};
+    }
+    
+    // ثبت تاریخ هدیه برای امروز
+    const today = new Date().toDateString();
+    user.dailyGifts[friend.discordId] = today;
+    
+    return true;
+  }
+
+  async updateClaimedRewards(userId: number, rewardType: string): Promise<boolean> {
+    const user = this.users.get(userId);
+    if (!user) return false;
+    
+    // اطمینان از وجود آرایه جوایز دریافت شده
+    if (!user.claimedRewards) {
+      user.claimedRewards = {};
+    }
+    
+    // ثبت دریافت جایزه
+    user.claimedRewards[rewardType] = new Date().toISOString();
+    
+    return true;
   }
 }
 

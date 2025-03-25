@@ -573,7 +573,7 @@ export async function claimFriendshipRewards(interaction: MessageComponentIntera
     // پاداش تعداد دوستان
     if (friends.length >= 5) {
       // بررسی آیا این پاداش قبلاً دریافت شده است
-      if (!user.claimedRewards?.includes('friends_5')) {
+      if (!user.claimedRewards || !user.claimedRewards['friends_5']) {
         claimableRewards.push({
           type: 'friends_5',
           description: '5 دوست: 500 Ccoin',
@@ -596,7 +596,7 @@ export async function claimFriendshipRewards(interaction: MessageComponentIntera
     }
     
     if (friends.length >= 10) {
-      if (!user.claimedRewards?.includes('friends_10')) {
+      if (!user.claimedRewards || !user.claimedRewards['friends_10']) {
         claimableRewards.push({
           type: 'friends_10',
           description: '10 دوست: رول "اجتماعی"',
@@ -620,7 +620,7 @@ export async function claimFriendshipRewards(interaction: MessageComponentIntera
     
     // پاداش بالاترین سطح دوستی
     if (highestLevel >= 3) {
-      if (!user.claimedRewards?.includes('friendship_level_3')) {
+      if (!user.claimedRewards || !user.claimedRewards['friendship_level_3']) {
         claimableRewards.push({
           type: 'friendship_level_3',
           description: 'سطح 3 دوستی: 200 Ccoin + 10 کریستال',
@@ -645,7 +645,7 @@ export async function claimFriendshipRewards(interaction: MessageComponentIntera
     
     // پاداش امتیاز کل دوستی
     if (totalXP >= 1000) {
-      if (!user.claimedRewards?.includes('friendship_xp_1000')) {
+      if (!user.claimedRewards || !user.claimedRewards['friendship_xp_1000']) {
         claimableRewards.push({
           type: 'friendship_xp_1000',
           description: '1000 XP دوستی: افکت پروفایل "دوستی درخشان"',
