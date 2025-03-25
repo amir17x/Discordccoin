@@ -6,7 +6,10 @@ import {
   EmbedBuilder,
   MessageComponentInteraction,
   StringSelectMenuBuilder,
-  StringSelectMenuOptionBuilder
+  StringSelectMenuOptionBuilder,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle
 } from 'discord.js';
 import { storage } from '../../storage';
 import { botConfig } from '../utils/config';
@@ -165,6 +168,93 @@ export async function robberyMenu(
     } catch (e) {
       console.error('Error handling robbery menu failure:', e);
     }
+  }
+}
+
+// تابع نمایش مودال انتخاب هدف برای دزدی - مشابه انتقال سکه
+export async function selectRobberyTarget(interaction: ButtonInteraction | MessageComponentInteraction) {
+  try {
+    // Check if user exists
+    const user = await storage.getUserByDiscordId(interaction.user.id);
+    
+    if (!user) {
+      await interaction.reply({
+        content: '⚠️ حساب کاربری شما یافت نشد!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // بررسی کولدان دزدی
+    const now = new Date();
+    const lastRob = user.lastRob ? new Date(user.lastRob) : null;
+    const canRob = !lastRob || (now.getTime() - lastRob.getTime() >= ROB_COOLDOWN);
+    
+    if (!canRob) {
+      const nextRob = new Date(lastRob!.getTime() + ROB_COOLDOWN);
+      const hours = Math.floor((nextRob.getTime() - now.getTime()) / (60 * 60 * 1000));
+      const minutes = Math.floor(((nextRob.getTime() - now.getTime()) % (60 * 60 * 1000)) / (60 * 1000));
+      
+      await interaction.reply({
+        content: `⏳ باید ${hours}h ${minutes}m صبر کنید تا بتوانید دوباره سرقت کنید.`,
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // محاسبه شانس موفقیت دزدی بر اساس آیتم‌های کاربر و عوامل دیگر
+    let successRate = BASE_SUCCESS_RATE;
+    
+    // بررسی آیتم‌های انبار کاربر که روی شانس دزدی تأثیر می‌گذارند
+    const inventory = await storage.getInventoryItems(user.id);
+    for (const item of inventory) {
+      // @ts-ignore - This is a valid property in ItemEffects
+      if (item.item.effects?.robberyChance) {
+        // @ts-ignore - This is a valid property in ItemEffects
+        successRate += item.item.effects.robberyChance;
+      }
+    }
+    
+    // ایجاد مودال انتخاب هدف دزدی
+    const modal = new ModalBuilder()
+      .setCustomId('robbery_target_modal')
+      .setTitle('🎯 انتخاب هدف دزدی');
+    
+    // فیلد وارد کردن آی‌دی دیسکورد کاربر هدف
+    const targetIdInput = new TextInputBuilder()
+      .setCustomId('target_id')
+      .setLabel('آی‌دی دیسکورد کاربر هدف')
+      .setPlaceholder('مثال: 123456789012345678')
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true)
+      .setMinLength(5)
+      .setMaxLength(20);
+    
+    // فیلد نمایش اطلاعات (فقط نمایشی، غیرقابل ویرایش)
+    const infoInput = new TextInputBuilder()
+      .setCustomId('info')
+      .setLabel('اطلاعات دزدی')
+      .setValue(`مقدار قابل دزدی: حداکثر ${MAX_ROB_AMOUNT} Ccoin\nشانس موفقیت: ${Math.floor(successRate * 100)}%\nجریمه شکست: ${PENALTY_AMOUNT} Ccoin`)
+      .setStyle(TextInputStyle.Paragraph)
+      .setRequired(false)
+      .setMinLength(1)
+      .setMaxLength(200);
+    
+    // اضافه کردن فیلدها به مودال
+    const firstRow = new ActionRowBuilder<TextInputBuilder>().addComponents(targetIdInput);
+    const secondRow = new ActionRowBuilder<TextInputBuilder>().addComponents(infoInput);
+    
+    modal.addComponents(firstRow, secondRow);
+    
+    // نمایش مودال به کاربر
+    await interaction.showModal(modal);
+    
+  } catch (error) {
+    console.error('Error in robbery target modal:', error);
+    await interaction.reply({
+      content: '❌ متأسفانه در نمایش فرم انتخاب هدف دزدی خطایی رخ داد!',
+      ephemeral: true
+    });
   }
 }
 

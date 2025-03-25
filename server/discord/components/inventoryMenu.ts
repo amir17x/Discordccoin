@@ -111,7 +111,7 @@ export async function inventoryMenu(
         // Check if item is already active
         const now = new Date();
         const expires = inventoryItem.expires ? new Date(inventoryItem.expires) : null;
-        const isActive = inventoryItem.active && expires && expires > now;
+        const isActive = Boolean(inventoryItem.active && expires && expires > now);
         
         const row = new ActionRowBuilder<ButtonBuilder>()
           .addComponents(
@@ -119,7 +119,7 @@ export async function inventoryMenu(
               .setCustomId(`use:${item.id}`)
               .setLabel(`استفاده از ${item.name}`)
               .setStyle(ButtonStyle.Primary)
-              .setDisabled(isActive) // Disable if already active
+              .setDisabled(isActive === true) // Disable if already active
           );
         
         itemButtons.push(row);

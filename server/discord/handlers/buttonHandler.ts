@@ -10,7 +10,7 @@ import { questsMenu } from '../components/questsMenu';
 import { clansMenu } from '../components/clansMenu';
 import { profileMenu } from '../components/profileMenu';
 import { wheelOfFortuneMenu, spinWheel } from '../components/wheelOfFortuneMenu';
-import { robberyMenu } from '../components/robberyMenu';
+import { robberyMenu, selectRobberyTarget, handleRobbery } from '../components/robberyMenu';
 import { adminMenu } from '../components/adminMenu';
 import { investmentMenu, processInvestment } from '../components/investmentMenu';
 import { stocksMenu, processBuyStock, processSellStock } from '../components/stocksMenu';
@@ -23,6 +23,9 @@ import { handleDiceDuel } from '../games/diceDuel';
 import { showMatchmakingMenu, startRandomMatchmaking, showInviteOpponentMenu, cancelMatchmaking } from '../games/matchmaking';
 import { getLogger, LogType } from '../utils/logger';
 import { botConfig } from '../utils/config';
+
+// زمان انتظار دزدی - تعریف شده در robberyMenu.ts
+const ROB_COOLDOWN = 4 * 60 * 60 * 1000; // 4 ساعت
 
 // Button handler function
 // Handler for investment history
@@ -891,6 +894,34 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       return;
     }
     
+    if (action === 'rob_select') {
+      // نمایش فرم انتخاب هدف دزدی
+      await selectRobberyTarget(interaction);
+      return;
+    }
+    
+    if (action.startsWith('rob_confirm_')) {
+      // پردازش تأیید دزدی
+      const targetId = parseInt(action.replace('rob_confirm_', ''));
+      if (isNaN(targetId)) {
+        await interaction.reply({
+          content: '❌ شناسه کاربر هدف نامعتبر است!',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      // انجام دزدی
+      await handleRobbery(interaction, targetId);
+      return;
+    }
+    
+    if (action === 'rob_cancel') {
+      // لغو دزدی
+      await robberyMenu(interaction);
+      return;
+    }
+    
     if (action === 'rob_items') {
       // آیتم‌های دزدی
       const user = await storage.getUserByDiscordId(interaction.user.id);
@@ -906,8 +937,9 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       // دریافت آیتم‌های مرتبط با دزدی
       const items = await storage.getAllItems();
       const robberyItems = items.filter(item => 
-        item.category === 'robbery' || 
-        (item.effects && 'robberyChance' in (item.effects as any))
+        (item.type === 'robbery' || item.type === 'tool') && 
+        item.effects && typeof item.effects === 'object' && 
+        'robberyChance' in (item.effects as any)
       );
       
       // دریافت آیتم‌های کاربر
