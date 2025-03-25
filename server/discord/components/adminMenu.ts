@@ -39,6 +39,7 @@ export async function adminMenu(
       .setTitle('⚙️ پنل مدیریت ربات Ccoin')
       .setDescription('به پنل مدیریت ربات خوش آمدید! لطفاً بخش مورد نظر را انتخاب کنید')
       .setFooter({ text: `مدیر: ${interaction.user.username} | ${new Date().toLocaleString()}` })
+      .setThumbnail('https://img.icons8.com/fluency/48/user-shield.png') // آیکون user-shield برای پنل ادمین
       .setTimestamp();
 
     let components = [];

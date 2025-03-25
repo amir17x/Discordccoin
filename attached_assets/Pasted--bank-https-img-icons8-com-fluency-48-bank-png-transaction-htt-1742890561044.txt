@@ -1,0 +1,110 @@
+سیستم بانکی
+bank
+https://img.icons8.com/fluency/48/bank.png
+
+تاریخچه تراکنش‌ها
+transaction
+https://img.icons8.com/fluency/48/transaction-list.png
+
+انتقال سکه
+transfer
+https://img.icons8.com/fluency/48/money-transfer.png
+
+سرقت/رادار
+radar
+https://img.icons8.com/fluency/48/radar.png
+
+آمار دزدی
+stats
+https://img.icons8.com/fluency/48/statistics.png 
+
+تبدیل سکه به کریستال
+exchange
+https://img.icons8.com/fluency/48/exchange.png
+
+بازی‌های گروهی
+team 
+https://img.icons8.com/fluency/48/teamwork.png
+
+فروشگاه
+shop
+https://img.icons8.com/fluency/48/shop.png
+
+کوله‌پشتی
+backpack
+https://img.icons8.com/fluency/48/backpack.png
+
+کلن‌ها
+clan
+https://img.icons8.com/fluency/48/conference.png
+
+ماموریت‌ها
+missions
+https://img.icons8.com/fluency/48/task-completed.png
+
+چرخ‌شانس
+wheel
+https://img.icons8.com/fluency/48/wheel-of-fortune.png
+
+پورتفولیو سهام
+portfolio
+https://img.icons8.com/fluency/48/folder-invoices.png
+
+راهنمای سهام
+guide
+https://img.icons8.com/fluency/48/help.png
+
+پورتفولیو سهام
+portfolio
+https://img.icons8.com/fluency/48/folder-invoices.png
+
+راهنمای سهام
+guide
+https://img.icons8.com/fluency/48/help.png
+
+بازار کاربران
+market
+https://img.icons8.com/fluency/48/online-store.png
+
+قرعه‌کشی گیواوی
+gift
+https://img.icons8.com/fluency/48/gift.png
+
+بلک جک
+blackjack
+https://img.icons8.com/fluency/48/cards.png
+
+حمایت از ربات
+support
+https://img.icons8.com/fluency/48/heart-with-pulse.png
+
+1. راهنمای دزدی
+Crime Guide
+https://img.icons8.com/fluency/48/crime.png
+
+2. تغییر چهره
+Avatar Change
+https://img.icons8.com/fluency/48/user-male-circle.png
+
+6. تورنمنت‌ها
+Tournaments
+https://img.icons8.com/fluency/48/trophy.png
+
+بازی‌های تک‌نفره (نسخه جدید)
+Single Player
+https://img.icons8.com/fluency/48/joystick.png
+
+دستاوردها (نسخه جدید)
+Achievements
+https://img.icons8.com/fluency/48/prize.png 
+
+1. بازی‌های رقابتی (3 ادمک پشت هم)
+Multiplayer
+https://img.icons8.com/fluency/48/conference-call.png
+
+
+بازار سهام
+https://img.icons8.com/fluency/48/stocks-growth.png
+
+فصل‌ها
+https://img.icons8.com/fluency/48/autumn.png

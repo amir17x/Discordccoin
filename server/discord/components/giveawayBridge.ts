@@ -46,7 +46,7 @@ export async function giveawayBridgeMenu(
 **💸 قیمت هر بلیط:** ${config.ticketPrice} Ccoin
 
 با خرید بلیط قرعه‌کشی، شانس خود را برای برنده شدن جوایز افزایش دهید!`)
-      .setThumbnail('https://cdn-icons-png.flaticon.com/512/9041/9041212.png') // آیکون fi-rr-gift برای گیواوی
+      .setThumbnail('https://img.icons8.com/fluency/48/gift.png') // آیکون gift برای گیواوی
       .setFooter({ text: 'ربات اقتصادی Ccoin' })
       .setTimestamp();
 
@@ -195,7 +195,7 @@ export async function buyGiveawayTickets(
         .setColor('#00FF88')
         .setTitle('✅ خرید بلیط موفق')
         .setDescription(`شما با موفقیت ${amount} بلیط قرعه‌کشی خریداری کردید.`)
-        .setThumbnail('https://cdn-icons-png.flaticon.com/512/9041/9041242.png') // آیکون fi-rr-check برای موفقیت
+        .setThumbnail('https://img.icons8.com/fluency/48/task-completed.png') // آیکون task-completed برای موفقیت
         .addFields(
           { name: '💰 هزینه هر بلیط', value: `${config.ticketPrice} Ccoin`, inline: true },
           { name: '🔢 تعداد', value: `${amount} بلیط`, inline: true },
@@ -263,7 +263,7 @@ export async function checkGiveawayBalance(interaction: MessageComponentInteract
       .setColor('#00BFFF')
       .setTitle('💰 موجودی حساب شما')
       .setDescription('اطلاعات موجودی شما در سیستم Ccoin و قرعه‌کشی:')
-      .setThumbnail('https://cdn-icons-png.flaticon.com/512/9041/9041192.png') // آیکون fi-rr-coin برای موجودی
+      .setThumbnail('https://img.icons8.com/fluency/48/money-transfer.png') // آیکون money-transfer برای موجودی
       .addFields(
         { name: '💰 موجودی Ccoin', value: `کیف پول: ${user.wallet} Ccoin\nبانک: ${user.bank} Ccoin`, inline: false },
         { name: '💎 کریستال', value: `${user.crystals} کریستال`, inline: false },

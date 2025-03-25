@@ -150,7 +150,7 @@ const daily = {
           .setColor('#E91E63') // صورتی
           .setTitle('🎁 پاداش روزانه دریافت شد!')
           .setDescription(`**${interaction.user.username}** عزیز، خوش آمدید! اولین پاداش روزانه شما دریافت شد.`)
-          .setThumbnail('https://cdn-icons-png.flaticon.com/512/2111/2111712.png') // آیکون جعبه هدیه
+          .setThumbnail('https://img.icons8.com/fluency/48/gift.png') // آیکون جعبه هدیه با سبک Fluency
           .addFields(
             { name: '💰 جایزه دریافتی', value: `\`50 Ccoin\``, inline: true },
             { name: '🔄 استریک روزانه', value: `\`1 روز\``, inline: true },
@@ -192,7 +192,7 @@ const daily = {
             .setColor('#F39C12') // نارنجی
             .setTitle('⏳ پاداش روزانه در دسترس نیست')
             .setDescription(`**${interaction.user.username}** عزیز، شما قبلاً پاداش روزانه خود را دریافت کرده‌اید!`)
-            .setThumbnail('https://cdn-icons-png.flaticon.com/512/3490/3490461.png') // آیکون ساعت شنی
+            .setThumbnail('https://img.icons8.com/fluency/48/hourglass.png') // آیکون ساعت شنی با سبک Fluency
             .addFields(
               { name: '⏱️ زمان باقی‌مانده', value: `\`${hours} ساعت و ${minutes} دقیقه\``, inline: false },
               { name: '📆 استریک فعلی', value: `\`${user.dailyStreak} روز\``, inline: true },
@@ -271,12 +271,12 @@ const daily = {
         // اُپن از نوع جایزه برای Embed
         let rewardColor = '#2ECC71'; // سبز
         let rewardTitle = '🎁 پاداش روزانه دریافت شد!';
-        let rewardThumbnail = 'https://cdn-icons-png.flaticon.com/512/2111/2111712.png'; // آیکون جعبه هدیه
+        let rewardThumbnail = 'https://img.icons8.com/fluency/48/gift.png'; // آیکون جعبه هدیه با سبک Fluency
         
         if (streak >= 7) {
           rewardColor = '#9B59B6'; // بنفش برای استریک های بالا
           rewardTitle = '🌟 پاداش روزانه ویژه دریافت شد!';
-          rewardThumbnail = 'https://cdn-icons-png.flaticon.com/512/2906/2906961.png'; // آیکون جایزه ویژه
+          rewardThumbnail = 'https://img.icons8.com/fluency/48/prize.png'; // آیکون جایزه ویژه با سبک Fluency
         }
         
         // ایجاد امبد برای دریافت جایزه
@@ -436,7 +436,7 @@ const ping = {
         .setColor('#00FFFF') // آبی فیروزه‌ای برای ظاهر شیک
         .setTitle('🏓 پونگ!')
         .setDescription(`🚀 **زمان پاسخگویی:** \`${latency}ms\`\n🔌 **وضعیت API:** عالی\n⏱️ **زمان آنلاین ربات:** ${Math.floor(interaction.client.uptime / 3600000)} ساعت و ${Math.floor((interaction.client.uptime % 3600000) / 60000)} دقیقه`)
-        .setThumbnail('https://cdn-icons-png.flaticon.com/512/2097/2097276.png') // آیکون پینگ پونگ
+        .setThumbnail('https://img.icons8.com/fluency/48/ping-pong.png') // آیکون پینگ پونگ با سبک Fluency
         .addFields(
           { name: '📡 وضعیت سرور', value: '`🟢 آنلاین`', inline: true },
           { name: '🖥️ پینگ دیسکورد', value: `\`${interaction.client.ws.ping}ms\``, inline: true },

@@ -63,7 +63,7 @@ export async function robberyMenu(
       .setColor('#800080') // رنگ بنفش طبق مستندات
       .setTitle('🕵️ بخش دزدی')
       .setDescription('از کاربران دیگر سکه بدزدید و موجودی خود را افزایش دهید!\nاما مراقب باشید، اگر دستگیر شوید، جریمه خواهید شد!')
-      .setThumbnail('https://cdn-icons-png.flaticon.com/512/9040/9040934.png') // آیکون fi-rr-mask برای بخش دزدی
+      .setThumbnail('https://img.icons8.com/fluency/48/radar.png') // آیکون radar برای بخش دزدی
       .addFields(
         { name: '✨ نرخ موفقیت پایه', value: `${BASE_SUCCESS_RATE * 100}%`, inline: true },
         { name: '🔒 قفل زمانی', value: `${canRob ? '✅ آماده برای دزدی!' : cooldownText}`, inline: true },
@@ -258,7 +258,7 @@ export async function handleRobbery(
         .setColor('#4CAF50')
         .setTitle('✅ دزدی موفق!')
         .setDescription(`شما با موفقیت ${robAmount} Ccoin از ${targetUser.username} دزدیدید!`)
-        .setThumbnail('https://cdn-icons-png.flaticon.com/512/9041/9041024.png') // آیکون fi-rr-money-bag برای دزدی موفق
+        .setThumbnail('https://img.icons8.com/fluency/48/money-transfer.png') // آیکون money-transfer برای دزدی موفق
         .addFields(
           { name: '💰 مقدار دزدیده شده', value: `${robAmount} Ccoin`, inline: true },
           { name: '👛 موجودی جدید شما', value: `${user.wallet + robAmount} Ccoin`, inline: true }
@@ -306,7 +306,7 @@ export async function handleRobbery(
         .setColor('#F44336')
         .setTitle('❌ دزدی ناموفق!')
         .setDescription(`شما هنگام دزدی از ${targetUser.username} دستگیر شدید!`)
-        .setThumbnail('https://cdn-icons-png.flaticon.com/512/9040/9040761.png') // آیکون fi-rr-handcuffs برای دزدی ناموفق
+        .setThumbnail('https://img.icons8.com/fluency/48/heart-with-pulse.png') // آیکون heart-with-pulse برای دزدی ناموفق
         .addFields(
           { name: '💸 جریمه', value: `${PENALTY_AMOUNT} Ccoin`, inline: true },
           { name: '👛 موجودی جدید شما', value: `${user.wallet - PENALTY_AMOUNT} Ccoin`, inline: true }

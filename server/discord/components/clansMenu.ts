@@ -41,7 +41,7 @@ export async function clansMenu(
       .setDescription(userClan 
         ? `به کلن **${userClan.name}** خوش آمدید! 🌟\nبا دوستانت متحد شو، وار بزن و کلنت رو به اوج برسون! 🚀`
         : '🏰 به بخش کلن‌ها خوش اومدی! 🌟\nبا دوستات متحد شو، وار بزن و کلنت رو به اوج برسون! 🚀')
-      .setThumbnail('https://cdn-icons-png.flaticon.com/512/9041/9041123.png') // آیکون fi-rr-castle برای بخش کلن ها
+      .setThumbnail('https://img.icons8.com/fluency/48/group.png') // آیکون group برای بخش کلن ها
       .setFooter({ text: `${interaction.user.username} | موجودی: ${user.wallet} Ccoin` })
       .setTimestamp();
     

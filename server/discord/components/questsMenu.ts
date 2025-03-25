@@ -38,7 +38,7 @@ export async function questsMenu(
       .setColor('#E74C3C')
       .setTitle('🎯 ماموریت‌ها')
       .setDescription('ماموریت‌ها را کامل کن و جوایز دریافت کن!')
-      .setThumbnail('https://cdn-icons-png.flaticon.com/512/9040/9040847.png') // آیکون fi-rr-document-signed برای بخش کوئست ها
+      .setThumbnail('https://img.icons8.com/fluency/48/task-completed.png') // آیکون task-completed برای بخش کوئست ها
       .setFooter({ text: `${interaction.user.username} | برای دریافت جایزه روی دکمه کلیک کنید` })
       .setTimestamp();
     

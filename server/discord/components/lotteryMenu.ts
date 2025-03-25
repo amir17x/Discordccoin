@@ -63,7 +63,7 @@ export async function lotteryMenu(
                          '🔹 در هر قرعه‌کشی فقط یک برنده خواهد بود\n' +
                          '🔹 80% از مبلغ فروش بلیط‌ها به جایزه اضافه می‌شود\n' +
                          '🔹 پس از اتمام مهلت، قرعه‌کشی به صورت خودکار انجام و برنده مشخص می‌شود')
-          .setThumbnail('https://cdn-icons-png.flaticon.com/512/9041/9041257.png'); // آیکون fi-rr-ticket برای قرعه‌کشی
+          .setThumbnail('https://img.icons8.com/fluency/48/lottery.png'); // آیکون lottery برای قرعه‌کشی
 
         // Show active lotteries count
         embed.addFields(
@@ -135,7 +135,7 @@ export async function lotteryMenu(
         embed
           .setTitle('🎯 قرعه‌کشی‌های فعال')
           .setDescription('لیست قرعه‌کشی‌های فعال که می‌توانید در آن‌ها شرکت کنید:')
-          .setThumbnail('https://cdn-icons-png.flaticon.com/512/9041/9041257.png'); // آیکون fi-rr-ticket برای قرعه‌کشی‌های فعال
+          .setThumbnail('https://img.icons8.com/fluency/48/lottery.png'); // آیکون lottery برای قرعه‌کشی‌های فعال
 
         if (activeLotteries.length > 0) {
           // Create a select menu for the lotteries
@@ -206,7 +206,7 @@ export async function lotteryMenu(
         embed
           .setTitle('📜 تاریخچه قرعه‌کشی‌ها')
           .setDescription('نتایج قرعه‌کشی‌های گذشته:')
-          .setThumbnail('https://cdn-icons-png.flaticon.com/512/9041/9041088.png'); // آیکون fi-rr-time-past برای تاریخچه
+          .setThumbnail('https://img.icons8.com/fluency/48/transaction-list.png'); // آیکون transaction-list برای تاریخچه
 
         if (completedLotteries.length > 0) {
           for (const lottery of completedLotteries) {
@@ -258,7 +258,7 @@ export async function lotteryMenu(
         embed
           .setTitle('ℹ️ راهنمای قرعه‌کشی')
           .setDescription('راهنمای استفاده از سیستم قرعه‌کشی Ccoin:')
-          .setThumbnail('https://cdn-icons-png.flaticon.com/512/9041/9041217.png') // آیکون fi-rr-interrogation برای راهنما
+          .setThumbnail('https://img.icons8.com/fluency/48/help.png') // آیکون help برای راهنما
           .addFields(
             { 
               name: '🎟️ نحوه خرید بلیط', 
@@ -427,7 +427,7 @@ export async function processBuyLotteryTicket(
         .setColor('#FFD700')
         .setTitle('✅ خرید بلیط موفق')
         .setDescription(`شما با موفقیت ${quantity} بلیط برای قرعه‌کشی ${updatedLottery.name} خریداری کردید.`)
-        .setThumbnail('https://cdn-icons-png.flaticon.com/512/9041/9041242.png') // آیکون fi-rr-check برای موفقیت
+        .setThumbnail('https://img.icons8.com/fluency/48/task-completed.png') // آیکون task-completed برای موفقیت
         .addFields(
           { name: '💰 قیمت هر بلیط', value: `${updatedLottery.ticketPrice} Ccoin`, inline: true },
           { name: '🔢 تعداد', value: `${quantity} بلیط`, inline: true },
