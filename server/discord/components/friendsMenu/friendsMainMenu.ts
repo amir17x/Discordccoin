@@ -2,6 +2,9 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageComp
 import { storage } from '../../../storage';
 import { formatNumber, formatDate, formatRelativeTime } from '../../utils/formatter';
 import * as anonymousChatMenu from '../anonymousChatMenu/anonymousChatMenu';
+import { friendshipLevelMenu, handleFriendshipLevelInteraction } from './friendshipLevelMenu';
+import { giftToFriendMenu, handleGiftMenuInteraction } from './giftMenu';
+import { interestsAndSuggestionsMenu, handleInterestsMenuInteraction } from './friendInterestsMenu';
 
 /**
  * منوی اصلی سیستم دوستان
@@ -1099,7 +1102,7 @@ async function showFriendProfile(interaction: MessageComponentInteraction, frien
       .setColor('#4E5D94')
       .setTitle(`👤 پروفایل ${friend.username}`)
       .setDescription(`اطلاعات دوستی شما با ${friend.username}`)
-      .setThumbnail(friend.avatar || 'https://img.icons8.com/fluency/48/user.png')
+      .setThumbnail(interaction.client.user?.displayAvatarURL() || 'https://img.icons8.com/fluency/48/user.png')
       .addFields(
         { name: '🔄 سطح دوستی', value: `${levelEmoji} سطح ${friendship.friendshipLevel}`, inline: true },
         { name: '⭐ امتیاز دوستی', value: `${friendship.friendshipXP} XP`, inline: true },
@@ -1117,9 +1120,13 @@ async function showFriendProfile(interaction: MessageComponentInteraction, frien
           .setLabel('💬 چت خصوصی')
           .setStyle(ButtonStyle.Primary),
         new ButtonBuilder()
-          .setCustomId(`toggle_favorite_${friend.id}`)
-          .setLabel(friendship.favoriteStatus ? '❌ حذف از علاقه‌مندی‌ها' : '⭐ افزودن به علاقه‌مندی‌ها')
-          .setStyle(friendship.favoriteStatus ? ButtonStyle.Danger : ButtonStyle.Success)
+          .setCustomId(`gift_to_friend_${friend.id}`)
+          .setLabel('🎁 هدیه دادن')
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId(`friendship_details_${friend.discordId}`)
+          .setLabel('🌟 سطح دوستی')
+          .setStyle(ButtonStyle.Primary)
       );
     
     const row2 = new ActionRowBuilder<ButtonBuilder>()
