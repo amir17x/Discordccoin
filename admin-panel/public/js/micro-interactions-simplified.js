@@ -239,9 +239,11 @@ function initCardInteractions() {
           const scrollPosition = window.scrollY;
           const headerRect = header.getBoundingClientRect();
           
-          if (headerRect.top < window.innerHeight && headerRect.bottom > 0) {
-            const scrollPercent = (headerRect.top / window.innerHeight);
-            headerImage.style.transform = 'translateY(' + scrollPercent * 50 + 'px)';
+          if (headerRect.top < window.innerHeight) {
+            if (headerRect.bottom > 0) {
+              const scrollPercent = (headerRect.top / window.innerHeight);
+              headerImage.style.transform = 'translateY(' + scrollPercent * 50 + 'px)';
+            }
           }
         });
       }
@@ -523,14 +525,18 @@ function initFormInteractions() {
       // حذف افکت در هنگام بلر
       inputElement.addEventListener('blur', function() {
         field.classList.remove('focused');
-        if (this.value === '' && label) {
-          label.classList.remove('active');
+        if (this.value === '') {
+          if (label) {
+            label.classList.remove('active');
+          }
         }
       });
       
       // بررسی وضعیت اولیه
-      if (inputElement.value !== '' && label) {
-        label.classList.add('active');
+      if (inputElement.value !== '') {
+        if (label) {
+          label.classList.add('active');
+        }
       }
     }
   });

@@ -137,8 +137,10 @@ function countUp(counterElement) {
     // اضافه کردن جداکننده هزارگان
     let formattedInt = '';
     for (let i = 0; i < integerPart.length; i++) {
-      if (i > 0 && (integerPart.length - i) % 3 === 0) {
-        formattedInt += separator;
+      if (i > 0) {
+        if ((integerPart.length - i) % 3 === 0) {
+          formattedInt += separator;
+        }
       }
       formattedInt += integerPart[i];
     }
@@ -283,8 +285,10 @@ function randomCounter(counterElement) {
     
     let formattedInt = '';
     for (let i = 0; i < integerPart.length; i++) {
-      if (i > 0 && (integerPart.length - i) % 3 === 0) {
-        formattedInt += separator;
+      if (i > 0) {
+        if ((integerPart.length - i) % 3 === 0) {
+          formattedInt += separator;
+        }
       }
       formattedInt += integerPart[i];
     }
@@ -467,8 +471,10 @@ function countdownTimer(timerElement) {
     // تنظیم متن بر اساس فرمت درخواستی
     let timerText = '';
     
-    if (format.includes('d') && days > 0) {
-      timerText += days + ' روز ';
+    if (format.includes('d')) {
+      if (days > 0) {
+        timerText += days + ' روز ';
+      }
     }
     
     if (format.includes('h')) {

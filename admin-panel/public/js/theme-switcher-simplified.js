@@ -176,20 +176,22 @@ function initThemeSettings() {
     const blurSlider = themeSettingsPanel.querySelector('.blur-intensity-slider');
     const blurPreview = themeSettingsPanel.querySelector('.blur-preview');
     
-    if (blurSlider && blurPreview) {
-      blurSlider.addEventListener('input', function() {
-        const value = this.value;
-        
-        // به‌روزرسانی پیش‌نمایش
-        blurPreview.style.backdropFilter = 'blur(' + value + 'px)';
-        blurPreview.style.webkitBackdropFilter = 'blur(' + value + 'px)';
-        
-        // ذخیره تنظیمات
-        saveThemeSettings('blurIntensity', value);
-        
-        // اعمال به همه المان‌های گلس‌مورفیک
-        applyBlurIntensity(value);
-      });
+    if (blurSlider) {
+      if (blurPreview) {
+        blurSlider.addEventListener('input', function() {
+          const value = this.value;
+          
+          // به‌روزرسانی پیش‌نمایش
+          blurPreview.style.backdropFilter = 'blur(' + value + 'px)';
+          blurPreview.style.webkitBackdropFilter = 'blur(' + value + 'px)';
+          
+          // ذخیره تنظیمات
+          saveThemeSettings('blurIntensity', value);
+          
+          // اعمال به همه المان‌های گلس‌مورفیک
+          applyBlurIntensity(value);
+        });
+      }
     }
     
     // رویداد برای دکمه ریست
@@ -221,9 +223,11 @@ function openThemeSettings() {
   const panel = document.querySelector('.theme-settings-panel');
   const overlay = document.querySelector('.theme-settings-overlay');
   
-  if (panel && overlay) {
-    panel.classList.add('open');
-    overlay.classList.add('visible');
+  if (panel) {
+    if (overlay) {
+      panel.classList.add('open');
+      overlay.classList.add('visible');
+    }
   }
 }
 
@@ -234,9 +238,11 @@ function closeThemeSettings() {
   const panel = document.querySelector('.theme-settings-panel');
   const overlay = document.querySelector('.theme-settings-overlay');
   
-  if (panel && overlay) {
-    panel.classList.remove('open');
-    overlay.classList.remove('visible');
+  if (panel) {
+    if (overlay) {
+      panel.classList.remove('open');
+      overlay.classList.remove('visible');
+    }
   }
 }
 
@@ -295,8 +301,10 @@ function setColorTheme(color) {
   }
   
   // اعمال تم رنگی جدید
-  if (color && color !== 'purple') { // پیش‌فرض بنفش است
-    document.documentElement.setAttribute('data-color-theme', color);
+  if (color) {
+    if (color !== 'purple') { // پیش‌فرض بنفش است
+      document.documentElement.setAttribute('data-color-theme', color);
+    }
   }
   
   // ذخیره تنظیمات
@@ -419,17 +427,19 @@ function loadSavedTheme() {
       }
       
       // اعمال رنگ
-      if (settings.colorTheme && settings.colorTheme !== 'purple') {
-        document.documentElement.setAttribute('data-color-theme', settings.colorTheme);
-        
-        // به‌روزرسانی UI
-        const colorOptions = document.querySelectorAll('.theme-color-option');
-        colorOptions.forEach(function(option) {
-          option.classList.remove('active');
-          if (option.dataset.color === settings.colorTheme) {
-            option.classList.add('active');
-          }
-        });
+      if (settings.colorTheme) {
+        if (settings.colorTheme !== 'purple') {
+          document.documentElement.setAttribute('data-color-theme', settings.colorTheme);
+          
+          // به‌روزرسانی UI
+          const colorOptions = document.querySelectorAll('.theme-color-option');
+          colorOptions.forEach(function(option) {
+            option.classList.remove('active');
+            if (option.dataset.color === settings.colorTheme) {
+              option.classList.add('active');
+            }
+          });
+        }
       }
       
       // اعمال تنظیمات دیگر
