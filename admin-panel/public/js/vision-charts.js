@@ -244,12 +244,12 @@ function createGradientConfig(colorType, isBgOnly = false) {
       type: 'linear',
       bordersOnly: isBgOnly,
       stops: [
-        { offset: 0, color: `var(--chart-${colorType}-gradient-start)` },
-        { offset: 1, color: `var(--chart-${colorType}-gradient-stop)` }
+        { offset: 0, color: 'var(--chart-' + colorType + '-gradient-start)' },
+        { offset: 1, color: 'var(--chart-' + colorType + '-gradient-stop)' }
       ]
     },
-    backgroundColor: `var(--chart-${colorType}-color)`,
-    borderColor: `var(--chart-${colorType}-color)`
+    backgroundColor: 'var(--chart-' + colorType + '-color)',
+    borderColor: 'var(--chart-' + colorType + '-color)'
   };
 }
 
@@ -414,7 +414,7 @@ function updateChartDataForWeek(chart) {
  */
 function updateChartDataForMonth(chart) {
   const chartId = chart.canvas.id;
-  const days = Array.from({length: 30}, (_, i) => `${i+1}`);
+  const days = Array.from({length: 30}, (_, i) => (i+1).toString());
   
   if (chartId === 'revenueChart') {
     chart.data.labels = days;
