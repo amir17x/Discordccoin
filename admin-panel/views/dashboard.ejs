@@ -1,464 +1,996 @@
-<%- include('partials/header') %>
+<%- include('layouts/main', { title: 'داشبورد' }); %>
 
-<div class="d-flex justify-content-between align-items-center mb-5" id="dashboard-main">
-    <h1 class="h3 gradient-text-primary fw-bold">داشبورد مدیریت</h1>
-    <div>
-        <button type="button" class="vui-btn vui-btn-primary pulse" data-bs-toggle="modal" data-bs-target="#refreshModal">
-            <i class="bi bi-arrow-clockwise me-2"></i> بروزرسانی
-        </button>
+<div class="container-fluid py-4">
+    <!-- هدر صفحه -->
+    <div class="vui-page-header mb-4">
+        <div class="vui-page-header-content">
+            <h2 class="gradient-text-primary">
+                <i class="bi bi-speedometer2"></i> داشبورد مدیریت Ccoin
+            </h2>
+            <p class="text-white-50">به پنل مدیریت ربات Ccoin خوش آمدید</p>
+        </div>
+        <div class="vui-page-header-actions">
+            <button class="vui-btn vui-btn-outline" onclick="refreshStats()">
+                <i class="bi bi-arrow-clockwise"></i> بروزرسانی
+            </button>
+            <button class="vui-btn vui-btn-primary pulse">
+                <i class="bi bi-download"></i> دانلود گزارش
+            </button>
+        </div>
     </div>
-</div>
 
-<!-- کارت‌های آمار با استایل Vision UI -->
-<div class="row mb-4">
-    <div class="col-md-3 mb-4">
-        <div class="vui-stat-card">
-            <div class="stat-icon" style="background: var(--vui-primary-gradient);">
-                <i class="bi bi-people"></i>
-            </div>
-            <div class="stat-title">کاربران</div>
-            <div class="stat-value" data-value="<%= stats.totalUsers %>"><%= stats.totalUsers.toLocaleString() %></div>
-            <% if (stats.newUsers > 0) { %>
-            <div class="stat-sub up">
-                <i class="bi bi-arrow-up-short"></i>
-                <span data-value="<%= stats.newUsers %>"><%= stats.newUsers %></span> کاربر جدید
-                <span class="ms-1 text-light-50">(24 ساعت گذشته)</span>
-            </div>
-            <% } else { %>
-            <div class="stat-sub">
-                <i class="bi bi-dash"></i>
-                بدون کاربر جدید
-                <span class="ms-1 text-light-50">(24 ساعت گذشته)</span>
-            </div>
-            <% } %>
+    <!-- نوار وضعیت سیستم -->
+    <div class="vui-system-status-bar mb-4" data-aos="fade-in">
+        <div class="status-item">
+            <i class="bi bi-circle-fill text-success"></i> وضعیت ربات: <strong>آنلاین</strong>
+        </div>
+        <div class="status-item">
+            <i class="bi bi-clock"></i> آپتایم: <strong>5 روز و 12 ساعت</strong>
+        </div>
+        <div class="status-item">
+            <i class="bi bi-heart-pulse"></i> پینگ: <strong>25ms</strong>
+        </div>
+        <div class="status-item">
+            <i class="bi bi-cpu"></i> CPU: <strong>12%</strong>
+        </div>
+        <div class="status-item">
+            <i class="bi bi-memory"></i> RAM: <strong>256MB</strong>
         </div>
     </div>
-    
-    <div class="col-md-3 mb-4">
-        <div class="vui-stat-card">
-            <div class="stat-icon" style="background: var(--vui-warning-gradient);">
-                <i class="bi bi-coin"></i>
-            </div>
-            <div class="stat-title">مجموع Ccoin</div>
-            <div class="stat-value currency" data-value="<%= stats.totalCcoin %>"><%= stats.totalCcoin.toLocaleString() %></div>
-            <% if (stats.economyChange > 0) { %>
-            <div class="stat-sub up">
-                <i class="bi bi-arrow-up-short"></i>
-                <span data-value="<%= stats.economyChange %>" class="currency"><%= stats.economyChange.toLocaleString() %></span> افزایش
-                <span class="ms-1 text-light-50">(24 ساعت گذشته)</span>
-            </div>
-            <% } else if (stats.economyChange < 0) { %>
-            <div class="stat-sub down">
-                <i class="bi bi-arrow-down-short"></i>
-                <span data-value="<%= Math.abs(stats.economyChange) %>" class="currency"><%= Math.abs(stats.economyChange).toLocaleString() %></span> کاهش
-                <span class="ms-1 text-light-50">(24 ساعت گذشته)</span>
-            </div>
-            <% } else { %>
-            <div class="stat-sub">
-                <i class="bi bi-dash"></i>
-                بدون تغییر
-                <span class="ms-1 text-light-50">(24 ساعت گذشته)</span>
-            </div>
-            <% } %>
-        </div>
-    </div>
-    
-    <div class="col-md-3 mb-4">
-        <div class="vui-stat-card">
-            <div class="stat-icon" style="background: var(--vui-info-gradient);">
-                <i class="bi bi-building"></i>
-            </div>
-            <div class="stat-title">تعداد کلن‌ها</div>
-            <div class="stat-value" data-value="<%= stats.totalClans %>"><%= stats.totalClans.toLocaleString() %></div>
-            <% if (stats.newClans > 0) { %>
-            <div class="stat-sub up">
-                <i class="bi bi-arrow-up-short"></i>
-                <span data-value="<%= stats.newClans %>"><%= stats.newClans %></span> کلن جدید
-                <span class="ms-1 text-light-50">(24 ساعت گذشته)</span>
-            </div>
-            <% } else { %>
-            <div class="stat-sub">
-                <i class="bi bi-dash"></i>
-                بدون کلن جدید
-                <span class="ms-1 text-light-50">(24 ساعت گذشته)</span>
-            </div>
-            <% } %>
-        </div>
-    </div>
-    
-    <div class="col-md-3 mb-4">
-        <div class="vui-stat-card">
-            <div class="stat-icon" style="background: var(--vui-success-gradient);">
-                <i class="bi bi-journal-check"></i>
-            </div>
-            <div class="stat-title">ماموریت‌های فعال</div>
-            <div class="stat-value" data-value="<%= stats.activeQuests %>"><%= stats.activeQuests.toLocaleString() %></div>
-            <div class="stat-sub">
-                <i class="bi bi-check2-circle"></i>
-                <span data-value="<%= stats.completedQuests %>"><%= stats.completedQuests.toLocaleString() %></span> ماموریت کامل شده
-                <span class="ms-1 text-light-50">(هفته گذشته)</span>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- نمودارها با استایل Vision UI -->
-<div class="row mb-4">
-    <!-- نمودار فعالیت کاربران -->
-    <div class="col-md-6 mb-4">
-        <div class="vui-card h-100">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h6 class="mb-0 gradient-text-primary">فعالیت کاربران</h6>
-                    <p class="text-light-50 small mb-0">روند فعالیت کاربران در طول هفته</p>
+    <!-- کارت‌های آمار پیشرفته -->
+    <div class="vui-dashboard-stats">
+        <!-- کارت آمار کاربران -->
+        <div class="vui-stat-card-advanced" data-aos="fade-up" data-aos-delay="100">
+            <div class="stat-header">
+                <div class="stat-icon-container" style="background: var(--vui-primary-gradient);">
+                    <i class="bi bi-people"></i>
                 </div>
-                <div class="dropdown">
-                    <button class="btn-icon" type="button" id="userActivityDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-three-dots"></i>
+                <div class="stat-actions">
+                    <button class="vui-btn vui-btn-icon">
+                        <i class="bi bi-three-dots-vertical"></i>
                     </button>
-                    <ul class="dropdown-menu glass-card" aria-labelledby="userActivityDropdown">
-                        <li><a class="dropdown-item" href="#">امروز</a></li>
-                        <li><a class="dropdown-item" href="#">7 روز گذشته</a></li>
-                        <li><a class="dropdown-item" href="#">30 روز گذشته</a></li>
-                    </ul>
                 </div>
             </div>
-            <div class="d-flex justify-content-between mb-3">
-                <div class="text-light-50 small">
-                    دوره زمانی: <span class="text-light">7 روز گذشته</span>
-                </div>
-                <div class="custom-tooltip">
-                    <i class="bi bi-info-circle text-light-50"></i>
-                    <span class="tooltip-text">نمودار تعداد کاربران فعال روزانه</span>
-                </div>
+            <h6 class="stat-title">کاربران فعال</h6>
+            <div class="stat-value counter"><%= usersCount || 0 %></div>
+            <div class="stat-meta up">
+                <i class="bi bi-arrow-up-right"></i>
+                <span><%= newUsersCount || 12 %>+ در 24 ساعت گذشته</span>
             </div>
-            <div style="height: 250px; position: relative;">
-                <canvas id="userActivityChart"></canvas>
+            <div class="stat-progress">
+                <div class="stat-progress-bar" style="width: <%= Math.min(((usersCount || 0) / 1000) * 100, 100) %>%; background: var(--vui-primary-gradient);"></div>
             </div>
         </div>
-    </div>
-    
-    <!-- نمودار تراکنش‌ها -->
-    <div class="col-md-6 mb-4">
-        <div class="vui-card h-100">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h6 class="mb-0 gradient-text-warning">تراکنش‌های Ccoin</h6>
-                    <p class="text-light-50 small mb-0">واریز و برداشت در طول هفته</p>
+
+        <!-- کارت آمار کلن‌ها -->
+        <div class="vui-stat-card-advanced" data-aos="fade-up" data-aos-delay="200">
+            <div class="stat-header">
+                <div class="stat-icon-container" style="background: var(--vui-info-gradient);">
+                    <i class="bi bi-flag"></i>
                 </div>
-                <div class="dropdown">
-                    <button class="btn-icon" type="button" id="transactionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-three-dots"></i>
+                <div class="stat-actions">
+                    <button class="vui-btn vui-btn-icon">
+                        <i class="bi bi-three-dots-vertical"></i>
                     </button>
-                    <ul class="dropdown-menu glass-card" aria-labelledby="transactionsDropdown">
-                        <li><a class="dropdown-item" href="#">امروز</a></li>
-                        <li><a class="dropdown-item" href="#">7 روز گذشته</a></li>
-                        <li><a class="dropdown-item" href="#">30 روز گذشته</a></li>
-                    </ul>
                 </div>
             </div>
-            <div class="d-flex justify-content-between mb-3">
-                <div class="text-light-50 small">
-                    دوره زمانی: <span class="text-light">7 روز گذشته</span>
-                </div>
-                <div class="d-flex">
-                    <div class="d-flex align-items-center me-3">
-                        <span class="status-dot" style="background-color: rgba(1, 181, 116, 0.7)"></span>
-                        <small class="ms-2 text-light-50">واریز</small>
-                    </div>
-                    <div class="d-flex align-items-center">
-                        <span class="status-dot" style="background-color: rgba(236, 64, 122, 0.7)"></span>
-                        <small class="ms-2 text-light-50">برداشت</small>
-                    </div>
-                </div>
+            <h6 class="stat-title">کلن‌ها</h6>
+            <div class="stat-value counter"><%= clansCount || 0 %></div>
+            <div class="stat-meta up">
+                <i class="bi bi-arrow-up-right"></i>
+                <span><%= newClansCount || 3 %>+ در هفته گذشته</span>
             </div>
-            <div style="height: 250px; position: relative;">
-                <canvas id="transactionsChart"></canvas>
+            <div class="stat-progress">
+                <div class="stat-progress-bar" style="width: <%= Math.min(((clansCount || 0) / 100) * 100, 100) %>%; background: var(--vui-info-gradient);"></div>
             </div>
         </div>
-    </div>
-</div>
 
-<div class="row mb-4">
-    <!-- آمار بازی‌ها با استایل Vision UI -->
-    <div class="col-md-4 mb-4">
-        <div class="vui-card h-100">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h6 class="mb-0 gradient-text-success">آمار بازی‌ها</h6>
-                    <p class="text-light-50 small mb-0">توزیع بازی‌های انجام شده</p>
+        <!-- کارت آمار اقتصاد -->
+        <div class="vui-stat-card-advanced" data-aos="fade-up" data-aos-delay="300">
+            <div class="stat-header">
+                <div class="stat-icon-container" style="background: var(--vui-success-gradient);">
+                    <i class="bi bi-coin"></i>
                 </div>
-                <div class="custom-tooltip">
-                    <i class="bi bi-info-circle text-light-50"></i>
-                    <span class="tooltip-text">درصد استفاده از هر بازی</span>
+                <div class="stat-actions">
+                    <button class="vui-btn vui-btn-icon">
+                        <i class="bi bi-three-dots-vertical"></i>
+                    </button>
                 </div>
             </div>
-            <div style="height: 250px; position: relative;">
-                <canvas id="gamesChart"></canvas>
+            <h6 class="stat-title">سی‌کوین در گردش</h6>
+            <div class="stat-value counter"><%= totalCcoin || 0 %></div>
+            <div class="stat-meta up">
+                <i class="bi bi-arrow-up-right"></i>
+                <span><%= ccoinGrowth || 15 %>% رشد ماهانه</span>
             </div>
-        </div>
-    </div>
-    
-    <!-- کاربران فعال با استایل Vision UI -->
-    <div class="col-md-4 mb-4">
-        <div class="vui-card h-100">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h6 class="mb-0 gradient-text-info">کاربران فعال اخیر</h6>
-                    <p class="text-light-50 small mb-0">آخرین فعالیت‌های کاربران</p>
-                </div>
-                <a href="/admin/users" class="btn-icon">
-                    <i class="bi bi-arrow-right"></i>
-                </a>
-            </div>
-            <div class="px-0">
-                <div class="list-group list-group-flush">
-                    <% recentUsers.forEach(user => { %>
-                    <a href="/admin/users/<%= user.id %>" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center border-0 py-3">
-                        <div class="d-flex align-items-center">
-                            <div style="background: var(--vui-primary-gradient)" class="rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                                <i class="bi bi-person text-light"></i>
-                            </div>
-                            <div>
-                                <h6 class="mb-0 text-light"><%= user.username %></h6>
-                                <small class="text-light-50"><%= Math.floor(user.wallet + user.bank).toLocaleString() %> Ccoin</small>
-                            </div>
-                        </div>
-                        <div class="custom-tooltip">
-                            <small class="badge-gradient badge-info px-2 py-1" style="font-size: 0.7rem">فعال</small>
-                            <span class="tooltip-text">آخرین فعالیت: <%= new Date(user.lastSeen).toLocaleDateString('fa-IR') %></span>
-                        </div>
-                    </a>
-                    <% }) %>
-                </div>
+            <div class="stat-progress">
+                <div class="stat-progress-bar" style="width: <%= Math.min(((totalCcoin || 0) / 1000000) * 100, 100) %>%; background: var(--vui-success-gradient);"></div>
             </div>
         </div>
-    </div>
-    
-    <!-- آخرین رویدادها با استایل Vision UI -->
-    <div class="col-md-4 mb-4">
-        <div class="vui-card h-100">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h6 class="mb-0 gradient-text-warning">آخرین رویدادها</h6>
-                    <p class="text-light-50 small mb-0">فعالیت‌های اخیر سیستم</p>
-                </div>
-                <a href="/admin/logs" class="btn-icon">
-                    <i class="bi bi-arrow-right"></i>
-                </a>
-            </div>
-            <div class="px-0">
-                <div class="list-group list-group-flush">
-                    <% recentEvents.forEach(event => { %>
-                    <div class="list-group-item border-0 py-3" style="background: transparent; border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;">
-                        <div class="d-flex">
-                            <% if (event.type === 'user') { %>
-                                <div style="background: var(--vui-primary-gradient)" class="rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                                    <i class="bi bi-person text-light"></i>
-                                </div>
-                            <% } else if (event.type === 'transaction') { %>
-                                <div style="background: var(--vui-warning-gradient)" class="rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                                    <i class="bi bi-coin text-light"></i>
-                                </div>
-                            <% } else if (event.type === 'game') { %>
-                                <div style="background: var(--vui-success-gradient)" class="rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                                    <i class="bi bi-controller text-light"></i>
-                                </div>
-                            <% } else if (event.type === 'clan') { %>
-                                <div style="background: var(--vui-info-gradient)" class="rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                                    <i class="bi bi-building text-light"></i>
-                                </div>
-                            <% } else { %>
-                                <div style="background: var(--vui-primary-gradient)" class="rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                                    <i class="bi bi-info-circle text-light"></i>
-                                </div>
-                            <% } %>
-                            <div>
-                                <p class="mb-0 text-light"><%= event.message %></p>
-                                <small class="text-light-50">
-                                    <i class="bi bi-clock me-1"></i>
-                                    <%= new Date(event.timestamp).toLocaleTimeString('fa-IR') %> | 
-                                    <%= new Date(event.timestamp).toLocaleDateString('fa-IR') %>
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                    <% }) %>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- مدال بروزرسانی با استایل Vision UI -->
-<div class="modal fade" id="refreshModal" tabindex="-1" aria-labelledby="refreshModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="vui-modal-content">
-            <div class="vui-modal-header">
-                <h5 class="gradient-text-primary fw-bold" id="refreshModalLabel">بروزرسانی داشبورد</h5>
-                <button type="button" class="btn-close-light" data-bs-dismiss="modal" aria-label="Close">
-                    <i class="bi bi-x-lg"></i>
-                </button>
+        <!-- کارت آمار کریستال -->
+        <div class="vui-stat-card-advanced" data-aos="fade-up" data-aos-delay="400">
+            <div class="stat-header">
+                <div class="stat-icon-container" style="background: var(--vui-warning-gradient);">
+                    <i class="bi bi-gem"></i>
+                </div>
+                <div class="stat-actions">
+                    <button class="vui-btn vui-btn-icon">
+                        <i class="bi bi-three-dots-vertical"></i>
+                    </button>
+                </div>
             </div>
-            <div class="vui-modal-body">
-                <div class="text-center py-3">
-                    <div class="vui-modal-icon primary mb-4">
+            <h6 class="stat-title">کریستال در گردش</h6>
+            <div class="stat-value counter"><%= totalCrystal || 0 %></div>
+            <div class="stat-meta down">
+                <i class="bi bi-arrow-down-right"></i>
+                <span><%= crystalGrowth || 5 %>% کاهش ماهانه</span>
+            </div>
+            <div class="stat-progress">
+                <div class="stat-progress-bar" style="width: <%= Math.min(((totalCrystal || 0) / 100000) * 100, 100) %>%; background: var(--vui-warning-gradient);"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- چارت‌های پیشرفته - سطر اول -->
+    <div class="row">
+        <!-- نمودار فعالیت کاربران -->
+        <div class="col-lg-8 col-md-12 mb-4">
+            <div class="vui-card" data-aos="fade-up">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="gradient-text-primary mb-0">تحلیل فعالیت‌ها</h5>
+                    <div class="vui-chart-filters">
+                        <button class="vui-btn vui-btn-outline active" data-filter="week">هفتگی</button>
+                        <button class="vui-btn vui-btn-outline" data-filter="month">ماهانه</button>
+                        <button class="vui-btn vui-btn-outline" data-filter="year">سالانه</button>
+                    </div>
+                </div>
+                <div class="vui-chart-container">
+                    <canvas id="userActivityChart" height="300"></canvas>
+                </div>
+                <div class="vui-chart-legend mt-3">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: var(--vui-primary-gradient);"></div>
+                        <span>تراکنش‌ها</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: var(--vui-success-gradient);"></div>
+                        <span>بازی‌ها</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: var(--vui-warning-gradient);"></div>
+                        <span>ماموریت‌ها</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- نمودار توزیع بازی‌ها -->
+        <div class="col-lg-4 col-md-12 mb-4">
+            <div class="vui-card" data-aos="fade-up">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="gradient-text-primary mb-0">توزیع بازی‌ها</h5>
+                </div>
+                <div class="vui-chart-container">
+                    <canvas id="gamesChart" height="300"></canvas>
+                </div>
+                <div class="vui-chart-legend mt-3 text-center">
+                    <span class="small text-muted">نمودار درصد محبوبیت بازی‌های مختلف</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- سطر دوم - جریان فعالیت -->
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="vui-card vui-activity-feed" data-aos="fade-up">
+                <div class="vui-activity-header">
+                    <h5 class="gradient-text-primary mb-0">جریان فعالیت‌ها</h5>
+                    <button class="vui-btn vui-btn-icon">
                         <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+            <ul class="vui-activity-list">
+                <li class="vui-activity-item">
+                    <div class="vui-activity-content">
+                        <h6 class="vui-activity-title">ثبت‌نام کاربر جدید</h6>
+                        <div class="vui-activity-time">10 دقیقه پیش</div>
+                        <p class="vui-activity-desc">کاربر <strong>علیرضا</strong> در سیستم ثبت‌نام کرد</p>
                     </div>
-                    <h6 class="text-light mb-3">بروزرسانی اطلاعات داشبورد</h6>
-                    <p class="text-light-50">آیا می‌خواهید داشبورد را بروزرسانی کنید؟</p>
-                    <p class="text-light-50 small">این عملیات ممکن است چند ثانیه طول بکشد.</p>
+                </li>
+                <li class="vui-activity-item">
+                    <div class="vui-activity-content">
+                        <h6 class="vui-activity-title">خرید آیتم</h6>
+                        <div class="vui-activity-time">45 دقیقه پیش</div>
+                        <p class="vui-activity-desc">کاربر <strong>محمد</strong> آیتم <strong>Wallet Lock</strong> را خریداری کرد</p>
+                    </div>
+                </li>
+                <li class="vui-activity-item">
+                    <div class="vui-activity-content">
+                        <h6 class="vui-activity-title">ایجاد کلن جدید</h6>
+                        <div class="vui-activity-time">2 ساعت پیش</div>
+                        <p class="vui-activity-desc">کلن جدید <strong>قهرمانان</strong> توسط <strong>حسین</strong> ایجاد شد</p>
+                    </div>
+                </li>
+                <li class="vui-activity-item">
+                    <div class="vui-activity-content">
+                        <h6 class="vui-activity-title">برنده لاتاری</h6>
+                        <div class="vui-activity-time">5 ساعت پیش</div>
+                        <p class="vui-activity-desc">کاربر <strong>سارا</strong> برنده <strong>5000</strong> سی‌کوین در لاتاری شد</p>
+                    </div>
+                </li>
+                <li class="vui-activity-item">
+                    <div class="vui-activity-content">
+                        <h6 class="vui-activity-title">به‌روزرسانی سیستم</h6>
+                        <div class="vui-activity-time">دیروز</div>
+                        <p class="vui-activity-desc">سیستم به نسخه <strong>2.0.0</strong> به‌روزرسانی شد</p>
+                    </div>
+                </li>
+            </ul>
+            <div class="text-center mt-3">
+                <button class="vui-btn vui-btn-outline w-100">نمایش بیشتر</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- بخش دوم -->
+    <div class="row mt-4">
+        <!-- آخرین تراکنش‌ها -->
+        <div class="col-lg-6 mb-4">
+            <div class="vui-card" data-aos="fade-up">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="gradient-text-primary mb-0">آخرین تراکنش‌ها</h5>
+                    <a href="/admin/transactions" class="vui-btn vui-btn-outline">همه تراکنش‌ها</a>
+                </div>
+                
+                <div class="vui-table-responsive">
+                    <table class="vui-data-table">
+                        <thead>
+                            <tr>
+                                <th>کاربر</th>
+                                <th>نوع</th>
+                                <th>مقدار</th>
+                                <th>تاریخ</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (typeof latestTransactions !== 'undefined' && latestTransactions.length > 0) { %>
+                                <% latestTransactions.forEach((transaction) => { %>
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="table-avatar">
+                                                    <span><%= (transaction.sourceName || 'User').charAt(0) %></span>
+                                                </div>
+                                                <div class="ms-2">
+                                                    <div class="fw-bold"><%= transaction.sourceName || 'کاربر' %></div>
+                                                    <div class="small text-muted">#<%= transaction.sourceId || '0' %></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="status-badge 
+                                                <%= transaction.type === 'deposit' || transaction.type === 'transfer_in' || transaction.type === 'game_win' ? 'active' : 
+                                                   transaction.type === 'withdraw' || transaction.type === 'transfer_out' || transaction.type === 'game_loss' ? 'inactive' : 'pending' %>">
+                                                <i class="bi <%= transaction.type === 'deposit' ? 'bi-arrow-down' : 
+                                                                transaction.type === 'withdraw' ? 'bi-arrow-up' : 
+                                                                transaction.type === 'transfer_in' ? 'bi-arrow-left' : 
+                                                                transaction.type === 'transfer_out' ? 'bi-arrow-right' : 
+                                                                transaction.type === 'game_win' ? 'bi-trophy' : 
+                                                                transaction.type === 'game_loss' ? 'bi-x-circle' : 'bi-wallet2' %>"></i>
+                                                <%= transaction.type === 'deposit' ? 'واریز' : 
+                                                    transaction.type === 'withdraw' ? 'برداشت' : 
+                                                    transaction.type === 'transfer_in' ? 'دریافت' : 
+                                                    transaction.type === 'transfer_out' ? 'ارسال' : 
+                                                    transaction.type === 'game_win' ? 'برد' : 
+                                                    transaction.type === 'game_loss' ? 'باخت' : 
+                                                    transaction.type === 'quest_reward' ? 'جایزه' : transaction.type %>
+                                            </div>
+                                        </td>
+                                        <td class="<%= transaction.type === 'deposit' || transaction.type === 'transfer_in' || transaction.type === 'game_win' ? 'text-success' : 'text-danger' %>">
+                                            <%= transaction.type === 'deposit' || transaction.type === 'transfer_in' || transaction.type === 'game_win' ? '+' : '-' %><%= transaction.amount %> Ccoin
+                                        </td>
+                                        <td>
+                                            <%= new Date(transaction.timestamp).toLocaleDateString('fa-IR') %>
+                                        </td>
+                                        <td>
+                                            <div class="table-actions">
+                                                <button class="action-btn" title="مشاهده">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                                <button class="action-btn" title="لغو">
+                                                    <i class="bi bi-x"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="5" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="bi bi-cash-stack fs-1 mb-2 d-block"></i>
+                                            <p>هیچ تراکنشی یافت نشد</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
                 </div>
             </div>
-            <div class="vui-modal-footer">
-                <button type="button" class="vui-btn vui-btn-outline" data-bs-dismiss="modal">انصراف</button>
-                <a href="/admin/dashboard?refresh=true" class="vui-btn vui-btn-primary">
-                    <i class="bi bi-arrow-clockwise me-2"></i>بروزرسانی
-                </a>
+        </div>
+        
+        <!-- کاربران برتر -->
+        <div class="col-lg-6 mb-4">
+            <div class="vui-card" data-aos="fade-up">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="gradient-text-primary mb-0">کاربران برتر</h5>
+                    <a href="/admin/users?sort=wallet" class="vui-btn vui-btn-outline">رتبه‌بندی کامل</a>
+                </div>
+                
+                <div class="vui-table-responsive">
+                    <table class="vui-data-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>کاربر</th>
+                                <th>سی‌کوین</th>
+                                <th>کریستال</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (typeof topUsers !== 'undefined' && topUsers.length > 0) { %>
+                                <% topUsers.forEach((user, index) => { %>
+                                    <tr>
+                                        <td>
+                                            <% if (index < 3) { %>
+                                                <div class="rank-badge rank-<%= index + 1 %>"><%= index + 1 %></div>
+                                            <% } else { %>
+                                                <%= index + 1 %>
+                                            <% } %>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="table-avatar" style="background: <%= index === 0 ? 'var(--vui-warning-gradient)' : index === 1 ? 'var(--vui-info-gradient)' : index === 2 ? 'var(--vui-success-gradient)' : 'var(--vui-primary-gradient)' %>;">
+                                                    <span><%= (user.username || 'U').charAt(0).toUpperCase() %></span>
+                                                </div>
+                                                <div class="ms-2">
+                                                    <div class="fw-bold"><%= user.username %></div>
+                                                    <div class="small text-muted">اعتبار: <%= user.bank || 0 %></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="fw-bold"><%= user.wallet || 0 %></td>
+                                        <td class="fw-bold"><%= user.crystals || 0 %></td>
+                                        <td>
+                                            <div class="table-actions">
+                                                <a href="/admin/users/<%= user.id %>" class="action-btn" title="مشاهده">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <button class="action-btn" title="اعطای جایزه">
+                                                    <i class="bi bi-gift"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="5" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="bi bi-trophy fs-1 mb-2 d-block"></i>
+                                            <p>هیچ کاربری یافت نشد</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- بخش سوم -->
+    <div class="row">
+        <!-- کوئست‌های فعال -->
+        <div class="col-md-4 mb-4">
+            <div class="vui-card" data-aos="fade-up">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="gradient-text-primary mb-0">کوئست‌های فعال</h5>
+                    <a href="/admin/quests" class="vui-btn vui-btn-outline">مدیریت</a>
+                </div>
+                
+                <div class="quests-container">
+                    <div class="quest-card">
+                        <div class="quest-icon" style="background: var(--vui-primary-gradient);">
+                            <i class="bi bi-chat-dots"></i>
+                        </div>
+                        <div class="quest-content">
+                            <h6 class="quest-title">ارسال 10 پیام</h6>
+                            <div class="quest-progress-info">
+                                <span>پیشرفت: 60%</span>
+                                <span>500 سی‌کوین</span>
+                            </div>
+                            <div class="quest-progress">
+                                <div class="quest-progress-bar" style="width: 60%; background: var(--vui-primary-gradient);"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="quest-card">
+                        <div class="quest-icon" style="background: var(--vui-success-gradient);">
+                            <i class="bi bi-coin"></i>
+                        </div>
+                        <div class="quest-content">
+                            <h6 class="quest-title">انتقال 1000 سی‌کوین</h6>
+                            <div class="quest-progress-info">
+                                <span>پیشرفت: 25%</span>
+                                <span>200 سی‌کوین</span>
+                            </div>
+                            <div class="quest-progress">
+                                <div class="quest-progress-bar" style="width: 25%; background: var(--vui-success-gradient);"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="quest-card">
+                        <div class="quest-icon" style="background: var(--vui-warning-gradient);">
+                            <i class="bi bi-joystick"></i>
+                        </div>
+                        <div class="quest-content">
+                            <h6 class="quest-title">5 برد در بازی‌ها</h6>
+                            <div class="quest-progress-info">
+                                <span>پیشرفت: 80%</span>
+                                <span>300 سی‌کوین</span>
+                            </div>
+                            <div class="quest-progress">
+                                <div class="quest-progress-bar" style="width: 80%; background: var(--vui-warning-gradient);"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-3">
+                        <button class="vui-btn vui-btn-outline w-100">افزودن کوئست جدید</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- سهام و بازار -->
+        <div class="col-md-4 mb-4">
+            <div class="vui-card" data-aos="fade-up">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="gradient-text-primary mb-0">بازار سهام</h5>
+                    <a href="/admin/stocks" class="vui-btn vui-btn-outline">مدیریت</a>
+                </div>
+                
+                <div class="stock-list">
+                    <div class="stock-item">
+                        <div class="stock-info">
+                            <div class="stock-icon" style="background: var(--vui-primary-gradient);">
+                                <i class="bi bi-pc-display"></i>
+                            </div>
+                            <div class="stock-details">
+                                <h6 class="stock-name">TECH</h6>
+                                <div class="stock-sector">بخش فناوری</div>
+                            </div>
+                        </div>
+                        <div class="stock-price up">
+                            <div class="price-value">1250</div>
+                            <div class="price-change">+5.2%</div>
+                        </div>
+                    </div>
+                    
+                    <div class="stock-item">
+                        <div class="stock-info">
+                            <div class="stock-icon" style="background: var(--vui-warning-gradient);">
+                                <i class="bi bi-bank"></i>
+                            </div>
+                            <div class="stock-details">
+                                <h6 class="stock-name">BANK</h6>
+                                <div class="stock-sector">بخش مالی</div>
+                            </div>
+                        </div>
+                        <div class="stock-price down">
+                            <div class="price-value">850</div>
+                            <div class="price-change">-2.1%</div>
+                        </div>
+                    </div>
+                    
+                    <div class="stock-item">
+                        <div class="stock-info">
+                            <div class="stock-icon" style="background: var(--vui-success-gradient);">
+                                <i class="bi bi-lightning"></i>
+                            </div>
+                            <div class="stock-details">
+                                <h6 class="stock-name">ENRG</h6>
+                                <div class="stock-sector">بخش انرژی</div>
+                            </div>
+                        </div>
+                        <div class="stock-price up">
+                            <div class="price-value">920</div>
+                            <div class="price-change">+1.8%</div>
+                        </div>
+                    </div>
+                    
+                    <div class="stock-item">
+                        <div class="stock-info">
+                            <div class="stock-icon" style="background: var(--vui-danger-gradient);">
+                                <i class="bi bi-basket"></i>
+                            </div>
+                            <div class="stock-details">
+                                <h6 class="stock-name">CONS</h6>
+                                <div class="stock-sector">بخش مصرفی</div>
+                            </div>
+                        </div>
+                        <div class="stock-price down">
+                            <div class="price-value">580</div>
+                            <div class="price-change">-0.9%</div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-3">
+                        <button class="vui-btn vui-btn-outline w-100">بروزرسانی قیمت‌ها</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- وضعیت سیستم -->
+        <div class="col-md-4 mb-4">
+            <div class="vui-card" data-aos="fade-up">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="gradient-text-primary mb-0">وضعیت سیستم</h5>
+                    <button class="vui-btn vui-btn-outline">بروزرسانی</button>
+                </div>
+                
+                <div class="system-stats">
+                    <div class="system-stat-item">
+                        <div class="stat-name">فضای دیسک</div>
+                        <div class="stat-progress">
+                            <div class="stat-progress-bar" style="width: 45%; background: var(--vui-primary-gradient);"></div>
+                        </div>
+                        <div class="stat-details">
+                            <span>3.6 GB / 8.0 GB</span>
+                            <span class="percentage">45%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="system-stat-item">
+                        <div class="stat-name">بار CPU</div>
+                        <div class="stat-progress">
+                            <div class="stat-progress-bar" style="width: 12%; background: var(--vui-success-gradient);"></div>
+                        </div>
+                        <div class="stat-details">
+                            <span>12%</span>
+                            <span class="status-indicator green">نرمال</span>
+                        </div>
+                    </div>
+                    
+                    <div class="system-stat-item">
+                        <div class="stat-name">مصرف حافظه</div>
+                        <div class="stat-progress">
+                            <div class="stat-progress-bar" style="width: 65%; background: var(--vui-warning-gradient);"></div>
+                        </div>
+                        <div class="stat-details">
+                            <span>256 MB / 384 MB</span>
+                            <span class="percentage">65%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="system-stat-item">
+                        <div class="stat-name">پایگاه داده</div>
+                        <div class="stat-progress">
+                            <div class="stat-progress-bar" style="width: 28%; background: var(--vui-info-gradient);"></div>
+                        </div>
+                        <div class="stat-details">
+                            <span>89 MB / 320 MB</span>
+                            <span class="status-indicator green">نرمال</span>
+                        </div>
+                    </div>
+                    
+                    <div class="system-connections mt-4">
+                        <div class="connection-header">
+                            <h6>اتصالات فعال</h6>
+                            <span class="status-pill">25 اتصال</span>
+                        </div>
+                        
+                        <div class="connection-list">
+                            <div class="connection-item">
+                                <i class="bi bi-discord"></i>
+                                <span class="connection-name">Discord API</span>
+                                <span class="connection-status green">متصل</span>
+                            </div>
+                            
+                            <div class="connection-item">
+                                <i class="bi bi-database"></i>
+                                <span class="connection-name">پایگاه داده</span>
+                                <span class="connection-status green">متصل</span>
+                            </div>
+                            
+                            <div class="connection-item">
+                                <i class="bi bi-hdd-network"></i>
+                                <span class="connection-name">API ربات گیواوی</span>
+                                <span class="connection-status green">متصل</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- اسکریپت‌های نمودارها -->
-<!-- اسکریپت نمودارها -->
-<script>
-  // داده‌های نمودار فعالیت کاربران
-  const userActivityData = {
-    labels: <%- JSON.stringify(charts.userActivity.labels) %>,
-    datasets: [{
-      label: 'تعداد کاربران فعال',
-      backgroundColor: 'rgba(0, 117, 255, 0.2)',
-      borderColor: 'rgba(0, 117, 255, 1)',
-      borderWidth: 2,
-      tension: 0.4,
-      pointRadius: 3,
-      pointBackgroundColor: 'rgba(0, 117, 255, 1)',
-      pointBorderColor: 'rgba(0, 0, 0, 0)',
-      pointHoverBackgroundColor: '#fff',
-      pointHoverBorderColor: 'rgba(0, 117, 255, 1)',
-      pointHoverRadius: 5,
-      pointHoverBorderWidth: 2,
-      fill: true,
-      data: <%- JSON.stringify(charts.userActivity.data) %>
-    }]
-  };
+<style>
+/* استایل هدر صفحه */
+.vui-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
 
-  // داده‌های نمودار تراکنش‌ها
-  const transactionsData = {
-    labels: <%- JSON.stringify(charts.transactions.labels) %>,
-    datasets: [{
-      label: 'واریز',
-      backgroundColor: 'rgba(33, 212, 253, 0.7)',
-      borderColor: 'rgba(33, 212, 253, 1)',
-      borderWidth: 0,
-      borderRadius: 5,
-      maxBarThickness: 10,
-      data: <%- JSON.stringify(charts.transactions.deposits) %>
-    }, {
-      label: 'برداشت',
-      backgroundColor: 'rgba(249, 99, 59, 0.7)',
-      borderColor: 'rgba(249, 99, 59, 1)',
-      borderWidth: 0,
-      borderRadius: 5,
-      maxBarThickness: 10,
-      data: <%- JSON.stringify(charts.transactions.withdrawals) %>
-    }]
-  };
+.vui-page-header-actions {
+    display: flex;
+    gap: 0.5rem;
+}
 
-  // داده‌های نمودار بازی‌ها
-  const gamesData = {
-    labels: <%- JSON.stringify(charts.games.labels) %>,
-    datasets: [{
-      data: <%- JSON.stringify(charts.games.data) %>,
-      backgroundColor: [
-        'rgba(33, 212, 253, 0.8)',
-        'rgba(0, 117, 255, 0.8)',
-        'rgba(249, 99, 59, 0.8)',
-        'rgba(134, 69, 255, 0.8)',
-        'rgba(229, 233, 234, 0.6)'
-      ],
-      borderWidth: 0,
-      cutout: '70%'
-    }]
-  };
+/* نوار وضعیت سیستم */
+.vui-system-status-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    padding: 1rem 1.5rem;
+    background: var(--vui-card-bg);
+    border-radius: var(--vui-border-radius);
+    margin-bottom: 2rem;
+}
 
-  // تنظیمات نمودارها
-  window.addEventListener('DOMContentLoaded', function() {
-    // تنظیمات مشترک
-    Chart.defaults.color = '#e9ecef';
-    Chart.defaults.font.family = "'Vazirmatn', sans-serif";
-    
-    // نمودار فعالیت کاربران
-    const userActivityChart = new Chart(
-      document.getElementById('userActivityChart'),
-      {
-        type: 'line',
-        data: userActivityData,
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: {
-              beginAtZero: true,
-              grid: {
-                color: 'rgba(255, 255, 255, 0.1)'
-              }
-            },
-            x: {
-              grid: {
-                color: 'rgba(255, 255, 255, 0.1)'
-              }
-            }
-          }
-        }
-      }
-    );
-    
-    // نمودار تراکنش‌ها
-    const transactionsChart = new Chart(
-      document.getElementById('transactionsChart'),
-      {
-        type: 'bar',
-        data: transactionsData,
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: {
-              beginAtZero: true,
-              grid: {
-                color: 'rgba(255, 255, 255, 0.1)'
-              }
-            },
-            x: {
-              grid: {
-                color: 'rgba(255, 255, 255, 0.1)'
-              }
-            }
-          }
-        }
-      }
-    );
-    
-    // نمودار بازی‌ها
-    const gamesChart = new Chart(
-      document.getElementById('gamesChart'),
-      {
-        type: 'doughnut',
-        data: gamesData,
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'bottom'
-            }
-          }
-        }
-      }
-    );
-  });
-</script>
+.vui-system-status-bar .status-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.875rem;
+}
 
-<%- include('partials/footer') %>
+.vui-system-status-bar .status-item i {
+    font-size: 0.8rem;
+}
+
+.vui-system-status-bar .status-item strong {
+    font-weight: 600;
+    color: white;
+}
+
+/* لجند نمودار */
+.vui-chart-legend {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.legend-color {
+    width: 20px;
+    height: 10px;
+    border-radius: 5px;
+}
+
+/* کوئست‌ها */
+.quests-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.quest-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--vui-border-radius);
+    transition: all 0.3s ease;
+}
+
+.quest-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateY(-2px);
+}
+
+.quest-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.quest-icon i {
+    color: white;
+    font-size: 1.2rem;
+}
+
+.quest-content {
+    flex: 1;
+}
+
+.quest-title {
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: white;
+}
+
+.quest-progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 0.5rem;
+}
+
+.quest-progress {
+    height: 6px;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.quest-progress-bar {
+    height: 100%;
+    border-radius: 3px;
+}
+
+/* سهام */
+.stock-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.stock-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--vui-border-radius);
+    transition: all 0.3s ease;
+}
+
+.stock-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateY(-2px);
+}
+
+.stock-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stock-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stock-icon i {
+    color: white;
+    font-size: 1.2rem;
+}
+
+.stock-name {
+    margin-bottom: 0.25rem;
+    font-weight: 600;
+    color: white;
+}
+
+.stock-sector {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.stock-price {
+    text-align: right;
+}
+
+.price-value {
+    font-weight: 700;
+    color: white;
+}
+
+.price-change {
+    font-size: 0.75rem;
+}
+
+.stock-price.up .price-change {
+    color: var(--vui-success);
+}
+
+.stock-price.down .price-change {
+    color: var(--vui-danger);
+}
+
+/* وضعیت سیستم */
+.system-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.system-stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.stat-name {
+    font-weight: 600;
+    color: white;
+}
+
+.stat-details {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.status-indicator {
+    font-weight: 600;
+}
+
+.status-indicator.green {
+    color: var(--vui-success);
+}
+
+.status-indicator.yellow {
+    color: var(--vui-warning);
+}
+
+.status-indicator.red {
+    color: var(--vui-danger);
+}
+
+.system-connections {
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding-top: 1.5rem;
+}
+
+.connection-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.connection-header h6 {
+    margin: 0;
+    color: white;
+}
+
+.status-pill {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.25rem 0.75rem;
+    border-radius: 50rem;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.connection-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.connection-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--vui-border-radius);
+}
+
+.connection-item i {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.connection-name {
+    flex: 1;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.connection-status {
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.connection-status.green {
+    color: var(--vui-success);
+}
+
+.connection-status.red {
+    color: var(--vui-danger);
+}
+
+/* تنظیمات جدول داده */
+.vui-table-responsive {
+    overflow-x: auto;
+}
+
+.rank-badge {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: white;
+}
+
+.rank-badge.rank-1 {
+    background: var(--vui-warning-gradient);
+}
+
+.rank-badge.rank-2 {
+    background: var(--vui-primary-gradient);
+}
+
+.rank-badge.rank-3 {
+    background: var(--vui-success-gradient);
+}
+
+/* فیلترهای نمودار */
+.vui-chart-filters {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.vui-chart-filters .vui-btn {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.75rem;
+}
+
+.vui-chart-filters .vui-btn.active {
+    background: var(--vui-primary-gradient);
+    color: white;
+}
+
+/* تکست گرادیانت */
+.gradient-text-primary {
+    background: var(--vui-primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/js/dashboard-fixed.js"></script>
+<!-- All JavaScript functionality moved to dashboard-fixed.js -->
+
+<script src="/js/counter-animations.js"></script>

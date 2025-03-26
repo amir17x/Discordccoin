@@ -875,3 +875,777 @@
     margin: 0 0.75rem;
   }
 }
+/* جستجو در سایدبار */
+.vui-search-box {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.vui-search-box i {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.9rem;
+}
+
+.vui-search-input {
+  width: 100%;
+  padding: 0.6rem 2.2rem 0.6rem 0.8rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: white;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+}
+
+.vui-search-input:focus {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.1);
+  outline: none;
+}
+
+.vui-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* وضعیت کاربر */
+.user-status {
+  display: flex;
+  align-items: center;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 0.2rem;
+}
+
+.user-status i {
+  font-size: 0.6rem;
+  margin-left: 0.3rem;
+}
+
+/* پالس دات برای نمایش وضعیت */
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  position: relative;
+}
+
+.pulse-dot.green {
+  background-color: #01b574;
+}
+
+.pulse-dot.red {
+  background-color: #ec407a;
+}
+
+.pulse-dot.yellow {
+  background-color: #ffb547;
+}
+
+.pulse-dot::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+  box-shadow: 0 0 0 0 rgba(1, 181, 116, 0.7);
+}
+
+.pulse-dot.green::after {
+  box-shadow: 0 0 0 0 rgba(1, 181, 116, 0.7);
+}
+
+.pulse-dot.red::after {
+  box-shadow: 0 0 0 0 rgba(236, 64, 122, 0.7);
+}
+
+.pulse-dot.yellow::after {
+  box-shadow: 0 0 0 0 rgba(255, 181, 71, 0.7);
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(1, 181, 116, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(1, 181, 116, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(1, 181, 116, 0);
+  }
+}
+
+/* اطلاعات سیستم */
+.vui-system-info {
+  width: 100%;
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.vui-system-status {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.status-item i {
+  margin-left: 0.25rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.status-item strong {
+  font-weight: 600;
+  color: white;
+}
+
+/* افکت های گرافیکی عنوان منو */
+.vui-nav-heading {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  letter-spacing: 0.5px;
+}
+
+.vui-nav-heading i {
+  font-size: 0.8rem;
+  margin-left: 0.2rem;
+  background: var(--vui-primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* بهبود استایل آیتم‌های منو */
+.vui-nav-link::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 3px;
+  height: 100%;
+  background: var(--vui-primary-gradient);
+  border-radius: 4px 0 0 4px;
+  transform: translateX(3px);
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.vui-nav-link.active::before {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.vui-nav-link::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.03) 0%, 
+    rgba(255, 255, 255, 0) 50%,
+    rgba(255, 255, 255, 0) 100%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.vui-nav-link:hover::after, .vui-nav-link.active::after {
+  opacity: 1;
+}
+
+/* استایل‌های داشبورد با کارت‌های پیشرفته */
+.vui-dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.vui-stat-card-advanced {
+  position: relative;
+  padding: 1.25rem;
+  border-radius: var(--vui-border-radius);
+  background: var(--vui-card-bg);
+  backdrop-filter: blur(120px);
+  transition: all 0.3s ease;
+  overflow: hidden;
+  height: 100%;
+}
+
+.vui-stat-card-advanced::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.03) 0%, 
+    rgba(255, 255, 255, 0) 50%, 
+    rgba(255, 255, 255, 0.03) 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.vui-stat-card-advanced:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+}
+
+.vui-stat-card-advanced .stat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.vui-stat-card-advanced .stat-icon-container {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  position: relative;
+}
+
+.vui-stat-card-advanced .stat-icon-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 60%);
+  pointer-events: none;
+}
+
+.vui-stat-card-advanced .stat-icon-container i {
+  font-size: 1.5rem;
+  color: white;
+  transition: transform 0.3s ease;
+}
+
+.vui-stat-card-advanced:hover .stat-icon-container i {
+  transform: scale(1.1);
+}
+
+.vui-stat-card-advanced .stat-title {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.vui-stat-card-advanced .stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 0.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.vui-stat-card-advanced .stat-meta {
+  display: flex;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.75rem;
+  position: relative;
+  z-index: 1;
+}
+
+.vui-stat-card-advanced .stat-meta i {
+  margin-left: 0.25rem;
+}
+
+.vui-stat-card-advanced .stat-meta.up {
+  color: var(--vui-success);
+}
+
+.vui-stat-card-advanced .stat-meta.down {
+  color: var(--vui-danger);
+}
+
+.vui-stat-card-advanced .stat-progress {
+  height: 6px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  margin-top: 1rem;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+.vui-stat-card-advanced .stat-progress-bar {
+  height: 100%;
+  border-radius: 3px;
+  width: 0;
+  transition: width 1.5s ease;
+}
+
+/* بخش های پیشرفته */
+.vui-advanced-charts {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 992px) {
+  .vui-advanced-charts {
+    grid-template-columns: 1fr;
+  }
+}
+
+.vui-activity-feed {
+  height: 100%;
+}
+
+.vui-activity-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.vui-activity-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.vui-activity-item {
+  position: relative;
+  padding-right: 2rem;
+  padding-bottom: 1.5rem;
+  padding-left: 1rem;
+  border-radius: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.vui-activity-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0.5rem;
+  height: 100%;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.vui-activity-item::after {
+  content: '';
+  position: absolute;
+  top: 0.25rem;
+  right: 0.1rem;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--vui-primary-gradient);
+  transition: all 0.3s ease;
+}
+
+.vui-activity-item:hover::after {
+  transform: scale(1.2);
+}
+
+.vui-activity-item:last-child {
+  padding-bottom: 0;
+}
+
+.vui-activity-item:last-child::before {
+  display: none;
+}
+
+.vui-activity-content {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border-right: 3px solid var(--vui-primary);
+  transition: all 0.3s ease;
+}
+
+.vui-activity-item:hover .vui-activity-content {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-2px);
+}
+
+.vui-activity-title {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  color: white;
+}
+
+.vui-activity-time {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 0.5rem;
+}
+
+.vui-activity-desc {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* میز‌های داده */
+.vui-data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.vui-data-table th {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 600;
+  text-align: right;
+  padding: 1rem;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+}
+
+.vui-data-table th:first-child {
+  border-top-right-radius: 0.75rem;
+}
+
+.vui-data-table th:last-child {
+  border-top-left-radius: 0.75rem;
+}
+
+.vui-data-table tbody tr {
+  transition: all 0.3s ease;
+}
+
+.vui-data-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.vui-data-table td {
+  padding: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.vui-data-table .table-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--vui-primary-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vui-data-table .table-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.vui-data-table .action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.vui-data-table .action-btn:hover {
+  background: var(--vui-primary-gradient);
+  transform: translateY(-2px);
+}
+
+.vui-data-table .status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 50rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.vui-data-table .status-badge i {
+  margin-left: 0.25rem;
+  font-size: 0.675rem;
+}
+
+.vui-data-table .status-badge.active {
+  background: rgba(1, 181, 116, 0.1);
+  color: #01b574;
+}
+
+.vui-data-table .status-badge.pending {
+  background: rgba(255, 171, 0, 0.1);
+  color: #ffab00;
+}
+
+.vui-data-table .status-badge.inactive {
+  background: rgba(236, 64, 122, 0.1);
+  color: #ec407a;
+}
+
+/* سیستم نوتیفیکیشن پیشرفته */
+.vui-notification-center {
+  position: relative;
+}
+
+.vui-notification-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 360px;
+  background: var(--vui-card-bg);
+  backdrop-filter: blur(120px);
+  border-radius: var(--vui-border-radius);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+  overflow: hidden;
+  transform: translateY(10px);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.vui-notification-center.active .vui-notification-dropdown {
+  transform: translateY(0);
+  opacity: 1;
+  visibility: visible;
+}
+
+.vui-notification-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.vui-notification-title {
+  font-weight: 600;
+  color: white;
+}
+
+.vui-notification-mark-all {
+  font-size: 0.75rem;
+  color: var(--vui-primary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.vui-notification-mark-all:hover {
+  text-decoration: underline;
+}
+
+.vui-notification-body {
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.vui-notification-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+}
+
+.vui-notification-empty i {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.vui-notification-footer {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.vui-notification-footer a {
+  color: var(--vui-primary);
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.vui-notification-footer a:hover {
+  text-decoration: underline;
+}
+
+.vui-notification-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.vui-notification-item:last-child {
+  border-bottom: none;
+}
+
+.vui-notification-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.vui-notification-item.unread::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--vui-primary);
+}
+
+.vui-notification-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 1rem;
+  flex-shrink: 0;
+}
+
+.vui-notification-icon.primary {
+  background: var(--vui-primary-gradient);
+}
+
+.vui-notification-icon.success {
+  background: var(--vui-success-gradient);
+}
+
+.vui-notification-icon.warning {
+  background: var(--vui-warning-gradient);
+}
+
+.vui-notification-icon.danger {
+  background: var(--vui-danger-gradient);
+}
+
+.vui-notification-icon i {
+  color: white;
+  font-size: 1.25rem;
+}
+
+.vui-notification-content {
+  flex: 1;
+}
+
+.vui-notification-content h6 {
+  margin: 0 0 0.25rem;
+  font-weight: 600;
+  color: white;
+}
+
+.vui-notification-content p {
+  margin: 0 0 0.25rem;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.vui-notification-time {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* آیکون‌های انیمیشنی */
+.vui-animated-icon {
+  position: relative;
+  display: inline-block;
+}
+
+.vui-animated-icon::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--vui-primary);
+  border: 2px solid var(--vui-dark);
+  transform: scale(0);
+  opacity: 0;
+  animation: pop 1s ease-in-out infinite;
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+
+/* نشانگر تعداد موارد جدید */
+.vui-badge-counter {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: var(--vui-danger);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
