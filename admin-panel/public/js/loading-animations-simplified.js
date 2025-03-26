@@ -111,16 +111,17 @@ function simulateLoadingProgress() {
 }
 
 /**
- * نمایش لودر اصلی صفحه
+ * نمایش لودر اصلی صفحه - بهینه شده برای سرعت بالاتر
  */
 function showMainLoader() {
   const loaderContainer = document.querySelector('.loader-container');
   if (!loaderContainer) return;
   
-  // حذف کلاس d-none با تاخیر برای اعمال انیمیشن
-  setTimeout(function() {
-    loaderContainer.classList.remove('d-none');
-  }, 0);
+  // نمایش فوری لودر (بدون تاخیر)
+  loaderContainer.classList.remove('d-none');
+  
+  // اطمینان از اینکه لودر دیده می‌شود
+  document.body.style.pointerEvents = 'none';
 }
 
 /**

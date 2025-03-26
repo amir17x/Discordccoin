@@ -55,6 +55,9 @@
     <link rel="stylesheet" href="/css/micro-interactions.css">
     <link rel="stylesheet" href="/css/loading-animations.css">
     
+    <!-- فایل رفع اشکالات منوهای کشویی و رنگ‌بندی -->
+    <link rel="stylesheet" href="/css/dropdown-fixes.css">
+    
     <!-- استایل‌های اضافی هر صفحه -->
     <% if (typeof styles !== 'undefined') { %>
         <% if (Array.isArray(styles)) { %>
@@ -117,6 +120,58 @@
     <script src="/js/loading-animations-simplified.js"></script>
     <script src="/js/micro-interactions-simplified.js"></script>
     <script src="/js/sidebar-controller.js"></script>
+    <script src="/js/dropdown-fixes.js"></script>
+    <script src="/js/dashboard-simplified.js"></script>
+    
+    <!-- اسکریپت برای مدیریت انتقال صفحات و بهبود لودینگ -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // گرفتن تمام لینک‌های داخلی
+        const internalLinks = document.querySelectorAll('a[href^="/admin"]');
+        
+        // اضافه کردن رویداد کلیک به همه لینک‌های داخلی
+        internalLinks.forEach(function(link) {
+            link.addEventListener('click', function(e) {
+                // جلوگیری از کلیک در صورتی که لینک خارجی یا دارای target باشد
+                if (link.getAttribute('target') === '_blank' || link.getAttribute('data-bypass-loader') === 'true') {
+                    return;
+                }
+                
+                // نمایش لودینگ قبل از رفتن به صفحه جدید
+                const event = new Event('pageTransition');
+                document.dispatchEvent(event);
+                
+                // تاخیر کوتاه برای اطمینان از نمایش لودینگ قبل از تغییر صفحه
+                setTimeout(function() {
+                    window.location.href = link.getAttribute('href');
+                }, 100);
+                
+                e.preventDefault();
+            });
+        });
+        
+        // مدیریت منوهای ساید‌بار
+        const sidebarMenuItems = document.querySelectorAll('.nav-link');
+        sidebarMenuItems.forEach(function(item) {
+            item.addEventListener('click', function(e) {
+                if (item.getAttribute('href') === '#' || item.getAttribute('data-bs-toggle') === 'collapse') {
+                    return; // اجازه دادن به منوهای کشویی برای باز شدن
+                }
+                
+                // نمایش لودینگ برای لینک‌های واقعی
+                const event = new Event('pageTransition');
+                document.dispatchEvent(event);
+            });
+        });
+    });
+    
+    // بهبود روند ناوبری با دکمه‌های مرورگر
+    window.addEventListener('beforeunload', function() {
+        // نمایش لودینگ هنگام خروج از صفحه
+        const event = new Event('pageTransition');
+        document.dispatchEvent(event);
+    });
+    </script>
     
     <!-- اسکریپت‌های اضافی هر صفحه -->
     <% if (typeof scripts !== 'undefined') { %>

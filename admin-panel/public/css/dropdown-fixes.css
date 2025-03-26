@@ -1,0 +1,198 @@
+/**
+ * Dropdown Fixes - رفع مشکلات منوهای کشویی مانند پروفایل و نوتیفیکیشن
+ */
+
+/* تنظیمات عمومی درپ‌داون‌ها */
+.dropdown-menu {
+  background-color: rgba(30, 30, 60, 0.95) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4) !important;
+  margin-top: 10px !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: block !important;
+  transform: none !important;
+  transition: all 0.3s ease !important;
+  z-index: 1050 !important;
+  padding: 0 !important;
+  max-height: none !important;
+}
+
+.dropdown-menu.show {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* انیمیشن فید-این برای درپ‌داون‌ها */
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-menu.show {
+  animation: dropdownFadeIn 0.3s ease !important;
+}
+
+/* آیتم‌های منو */
+.dropdown-item {
+  padding: 12px 16px !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-size: 0.9rem !important;
+  transition: all 0.2s ease !important;
+}
+
+.dropdown-item:hover, .dropdown-item:focus {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+}
+
+.dropdown-divider {
+  margin: 0 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* استایل‌های اختصاصی منوی نوتیفیکیشن */
+.notification-dropdown {
+  min-width: 320px !important;
+  max-width: 400px !important;
+  max-height: 500px !important;
+  overflow-y: auto !important;
+  top: 100% !important;
+  left: auto !important;
+  right: 0 !important;
+  transform: none !important;
+}
+
+.notification-dropdown .vui-dropdown-header {
+  padding: 15px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.vui-notification-item {
+  display: flex !important;
+  padding: 15px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  transition: all 0.2s ease !important;
+  text-decoration: none !important;
+}
+
+.vui-notification-item:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.vui-notification-item.unread {
+  background-color: rgba(67, 24, 255, 0.05) !important;
+}
+
+.vui-notification-item .notification-icon {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 10px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-left: 15px !important;
+  flex-shrink: 0 !important;
+}
+
+.vui-notification-item .notification-content {
+  flex: 1 !important;
+}
+
+.vui-notification-item .notification-title {
+  font-weight: 600 !important;
+  margin-bottom: 5px !important;
+  font-size: 0.9rem !important;
+  color: white !important;
+}
+
+.vui-notification-item .notification-text {
+  font-size: 0.85rem !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  margin-bottom: 5px !important;
+}
+
+.vui-notification-item .notification-time {
+  font-size: 0.75rem !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.vui-dropdown-footer {
+  padding: 12px 15px !important;
+  display: block !important;
+  text-align: center !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+  transition: all 0.2s ease !important;
+  text-decoration: none !important;
+}
+
+.vui-dropdown-footer:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* استایل‌های اختصاصی منوی پروفایل */
+.user-dropdown .dropdown-menu {
+  min-width: 280px !important;
+  top: 100% !important;
+  left: auto !important;
+  right: 0 !important;
+  transform: none !important;
+}
+
+.vui-dropdown-item {
+  display: flex !important;
+  align-items: center !important;
+  padding: 12px 16px !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  transition: all 0.2s ease !important;
+  text-decoration: none !important;
+}
+
+.vui-dropdown-item:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+}
+
+.vui-dropdown-item i {
+  margin-left: 10px !important;
+  font-size: 1.1rem !important;
+}
+
+/* رفع مشکل اجزای داشبورد */
+.vui-card, .stats-card, .stat-card, .chart-card, .activity-table, .dashboard-card {
+  background-color: rgba(30, 30, 60, 0.6) !important;
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* رنگ‌های متن */
+.stats-card-title, .stats-card-value, .chart-card-title, 
+.activity-table th, .activity-table td, .stat-card-label, 
+.stat-card-value, .metric-value, .metric-label {
+  color: white !important;
+}
+
+/* عناصر کوچکتر */
+.stats-card-trend, .chart-card-actions, .activity-name, 
+.activity-action, .activity-time, .stat-card-body {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* رفع مشکل بخش‌های سفید */
+.container-fluid, .card, .card-body, .card-header, .card-footer,
+.white-section, .light-section, .table-section {
+  background-color: transparent !important;
+}
