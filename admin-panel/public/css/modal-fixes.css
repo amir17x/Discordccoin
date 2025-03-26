@@ -1,6 +1,7 @@
 /**
  * اصلاحات استایل مودال‌ها
  * این فایل برای رفع مشکلات نمایشی مودال‌ها و مشکل نصفه باز شدن مودال‌ها استفاده می‌شود
+ * بروزرسانی شده برای هماهنگی با modal-improved.js
  */
 
 /* اصلاح سایز و نمایش کلی مودال‌ها */
@@ -214,4 +215,85 @@
 
 .modal .btn-secondary:hover {
     background-color: rgba(50, 50, 100, 0.8);
+}
+
+/* استایل‌های اختصاصی برای سیستم مودال بهبود یافته */
+.vui-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(5, 5, 20, 0.75);
+    backdrop-filter: blur(4px);
+    z-index: 1040;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.vui-modal-backdrop.show {
+    opacity: 1;
+}
+
+.vui-modal-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1050;
+}
+
+/* افکت استاتیک بک‌گراند */
+.modal-static .modal-content {
+    animation-name: modalStatic;
+    animation-duration: 0.3s;
+}
+
+@keyframes modalStatic {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+/* کلاس برای دکمه‌های تأیید بهبود یافته */
+.enhanced-confirm-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.enhanced-confirm-btn:after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1, 1) translate(-50%, -50%);
+    transform-origin: 50% 50%;
+}
+
+.enhanced-confirm-btn:focus:not(:active)::after {
+    animation: ripple 1s ease-out;
+}
+
+@keyframes ripple {
+    0% {
+        transform: scale(0, 0);
+        opacity: 0.5;
+    }
+    20% {
+        transform: scale(25, 25);
+        opacity: 0.3;
+    }
+    100% {
+        opacity: 0;
+        transform: scale(40, 40);
+    }
 }

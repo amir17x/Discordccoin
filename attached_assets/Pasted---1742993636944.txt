@@ -1,0 +1,663 @@
+مرسی که توضیحات کامل رو دادی و حالا گفتی "شروع کن"! هدف تو کاملاً مشخصه: می‌خوای تمام امکانات پنل ادمین توی دیسکورد رو به یه پنل تحت وب منتقل کنی، با امکانات بیشتر، UI بهتر، جلوه‌های بصری جذاب‌تر و اطلاعات بیشتری از کاربران بگیری. در عین حال، می‌خوای مشکلات پنل ادمین توی دیسکورد رو هم برطرف کنی. من الان شروع می‌کنم و همه چیز رو مستند می‌کنم تا بتونی قدم به قدم پیش بری.
+
+---
+
+## مستندسازی و راه‌حل برای بهبود پنل ادمین (تحت وب و دیسکورد)
+
+### ۱. تحلیل مشکلات فعلی
+#### مشکلات پنل تحت وب (بر اساس اسکرین‌شات‌ها و توضیحات):
+- **ظاهر و UI:**
+  - رنگ‌های ناهماهنگ (زرد، قرمز، سبز، آبی) با تم تیره‌ی سایت.
+  - بخش‌های خالی (مثل مدیریت کاربران که هیچ کاربری نشون نمی‌ده).
+  - خطای "[object Object]" توی رندر داده‌ها.
+- **عملکرد:**
+  - دکمه‌ها کار نمی‌کنن (مثل "افزودن سکه").
+  - سایدبار مشکل داره (بیشتر بخش‌ها خطا می‌دن).
+  - اعلانات و پروفایل کار نمی‌کنن.
+- **تداخل EJS و React:**
+  - خطای "Unexpected token '&'" نشون می‌ده که EJS و React باهم تداخل دارن.
+
+#### مشکلات پنل دیسکورد (بر اساس اسکرین‌شات‌ها و توضیحات):
+- **عملکرد:**
+  - دکمه‌های بخش‌هایی مثل "مدیریت ماموریت‌ها"، "مدیریت کلن‌ها"، "مدیریت آیتم‌ها"، "اطلاع‌رسانی" و "پشتیبان‌گیری/آمار" واکنشی ندارن.
+  - دکمه‌ی "افزودن سکه" کار نمی‌کنه و سکه به کاربر اضافه نمی‌شه.
+- **امکانات محدود:**
+  - اطلاعات کمی از کاربران نمایش داده می‌شه.
+  - امکانات مدیریتی کافی نیست (مثلاً نمی‌تونی آیتم‌ها رو ریست کنی).
+
+---
+
+### ۲. راه‌حل‌ها و مستندسازی
+
+#### الف) بهبود پنل تحت وب
+برای اینکه پنل تحت وب رو به یه پنل خفن‌تر با UI بهتر و امکانات بیشتر تبدیل کنیم، باید مشکلات فعلی رو برطرف کنیم و یه سری قابلیت جدید اضافه کنیم.
+
+##### ۱. رفع مشکلات رندر داده‌ها (خطای "[object Object]")
+**مشکل:** توی بخش‌هایی مثل "مدیریت کاربران"، داده‌ها درست رندر نمی‌شن و خطای "[object Object]" می‌بینیم.
+
+**راه‌حل:**
+- خطای "[object Object]" معمولاً وقتی پیش میاد که یه آبجکت جاوااسکریپت رو مستقیم توی صفحه نمایش می‌دی. باید داده‌ها رو به رشته (string) تبدیل کنی.
+- فرض می‌کنیم توی فایل EJS (مثلاً `views/admin/users.ejs`) داری داده‌ها رو نمایش می‌دی. یه نمونه کد مشکل‌دار ممکنه اینجوری باشه:
+
+```ejs
+<!-- views/admin/users.ejs -->
+<div>
+  <%= users %>
+</div>
+```
+
+اگه `users` یه آبجکت یا آرایه باشه، مستقیماً به صورت "[object Object]" نمایش داده می‌شه. باید داده‌ها رو درست پردازش کنی:
+
+```ejs
+<!-- views/admin/users.ejs -->
+<div>
+  <% if (users && users.length > 0) { %>
+    <ul>
+      <% users.forEach(user => { %>
+        <li><%= user.username %> - <%= user.coins %> Ccoin</li>
+      <% }) %>
+    </ul>
+  <% } else { %>
+    <p>کاربری یافت نشد.</p>
+  <% } %>
+</div>
+```
+
+- توی فایل `admin.ts` (یا فایل بک‌اند)، مطمئن شو که داده‌ها درست به قالب EJS ارسال می‌شن:
+
+```typescript
+// routes/admin.ts
+router.get('/admin/users', async (req, res) => {
+  try {
+    const users = await User.find(); // فرضاً از یه مدل MongoDB استفاده می‌کنی
+    res.render('admin/users', { users });
+  } catch (error) {
+    console.error(error);
+    res.render('admin/users', { users: [] });
+  }
+});
+```
+
+**اقدام:** فایل‌های EJS توی پوشه `views` (مثل `users.ejs`، `quests.ejs` و غیره) رو چک کن و مطمئن شو که داده‌ها درست پردازش می‌شن.
+
+---
+
+##### ۲. رفع مشکل دکمه‌ها (مثل "افزودن سکه")
+**مشکل:** دکمه‌ی "افزودن سکه" توی پنل تحت وب کار نمی‌کنه.
+
+**راه‌حل:**
+- باید یه روت توی بک‌اند برای افزودن سکه بسازی و توی جاوااسکریپت یه درخواست AJAX بفرستی.
+- توی فایل `admin.ts`، یه روت برای افزودن سکه اضافه کن:
+
+```typescript
+// routes/admin.ts
+router.post('/admin/add-coins', async (req, res) => {
+  const { userId, amount } = req.body;
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'کاربر یافت نشد' });
+    }
+    user.coins += parseInt(amount);
+    await user.save();
+    res.json({ success: true, message: `${amount} سکه به کاربر اضافه شد` });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'خطا در افزودن سکه' });
+  }
+});
+```
+
+- توی فایل `user-actions.js`، یه تابع برای ارسال درخواست AJAX بنویس:
+
+```javascript
+// public/js/user-actions.js
+document.getElementById('add-coins-btn').addEventListener('click', async () => {
+  const userId = document.getElementById('user-id').value;
+  const amount = document.getElementById('coin-amount').value;
+
+  try {
+    const response = await fetch('/admin/add-coins', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId, amount }),
+    });
+    const result = await response.json();
+    if (result.success) {
+      alert(result.message);
+      location.reload(); // رفرش صفحه برای به‌روزرسانی داده‌ها
+    } else {
+      alert(result.error);
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    alert('خطا در افزودن سکه');
+  }
+});
+```
+
+- توی فایل EJS (مثلاً `users.ejs`)، فرم رو درست کن:
+
+```ejs
+<!-- views/admin/users.ejs -->
+<form id="add-coins-form">
+  <label for="user-id">شناسه کاربر:</label>
+  <input type="text" id="user-id" name="userId" required>
+  <label for="coin-amount">مقدار سکه:</label>
+  <input type="number" id="coin-amount" name="amount" required>
+  <button type="button" id="add-coins-btn">افزودن سکه</button>
+</form>
+```
+
+**اقدام:** این تغییرات رو توی فایل‌های `admin.ts`، `user-actions.js` و `users.ejs` اعمال کن.
+
+---
+
+##### ۳. رفع مشکل سایدبار
+**مشکل:** بیشتر بخش‌های سایدبار خطای "[object Object]" می‌دن یا کار نمی‌کنن.
+
+**راه‌حل:**
+- توی فایل `sidebar-controller.js`، باید مطمئن شی که رویدادهای کلیک روی آیتم‌های سایدبار درست کار می‌کنن.
+- یه نمونه کد برای مدیریت سایدبار:
+
+```javascript
+// public/js/sidebar-controller.js
+document.querySelectorAll('.sidebar-item').forEach(item => {
+  item.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const section = item.getAttribute('data-section'); // مثلاً "users" یا "quests"
+    try {
+      const response = await fetch(`/admin/${section}`);
+      if (response.ok) {
+        window.location.href = `/admin/${section}`;
+      } else {
+        alert('خطا در بارگذاری بخش');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('خطا در بارگذاری بخش');
+    }
+  });
+});
+```
+
+- توی فایل `admin.ts`، مطمئن شو که روت‌های مربوط به هر بخش سایدبار درست تنظیم شدن:
+
+```typescript
+// routes/admin.ts
+router.get('/admin/quests', async (req, res) => {
+  try {
+    const quests = await Quest.find(); // فرضاً از MongoDB استفاده می‌کنی
+    res.render('admin/quests', { quests });
+  } catch (error) {
+    console.error(error);
+    res.render('admin/quests', { quests: [] });
+  }
+});
+
+router.get('/admin/clans', async (req, res) => {
+  try {
+    const clans = await Clan.find();
+    res.render('admin/clans', { clans });
+  } catch (error) {
+    console.error(error);
+    res.render('admin/clans', { clans: [] });
+  }
+});
+```
+
+**اقدام:** فایل `sidebar-controller.js` و روت‌های `admin.ts` رو به‌روزرسانی کن.
+
+---
+
+##### ۴. بهبود UI و جلوه‌های بصری
+**مشکل:** رنگ‌ها ناهماهنگن و ظاهر سایت بهم‌ریخته‌ست.
+
+**راه‌حل:**
+- یه پالت رنگی هماهنگ با تم تیره انتخاب کن. مثلاً:
+  - پس‌زمینه: `#1A1D2E`
+  - رنگ اصلی (Primary): `#4A90E2` (آبی ملایم)
+  - رنگ ثانویه (Secondary): `#FF6F61` (نارنجی ملایم)
+  - رنگ متون: `#E0E0E0`
+  - رنگ کارت‌ها: `#2A2F4A`
+- توی فایل `public/css/style.css`، استایل‌ها رو به‌روزرسانی کن:
+
+```css
+/* public/css/style.css */
+body {
+  background-color: #1A1D2E;
+  color: #E0E0E0;
+  font-family: 'Vazir', sans-serif;
+}
+
+.card {
+  background-color: #2A2F4A;
+  border: none;
+  border-radius: 10px;
+  padding: 20px;
+  margin: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.card h3 {
+  color: #4A90E2;
+}
+
+.btn-primary {
+  background-color: #4A90E2;
+  border: none;
+}
+
+.btn-primary:hover {
+  background-color: #357ABD;
+}
+
+.sidebar {
+  background-color: #2A2F4A;
+  padding: 20px;
+}
+
+.sidebar-item {
+  color: #E0E0E0;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.sidebar-item:hover {
+  background-color: #4A90E2;
+  cursor: pointer;
+}
+```
+
+- برای جلوه‌های بصری، می‌تونی از انیمیشن‌ها استفاده کنی. مثلاً برای کارت‌ها:
+
+```css
+.card {
+  transition: transform 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+```
+
+**اقدام:** فایل `style.css` رو با این استایل‌ها به‌روزرسانی کن. فونت `Vazir` رو هم می‌تونی از CDN یا فایل محلی اضافه کنی.
+
+---
+
+##### ۵. اضافه کردن امکانات بیشتر و اطلاعات کاربران
+**هدف:** اطلاعات بیشتری از کاربران نمایش بدی و امکانات بیشتری به پنل اضافه کنی.
+
+**راه‌حل:**
+- توی بخش "مدیریت کاربران"، اطلاعات بیشتری از کاربران نمایش بده (مثلاً تاریخ ثبت‌نام، تعداد ماموریت‌های انجام‌شده، کلن، موجودی و غیره).
+- توی فایل `users.ejs`:
+
+```ejs
+<!-- views/admin/users.ejs -->
+<table class="table">
+  <thead>
+    <tr>
+      <th>نام کاربری</th>
+      <th>موجودی (Ccoin)</th>
+      <th>تاریخ ثبت‌نام</th>
+      <th>ماموریت‌های انجام‌شده</th>
+      <th>کلن</th>
+      <th>عملیات</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% users.forEach(user => { %>
+      <tr>
+        <td><%= user.username %></td>
+        <td><%= user.coins %></td>
+        <td><%= new Date(user.createdAt).toLocaleDateString('fa-IR') %></td>
+        <td><%= user.completedQuests || 0 %></td>
+        <td><%= user.clan || 'بدون کلن' %></td>
+        <td>
+          <button class="btn btn-primary" onclick="openAddCoinsModal('<%= user._id %>')">افزودن سکه</button>
+          <button class="btn btn-danger" onclick="deleteUser('<%= user._id %>')">حذف</button>
+        </td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>
+
+<!-- Modal برای افزودن سکه -->
+<div id="add-coins-modal" style="display: none;">
+  <form id="add-coins-form">
+    <input type="hidden" id="modal-user-id">
+    <label for="modal-coin-amount">مقدار سکه:</label>
+    <input type="number" id="modal-coin-amount" required>
+    <button type="button" onclick="submitAddCoins()">تأیید</button>
+    <button type="button" onclick="closeModal()">لغو</button>
+  </form>
+</div>
+```
+
+- توی فایل `user-actions.js`، توابع مربوط به مودال رو اضافه کن:
+
+```javascript
+// public/js/user-actions.js
+function openAddCoinsModal(userId) {
+  document.getElementById('modal-user-id').value = userId;
+  document.getElementById('add-coins-modal').style.display = 'block';
+}
+
+function closeModal() {
+  document.getElementById('add-coins-modal').style.display = 'none';
+}
+
+async function submitAddCoins() {
+  const userId = document.getElementById('modal-user-id').value;
+  const amount = document.getElementById('modal-coin-amount').value;
+
+  try {
+    const response = await fetch('/admin/add-coins', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId, amount }),
+    });
+    const result = await response.json();
+    if (result.success) {
+      alert(result.message);
+      location.reload();
+    } else {
+      alert(result.error);
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    alert('خطا در افزودن سکه');
+  }
+}
+
+async function deleteUser(userId) {
+  if (confirm('آیا از حذف این کاربر مطمئن هستید؟')) {
+    try {
+      const response = await fetch('/admin/delete-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId }),
+      });
+      const result = await response.json();
+      if (result.success) {
+        alert(result.message);
+        location.reload();
+      } else {
+        alert(result.error);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('خطا در حذف کاربر');
+    }
+  }
+}
+```
+
+- توی فایل `admin.ts`، روت برای حذف کاربر اضافه کن:
+
+```typescript
+// routes/admin.ts
+router.post('/admin/delete-user', async (req, res) => {
+  const { userId } = req.body;
+  try {
+    const user = await User.findByIdAndDelete(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'کاربر یافت نشد' });
+    }
+    res.json({ success: true, message: 'کاربر با موفقیت حذف شد' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'خطا در حذف کاربر' });
+  }
+});
+```
+
+**اقدام:** این تغییرات رو توی `users.ejs`، `user-actions.js` و `admin.ts` اعمال کن.
+
+---
+
+#### ب) بهبود پنل ادمین توی دیسکورد
+برای اینکه پنل ادمین توی دیسکورد رو درست کنی و دکمه‌ها کار کنن، باید منطق تعاملات (Interactions) رو درست کنی.
+
+##### ۱. رفع مشکل دکمه‌ها (مثل "افزودن سکه")
+**مشکل:** دکمه‌ی "افزودن سکه" توی دیسکورد کار نمی‌کنه.
+
+**راه‌حل:**
+- فرض می‌کنیم توی فایل `commands/admin.js` کامند `/admin` رو تعریف کردی. باید یه `interactionCreate` event listener برای مدیریت دکمه‌ها اضافه کنی.
+- توی فایل اصلی ربات (مثلاً `index.js`):
+
+```javascript
+// index.js
+const { Client, Intents, MessageEmbed, MessageActionRow, MessageButton } = require('discord.js');
+const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
+
+client.on('interactionCreate', async (interaction) => {
+  if (!interaction.isButton()) return;
+
+  const userId = interaction.message.embeds[0].fields[0].value; // فرضاً userId توی embed ذخیره شده
+
+  if (interaction.customId === 'add-coins') {
+    const modal = new Modal()
+      .setCustomId('add-coins-modal')
+      .setTitle('افزودن سکه')
+      .addComponents(
+        new MessageActionRow().addComponents(
+          new TextInputComponent()
+            .setCustomId('coin-amount')
+            .setLabel('مقدار سکه')
+            .setStyle('SHORT')
+            .setRequired(true)
+        )
+      );
+    await interaction.showModal(modal);
+  }
+
+  if (interaction.customId === 'add-coins-modal') {
+    const amount = interaction.fields.getTextInputValue('coin-amount');
+    try {
+      const user = await User.findById(userId); // فرضاً از MongoDB استفاده می‌کنی
+      if (!user) {
+        return interaction.reply({ content: 'کاربر یافت نشد', ephemeral: true });
+      }
+      user.coins += parseInt(amount);
+      await user.save();
+      await interaction.reply({ content: `${amount} سکه به کاربر اضافه شد`, ephemeral: true });
+    } catch (error) {
+      console.error(error);
+      await interaction.reply({ content: 'خطا در افزودن سکه', ephemeral: true });
+    }
+  }
+});
+```
+
+- توی فایل `commands/admin.js`، دکمه‌ها رو درست تعریف کن:
+
+```javascript
+// commands/admin.js
+const { SlashCommandBuilder, MessageEmbed, MessageActionRow, MessageButton } = require('discord.js');
+
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName('admin')
+    .setDescription('پنل ادمین'),
+  async execute(interaction) {
+    const embed = new MessageEmbed()
+      .setTitle('پنل ادمین')
+      .addFields(
+        { name: 'کاربر', value: interaction.user.id },
+        { name: 'موجودی', value: '500 Ccoin' },
+        // اطلاعات بیشتر
+      );
+
+    const row = new MessageActionRow()
+      .addComponents(
+        new MessageButton()
+          .setCustomId('add-coins')
+          .setLabel('افزودن سکه')
+          .setStyle('SUCCESS'),
+        new MessageButton()
+          .setCustomId('remove-coins')
+          .setLabel('کسر سکه')
+          .setStyle('DANGER'),
+        // دکمه‌های دیگه
+      );
+
+    await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+  },
+};
+```
+
+**اقدام:** این تغییرات رو توی `index.js` و `commands/admin.js` اعمال کن.
+
+---
+
+##### ۲. رفع مشکل بخش‌های "مدیریت ماموریت‌ها"، "مدیریت کلن‌ها" و "مدیریت آیتم‌ها"
+**مشکل:** دکمه‌های این بخش‌ها واکنشی ندارن.
+
+**راه‌حل:**
+- برای هر بخش، یه دکمه تعریف کن و منطقش رو توی `interactionCreate` اضافه کن.
+- توی فایل `commands/admin.js`، دکمه‌های جدید اضافه کن:
+
+```javascript
+// commands/admin.js
+const row = new MessageActionRow()
+  .addComponents(
+    new MessageButton()
+      .setCustomId('manage-quests')
+      .setLabel('مدیریت ماموریت‌ها')
+      .setStyle('PRIMARY'),
+    new MessageButton()
+      .setCustomId('manage-clans')
+      .setLabel('مدیریت کلن‌ها')
+      .setStyle('PRIMARY'),
+    new MessageButton()
+      .setCustomId('manage-items')
+      .setLabel('مدیریت آیتم‌ها')
+      .setStyle('PRIMARY'),
+  );
+```
+
+- توی فایل `index.js`، منطق این دکمه‌ها رو اضافه کن:
+
+```javascript
+// index.js
+client.on('interactionCreate', async (interaction) => {
+  if (!interaction.isButton()) return;
+
+  if (interaction.customId === 'manage-quests') {
+    const embed = new MessageEmbed()
+      .setTitle('مدیریت ماموریت‌ها')
+      .setDescription('لیست ماموریت‌ها...');
+    const row = new MessageActionRow()
+      .addComponents(
+        new MessageButton()
+          .setCustomId('add-quest')
+          .setLabel('افزودن ماموریت')
+          .setStyle('SUCCESS'),
+        new MessageButton()
+          .setCustomId('remove-quest')
+          .setLabel('حذف ماموریت')
+          .setStyle('DANGER'),
+      );
+    await interaction.update({ embeds: [embed], components: [row], ephemeral: true });
+  }
+
+  if (interaction.customId === 'add-quest') {
+    // منطق افزودن ماموریت
+    await interaction.reply({ content: 'ماموریت اضافه شد', ephemeral: true });
+  }
+
+  // مشابه برای manage-clans و manage-items
+});
+```
+
+**اقدام:** این تغییرات رو توی `index.js` و `commands/admin.js` اعمال کن.
+
+---
+
+##### ۳. بهبود اطلاع‌رسانی و پشتیبان‌گیری
+**مشکل:** بخش‌های اطلاع‌رسانی و پشتیبان‌گیری کار نمی‌کنن.
+
+**راه‌حل:**
+- برای اطلاع‌رسانی، یه سیستم اعلان بساز که به کاربران پیام بفرسته.
+- توی فایل `index.js`:
+
+```javascript
+// index.js
+client.on('interactionCreate', async (interaction) => {
+  if (interaction.customId === 'send-notification') {
+    const modal = new Modal()
+      .setCustomId('notification-modal')
+      .setTitle('ارسال اعلان')
+      .addComponents(
+        new MessageActionRow().addComponents(
+          new TextInputComponent()
+            .setCustomId('notification-message')
+            .setLabel('پیام اعلان')
+            .setStyle('PARAGRAPH')
+            .setRequired(true)
+        )
+      );
+    await interaction.showModal(modal);
+  }
+
+  if (interaction.customId === 'notification-modal') {
+    const message = interaction.fields.getTextInputValue('notification-message');
+    const channel = client.channels.cache.get('CHANNEL_ID'); // آیدی کانال اعلان‌ها
+    await channel.send(message);
+    await interaction.reply({ content: 'اعلان ارسال شد', ephemeral: true });
+  }
+});
+```
+
+- برای پشتیبان‌گیری، یه تابع بساز که داده‌ها رو از دیتابیس بکاپ بگیره:
+
+```javascript
+// index.js
+client.on('interactionCreate', async (interaction) => {
+  if (interaction.customId === 'backup') {
+    try {
+      const users = await User.find();
+      const backupData = JSON.stringify(users, null, 2);
+      const backupFile = `backup-${Date.now()}.json`;
+      require('fs').writeFileSync(backupFile, backupData);
+      await interaction.reply({ content: 'بکاپ با موفقیت انجام شد', ephemeral: true });
+    } catch (error) {
+      console.error(error);
+      await interaction.reply({ content: 'خطا در بکاپ', ephemeral: true });
+    }
+  }
+});
+```
+
+**اقدام:** این تغییرات رو توی `index.js` اعمال کن.
+
+---
+
+### ۳. جمع‌بندی و اقدامات نهایی
+#### اقدامات برای پنل تحت وب:
+1. فایل‌های EJS (توی `views`) رو برای رفع خطای "[object Object]" به‌روزرسانی کن.
+2. دکمه‌ها رو با استفاده از `user-actions.js` و روت‌های `admin.ts` درست کن.
+3. سایدبار رو با `sidebar-controller.js` و روت‌های `admin.ts` درست کن.
+4. استایل‌ها رو توی `style.css` به‌روزرسانی کن و UI رو بهبود بده.
+5. اطلاعات بیشتری از کاربران نمایش بده و امکانات جدید (مثل حذف کاربر) اضافه کن.
+
+#### اقدامات برای پنل دیسکورد:
+1. منطق تعاملات دکمه‌ها رو توی `index.js` و `commands/admin.js` درست کن.
+2. بخش‌های "مدیریت ماموریت‌ها"، "مدیریت کلن‌ها" و "مدیریت آیتم‌ها" رو با دکمه‌های جدید درست کن.
+3. سیستم اطلاع‌رسانی و پشتیبان‌گیری رو پیاده‌سازی کن.
+
+#### پیشنهادات اضافی:
+- برای پنل تحت وب، می‌تونی از یه فریم‌ورک مثل React یا Vue.js استفاده کنی تا رندر داده‌ها و تعاملات بهتر بشه.
+- برای دیسکورد، می‌تونی از کتابخونه‌های آماده مثل `discord.js` برای مدیریت بهتر تعاملات استفاده کنی.
+
+---
+
+### ۴. نتیجه نهایی
+با این تغییرات، پنل تحت وب تو یه UI جذاب‌تر، امکانات بیشتر و عملکرد بهتر خواهد داشت. پنل دیسکورد هم تمام دکمه‌هاش کار می‌کنه و می‌تونی باهاش همه بخش‌ها رو مدیریت کنی. اگه بازم مشکلی داشتی، بگو تا بیشتر کمکت کنم!

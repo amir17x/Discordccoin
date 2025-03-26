@@ -5,7 +5,7 @@
  */
 
 (function() {
-    // امکان دسترسی به فانکشن‌های این فایل از خارج
+    // امکان دسترسی به فانکشن‌های این فایل از خارج - پیش‌تعریف اولیه
     window.vuiUserActions = {};
     
     // متغیرهای کلی
@@ -14,7 +14,7 @@
     var activeUserId = null;
     
     // افزودن نمایش debugger
-    console.log("User Actions Module Initialized");
+    console.log("User Actions Module Initialized (with enhanced modal support)");
 
     /**
      * راه‌اندازی اولیه سیستم نوتیفیکیشن‌ها
@@ -862,7 +862,18 @@
      * @param {Function} callback - تابع فراخوانی بعد از ایجاد مودال
      */
     function showModal(html, callback) {
-        console.log('Opening modal with callback', !!callback);
+        console.log('Opening modal with callback using improved modal system');
+        
+        // استفاده از سیستم مودال بهبود یافته اگر در دسترس باشد
+        if (typeof window.showModalImproved === 'function') {
+            modalContainer = window.showModalImproved(html, callback, {
+                static: true
+            });
+            return modalContainer;
+        }
+        
+        // کد سیستم مودال قدیمی در صورت عدم دسترسی به سیستم جدید
+        console.warn('Using legacy modal system - improved modal not available');
         
         // حذف مودال قبلی اگر وجود داشته باشد
         if (modalContainer) {
@@ -1130,7 +1141,7 @@
             data: {
                 userId: userId,
                 amount: amount,
-                destination: destination,
+                type: destination, // تغییر نام به آنچه سرور انتظار دارد
                 reason: reason
             },
             success: function(response) {
@@ -1363,7 +1374,10 @@
         
         // اکسپوز کردن فانکشن‌های مورد نیاز به عنوان API عمومی
         window.vuiUserActions = {
+            // توابع مورد نیاز برای سیستم بهبود یافته مودال
             showNotification: showNotification,
+            getActiveUserId: function() { return activeUserId; },
+            // مودال‌های اصلی
             showAddCoinsModal: showAddCoinsModal,
             showRemoveCoinsModal: showRemoveCoinsModal,
             showAddItemModal: showAddItemModal,

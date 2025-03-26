@@ -8,7 +8,7 @@ import expressLayouts from 'express-ejs-layouts';
 import { Transaction, User, Item, Clan, Friend, BlockedUser, PrivateChat, Quest } from '@shared/schema';
 
 // توابع کمکی برای قالب‌
-import formatters from '../admin-panel/helpers/formatters.js';
+import formatters from '../admin-panel/helpers/formatter.js';
 
 // تنظیمات دسترسی به توابع دیتابیس برای پنل ادمین
 const db = {

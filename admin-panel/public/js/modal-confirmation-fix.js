@@ -1,20 +1,42 @@
 /**
  * رفع مشکل دکمه‌های تایید در مودال‌ها
  * این فایل مشکل عدم کارکرد دکمه‌های تایید در مودال‌های پنل مدیریت را رفع می‌کند
- * نسخه اصلاح شده با راه‌حل پایدار ۱۴۰۳/۰۱/۰۷
+ * نسخه اصلاح شده با راه‌حل پایدار ۱۴۰۳/۰۱/۱۱
+ * هماهنگ شده با سیستم مودال بهبود یافته
  */
 
 // متغیر جهانی برای ردیابی فایل در کنسول
 window.vui_modal_fixes_loaded = true;
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Modal confirmation fix loaded');
+    console.log('Modal confirmation fix loaded (enhanced version with vuiUserActions integration)');
     
-    // فعال‌سازی مجدد رویدادهای مودال
-    fixModalConfirmation();
+    // اطمینان از اینکه API عمومی قابل دسترسی است
+    var waitForApi = function(callback) {
+        if (window.vuiUserActions && typeof window.vuiUserActions.showNotification === 'function') {
+            callback();
+        } else {
+            console.log('Waiting for vuiUserActions API...');
+            setTimeout(function() { waitForApi(callback); }, 100);
+        }
+    };
     
-    // مدیریت رویدادهای مودال‌های ساخته شده به صورت پویا
-    observeModalCreation();
+    // شروع اصلاحات بعد از آماده شدن API
+    waitForApi(function() {
+        // بررسی وجود سیستم مودال بهبود یافته
+        if (typeof window.showModalImproved === 'function') {
+            console.log('Using improved modal system for all confirmation dialogs');
+            // اطلاع رسانی آماده بودن سیستم
+            window.vuiUserActions.showNotification('سیستم مودال پیشرفته فعال شد', 'info', 2000);
+        } else {
+            console.warn('Improved modal system not detected, using legacy fixes');
+            // فعال‌سازی مجدد رویدادهای مودال در حالت قدیمی
+            fixModalConfirmation();
+            
+            // مدیریت رویدادهای مودال‌های ساخته شده به صورت پویا
+            observeModalCreation();
+        }
+    });
 });
 
 /**
@@ -227,14 +249,14 @@ function processAddCoinsModal(modal, data) {
         return;
     }
     
-    // ارسال درخواست به سرور
+    // ارسال درخواست به سرور با تطبیق پارامترها
     $.ajax({
         url: '/admin/users/add-coins',
         type: 'POST',
         data: {
             userId: userId,
             amount: amount,
-            destination: destination,
+            type: destination, // تغییر نام به آنچه سرور انتظار دارد
             reason: reason
         },
         success: function(response) {
@@ -518,6 +540,12 @@ function processGenericModal(modal, data) {
 function showModalError(modal, message) {
     console.log('Showing modal error:', message);
     
+    // نمایش نوتیفیکیشن خطا با API عمومی اگر در دسترس باشد
+    if (window.vuiUserActions && typeof window.vuiUserActions.showNotification === 'function') {
+        // نمایش نوتیفیکیشن خطا به صورت موازی
+        window.vuiUserActions.showNotification(message, 'error', 5000);
+    }
+    
     // بررسی وجود کانتینر خطا
     var errorContainer = modal.querySelector('.modal-error');
     
@@ -545,32 +573,57 @@ function showModalError(modal, message) {
 }
 
 /**
- * بستن مودال با استفاده از API بوت‌استرپ
+ * بستن مودال با استفاده از API بوت‌استرپ یا سیستم بهبود یافته
  */
 function closeModal(modal) {
     console.log('Closing modal:', modal);
+    
+    // بررسی سیستم مودال بهبود یافته
+    if (typeof window.closeModalImproved === 'function') {
+        try {
+            window.closeModalImproved(modal.id);
+            return; // اگر موفق بود، خروج از تابع
+        } catch (err) {
+            console.warn('Error using improved modal system:', err);
+            // ادامه با روش‌های پشتیبان
+        }
+    }
     
     try {
         // روش 1: استفاده از API بوت‌استرپ
         var bsModal = bootstrap.Modal.getInstance(modal);
         if (bsModal) {
             bsModal.hide();
-        } else {
-            // روش 2: استفاده از jQuery
-            $(modal).modal('hide');
+            return;
         }
-    } catch (e) {
-        console.error('Error closing modal:', e);
+        
+        // روش 2: استفاده از jQuery
+        if (typeof $ !== 'undefined' && typeof $.fn.modal === 'function') {
+            $(modal).modal('hide');
+            return;
+        }
         
         // روش 3: بستن دستی
+        throw new Error('Fallback to manual closing');
+    } catch (e) {
+        console.warn('Using manual modal closing due to:', e);
+        
+        // روش 4: بستن دستی
         modal.classList.remove('show');
         modal.style.display = 'none';
         document.body.classList.remove('modal-open');
         
-        // حذف backdrop
-        var backdrop = document.querySelector('.modal-backdrop');
-        if (backdrop && backdrop.parentNode) {
-            backdrop.parentNode.removeChild(backdrop);
+        // حذف backdrop با حفاظت از خطا
+        var backdrops = document.querySelectorAll('.modal-backdrop, .vui-modal-backdrop');
+        backdrops.forEach(function(backdrop) {
+            if (backdrop && backdrop.parentNode) {
+                backdrop.parentNode.removeChild(backdrop);
+            }
+        });
+        
+        // اطلاع‌رسانی با نوتیفیکیشن اگر با مشکل مواجه شدیم
+        if (window.vuiUserActions && typeof window.vuiUserActions.showNotification === 'function') {
+            window.vuiUserActions.showNotification('مودال با روش جایگزین بسته شد', 'info', 3000);
         }
     }
 }
@@ -579,18 +632,26 @@ function closeModal(modal) {
  * دریافت شناسه کاربر فعال از متغیر سراسری یا المان‌های صفحه
  */
 function getActiveUserId() {
-    // تلاش 1: بررسی متغیر سراسری
+    // تلاش 1: استفاده از API عمومی vuiUserActions
+    if (window.vuiUserActions && typeof window.vuiUserActions.getActiveUserId === 'function') {
+        var userId = window.vuiUserActions.getActiveUserId();
+        if (userId) {
+            return userId;
+        }
+    }
+    
+    // تلاش 2: بررسی متغیر سراسری
     if (window.activeUserId) {
         return window.activeUserId;
     }
     
-    // تلاش 2: بررسی المان‌های مربوط به کاربر در صفحه
+    // تلاش 3: بررسی المان‌های مربوط به کاربر در صفحه
     var userIdElement = document.querySelector('[data-user-id]');
     if (userIdElement) {
         return userIdElement.getAttribute('data-user-id');
     }
     
-    // تلاش 3: بررسی URL صفحه
+    // تلاش 4: بررسی URL صفحه
     var match = location.pathname.match(/\/admin\/users\/(\d+)/);
     if (match && match[1]) {
         return match[1];
