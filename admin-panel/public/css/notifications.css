@@ -1,0 +1,114 @@
+/**
+ * استایل‌های مربوط به نوتیفیکیشن‌های پنل مدیریت
+ */
+
+.vui-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    min-width: 300px;
+    max-width: 400px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 15px;
+    display: flex;
+    align-items: flex-start;
+    z-index: 9999;
+    transform: translateY(-20px);
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    color: #333;
+    border-right: 4px solid #4318ff;
+}
+
+.vui-notification.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.vui-notification-icon {
+    margin-left: 15px;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vui-notification-content {
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.vui-notification-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: #999;
+    margin-right: 5px;
+    transition: color 0.2s ease;
+}
+
+.vui-notification-close:hover {
+    color: #333;
+}
+
+/* رنگ‌بندی انواع نوتیفیکیشن */
+.vui-notification-success {
+    border-right-color: #00b574;
+}
+
+.vui-notification-success .vui-notification-icon {
+    color: #00b574;
+}
+
+.vui-notification-error {
+    border-right-color: #f44336;
+}
+
+.vui-notification-error .vui-notification-icon {
+    color: #f44336;
+}
+
+.vui-notification-warning {
+    border-right-color: #ffb747;
+}
+
+.vui-notification-warning .vui-notification-icon {
+    color: #ffb747;
+}
+
+.vui-notification-info {
+    border-right-color: #4318ff;
+}
+
+.vui-notification-info .vui-notification-icon {
+    color: #4318ff;
+}
+
+/* تنظیمات برای تم تاریک */
+[data-theme="dark"] .vui-notification {
+    background: #1a1f37;
+    color: #f4f7fe;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .vui-notification-close {
+    color: #aaa;
+}
+
+[data-theme="dark"] .vui-notification-close:hover {
+    color: #f4f7fe;
+}
+
+/* مدیا کوئری برای ریسپانسیو */
+@media (max-width: 576px) {
+    .vui-notification {
+        min-width: auto;
+        width: calc(100% - 40px);
+        right: 20px;
+        left: 20px;
+    }
+}

@@ -127,24 +127,9 @@
                     <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editUserModal<%= user.id %>" title="ویرایش">
                       <i class="bi bi-pencil"></i>
                     </button>
-                    <div class="dropdown d-inline-block">
-                      <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" id="userActionDropdown<%= user.id %>" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-three-dots"></i>
-                      </button>
-                      <ul class="dropdown-menu" aria-labelledby="userActionDropdown<%= user.id %>">
-                        <li><a class="dropdown-item" href="#" onclick="addCoins(<%= user.id %>)"><i class="bi bi-plus-circle me-2"></i>افزایش موجودی</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="sendMessage(<%= user.id %>)"><i class="bi bi-chat-dots me-2"></i>ارسال پیام</a></li>
-                        <li><a class="dropdown-item" href="/admin/users/<%= user.id %>/inventory"><i class="bi bi-box me-2"></i>مشاهده انبار</a></li>
-                        <li><a class="dropdown-item" href="/admin/users/<%= user.id %>/transactions"><i class="bi bi-receipt me-2"></i>تراکنش‌ها</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <% if (user.banned) { %>
-                          <li><a class="dropdown-item text-success" href="#" onclick="unbanUser(<%= user.id %>)"><i class="bi bi-unlock me-2"></i>رفع مسدودیت</a></li>
-                        <% } else { %>
-                          <li><a class="dropdown-item text-danger" href="#" onclick="banUser(<%= user.id %>)"><i class="bi bi-lock me-2"></i>مسدودسازی</a></li>
-                        <% } %>
-                        <li><a class="dropdown-item text-danger" href="#" onclick="resetUserProgress(<%= user.id %>)"><i class="bi bi-arrow-repeat me-2"></i>بازنشانی پیشرفت</a></li>
-                      </ul>
-                    </div>
+                    <button class="btn btn-sm btn-primary user-actions-button" data-user-id="<%= user.id %>" title="عملیات کاربر">
+                      <i class="bi bi-gear"></i>
+                    </button>
                   </div>
                 </td>
               </tr>

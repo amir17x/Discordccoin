@@ -1,1 +1,1 @@
-{"cookie":{"originalMaxAge":86400000,"expires":"2025-03-26T23:14:12.758Z","httpOnly":true,"path":"/"},"flash":{"error":["نام کاربری یا رمز عبور اشتباه است."]},"isAuthenticated":true,"isAdmin":true,"user":{"username":"admin","role":"admin"},"__lastAccess":1742944452758}
+{"cookie":{"originalMaxAge":86400000,"expires":"2025-03-27T08:39:58.197Z","httpOnly":true,"path":"/"},"flash":{"success":["خوش آمدید، admin!"]},"isAuthenticated":true,"isAdmin":true,"user":{"username":"admin","role":"admin"},"__lastAccess":1742978398197}

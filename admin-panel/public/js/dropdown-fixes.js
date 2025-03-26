@@ -1,7 +1,11 @@
 /**
  * اصلاحات منوهای کشویی
  * این فایل اسکریپت‌های لازم برای رفع مشکلات منوهای کشویی را ارائه می‌دهد
+ * نسخه بهبود یافته برای سازگاری با آخرین تغییرات اکشن‌های کاربر
  */
+
+// متغیر عمومی برای دسترسی به توابع از بیرون
+window.dropdownFixes = {};
 
 document.addEventListener('DOMContentLoaded', function() {
     // بهبود عملکرد منوهای کشویی
@@ -13,6 +17,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // بهبود تعامل با منوهای پروفایل و اعلان‌ها
     enhanceNotificationCenter();
     enhanceProfileDropdown();
+    
+    // اکسپوز کردن توابع مورد نیاز به عنوان API عمومی
+    window.dropdownFixes = {
+        positionDropdownMenu: positionDropdownMenu,
+        ensureFullVisibility: ensureFullVisibility,
+        closeAllDropdowns: closeAllDropdowns
+    };
 });
 
 /**
@@ -203,4 +214,27 @@ function enhanceProfileDropdown() {
             }
         }, 10);
     });
+}
+
+/**
+ * بستن تمام منوهای کشویی باز در صفحه
+ * @returns {number} تعداد منوهای بسته شده
+ */
+function closeAllDropdowns() {
+    var openDropdowns = document.querySelectorAll('.dropdown-menu.show');
+    var count = openDropdowns.length;
+    
+    openDropdowns.forEach(function(menu) {
+        menu.classList.remove('show');
+    });
+    
+    // بستن هر نوع دراپ‌داون سفارشی دیگر در صفحه
+    var customDropdowns = document.querySelectorAll('.vui-actions-dropdown.show');
+    customDropdowns.forEach(function(dropdown) {
+        if (dropdown.parentNode) {
+            dropdown.parentNode.removeChild(dropdown);
+        }
+    });
+    
+    return count;
 }
