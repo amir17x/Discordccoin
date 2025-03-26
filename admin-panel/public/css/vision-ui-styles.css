@@ -241,6 +241,38 @@ body.sidebar-collapsed .vui-sidebar {
   width: var(--sidebar-collapsed-width);
 }
 
+/* تغییر عرض محتوا با تغییر سایدبار */
+body.sidebar-collapsed .vui-content-wrapper {
+  margin-right: var(--sidebar-collapsed-width);
+}
+
+.vui-content-wrapper {
+  margin-right: var(--sidebar-width);
+  transition: margin var(--transition-normal);
+}
+
+/* دکمه تغییر حالت سایدبار */
+.vui-sidebar-toggle {
+  cursor: pointer;
+  transition: transform 0.3s ease;
+  margin-right: auto;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+}
+
+.vui-sidebar-toggle:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+body.sidebar-collapsed .vui-sidebar-toggle {
+  transform: rotate(180deg);
+}
+
 /* حالت موبایل */
 @media (max-width: 992px) {
   .vui-sidebar {
@@ -249,6 +281,18 @@ body.sidebar-collapsed .vui-sidebar {
   
   body.sidebar-open .vui-sidebar {
     transform: translateX(0);
+  }
+  
+  .vui-content-wrapper {
+    margin-right: 0;
+  }
+  
+  body.sidebar-collapsed .vui-content-wrapper {
+    margin-right: 0;
+  }
+  
+  .mobile-sidebar-toggle {
+    display: block;
   }
 }
 

@@ -1,296 +1,320 @@
 <div class="vui-sidebar">
     <!-- هدر منو -->
-    <div class="sidebar-header">
-        <div class="logo-container" style="background: var(--vui-primary-gradient)">
-            <img src="/img/coin.svg" alt="Ccoin Logo" class="logo" onerror="this.src='https://api.iconify.design/cryptocurrency-color:coin.svg'">
+    <div class="vui-sidebar-brand">
+        <div class="vui-sidebar-logo">
+            <img src="/img/coin.svg" alt="Ccoin Logo" onerror="this.src='https://api.iconify.design/cryptocurrency-color:coin.svg'">
         </div>
-        <h4 class="mb-0 gradient-text-primary">پنل مدیریت</h4>
-        <button class="vui-btn vui-btn-icon btn-sidebar-close" aria-label="بستن منو">
-            <i class="bi bi-x-lg"></i>
-        </button>
+        <h4 class="vui-sidebar-title">پنل مدیریت</h4>
+        <div class="vui-sidebar-toggle" id="sidebarToggle">
+            <i class="bi bi-chevron-right"></i>
+        </div>
     </div>
     
     <!-- اطلاعات کاربر -->
-    <div class="vui-user-card">
-        <div class="vui-avatar" style="background: var(--vui-primary-gradient)">
+    <div class="vui-sidebar-user">
+        <div class="vui-sidebar-user-avatar">
             <span>A</span>
         </div>
-        <div class="user-info">
-            <span class="user-name">ادمین</span>
-            <span class="user-role">مدیر سیستم</span>
-            <div class="user-status">
-                <i class="bi bi-circle-fill text-success"></i>
-                <span>آنلاین</span>
-            </div>
+        <div class="vui-sidebar-user-info">
+            <div class="vui-sidebar-user-name">ادمین</div>
+            <div class="vui-sidebar-user-role">مدیر سیستم</div>
         </div>
     </div>
     
     <!-- منوی اصلی -->
     <div class="vui-sidebar-nav">
-        <div class="vui-search-box mb-3">
-            <i class="bi bi-search"></i>
-            <input type="text" placeholder="جستجو در منو..." class="vui-search-input">
-        </div>
-        
-        <h6 class="vui-nav-heading">اصلی</h6>
-        <ul class="vui-nav">
-            <li class="vui-nav-item">
-                <a href="/admin/dashboard" class="vui-nav-link <%= currentPage === 'dashboard' ? 'active' : '' %>">
-                    <div class="icon-box">
+        <!-- بخش اول: اصلی -->
+        <div class="vui-sidebar-nav-section">
+            <div class="vui-sidebar-nav-section-title">
+                <i class="bi bi-house-door me-2"></i>اصلی
+            </div>
+            
+            <div class="vui-sidebar-nav-item <%= currentPage === 'dashboard' ? 'active' : '' %>">
+                <a href="/admin/dashboard" class="nav-link">
+                    <div class="vui-sidebar-nav-icon">
                         <i class="bi bi-speedometer2"></i>
                     </div>
-                    <span>داشبورد</span>
+                    <div class="vui-sidebar-nav-text">داشبورد</div>
                 </a>
-            </li>
-            <li class="vui-nav-item">
-                <a href="/admin/users" class="vui-nav-link <%= currentPage === 'users' || currentPage === 'user-details' ? 'active' : '' %>">
-                    <div class="icon-box">
+            </div>
+            
+            <div class="vui-sidebar-nav-item <%= currentPage === 'users' || currentPage === 'user-details' ? 'active' : '' %>">
+                <a href="/admin/users" class="nav-link">
+                    <div class="vui-sidebar-nav-icon">
                         <i class="bi bi-people"></i>
                     </div>
-                    <span>کاربران</span>
-                    <span class="vui-badge">
+                    <div class="vui-sidebar-nav-text">کاربران</div>
+                    <div class="vui-sidebar-nav-badge">
                         <% if (typeof usersCount !== 'undefined') { %>
                             <%= usersCount %>
                         <% } else { %>
                             0
                         <% } %>
-                    </span>
+                    </div>
                 </a>
-            </li>
-        </ul>
+            </div>
+        </div>
         
-        <div class="vui-divider"></div>
-        
-        <h6 class="vui-nav-heading"><i class="bi bi-coin me-2"></i>اقتصاد</h6>
-        <ul class="vui-nav">
-            <li class="vui-nav-item">
-                <a href="/admin/transactions" class="vui-nav-link <%= currentPage === 'transactions' ? 'active' : '' %>">
-                    <div class="icon-box">
+        <!-- بخش دوم: اقتصاد -->
+        <div class="vui-sidebar-nav-section">
+            <div class="vui-sidebar-nav-section-title">
+                <i class="bi bi-coin me-2"></i>اقتصاد
+            </div>
+            
+            <div class="vui-sidebar-nav-item <%= currentPage === 'transactions' ? 'active' : '' %>">
+                <a href="/admin/transactions">
+                    <div class="vui-sidebar-nav-icon">
                         <i class="bi bi-arrow-left-right"></i>
                     </div>
-                    <span>تراکنش‌ها</span>
+                    <div class="vui-sidebar-nav-text">تراکنش‌ها</div>
                 </a>
-            </li>
-            <li class="vui-nav-item">
-                <a href="/admin/stocks" class="vui-nav-link <%= currentPage === 'stocks' ? 'active' : '' %>">
-                    <div class="icon-box">
+            </div>
+            
+            <div class="vui-sidebar-nav-item <%= currentPage === 'stocks' ? 'active' : '' %>">
+                <a href="/admin/stocks">
+                    <div class="vui-sidebar-nav-icon">
                         <i class="bi bi-graph-up"></i>
                     </div>
-                    <span>سهام</span>
+                    <div class="vui-sidebar-nav-text">سهام</div>
                 </a>
-            </li>
-            <li class="vui-nav-item">
-                <a href="/admin/lottery" class="vui-nav-link <%= currentPage === 'lottery' ? 'active' : '' %>">
-                    <div class="icon-box">
+            </div>
+            
+            <div class="vui-sidebar-nav-item <%= currentPage === 'lottery' ? 'active' : '' %>">
+                <a href="/admin/lottery">
+                    <div class="vui-sidebar-nav-icon">
                         <i class="bi bi-ticket-perforated"></i>
                     </div>
-                    <span>لاتاری</span>
+                    <div class="vui-sidebar-nav-text">لاتاری</div>
                 </a>
-            </li>
-            <li class="vui-nav-item">
-                <a href="/admin/economy" class="vui-nav-link <%= currentPage === 'economy' ? 'active' : '' %>">
-                    <div class="icon-box">
+            </div>
+            
+            <div class="vui-sidebar-nav-item <%= currentPage === 'economy' ? 'active' : '' %>">
+                <a href="/admin/economy">
+                    <div class="vui-sidebar-nav-icon">
                         <i class="bi bi-cash-stack"></i>
                     </div>
-                    <span>مدیریت اقتصاد</span>
+                    <div class="vui-sidebar-nav-text">مدیریت اقتصاد</div>
                 </a>
-            </li>
-            <li class="vui-nav-item">
-                <a href="/admin/rob-settings" class="vui-nav-link <%= currentPage === 'rob-settings' ? 'active' : '' %>">
-                    <div class="icon-box">
+            </div>
+            
+            <div class="vui-sidebar-nav-item <%= currentPage === 'rob-settings' ? 'active' : '' %>">
+                <a href="/admin/rob-settings">
+                    <div class="vui-sidebar-nav-icon">
                         <i class="bi bi-shield-lock"></i>
                     </div>
-                    <span>تنظیمات سرقت</span>
+                    <div class="vui-sidebar-nav-text">تنظیمات سرقت</div>
                 </a>
-            </li>
-        </ul>
+            </div>
+        </div>
         
-        <div class="vui-divider"></div>
-        
-        <h6 class="vui-nav-heading"><i class="bi bi-controller me-2"></i>گیم‌پلی</h6>
-        <ul class="vui-nav">
-            <li class="vui-nav-item">
-                <a href="/admin/clans" class="vui-nav-link <%= currentPage === 'clans' ? 'active' : '' %>">
-                    <div class="icon-box">
+        <!-- بخش سوم: گیم‌پلی -->
+        <div class="vui-sidebar-nav-section">
+            <div class="vui-sidebar-nav-section-title">
+                <i class="bi bi-controller me-2"></i>گیم‌پلی
+            </div>
+            
+            <div class="vui-sidebar-nav-item <%= currentPage === 'clans' ? 'active' : '' %>">
+                <a href="/admin/clans">
+                    <div class="vui-sidebar-nav-icon">
                         <i class="bi bi-flag"></i>
                     </div>
-                    <span>کلن‌ها</span>
+                    <div class="vui-sidebar-nav-text">کلن‌ها</div>
                 </a>
-            </li>
-            <li class="vui-nav-item">
-                <a href="/admin/items" class="vui-nav-link <%= currentPage === 'items' ? 'active' : '' %>">
-                    <div class="icon-box">
+            </div>
+            
+            <div class="vui-sidebar-nav-item <%= currentPage === 'items' ? 'active' : '' %>">
+                <a href="/admin/items">
+                    <div class="vui-sidebar-nav-icon">
                         <i class="bi bi-box"></i>
                     </div>
-                    <span>آیتم‌ها</span>
+                    <div class="vui-sidebar-nav-text">آیتم‌ها</div>
                 </a>
-            </li>
-            <li class="vui-nav-item">
-                <a href="/admin/quests" class="vui-nav-link <%= currentPage === 'quests' ? 'active' : '' %>">
-                    <div class="icon-box">
+            </div>
+            
+            <div class="vui-sidebar-nav-item <%= currentPage === 'quests' ? 'active' : '' %>">
+                <a href="/admin/quests">
+                    <div class="vui-sidebar-nav-icon">
                         <i class="bi bi-journal-check"></i>
                     </div>
-                    <span>ماموریت‌ها</span>
+                    <div class="vui-sidebar-nav-text">ماموریت‌ها</div>
                 </a>
-            </li>
-            <li class="vui-nav-item">
-                <a href="/admin/games" class="vui-nav-link <%= currentPage === 'games' ? 'active' : '' %>">
-                    <div class="icon-box">
+            </div>
+            
+            <div class="vui-sidebar-nav-item <%= currentPage === 'games' ? 'active' : '' %>">
+                <a href="/admin/games">
+                    <div class="vui-sidebar-nav-icon">
                         <i class="bi bi-joystick"></i>
                     </div>
-                    <span>بازی‌ها</span>
+                    <div class="vui-sidebar-nav-text">بازی‌ها</div>
                 </a>
-            </li>
-            <li class="vui-nav-item">
-                <a href="/admin/rewards" class="vui-nav-link <%= currentPage === 'rewards' ? 'active' : '' %>">
-                    <div class="icon-box">
+            </div>
+            
+            <div class="vui-sidebar-nav-item <%= currentPage === 'rewards' ? 'active' : '' %>">
+                <a href="/admin/rewards">
+                    <div class="vui-sidebar-nav-icon">
                         <i class="bi bi-gift"></i>
                     </div>
-                    <span>جایزه‌ها</span>
+                    <div class="vui-sidebar-nav-text">جایزه‌ها</div>
                 </a>
-            </li>
-            <li class="vui-nav-item">
-                <a href="/admin/shop" class="vui-nav-link <%= currentPage === 'shop' ? 'active' : '' %>">
-                    <div class="icon-box">
+            </div>
+            
+            <div class="vui-sidebar-nav-item <%= currentPage === 'shop' ? 'active' : '' %>">
+                <a href="/admin/shop">
+                    <div class="vui-sidebar-nav-icon">
                         <i class="bi bi-shop"></i>
                     </div>
-                    <span>فروشگاه</span>
+                    <div class="vui-sidebar-nav-text">فروشگاه</div>
                 </a>
-            </li>
-        </ul>
+            </div>
+        </div>
         
-        <div class="vui-divider"></div>
-        
-        <h6 class="vui-nav-heading"><i class="bi bi-people me-2"></i>اجتماعی</h6>
-        <ul class="vui-nav">
-            <li class="vui-nav-item">
-                <a href="/admin/friendships" class="vui-nav-link <%= currentPage === 'friendships' ? 'active' : '' %>">
-                    <div class="icon-box">
+        <!-- بخش چهارم: اجتماعی -->
+        <div class="vui-sidebar-nav-section">
+            <div class="vui-sidebar-nav-section-title">
+                <i class="bi bi-people me-2"></i>اجتماعی
+            </div>
+            
+            <div class="vui-sidebar-nav-item <%= currentPage === 'friendships' ? 'active' : '' %>">
+                <a href="/admin/friendships">
+                    <div class="vui-sidebar-nav-icon">
                         <i class="bi bi-people-fill"></i>
                     </div>
-                    <span>سیستم دوستی</span>
+                    <div class="vui-sidebar-nav-text">سیستم دوستی</div>
                 </a>
-            </li>
-            <li class="vui-nav-item">
-                <a href="/admin/blocked-users" class="vui-nav-link <%= currentPage === 'blocked-users' ? 'active' : '' %>">
-                    <div class="icon-box">
+            </div>
+            
+            <div class="vui-sidebar-nav-item <%= currentPage === 'blocked-users' ? 'active' : '' %>">
+                <a href="/admin/blocked-users">
+                    <div class="vui-sidebar-nav-icon">
                         <i class="bi bi-person-x-fill"></i>
                     </div>
-                    <span>کاربران بلاک شده</span>
+                    <div class="vui-sidebar-nav-text">کاربران بلاک شده</div>
                 </a>
-            </li>
-            <li class="vui-nav-item">
-                <a href="/admin/private-chats" class="vui-nav-link <%= currentPage === 'private-chats' ? 'active' : '' %>">
-                    <div class="icon-box">
+            </div>
+            
+            <div class="vui-sidebar-nav-item <%= currentPage === 'private-chats' ? 'active' : '' %>">
+                <a href="/admin/private-chats">
+                    <div class="vui-sidebar-nav-icon">
                         <i class="bi bi-chat-dots-fill"></i>
                     </div>
-                    <span>چت‌های خصوصی</span>
+                    <div class="vui-sidebar-nav-text">چت‌های خصوصی</div>
                 </a>
-            </li>
-            <li class="vui-nav-item">
-                <a href="/admin/leaderboards" class="vui-nav-link <%= currentPage === 'leaderboards' ? 'active' : '' %>">
-                    <div class="icon-box">
+            </div>
+            
+            <div class="vui-sidebar-nav-item <%= currentPage === 'leaderboards' ? 'active' : '' %>">
+                <a href="/admin/leaderboards">
+                    <div class="vui-sidebar-nav-icon">
                         <i class="bi bi-trophy"></i>
                     </div>
-                    <span>رتبه‌بندی</span>
+                    <div class="vui-sidebar-nav-text">رتبه‌بندی</div>
                 </a>
-            </li>
-            <li class="vui-nav-item">
-                <a href="/admin/votes" class="vui-nav-link <%= currentPage === 'votes' ? 'active' : '' %>">
-                    <div class="icon-box">
+            </div>
+            
+            <div class="vui-sidebar-nav-item <%= currentPage === 'votes' ? 'active' : '' %>">
+                <a href="/admin/votes">
+                    <div class="vui-sidebar-nav-icon">
                         <i class="bi bi-hand-thumbs-up"></i>
                     </div>
-                    <span>رأی‌گیری</span>
+                    <div class="vui-sidebar-nav-text">رأی‌گیری</div>
                 </a>
-            </li>
-            <li class="vui-nav-item">
-                <a href="/admin/invites" class="vui-nav-link <%= currentPage === 'invites' ? 'active' : '' %>">
-                    <div class="icon-box">
+            </div>
+            
+            <div class="vui-sidebar-nav-item <%= currentPage === 'invites' ? 'active' : '' %>">
+                <a href="/admin/invites">
+                    <div class="vui-sidebar-nav-icon">
                         <i class="bi bi-send"></i>
                     </div>
-                    <span>دعوت‌ها</span>
+                    <div class="vui-sidebar-nav-text">دعوت‌ها</div>
                 </a>
-            </li>
-        </ul>
+            </div>
+        </div>
 
-        <div class="vui-divider"></div>
-
-        <h6 class="vui-nav-heading"><i class="bi bi-gear me-2"></i>سیستم</h6>
-        <ul class="vui-nav">
-            <li class="vui-nav-item">
-                <a href="/admin/logs" class="vui-nav-link <%= currentPage === 'logs' ? 'active' : '' %>">
-                    <div class="icon-box">
+        <!-- بخش پنجم: سیستم -->
+        <div class="vui-sidebar-nav-section">
+            <div class="vui-sidebar-nav-section-title">
+                <i class="bi bi-gear me-2"></i>سیستم
+            </div>
+            
+            <div class="vui-sidebar-nav-item <%= currentPage === 'logs' ? 'active' : '' %>">
+                <a href="/admin/logs">
+                    <div class="vui-sidebar-nav-icon">
                         <i class="bi bi-list-ul"></i>
                     </div>
-                    <span>لاگ‌ها</span>
+                    <div class="vui-sidebar-nav-text">لاگ‌ها</div>
                 </a>
-            </li>
-            <li class="vui-nav-item">
-                <a href="/admin/settings" class="vui-nav-link <%= currentPage === 'settings' ? 'active' : '' %>">
-                    <div class="icon-box">
+            </div>
+            
+            <div class="vui-sidebar-nav-item <%= currentPage === 'settings' ? 'active' : '' %>">
+                <a href="/admin/settings">
+                    <div class="vui-sidebar-nav-icon">
                         <i class="bi bi-gear"></i>
                     </div>
-                    <span>تنظیمات</span>
+                    <div class="vui-sidebar-nav-text">تنظیمات</div>
                 </a>
-            </li>
-            <li class="vui-nav-item">
-                <a href="/admin/bot-status" class="vui-nav-link <%= currentPage === 'bot-status' ? 'active' : '' %>">
-                    <div class="icon-box">
+            </div>
+            
+            <div class="vui-sidebar-nav-item <%= currentPage === 'bot-status' ? 'active' : '' %>">
+                <a href="/admin/bot-status">
+                    <div class="vui-sidebar-nav-icon">
                         <i class="bi bi-robot"></i>
                     </div>
-                    <span>وضعیت ربات</span>
+                    <div class="vui-sidebar-nav-text">وضعیت ربات</div>
                     <span class="pulse-dot green"></span>
                 </a>
-            </li>
-            <li class="vui-nav-item">
-                <a href="/admin/backup" class="vui-nav-link <%= currentPage === 'backup' ? 'active' : '' %>">
-                    <div class="icon-box">
+            </div>
+            
+            <div class="vui-sidebar-nav-item <%= currentPage === 'backup' ? 'active' : '' %>">
+                <a href="/admin/backup">
+                    <div class="vui-sidebar-nav-icon">
                         <i class="bi bi-cloud-arrow-up"></i>
                     </div>
-                    <span>پشتیبان‌گیری</span>
+                    <div class="vui-sidebar-nav-text">پشتیبان‌گیری</div>
                 </a>
-            </li>
-        </ul>
+            </div>
+        </div>
         
-        <div class="vui-divider"></div>
-        
-        <h6 class="vui-nav-heading"><i class="bi bi-braces me-2"></i>توسعه</h6>
-        <ul class="vui-nav">
-            <li class="vui-nav-item">
-                <a href="/admin/api-docs" class="vui-nav-link <%= currentPage === 'api-docs' ? 'active' : '' %>">
-                    <div class="icon-box">
+        <!-- بخش ششم: توسعه -->
+        <div class="vui-sidebar-nav-section">
+            <div class="vui-sidebar-nav-section-title">
+                <i class="bi bi-braces me-2"></i>توسعه
+            </div>
+            
+            <div class="vui-sidebar-nav-item <%= currentPage === 'api-docs' ? 'active' : '' %>">
+                <a href="/admin/api-docs">
+                    <div class="vui-sidebar-nav-icon">
                         <i class="bi bi-file-code"></i>
                     </div>
-                    <span>API مستندات</span>
+                    <div class="vui-sidebar-nav-text">API مستندات</div>
                 </a>
-            </li>
-            <li class="vui-nav-item">
-                <a href="/admin/webhooks" class="vui-nav-link <%= currentPage === 'webhooks' ? 'active' : '' %>">
-                    <div class="icon-box">
+            </div>
+            
+            <div class="vui-sidebar-nav-item <%= currentPage === 'webhooks' ? 'active' : '' %>">
+                <a href="/admin/webhooks">
+                    <div class="vui-sidebar-nav-icon">
                         <i class="bi bi-link-45deg"></i>
                     </div>
-                    <span>وب‌هوک‌ها</span>
+                    <div class="vui-sidebar-nav-text">وب‌هوک‌ها</div>
                 </a>
-            </li>
-        </ul>
+            </div>
+        </div>
     </div>
     
     <!-- فوتر منو -->
     <div class="vui-sidebar-footer">
-        <a href="/admin/logout" class="vui-btn vui-btn-gradient-primary vui-btn-lg w-100">
-            <i class="bi bi-box-arrow-right"></i> خروج از سیستم
+        <a href="/admin/logout" class="vui-btn vui-btn-gradient-danger vui-btn-md">
+            <i class="bi bi-box-arrow-right"></i> <span class="vui-sidebar-footer-info">خروج از سیستم</span>
         </a>
-        <div class="vui-system-info">
-            <div class="vui-system-status">
-                <span class="status-item">
+        <div class="vui-system-info vui-sidebar-footer-info">
+            <div class="d-flex align-items-center mt-2">
+                <span class="status-item me-2">
                     <i class="bi bi-cpu"></i> CPU: <strong>12%</strong>
                 </span>
                 <span class="status-item">
                     <i class="bi bi-memory"></i> RAM: <strong>256MB</strong>
                 </span>
             </div>
-            <div class="vui-version">
-                <span class="vui-badge vui-badge-primary">نسخه ۲.۰.۰</span>
+            <div class="mt-1">
+                <span class="badge bg-primary">نسخه 2.0.0</span>
             </div>
         </div>
     </div>

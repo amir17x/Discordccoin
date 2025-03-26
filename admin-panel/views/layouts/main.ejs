@@ -9,8 +9,43 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vazirmatn@33.0.3/Vazirmatn-font-face.css">
+    
+    <!-- اسکریپت‌ها با بارگذاری به‌موقع برای جلوگیری از صفحه سیاه -->
+    <script type="text/javascript">
+        // ایجاد متغیر برای جلوگیری از چشمک زدن اولیه
+        window.visionUILoaded = false;
+        
+        // وقتی صفحه بارگذاری شد، کلاس آماده‌سازی را اضافه می‌کنیم
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                document.body.classList.add('vui-ready');
+                window.visionUILoaded = true;
+            }, 50);
+        });
+    </script>
+    
+    <!-- استایل اصلی و رفع مشکل صفحه سیاه -->
+    <style>
+        body {
+            background-color: rgb(8, 8, 20) !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            transition: opacity 0.3s ease;
+        }
+        
+        body:not(.vui-ready) {
+            opacity: 0.5 !important;
+        }
+        
+        body.vui-ready {
+            opacity: 1 !important;
+        }
+    </style>
+    
+    <!-- استایل‌های پایه -->
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/vision-ui-utilities.css">
+    <link rel="stylesheet" href="/css/dashboard-fixes.css">
     <link rel="stylesheet" href="/css/vision-ui-styles.css">
     <link rel="stylesheet" href="/css/chart-fixes.css">
     
@@ -81,6 +116,7 @@
     <script src="/js/notification-center.js"></script>
     <script src="/js/loading-animations.js"></script>
     <script src="/js/micro-interactions.js"></script>
+    <script src="/js/sidebar-controller.js"></script>
     
     <!-- اسکریپت‌های اضافی هر صفحه -->
     <% if (typeof scripts !== 'undefined') { %>
