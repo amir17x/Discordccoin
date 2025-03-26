@@ -1,0 +1,76 @@
+/**
+ * Vision UI Dashboard - Chart Compatibility Fixes
+ * اصلاحات سازگاری با نمودارها در Vision UI
+ */
+
+/* نمودارهای خطی */
+.chart-container {
+  position: relative;
+  height: 300px;
+  background: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%);
+  border-radius: 15px;
+  padding: 15px;
+  margin-bottom: 20px;
+  box-shadow: 0 10px 20px -5px rgba(8, 11, 28, 0.5);
+}
+
+/* نمودارهای دایره‌ای */
+.doughnut-chart-container {
+  position: relative;
+  height: 300px;
+  background: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%);
+  border-radius: 15px;
+  padding: 15px;
+  margin-bottom: 20px;
+  box-shadow: 0 10px 20px -5px rgba(8, 11, 28, 0.5);
+}
+
+/* عناوین نمودارها */
+.chart-title {
+  color: white;
+  margin-bottom: 15px;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+/* اصلاح حاشیه‌های نمودار */
+canvas {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+/* رفع مشکل تولتیپ */
+.chart-tooltip {
+  background-color: rgba(0, 0, 0, 0.7) !important;
+  color: white !important;
+  border-radius: 5px !important;
+  padding: 8px 12px !important;
+  font-family: 'Vazirmatn', sans-serif !important;
+}
+
+/* اصلاح خط عمودی در نمودارها */
+.chart-gridlines-vertical {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* اصلاح خط افقی در نمودارها */
+.chart-gridlines-horizontal {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* پیام خطا در نمودارها */
+.chart-error {
+  background-color: rgba(220, 53, 69, 0.2);
+  color: #dc3545;
+  border: 1px solid rgba(220, 53, 69, 0.3);
+  border-radius: 10px;
+  padding: 15px;
+  text-align: center;
+  margin: 10px 0;
+}
+
+/* اصلاح فونت برچسب‌ها */
+.chart-label {
+  font-family: 'Vazirmatn', sans-serif !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+}
