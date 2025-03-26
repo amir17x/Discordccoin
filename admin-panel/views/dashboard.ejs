@@ -53,7 +53,7 @@
                 </div>
             </div>
             <h6 class="stat-title">کاربران فعال</h6>
-            <div class="stat-value counter"><%= usersCount || 0 %></div>
+            <div id="usersCount" class="stat-value counter" data-value="<%= usersCount || 0 %>"><%= usersCount || 0 %></div>
             <div class="stat-meta up">
                 <i class="bi bi-arrow-up-right"></i>
                 <span><%= newUsersCount || 12 %>+ در 24 ساعت گذشته</span>
@@ -989,5 +989,4 @@
 }
 </style>
 
-<script src="/js/dashboard-fixed.js"></script>
-<!-- All JavaScript functionality moved to dashboard-fixed.js -->
+<!-- All JavaScript functionality moved to vision-charts.js -->

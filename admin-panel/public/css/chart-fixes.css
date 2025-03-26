@@ -1,76 +1,106 @@
 /**
  * Vision UI Dashboard - Chart Compatibility Fixes
  * اصلاحات سازگاری با نمودارها در Vision UI
+ * بهینه‌سازی شده برای Chart.js v2.9.4
  */
 
-/* نمودارهای خطی */
-.chart-container {
+/* تنظیمات کلی نمودارها */
+.vui-chart-container {
   position: relative;
-  height: 300px;
-  background: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%);
-  border-radius: 15px;
-  padding: 15px;
-  margin-bottom: 20px;
-  box-shadow: 0 10px 20px -5px rgba(8, 11, 28, 0.5);
-}
-
-/* نمودارهای دایره‌ای */
-.doughnut-chart-container {
-  position: relative;
-  height: 300px;
-  background: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%);
-  border-radius: 15px;
-  padding: 15px;
-  margin-bottom: 20px;
-  box-shadow: 0 10px 20px -5px rgba(8, 11, 28, 0.5);
-}
-
-/* عناوین نمودارها */
-.chart-title {
-  color: white;
+  min-height: 300px;
+  width: 100%;
   margin-bottom: 15px;
-  font-size: 18px;
-  font-weight: 500;
 }
 
-/* اصلاح حاشیه‌های نمودار */
-canvas {
-  box-sizing: border-box;
-  max-width: 100%;
+/* ظاهر نوار دسترسی سریع نمودارها */
+.vui-chart-filters {
+  display: flex;
+  gap: 8px;
 }
 
-/* رفع مشکل تولتیپ */
-.chart-tooltip {
-  background-color: rgba(0, 0, 0, 0.7) !important;
-  color: white !important;
-  border-radius: 5px !important;
-  padding: 8px 12px !important;
+.vui-chart-filters .vui-btn {
+  padding: 5px 12px;
+  font-size: 0.8rem;
+  transition: all 0.3s ease;
+}
+
+.vui-chart-filters .vui-btn.active {
+  background: var(--vui-primary-gradient);
+  border-color: transparent;
+  color: white;
+  box-shadow: 0 7px 14px rgba(50, 10, 240, 0.2);
+}
+
+/* راهنمای نمودار */
+.vui-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  justify-content: center;
+}
+
+.vui-chart-legend .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vui-chart-legend .legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.vui-chart-legend .legend-item span {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* رفع مشکلات ظاهری Chart.js */
+.chartjs-tooltip {
+  background-color: rgba(22, 24, 39, 0.95) !important;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 10px !important;
+  padding: 10px !important;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* گرادیان پس‌زمینه‌ای نمودارها */
+canvas.chart-background-gradient {
+  background: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%);
+  border-radius: 15px;
+  padding: 20px;
+}
+
+/* اصلاح اندازه‌های نمودار */
+canvas.chart-canvas {
+  width: 100% !important;
+  max-height: 300px !important;
+}
+
+/* اصلاح رنگ‌ها و یکپارچگی با تم داشبورد */
+.chart-grid-line {
+  stroke: rgba(255, 255, 255, 0.05) !important;
+  stroke-width: 1 !important;
+  stroke-dasharray: 5, 5 !important;
+}
+
+.chart-axis-label {
+  fill: rgba(255, 255, 255, 0.7) !important;
   font-family: 'Vazirmatn', sans-serif !important;
+  font-size: 11px !important;
 }
 
-/* اصلاح خط عمودی در نمودارها */
-.chart-gridlines-vertical {
-  border-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-/* اصلاح خط افقی در نمودارها */
-.chart-gridlines-horizontal {
-  border-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-/* پیام خطا در نمودارها */
-.chart-error {
-  background-color: rgba(220, 53, 69, 0.2);
-  color: #dc3545;
-  border: 1px solid rgba(220, 53, 69, 0.3);
-  border-radius: 10px;
+/* پیام خطای نمودار با استایل Vision UI */
+.vui-chart-error {
+  background: rgba(236, 64, 122, 0.1);
+  color: rgba(236, 64, 122, 1);
+  border: 1px solid rgba(236, 64, 122, 0.3);
+  border-radius: 12px;
   padding: 15px;
   text-align: center;
-  margin: 10px 0;
-}
-
-/* اصلاح فونت برچسب‌ها */
-.chart-label {
-  font-family: 'Vazirmatn', sans-serif !important;
-  color: rgba(255, 255, 255, 0.7) !important;
+  font-size: 0.9rem;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
