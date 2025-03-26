@@ -1,0 +1,40 @@
+<%
+/**
+ * تابع دریافت نام فارسی نوع آیتم
+ */
+function getItemTypeName(type) {
+  switch (type) {
+    case 'consumable': return 'مصرفی';
+    case 'equipment': return 'تجهیزات';
+    case 'collectible': return 'کلکسیونی';
+    case 'special': return 'ویژه';
+    default: return 'نامشخص';
+  }
+}
+
+/**
+ * تابع دریافت رنگ مناسب برای نوع آیتم
+ */
+function getItemTypeColor(type) {
+  switch (type) {
+    case 'consumable': return 'success';
+    case 'equipment': return 'primary';
+    case 'collectible': return 'purple';
+    case 'special': return 'warning';
+    default: return 'secondary';
+  }
+}
+
+/**
+ * تابع دریافت آیکون مناسب برای نوع آیتم
+ */
+function getItemIcon(type) {
+  switch (type) {
+    case 'consumable': return 'cup-hot';
+    case 'equipment': return 'shield';
+    case 'collectible': return 'gem';
+    case 'special': return 'stars';
+    default: return 'question-circle';
+  }
+}
+%>

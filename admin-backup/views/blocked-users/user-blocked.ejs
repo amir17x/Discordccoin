@@ -1,0 +1,104 @@
+<%- include('../partials/header') %>
+
+<div class="content-wrapper">
+  <div class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <h1 class="m-0 text-dark">کاربران بلاک شده توسط <%= user.username %></h1>
+        </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-left">
+            <li class="breadcrumb-item"><a href="/admin/dashboard">داشبورد</a></li>
+            <li class="breadcrumb-item"><a href="/admin/blocked-users">کاربران بلاک شده</a></li>
+            <li class="breadcrumb-item active">لیست بلاک <%= user.username %></li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="container-fluid">
+      <!-- اطلاعات کاربر -->
+      <div class="row">
+        <div class="col-md-3">
+          <div class="card card-primary card-outline">
+            <div class="card-body box-profile">
+              <div class="text-center">
+                <img class="profile-user-img img-fluid img-circle" src="https://cdn.discordapp.com/avatars/<%= user.discordId %>/<%= user.avatar || 'default' %>.png" alt="<%= user.username %>" onerror="this.src='/admin/img/default-avatar.png'">
+              </div>
+
+              <h3 class="profile-username text-center"><%= user.username %></h3>
+              <p class="text-muted text-center"><%= user.discordId %></p>
+
+              <ul class="list-group list-group-unbordered mb-3">
+                <li class="list-group-item">
+                  <b>موجودی کیف پول</b> <a class="float-left"><%= user.wallet.toLocaleString() %> Ccoin</a>
+                </li>
+                <li class="list-group-item">
+                  <b>تعداد بلاک‌ها</b> <a class="float-left"><%= blockedUsers.length %></a>
+                </li>
+              </ul>
+
+              <a href="/admin/users/<%= user.id %>" class="btn btn-primary btn-block">صفحه پروفایل</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-9">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">لیست کاربران بلاک شده</h3>
+            </div>
+            <div class="card-body">
+              <% if(blockedUsers.length > 0) { %>
+                <div class="table-responsive">
+                  <table class="table table-bordered table-striped">
+                    <thead>
+                      <tr>
+                        <th>شناسه کاربر</th>
+                        <th>نام کاربری</th>
+                        <th>دلیل بلاک</th>
+                        <th>تاریخ بلاک</th>
+                        <th>عملیات</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% blockedUsers.forEach(function(blocked) { %>
+                        <tr>
+                          <td><%= blocked.userId %></td>
+                          <td><%= blocked.user.username %></td>
+                          <td><%= blocked.reason || 'بدون دلیل' %></td>
+                          <td><%= new Date(blocked.timestamp).toLocaleDateString('fa-IR') %></td>
+                          <td>
+                            <form action="/admin/unblock-user" method="POST" style="display: inline;">
+                              <input type="hidden" name="userId" value="<%= user.id %>">
+                              <input type="hidden" name="blockedUserId" value="<%= blocked.user.id %>">
+                              <input type="hidden" name="returnUrl" value="/admin/users/<%= user.id %>/blocked">
+                              <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('آیا از رفع بلاک این کاربر مطمئن هستید؟');">
+                                <i class="fas fa-check"></i> رفع بلاک
+                              </button>
+                            </form>
+                            <a href="/admin/users/<%= blocked.user.id %>" class="btn btn-info btn-sm">
+                              <i class="fas fa-user"></i> پروفایل
+                            </a>
+                          </td>
+                        </tr>
+                      <% }); %>
+                    </tbody>
+                  </table>
+                </div>
+              <% } else { %>
+                <div class="alert alert-info">
+                  این کاربر هیچ کاربری را بلاک نکرده است.
+                </div>
+              <% } %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

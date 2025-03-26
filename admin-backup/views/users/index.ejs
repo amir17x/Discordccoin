@@ -1,0 +1,508 @@
+<!-- صفحه مدیریت کاربران -->
+<div class="page-header d-flex justify-content-between align-items-center">
+  <h4 class="page-title mb-0">مدیریت کاربران</h4>
+  <div>
+    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#bulkActionModal">
+      <i class="bi bi-list-check me-1"></i> عملیات دسته‌جمعی
+    </button>
+  </div>
+</div>
+
+<div class="card mt-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="card-title mb-0">لیست کاربران</h5>
+    <div class="d-flex">
+      <div class="input-group input-group-sm me-2" style="width: 250px;">
+        <input type="text" class="form-control" id="searchUser" placeholder="جستجو...">
+        <button class="btn btn-outline-secondary" type="button">
+          <i class="bi bi-search"></i>
+        </button>
+      </div>
+      <div class="dropdown">
+        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="bi bi-funnel me-1"></i> فیلتر
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="filterDropdown">
+          <li><a class="dropdown-item" href="?sort=name">مرتب‌سازی بر اساس نام</a></li>
+          <li><a class="dropdown-item" href="?sort=coins">مرتب‌سازی بر اساس موجودی</a></li>
+          <li><a class="dropdown-item" href="?sort=created">مرتب‌سازی بر اساس تاریخ عضویت</a></li>
+          <li><a class="dropdown-item" href="?sort=activity">مرتب‌سازی بر اساس فعالیت</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item" href="?filter=active">فقط کاربران فعال</a></li>
+          <li><a class="dropdown-item" href="?filter=inactive">فقط کاربران غیرفعال</a></li>
+          <li><a class="dropdown-item" href="?filter=banned">فقط کاربران مسدود شده</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="selectAllUsers">
+              </div>
+            </th>
+            <th>شناسه</th>
+            <th>نام کاربری</th>
+            <th>نام نمایشی</th>
+            <th>شناسه دیسکورد</th>
+            <th>موجودی (کیف پول)</th>
+            <th>موجودی (بانک)</th>
+            <th>کریستال</th>
+            <th>تاریخ عضویت</th>
+            <th>آخرین فعالیت</th>
+            <th>وضعیت</th>
+            <th>عملیات</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (users && users.length > 0) { %>
+            <% users.forEach(user => { %>
+              <tr>
+                <td>
+                  <div class="form-check">
+                    <input class="form-check-input user-checkbox" type="checkbox" value="<%= user.id %>">
+                  </div>
+                </td>
+                <td><%= user.id %></td>
+                <td>
+                  <div class="d-flex align-items-center">
+                    <% if (user.avatarUrl) { %>
+                      <img src="<%= user.avatarUrl %>" alt="<%= user.username %>" width="32" height="32" class="rounded-circle me-2">
+                    <% } else { %>
+                      <div class="avatar-circle bg-primary text-white me-2">
+                        <span class="initials"><%= user.username.charAt(0).toUpperCase() %></span>
+                      </div>
+                    <% } %>
+                    <span><%= user.username %></span>
+                  </div>
+                </td>
+                <td><%= user.displayName || '-' %></td>
+                <td>
+                  <% if (user.discordId) { %>
+                    <a href="https://discord.com/users/<%= user.discordId %>" target="_blank" class="text-decoration-none">
+                      <i class="bi bi-discord me-1"></i><%= user.discordId %>
+                    </a>
+                  <% } else { %>
+                    -
+                  <% } %>
+                </td>
+                <td><%= user.wallet.toLocaleString('fa-IR') %> <i class="bi bi-coin text-warning"></i></td>
+                <td><%= user.bank.toLocaleString('fa-IR') %> <i class="bi bi-building text-primary"></i></td>
+                <td><%= user.crystals.toLocaleString('fa-IR') %> <i class="bi bi-gem text-info"></i></td>
+                <td><%= new Date(user.createdAt).toLocaleDateString('fa-IR') %></td>
+                <td>
+                  <% 
+                    const lastActive = new Date(user.lastActive);
+                    const now = new Date();
+                    const diffHours = Math.floor((now - lastActive) / (1000 * 60 * 60));
+                  %>
+                  <% if (diffHours < 24) { %>
+                    <span class="badge rounded-pill bg-success">امروز</span>
+                  <% } else if (diffHours < 72) { %>
+                    <span class="badge rounded-pill bg-info"><%= Math.floor(diffHours/24) %> روز قبل</span>
+                  <% } else if (diffHours < 168) { %>
+                    <span class="badge rounded-pill bg-warning">هفته اخیر</span>
+                  <% } else { %>
+                    <span class="badge rounded-pill bg-secondary"><%= Math.floor(diffHours/24) %> روز قبل</span>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (user.banned) { %>
+                    <span class="badge bg-danger">مسدود شده</span>
+                  <% } else if (user.lastActive > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) { %>
+                    <span class="badge bg-success">فعال</span>
+                  <% } else { %>
+                    <span class="badge bg-secondary">غیرفعال</span>
+                  <% } %>
+                </td>
+                <td>
+                  <div class="action-buttons">
+                    <a href="/admin/users/<%= user.id %>" class="btn btn-sm btn-info" title="مشاهده پروفایل">
+                      <i class="bi bi-eye"></i>
+                    </a>
+                    <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editUserModal<%= user.id %>" title="ویرایش">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-primary user-actions-button" data-user-id="<%= user.id %>" title="عملیات کاربر">
+                      <i class="bi bi-gear"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- مدال ویرایش کاربر -->
+              <div class="modal fade" id="editUserModal<%= user.id %>" tabindex="-1" aria-labelledby="editUserModalLabel<%= user.id %>" aria-hidden="true">
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title" id="editUserModalLabel<%= user.id %>">ویرایش کاربر <%= user.username %></h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+                    </div>
+                    <form action="/admin/users/<%= user.id %>/update" method="POST">
+                      <div class="modal-body">
+                        <div class="mb-3">
+                          <label for="editUsername<%= user.id %>" class="form-label">نام کاربری</label>
+                          <input type="text" class="form-control" id="editUsername<%= user.id %>" name="username" value="<%= user.username %>" required>
+                        </div>
+                        <div class="mb-3">
+                          <label for="editDisplayName<%= user.id %>" class="form-label">نام نمایشی</label>
+                          <input type="text" class="form-control" id="editDisplayName<%= user.id %>" name="displayName" value="<%= user.displayName || '' %>">
+                        </div>
+                        <div class="mb-3">
+                          <label for="editDiscordId<%= user.id %>" class="form-label">شناسه دیسکورد</label>
+                          <input type="text" class="form-control" id="editDiscordId<%= user.id %>" name="discordId" value="<%= user.discordId || '' %>">
+                        </div>
+                        <div class="row">
+                          <div class="col-md-4">
+                            <div class="mb-3">
+                              <label for="editWallet<%= user.id %>" class="form-label">موجودی کیف پول</label>
+                              <input type="number" class="form-control" id="editWallet<%= user.id %>" name="wallet" value="<%= user.wallet %>" min="0">
+                            </div>
+                          </div>
+                          <div class="col-md-4">
+                            <div class="mb-3">
+                              <label for="editBank<%= user.id %>" class="form-label">موجودی بانک</label>
+                              <input type="number" class="form-control" id="editBank<%= user.id %>" name="bank" value="<%= user.bank %>" min="0">
+                            </div>
+                          </div>
+                          <div class="col-md-4">
+                            <div class="mb-3">
+                              <label for="editCrystals<%= user.id %>" class="form-label">کریستال</label>
+                              <input type="number" class="form-control" id="editCrystals<%= user.id %>" name="crystals" value="<%= user.crystals %>" min="0">
+                            </div>
+                          </div>
+                        </div>
+                        <div class="mb-3">
+                          <label for="editLevel<%= user.id %>" class="form-label">سطح کاربر</label>
+                          <input type="number" class="form-control" id="editLevel<%= user.id %>" name="level" value="<%= user.level %>" min="1">
+                        </div>
+                        <div class="mb-3">
+                          <label for="editXp<%= user.id %>" class="form-label">تجربه</label>
+                          <input type="number" class="form-control" id="editXp<%= user.id %>" name="xp" value="<%= user.xp %>" min="0">
+                        </div>
+                        <div class="mb-3 form-check">
+                          <input type="checkbox" class="form-check-input" id="editBanned<%= user.id %>" name="banned" <%= user.banned ? 'checked' : '' %>>
+                          <label class="form-check-label" for="editBanned<%= user.id %>">کاربر مسدود شده است</label>
+                        </div>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                        <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            <% }); %>
+          <% } else { %>
+            <tr>
+              <td colspan="12" class="text-center py-4">
+                <div class="empty-state">
+                  <i class="bi bi-people fs-1 text-muted mb-3"></i>
+                  <h5>هیچ کاربری یافت نشد</h5>
+                  <p class="text-muted">ممکن است پایگاه داده خالی باشد یا فیلترهای جستجو نتیجه‌ای نداشته باشند.</p>
+                </div>
+              </td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card-footer">
+    <nav aria-label="صفحه‌بندی کاربران">
+      <ul class="pagination justify-content-center mb-0">
+        <li class="page-item <%= currentPage <= 1 ? 'disabled' : '' %>">
+          <a class="page-link" href="?page=<%= currentPage - 1 %>" tabindex="-1" aria-disabled="<%= currentPage <= 1 %>">قبلی</a>
+        </li>
+        <% for(let i = 1; i <= totalPages; i++) { %>
+          <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+            <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+          </li>
+        <% } %>
+        <li class="page-item <%= currentPage >= totalPages ? 'disabled' : '' %>">
+          <a class="page-link" href="?page=<%= currentPage + 1 %>">بعدی</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+</div>
+
+<!-- مدال افزایش موجودی -->
+<div class="modal fade" id="addCoinsModal" tabindex="-1" aria-labelledby="addCoinsModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addCoinsModalLabel">افزایش موجودی کاربر</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+      </div>
+      <form id="addCoinsForm" action="/admin/users/add-coins" method="POST">
+        <input type="hidden" id="addCoinsUserId" name="userId">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="addCoinsType" class="form-label">نوع موجودی</label>
+            <select class="form-select" id="addCoinsType" name="type" required>
+              <option value="wallet">کیف پول (Ccoin)</option>
+              <option value="bank">بانک (Ccoin)</option>
+              <option value="crystals">کریستال</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="addCoinsAmount" class="form-label">مقدار</label>
+            <input type="number" class="form-control" id="addCoinsAmount" name="amount" min="1" required>
+          </div>
+          <div class="mb-3">
+            <label for="addCoinsReason" class="form-label">دلیل</label>
+            <textarea class="form-control" id="addCoinsReason" name="reason" rows="2" placeholder="توضیحات بیشتر (اختیاری)"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+          <button type="submit" class="btn btn-primary">افزایش موجودی</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- مدال ارسال پیام -->
+<div class="modal fade" id="sendMessageModal" tabindex="-1" aria-labelledby="sendMessageModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="sendMessageModalLabel">ارسال پیام به کاربر</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+      </div>
+      <form id="sendMessageForm" action="/admin/users/send-message" method="POST">
+        <input type="hidden" id="messageUserId" name="userId">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="messageTitle" class="form-label">عنوان پیام</label>
+            <input type="text" class="form-control" id="messageTitle" name="title" required>
+          </div>
+          <div class="mb-3">
+            <label for="messageContent" class="form-label">متن پیام</label>
+            <textarea class="form-control" id="messageContent" name="content" rows="4" required></textarea>
+          </div>
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="messagePin" name="isPinned">
+            <label class="form-check-label" for="messagePin">پیام سنجاق شود</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+          <button type="submit" class="btn btn-primary">ارسال پیام</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- مدال عملیات دسته‌جمعی -->
+<div class="modal fade" id="bulkActionModal" tabindex="-1" aria-labelledby="bulkActionModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="bulkActionModalLabel">عملیات دسته‌جمعی</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+      </div>
+      <form id="bulkActionForm" action="/admin/users/bulk-action" method="POST">
+        <input type="hidden" id="bulkActionIds" name="userIds">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="bulkActionType" class="form-label">نوع عملیات</label>
+            <select class="form-select" id="bulkActionType" name="actionType" required>
+              <option value="">انتخاب کنید...</option>
+              <option value="add_coins">افزایش موجودی</option>
+              <option value="send_message">ارسال پیام</option>
+              <option value="ban">مسدودسازی</option>
+              <option value="unban">رفع مسدودیت</option>
+              <option value="add_item">افزودن آیتم</option>
+            </select>
+          </div>
+          
+          <!-- فیلدهای افزایش موجودی -->
+          <div id="bulkAddCoinsFields" style="display: none;">
+            <div class="mb-3">
+              <label for="bulkCoinsType" class="form-label">نوع موجودی</label>
+              <select class="form-select" id="bulkCoinsType" name="coinsType">
+                <option value="wallet">کیف پول (Ccoin)</option>
+                <option value="bank">بانک (Ccoin)</option>
+                <option value="crystals">کریستال</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="bulkCoinsAmount" class="form-label">مقدار</label>
+              <input type="number" class="form-control" id="bulkCoinsAmount" name="coinsAmount" min="1">
+            </div>
+          </div>
+          
+          <!-- فیلدهای ارسال پیام -->
+          <div id="bulkMessageFields" style="display: none;">
+            <div class="mb-3">
+              <label for="bulkMessageTitle" class="form-label">عنوان پیام</label>
+              <input type="text" class="form-control" id="bulkMessageTitle" name="messageTitle">
+            </div>
+            <div class="mb-3">
+              <label for="bulkMessageContent" class="form-label">متن پیام</label>
+              <textarea class="form-control" id="bulkMessageContent" name="messageContent" rows="4"></textarea>
+            </div>
+          </div>
+          
+          <!-- فیلدهای افزودن آیتم -->
+          <div id="bulkAddItemFields" style="display: none;">
+            <div class="mb-3">
+              <label for="bulkItemId" class="form-label">آیتم</label>
+              <select class="form-select" id="bulkItemId" name="itemId">
+                <option value="">انتخاب آیتم...</option>
+                <% if (typeof items !== 'undefined' && items.length > 0) { %>
+                  <% items.forEach(item => { %>
+                    <option value="<%= item.id %>"><%= item.name %></option>
+                  <% }); %>
+                <% } %>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="bulkItemQuantity" class="form-label">تعداد</label>
+              <input type="number" class="form-control" id="bulkItemQuantity" name="itemQuantity" min="1" value="1">
+            </div>
+          </div>
+          
+          <div class="alert alert-info mt-3">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            <span id="selectedUsersCount">0</span> کاربر برای این عملیات انتخاب شده‌اند.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+          <button type="submit" class="btn btn-primary">اجرای عملیات</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<%- contentFor('scripts') %>
+<script>
+  // انتخاب همه کاربران
+  document.getElementById('selectAllUsers').addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('.user-checkbox');
+    checkboxes.forEach(checkbox => {
+      checkbox.checked = this.checked;
+    });
+    updateSelectedUsersCount();
+  });
+  
+  // به‌روزرسانی تعداد کاربران انتخاب شده
+  function updateSelectedUsersCount() {
+    const selectedCount = document.querySelectorAll('.user-checkbox:checked').length;
+    document.getElementById('selectedUsersCount').textContent = selectedCount;
+  }
+  
+  // اضافه کردن یک گوش‌دهنده برای تمام چک‌باکس‌های کاربر
+  document.querySelectorAll('.user-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', updateSelectedUsersCount);
+  });
+  
+  // تغییر فیلدهای فرم بر اساس نوع عملیات دسته‌جمعی
+  document.getElementById('bulkActionType').addEventListener('change', function() {
+    document.getElementById('bulkAddCoinsFields').style.display = 'none';
+    document.getElementById('bulkMessageFields').style.display = 'none';
+    document.getElementById('bulkAddItemFields').style.display = 'none';
+    
+    switch(this.value) {
+      case 'add_coins':
+        document.getElementById('bulkAddCoinsFields').style.display = 'block';
+        break;
+      case 'send_message':
+        document.getElementById('bulkMessageFields').style.display = 'block';
+        break;
+      case 'add_item':
+        document.getElementById('bulkAddItemFields').style.display = 'block';
+        break;
+    }
+  });
+  
+  // قبل از ارسال فرم عملیات دسته‌جمعی
+  document.getElementById('bulkActionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const selectedUsers = Array.from(document.querySelectorAll('.user-checkbox:checked'))
+      .map(checkbox => checkbox.value);
+    
+    if (selectedUsers.length === 0) {
+      alert('لطفاً حداقل یک کاربر را انتخاب کنید.');
+      return;
+    }
+    
+    document.getElementById('bulkActionIds').value = selectedUsers.join(',');
+    this.submit();
+  });
+  
+  // افزایش موجودی کاربر
+  function addCoins(userId) {
+    document.getElementById('addCoinsUserId').value = userId;
+    new bootstrap.Modal(document.getElementById('addCoinsModal')).show();
+  }
+  
+  // ارسال پیام به کاربر
+  function sendMessage(userId) {
+    document.getElementById('messageUserId').value = userId;
+    new bootstrap.Modal(document.getElementById('sendMessageModal')).show();
+  }
+  
+  // مسدودسازی کاربر
+  function banUser(userId) {
+    if (confirm('آیا از مسدود کردن این کاربر اطمینان دارید؟')) {
+      window.location.href = `/admin/users/${userId}/ban`;
+    }
+  }
+  
+  // رفع مسدودیت کاربر
+  function unbanUser(userId) {
+    if (confirm('آیا از رفع مسدودیت این کاربر اطمینان دارید؟')) {
+      window.location.href = `/admin/users/${userId}/unban`;
+    }
+  }
+  
+  // بازنشانی پیشرفت کاربر
+  function resetUserProgress(userId) {
+    if (confirm('آیا از بازنشانی تمام پیشرفت این کاربر اطمینان دارید؟ این عمل غیرقابل بازگشت است.')) {
+      if (confirm('هشدار: این عمل تمام پیشرفت، آیتم‌ها، دستاوردها و کوئست‌های کاربر را حذف می‌کند، اما موجودی حساب را حفظ می‌کند. آیا مطمئن هستید؟')) {
+        window.location.href = `/admin/users/${userId}/reset`;
+      }
+    }
+  }
+  
+  // جستجوی کاربران
+  document.getElementById('searchUser').addEventListener('keyup', function(e) {
+    if (e.key === 'Enter') {
+      const searchTerm = this.value.trim();
+      if (searchTerm) {
+        window.location.href = `/admin/users?search=${encodeURIComponent(searchTerm)}`;
+      }
+    }
+  });
+</script>
+
+<%- contentFor('styles') %>
+<style>
+  .avatar-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+  }
+  
+  .action-buttons .dropdown-menu {
+    min-width: 200px;
+  }
+</style>

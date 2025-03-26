@@ -1,0 +1,419 @@
+/**
+ * Vision UI Dashboard - Chart Fixes
+ * رفع مشکلات احتمالی در نمودارها و سازگاری با تم Vision UI
+ */
+
+/* تنظیم ابعاد مناسب برای بوم‌های نمودار */
+.chart-container {
+  position: relative;
+  margin: auto;
+  height: 300px;
+  width: 100%;
+}
+
+.chart-container.small {
+  height: 200px;
+}
+
+.chart-container.large {
+  height: 400px;
+}
+
+.chart-container.circle {
+  height: 250px;
+}
+
+/* حل مشکل نسبت ابعاد در موبایل */
+@media (max-width: 768px) {
+  .chart-container {
+    height: 250px;
+  }
+  
+  .chart-container.large {
+    height: 300px;
+  }
+  
+  .chart-container.circle {
+    height: 220px;
+  }
+}
+
+/* فیکس نمایش تولتیپ در حالت مودال */
+.modal .chart-container {
+  z-index: 1;
+}
+
+/* فیکس سایز و گوشه‌های گرد در کارت‌های نمودار */
+.vui-chart-card {
+  border-radius: 15px;
+  overflow: hidden;
+  height: 100%;
+}
+
+.vui-chart-card .vui-chart-header {
+  padding: 15px 20px 0;
+}
+
+.vui-chart-card .vui-chart-body {
+  height: calc(100% - 60px);
+  min-height: 200px;
+}
+
+/* هماهنگی رنگ‌های نمودار با تم Vision UI */
+:root {
+  --chart-primary-color: rgba(67, 24, 255, 1);
+  --chart-primary-gradient-start: rgba(67, 24, 255, 0.9);
+  --chart-primary-gradient-stop: rgba(117, 81, 255, 0.4);
+  
+  --chart-info-color: rgba(57, 184, 255, 1);
+  --chart-info-gradient-start: rgba(57, 184, 255, 0.9);
+  --chart-info-gradient-stop: rgba(105, 234, 203, 0.4);
+  
+  --chart-success-color: rgba(1, 181, 116, 1);
+  --chart-success-gradient-start: rgba(1, 181, 116, 0.9);
+  --chart-success-gradient-stop: rgba(152, 236, 45, 0.4);
+  
+  --chart-warning-color: rgba(255, 181, 71, 1);
+  --chart-warning-gradient-start: rgba(255, 181, 71, 0.9);
+  --chart-warning-gradient-stop: rgba(255, 138, 0, 0.4);
+  
+  --chart-danger-color: rgba(236, 64, 122, 1);
+  --chart-danger-gradient-start: rgba(236, 64, 122, 0.9);
+  --chart-danger-gradient-stop: rgba(216, 27, 96, 0.4);
+}
+
+/* استایل مشترک برای کانوس‌های نمودار */
+canvas.chart {
+  max-width: 100%;
+  height: auto !important;
+}
+
+/* استایل برای فیلترهای نمودار */
+.vui-chart-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.vui-chart-filters button {
+  background: transparent;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.vui-chart-filters button:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.vui-chart-filters button.active {
+  color: white;
+  background: var(--vui-primary-gradient);
+  box-shadow: 0 3px 10px rgba(67, 24, 255, 0.3);
+}
+
+/* لودر برای نمودارها */
+.chart-loader {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: inherit;
+}
+
+.chart-loader::after {
+  content: '';
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  border-top-color: var(--vui-primary);
+  border-bottom-color: var(--vui-info);
+  animation: spin 1.2s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* حالت بدون داده برای نمودارها */
+.chart-no-data {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: inherit;
+}
+
+.chart-no-data-icon {
+  font-size: 32px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.chart-no-data-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* رفع مشکل همپوشانی لجند‌ها */
+.chart-container .chartjs-legend-overlay {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  padding: 10px 0;
+}
+
+.chart-container .chartjs-legend-overlay::-webkit-scrollbar {
+  display: none;
+}
+
+/* فیکس های مخصوص نمودارهای پیشرفته */
+.vui-advanced-chart {
+  position: relative;
+}
+
+.vui-advanced-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.vui-advanced-chart-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.vui-advanced-chart-subtitle {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.vui-advanced-chart-value {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 10px 0;
+}
+
+.vui-advanced-chart-meta {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  margin-bottom: 15px;
+}
+
+.vui-advanced-chart-meta.up {
+  color: var(--vui-success);
+}
+
+.vui-advanced-chart-meta.down {
+  color: var(--vui-danger);
+}
+
+.vui-advanced-chart-meta i {
+  margin-right: 4px;
+}
+
+/* کارت‌های آماری همراه با نمودار */
+.vui-stat-card-with-chart {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.vui-stat-card-with-chart-header {
+  padding: 20px 20px 0;
+}
+
+.vui-stat-card-with-chart-body {
+  flex: 1;
+  padding: 10px 20px 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.vui-stat-card-with-chart-info {
+  margin-bottom: 15px;
+}
+
+.vui-stat-card-with-chart-value {
+  font-size: 26px;
+  font-weight: 700;
+  margin: 0 0 5px;
+}
+
+.vui-stat-card-with-chart-title {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.vui-stat-card-with-chart-chart {
+  flex: 1;
+  min-height: 120px;
+  margin-top: auto;
+}
+
+/* کلاس‌های کمکی برای جلوگیری از مشکلات نمودار */
+.hidden-overflow {
+  overflow: hidden;
+}
+
+.chart-aspect-ratio {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+}
+
+.chart-aspect-ratio.square {
+  aspect-ratio: 1 / 1;
+}
+
+.chart-aspect-ratio.circle {
+  aspect-ratio: 1 / 1;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+/* داده‌های مرتبط با نمودار */
+.chart-data-table {
+  margin-top: 20px;
+  font-size: 13px;
+}
+
+.chart-data-table th {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.chart-data-table td {
+  color: var(--text-secondary);
+}
+
+.chart-data-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+/* اعمال سبک‌های اسکرول اختصاصی روی محتوای نمودارها */
+.vui-chart-scrollable {
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  position: relative;
+}
+
+.vui-chart-scrollable::-webkit-scrollbar {
+  height: 5px;
+}
+
+.vui-chart-scrollable::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.vui-chart-scrollable::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+
+.vui-chart-scrollable::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* فیکس لوگو برای نمودارهای دایره‌ای */
+.chart-center-image {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  overflow: hidden;
+  z-index: 1;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+}
+
+.chart-center-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* افکت‌های انیمیشنی برای نمودارها */
+.chart-animate-in {
+  animation: fadeIn 0.8s ease-out forwards;
+  opacity: 0;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* بهبود نمایش لجند‌ها با آیکون‌ها */
+.chart-legend-icon {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 8px;
+}
+
+.chart-legend-icon i {
+  margin-right: 5px;
+  font-size: 14px;
+}
+
+.chart-legend-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.chart-legend-item {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.chart-legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 6px;
+  flex-shrink: 0;
+}

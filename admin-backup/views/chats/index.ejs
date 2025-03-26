@@ -1,0 +1,124 @@
+<%- include('../partials/header') %>
+
+<div class="content-wrapper">
+  <div class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <h1 class="m-0 text-dark">مدیریت چت‌های خصوصی</h1>
+        </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-left">
+            <li class="breadcrumb-item"><a href="/admin/dashboard">داشبورد</a></li>
+            <li class="breadcrumb-item active">چت‌های خصوصی</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="container-fluid">
+      <!-- نمایش آمارها -->
+      <div class="row">
+        <div class="col-lg-3 col-6">
+          <div class="small-box bg-info">
+            <div class="inner">
+              <h3><%= stats.totalChats %></h3>
+              <p>تعداد کل چت‌ها</p>
+            </div>
+            <div class="icon">
+              <i class="fas fa-comments"></i>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-lg-3 col-6">
+          <div class="small-box bg-success">
+            <div class="inner">
+              <h3><%= stats.totalMessages %></h3>
+              <p>تعداد کل پیام‌ها</p>
+            </div>
+            <div class="icon">
+              <i class="fas fa-envelope"></i>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-lg-3 col-6">
+          <div class="small-box bg-warning">
+            <div class="inner">
+              <h3><%= stats.avgMessagesPerChat %></h3>
+              <p>میانگین پیام در هر چت</p>
+            </div>
+            <div class="icon">
+              <i class="fas fa-chart-line"></i>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-lg-3 col-6">
+          <div class="small-box bg-primary">
+            <div class="inner">
+              <h3><%= stats.usersWithChat %></h3>
+              <p>کاربران دارای چت</p>
+            </div>
+            <div class="icon">
+              <i class="fas fa-users"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- کاربران با بیشترین چت -->
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">کاربران با بیشترین چت</h3>
+            </div>
+            <div class="card-body table-responsive p-0">
+              <table class="table table-hover text-nowrap">
+                <thead>
+                  <tr>
+                    <th>شناسه</th>
+                    <th>نام کاربری</th>
+                    <th>تعداد چت‌ها</th>
+                    <th>عملیات</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% if(topUsers.length > 0) { %>
+                    <% topUsers.forEach(function(user) { %>
+                      <tr>
+                        <td><%= user.userId %></td>
+                        <td><%= user.username %></td>
+                        <td><span class="badge bg-primary"><%= user.chatCount %></span></td>
+                        <td>
+                          <div class="btn-group">
+                            <a href="/admin/users/<%= user.userId %>/chats" class="btn btn-info btn-sm">
+                              <i class="fas fa-comments"></i> مشاهده چت‌ها
+                            </a>
+                            <a href="/admin/users/<%= user.userId %>" class="btn btn-primary btn-sm">
+                              <i class="fas fa-user"></i> پروفایل
+                            </a>
+                          </div>
+                        </td>
+                      </tr>
+                    <% }); %>
+                  <% } else { %>
+                    <tr>
+                      <td colspan="4" class="text-center">هیچ کاربری با چت خصوصی پیدا نشد.</td>
+                    </tr>
+                  <% } %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>
