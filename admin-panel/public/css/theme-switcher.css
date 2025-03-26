@@ -1,0 +1,178 @@
+/**
+ * Vision UI Dashboard - Theme Switcher Styles
+ * سیستم تغییر تم با انتقال‌های نرم
+ */
+
+/* متغیرهای رنگی تم تیره (پیش‌فرض) */
+:root {
+  /* رنگ‌های اصلی تم تیره */
+  --body-bg: #0f1535;
+  --body-bg-gradient: linear-gradient(120deg, #0f1535, #171e3e);
+  --card-bg: rgba(21, 26, 64, 0.7);
+  --text-primary: #fff;
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-muted: rgba(255, 255, 255, 0.5);
+  --border-color: rgba(255, 255, 255, 0.1);
+  
+  /* سایه‌ها */
+  --card-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  --button-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+  
+  /* گرادیان‌ها */
+  --vui-primary-gradient: linear-gradient(310deg, #4318ff, #9f7aea);
+  --vui-info-gradient: linear-gradient(310deg, #2152ff, #21d4fd);
+  --vui-success-gradient: linear-gradient(310deg, #01b574, #82d616);
+  --vui-warning-gradient: linear-gradient(310deg, #f53939, #fbcf33);
+  
+  /* زمان انتقال تم */
+  --theme-transition-time: 0.5s;
+}
+
+/* متغیرهای رنگی تم روشن */
+.light-theme {
+  /* رنگ‌های اصلی تم روشن */
+  --body-bg: #f8f9fa;
+  --body-bg-gradient: linear-gradient(120deg, #f8f9fa, #e9ecef);
+  --card-bg: rgba(255, 255, 255, 0.85);
+  --text-primary: #344767;
+  --text-secondary: #67748e;
+  --text-muted: #7b809a;
+  --border-color: rgba(0, 0, 0, 0.1);
+  
+  /* سایه‌ها */
+  --card-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  --button-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  
+  /* گرادیان‌ها - رنگ‌های روشن‌تر */
+  --vui-primary-gradient: linear-gradient(310deg, #5e35ff, #a992e2);
+  --vui-info-gradient: linear-gradient(310deg, #4065ff, #45dbff);
+  --vui-success-gradient: linear-gradient(310deg, #18ca8b, #98e935);
+  --vui-warning-gradient: linear-gradient(310deg, #ff5d5d, #ffdb57);
+}
+
+/* تنظیم انتقال تم برای همه المان‌هایی که باید تغییر کنند */
+body, 
+.vui-card, 
+.vui-btn,
+.vui-stat-card-advanced,
+.stat-progress-bar,
+.vui-sidebar,
+.vui-navbar,
+.table-avatar,
+.vui-data-table,
+.vui-activity-feed,
+.stat-icon-container {
+  transition: all var(--theme-transition-time) ease;
+}
+
+/* استایل‌های دکمه تغییر تم */
+.theme-switcher-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: var(--vui-primary-gradient);
+  color: white;
+  border: none;
+  box-shadow: var(--button-shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1000;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.theme-switcher-btn:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.theme-switcher-btn i {
+  font-size: 1.5rem;
+}
+
+/* استایل پاپ‌آپ تغییر تم */
+.theme-switcher-popup {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  width: 250px;
+  background: var(--card-bg);
+  border-radius: 15px;
+  box-shadow: var(--card-shadow);
+  padding: 15px;
+  z-index: 1000;
+  border: 1px solid var(--border-color);
+  transform: translateY(20px);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.theme-switcher-popup.show {
+  transform: translateY(0);
+  opacity: 1;
+  visibility: visible;
+}
+
+.theme-switcher-popup h5 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: var(--text-primary);
+}
+
+.theme-options {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.theme-option {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.theme-option.active {
+  border-color: var(--text-primary);
+  transform: scale(1.2);
+}
+
+.theme-option.dark {
+  background: linear-gradient(310deg, #0f1535, #4318ff);
+}
+
+.theme-option.light {
+  background: linear-gradient(310deg, #f8f9fa, #5e35ff);
+}
+
+.theme-option.purple {
+  background: linear-gradient(310deg, #3a1162, #9f7aea);
+}
+
+.theme-option.blue {
+  background: linear-gradient(310deg, #1a174d, #2152ff);
+}
+
+/* استایل دکمه‌های تغییر تم */
+.theme-switcher-popup button {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  background: var(--vui-primary-gradient);
+  color: white;
+  cursor: pointer;
+  margin-right: 5px;
+  transition: all 0.3s ease;
+}
+
+.theme-switcher-popup button:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}

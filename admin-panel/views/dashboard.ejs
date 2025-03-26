@@ -76,7 +76,7 @@
                 </div>
             </div>
             <h6 class="stat-title">کلن‌ها</h6>
-            <div class="stat-value counter"><%= clansCount || 0 %></div>
+            <div id="clansCount" class="stat-value counter" data-value="<%= clansCount || 0 %>"><%= clansCount || 0 %></div>
             <div class="stat-meta up">
                 <i class="bi bi-arrow-up-right"></i>
                 <span><%= newClansCount || 3 %>+ در هفته گذشته</span>
@@ -99,7 +99,7 @@
                 </div>
             </div>
             <h6 class="stat-title">سی‌کوین در گردش</h6>
-            <div class="stat-value counter"><%= totalCcoin || 0 %></div>
+            <div id="totalCcoin" class="stat-value counter" data-value="<%= totalCcoin || 0 %>"><%= totalCcoin || 0 %></div>
             <div class="stat-meta up">
                 <i class="bi bi-arrow-up-right"></i>
                 <span><%= ccoinGrowth || 15 %>% رشد ماهانه</span>
@@ -122,7 +122,7 @@
                 </div>
             </div>
             <h6 class="stat-title">کریستال در گردش</h6>
-            <div class="stat-value counter"><%= totalCrystal || 0 %></div>
+            <div id="totalCrystal" class="stat-value counter" data-value="<%= totalCrystal || 0 %>"><%= totalCrystal || 0 %></div>
             <div class="stat-meta down">
                 <i class="bi bi-arrow-down-right"></i>
                 <span><%= crystalGrowth || 5 %>% کاهش ماهانه</span>

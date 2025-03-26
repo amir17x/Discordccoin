@@ -1,0 +1,394 @@
+/**
+ * Vision UI Dashboard - Notification Center Styles
+ * مرکز اعلان‌های متحرک با انتقال‌های ظریف
+ */
+
+/* کانتینر اصلی مرکز اعلان‌ها */
+.vui-notification-center {
+  position: fixed;
+  top: 70px;
+  right: 20px;
+  width: 320px;
+  max-height: 70vh;
+  background: var(--card-bg);
+  border-radius: 15px;
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--border-color);
+  z-index: 1000;
+  overflow: hidden;
+  transform: translateX(110%);
+  opacity: 0;
+  transition: transform 0.4s ease, opacity 0.3s ease;
+}
+
+.vui-notification-center.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+/* هدر مرکز اعلان‌ها */
+.vui-notification-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.vui-notification-header h5 {
+  margin: 0;
+  color: var(--text-primary);
+  font-weight: 600;
+  background: var(--vui-primary-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.vui-notification-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.vui-notification-actions button {
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.vui-notification-actions button:hover {
+  color: var(--text-primary);
+}
+
+/* تب‌های فیلتر اعلان‌ها */
+.vui-notification-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.vui-notification-tab {
+  flex: 1;
+  text-align: center;
+  padding: 12px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-weight: 500;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.vui-notification-tab.active {
+  color: var(--text-primary);
+}
+
+.vui-notification-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--vui-primary-gradient);
+  border-radius: 3px 3px 0 0;
+}
+
+.vui-notification-tab:hover {
+  color: var(--text-primary);
+}
+
+/* لیست اعلان‌ها */
+.vui-notification-list {
+  max-height: 500px;
+  overflow-y: auto;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+/* استایل اسکرول‌بار */
+.vui-notification-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.vui-notification-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.vui-notification-list::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 5px;
+}
+
+.vui-notification-list::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* آیتم اعلان */
+.vui-notification-item {
+  padding: 15px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  animation: fadeInRight 0.5s ease forwards;
+  position: relative;
+}
+
+.vui-notification-item:last-child {
+  border-bottom: none;
+}
+
+.vui-notification-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* انیمیشن ورود اعلان از راست */
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* آیکون اعلان */
+.vui-notification-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.vui-notification-icon.primary {
+  background: var(--vui-primary-gradient);
+}
+
+.vui-notification-icon.info {
+  background: var(--vui-info-gradient);
+}
+
+.vui-notification-icon.success {
+  background: var(--vui-success-gradient);
+}
+
+.vui-notification-icon.warning {
+  background: var(--vui-warning-gradient);
+}
+
+.vui-notification-icon i {
+  color: white;
+  font-size: 1.1rem;
+}
+
+/* محتوای اعلان */
+.vui-notification-content {
+  flex: 1;
+}
+
+.vui-notification-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 5px 0;
+  font-size: 0.95rem;
+}
+
+.vui-notification-desc {
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.vui-notification-time {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  margin-top: 8px;
+  display: block;
+}
+
+/* نشانگر اعلان خوانده نشده */
+.vui-notification-item.unread::before {
+  content: '';
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 8px;
+  height: 8px;
+  background: var(--vui-primary-gradient);
+  border-radius: 50%;
+}
+
+/* فوتر مرکز اعلان‌ها */
+.vui-notification-footer {
+  padding: 10px 15px;
+  text-align: center;
+  border-top: 1px solid var(--border-color);
+}
+
+.vui-notification-footer a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.vui-notification-footer a:hover {
+  color: var(--text-primary);
+}
+
+/* استایل‌های اعلان‌های پاپ‌آپ */
+.vui-notification-popup {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 320px;
+  background: var(--card-bg);
+  border-radius: 10px;
+  box-shadow: var(--card-shadow);
+  border-left: 4px solid transparent;
+  padding: 15px;
+  z-index: 1100;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  transform: translateX(120%);
+  opacity: 0;
+  transition: transform 0.4s ease, opacity 0.3s ease;
+}
+
+.vui-notification-popup.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.vui-notification-popup.primary {
+  border-left-color: #4318ff;
+}
+
+.vui-notification-popup.info {
+  border-left-color: #2152ff;
+}
+
+.vui-notification-popup.success {
+  border-left-color: #01b574;
+}
+
+.vui-notification-popup.warning {
+  border-left-color: #f53939;
+}
+
+.vui-notification-popup-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.vui-notification-popup-icon.primary {
+  background: var(--vui-primary-gradient);
+}
+
+.vui-notification-popup-icon.info {
+  background: var(--vui-info-gradient);
+}
+
+.vui-notification-popup-icon.success {
+  background: var(--vui-success-gradient);
+}
+
+.vui-notification-popup-icon.warning {
+  background: var(--vui-warning-gradient);
+}
+
+.vui-notification-popup-icon i {
+  color: white;
+  font-size: 1rem;
+}
+
+.vui-notification-popup-content {
+  flex: 1;
+}
+
+.vui-notification-popup-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 5px 0;
+  font-size: 0.95rem;
+}
+
+.vui-notification-popup-desc {
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.vui-notification-popup-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0;
+  transition: color 0.3s ease;
+}
+
+.vui-notification-popup-close:hover {
+  color: var(--text-primary);
+}
+
+/* نشانگر اعلان‌ها در نوار بالا */
+.notification-indicator {
+  position: relative;
+}
+
+.notification-indicator .badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--vui-primary-gradient);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* انیمیشن تپش برای نشانگر اعلان */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.notification-indicator .badge.has-new {
+  animation: pulse 1.5s infinite;
+}
