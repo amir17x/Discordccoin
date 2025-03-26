@@ -1,505 +1,494 @@
 /**
- * Dashboard Fixes - رفع مشکلات و بهبود ظاهر داشبورد
+ * فایل برای رفع مشکلات رنگ‌بندی و نمایش در داشبورد
  */
 
-/* رفع مشکل صفحه سیاه - اصلاح زمینه */
-html, body {
-  background-color: var(--vui-bg-primary) !important;
-  color: var(--text-primary) !important;
-  min-height: 100vh;
-  width: 100%;
-  overflow-x: hidden;
-  margin: 0;
-  padding: 0;
+/* رفع مشکل متن‌های سفید روی پس‌زمینه سفید */
+.white-bg, .light-bg, .bg-white, .bg-light {
+    background-color: rgba(32, 32, 48, 0.6) !important;
 }
 
-body:before {
-  content: "";
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: var(--vui-bg-primary);
-  z-index: -1;
+/* اطمینان از خوانایی متن‌ها */
+body {
+    color: rgba(255, 255, 255, 0.85);
 }
 
-.vui-dashboard {
-  background-color: var(--vui-bg-primary) !important;
-  background-image: radial-gradient(
-    circle at 30% 40%, 
-    rgba(67, 24, 255, 0.1) 0%, 
-    rgba(0, 0, 0, 0) 60%
-  ) !important;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  overflow-x: hidden;
+.card, .vui-card {
+    background: linear-gradient(127deg, rgba(33, 33, 50, 0.85) 0%, rgba(22, 22, 42, 0.95) 100%);
+    border-color: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
-.vui-layout {
-  display: flex;
-  flex: 1;
-  position: relative;
-  background-color: transparent !important;
+/* رفع مشکل خوانایی متن‌ها */
+.text-dark, .text-black, h1, h2, h3, h4, h5, h6, p, .card-title, .card-text, .widget-title, .widget-text {
+    color: rgba(255, 255, 255, 0.9) !important;
 }
 
-/* اصلاح رنگ‌های داشبورد - کاهش سفیدی زیاد */
-.stat-card, 
-.vui-card,
-.dashboard-card {
-  background-color: rgba(30, 30, 60, 0.6) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
-  transition: all 0.3s ease-in-out;
+/* بهبود نمودار */
+.vui-chart-container {
+    background-color: rgba(18, 18, 38, 0.4);
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 15px;
 }
 
-.stat-card:hover,
-.dashboard-card:hover {
-  background-color: rgba(40, 40, 80, 0.7) !important;
-  transform: translateY(-3px);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2) !important;
+/* بهبود جداول */
+.table, .vui-table {
+    color: rgba(255, 255, 255, 0.85);
+    border-color: rgba(255, 255, 255, 0.05);
 }
 
-/* داشبورد - کارت‌های آمار */
-.stats-card {
-  background: linear-gradient(145deg, rgba(30, 30, 60, 0.6), rgba(20, 20, 40, 0.8)) !important;
-  border-radius: 16px;
-  padding: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  position: relative;
-  overflow: hidden;
-  transition: all 0.3s ease;
+.table th, .vui-table th {
+    color: rgba(255, 255, 255, 0.95);
+    background-color: rgba(33, 33, 60, 0.6);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.stats-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+.table tbody tr, .vui-table tbody tr {
+    background-color: rgba(33, 33, 60, 0.3);
+    transition: background-color 0.2s;
 }
 
-.stats-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 60px;
-  height: 60px;
-  border-radius: 0 16px 0 60px;
-  opacity: 0.7;
-  z-index: 0;
+.table tbody tr:hover, .vui-table tbody tr:hover {
+    background-color: rgba(33, 33, 60, 0.5);
 }
 
-.stats-card.users-card::before {
-  background: linear-gradient(135deg, #4361ee, #3f37c9);
+/* بهبود ظاهر استتوس بج‌ها */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
 }
 
-.stats-card.clans-card::before {
-  background: linear-gradient(135deg, #0096c7, #0077b6);
+.status-badge.active {
+    background-color: rgba(45, 206, 137, 0.2);
+    color: #2dce89;
+    border: 1px solid rgba(45, 206, 137, 0.3);
 }
 
-.stats-card.ccoin-card::before {
-  background: linear-gradient(135deg, #f72585, #b5179e);
+.status-badge.inactive {
+    background-color: rgba(245, 54, 92, 0.2);
+    color: #f5365c;
+    border: 1px solid rgba(245, 54, 92, 0.3);
 }
 
-.stats-card.quests-card::before {
-  background: linear-gradient(135deg, #ffbe0b, #fb8500);
+.status-badge.pending {
+    background-color: rgba(251, 99, 64, 0.2);
+    color: #fb6340;
+    border: 1px solid rgba(251, 99, 64, 0.3);
 }
 
-.stats-card-title {
-  color: var(--text-secondary);
-  font-size: 1rem;
-  font-weight: 500;
-  margin-bottom: 5px;
-  position: relative;
-  z-index: 1;
+.status-badge i {
+    margin-right: 5px;
 }
 
-.stats-card-value {
-  color: var(--text-primary);
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 5px;
-  position: relative;
-  z-index: 1;
+/* بهبود استایل فرم‌ها */
+.form-control, .form-select {
+    background-color: rgba(33, 33, 60, 0.3);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.85);
 }
 
-.stats-card-trend {
-  display: flex;
-  align-items: center;
-  font-size: 0.875rem;
-  position: relative;
-  z-index: 1;
+.form-control:focus, .form-select:focus {
+    background-color: rgba(33, 33, 60, 0.5);
+    border-color: rgba(94, 114, 228, 0.5);
+    color: rgba(255, 255, 255, 0.95);
 }
 
-.stats-card-trend.up {
-  color: #4ade80;
+.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.5);
 }
 
-.stats-card-trend.down {
-  color: #f87171;
+/* بهبود نوارهای پیشرفت */
+.progress {
+    background-color: rgba(33, 33, 60, 0.3);
+    height: 10px;
+    border-radius: 5px;
 }
 
-.stats-card-icon {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  width: 40px;
-  height: 40px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  z-index: 1;
+/* بهبود ظاهر کارت‌های آمار */
+.vui-stat-card-advanced {
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+    background: linear-gradient(145deg, rgba(33, 33, 60, 0.7) 0%, rgba(18, 18, 38, 0.8) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* نمودارها */
-.chart-card {
-  background: linear-gradient(145deg, rgba(30, 30, 60, 0.6), rgba(20, 20, 40, 0.8)) !important;
-  border-radius: 16px;
-  padding: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  margin-bottom: 20px;
+.vui-stat-card-advanced:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
 }
 
-.chart-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
+.stat-title {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.95rem;
+    margin-bottom: 10px;
 }
 
-.chart-card-title {
-  color: var(--text-primary);
-  font-size: 1.25rem;
-  font-weight: 600;
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+    background: linear-gradient(to right, #5e72e4, #8466e2);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
-.chart-card-actions {
-  display: flex;
-  gap: 10px;
+/* بهبود استایل دکمه‌ها */
+.vui-btn {
+    border-radius: 6px;
+    font-weight: 600;
+    padding: 8px 16px;
+    transition: all 0.2s ease;
 }
 
-.chart-card-action {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
-  transition: all 0.3s ease;
-  cursor: pointer;
+.vui-btn-primary {
+    background: linear-gradient(to right, #5e72e4, #825ee4);
+    border: none;
 }
 
-.chart-card-action:hover {
-  background: rgba(255, 255, 255, 0.2);
-  color: var(--text-primary);
-  transform: translateY(-2px);
+.vui-btn-primary:hover {
+    background: linear-gradient(to right, #4c60d0, #7050e0);
+    transform: translateY(-2px);
 }
 
-.chart-wrapper {
-  position: relative;
-  height: 250px;
+.vui-btn-outline {
+    background-color: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.8);
 }
 
-/* رفع مشکل در منوهای کشویی */
+.vui-btn-outline:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+    background-color: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.95);
+}
+
+/* بهبود جریان فعالیت‌ها */
+.vui-activity-feed {
+    padding: 0;
+}
+
+.vui-activity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.vui-activity-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.vui-activity-item {
+    padding: 15px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background-color 0.2s;
+}
+
+.vui-activity-item:last-child {
+    border-bottom: none;
+}
+
+.vui-activity-item:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.vui-activity-title {
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.vui-activity-time {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 5px;
+}
+
+.vui-activity-desc {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 0;
+}
+
+/* اصلاح منوهای کشویی */
 .dropdown-menu {
-  background: rgba(30, 30, 60, 0.95) !important;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: var(--radius-md);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2) !important;
+    background-color: rgba(33, 33, 60, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    padding: 8px 0;
+    max-height: 80vh;
+    overflow-y: auto;
 }
 
 .dropdown-item {
-  color: var(--text-secondary) !important;
+    color: rgba(255, 255, 255, 0.8);
+    padding: 8px 16px;
+    transition: background-color 0.2s;
 }
 
-.dropdown-item:hover, .dropdown-item:focus {
-  background: rgba(255, 255, 255, 0.1) !important;
-  color: var(--text-primary) !important;
+.dropdown-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.95);
 }
 
-/* رفع مشکل پروفایل و نوتیفیکیشن */
-.profile-dropdown, .notification-dropdown {
-  opacity: 1 !important;
-  visibility: visible !important;
-  transform: none !important;
-  transition: all 0.3s ease !important;
-  min-width: 300px !important;
-  max-height: 400px !important;
-  overflow-y: auto !important;
+.dropdown-divider {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin: 4px 0;
 }
 
-.notification-item {
-  padding: 12px 15px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  transition: all 0.3s ease;
+/* نوار وضعیت سیستم */
+.vui-system-status-bar {
+    display: flex;
+    flex-wrap: wrap;
+    background: linear-gradient(to right, rgba(33, 33, 60, 0.8), rgba(18, 18, 38, 0.8));
+    border-radius: 10px;
+    padding: 12px 20px;
+    gap: 20px;
 }
 
-.notification-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+.status-item {
+    display: flex;
+    align-items: center;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
 }
 
-.notification-content {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
+.status-item i {
+    margin-right: 8px;
+    font-size: 0.85rem;
+}
+
+.status-item strong {
+    margin-left: 5px;
+    color: rgba(255, 255, 255, 0.95);
+}
+
+/* افزودن انیمیشن ورود به صفحه */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.5s ease forwards;
+}
+
+/* بهبود نمایش سایدبار */
+.vui-sidebar {
+    background: linear-gradient(180deg, rgba(33, 33, 60, 0.9) 0%, rgba(18, 18, 38, 0.95) 100%);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 5px 0 15px rgba(0, 0, 0, 0.1);
+}
+
+.vui-sidebar .nav-link {
+    color: rgba(255, 255, 255, 0.7);
+    border-radius: 6px;
+    margin: 4px 10px;
+    padding: 10px 15px;
+    transition: all 0.2s ease;
+}
+
+.vui-sidebar .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.vui-sidebar .nav-link.active {
+    background: linear-gradient(to right, rgba(94, 114, 228, 0.2), rgba(130, 94, 228, 0.2));
+    color: #5e72e4;
+    font-weight: 600;
+}
+
+.vui-sidebar .nav-link i {
+    margin-right: 8px;
+}
+
+/* منوی اصلی در حالت جمع‌شده */
+.vui-sidebar.collapsed {
+    width: 80px;
+}
+
+.vui-sidebar.collapsed .nav-link span {
+    display: none;
+}
+
+.vui-sidebar.collapsed .nav-link i {
+    font-size: 1.2rem;
+    margin-right: 0;
+}
+
+/* دکمه جمع/باز کردن سایدبار */
+.sidebar-toggle-btn {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(33, 33, 60, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+.sidebar-toggle-btn:hover {
+    background-color: rgba(33, 33, 60, 1);
+    color: rgba(255, 255, 255, 0.95);
+}
+
+/* حالت انتخاب شده */
+.selected-row {
+    background-color: rgba(94, 114, 228, 0.1) !important;
+    border-left: 3px solid #5e72e4;
+}
+
+/* اصلاح لودر */
+.loader-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(18, 18, 38, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.loader {
+    width: 50px;
+    height: 50px;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    border-top-color: #5e72e4;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* استایل‌های جدید برای بهبود نمایش نوتیفیکیشن‌ها */
+.notification-dropdown {
+    width: 320px;
+    padding: 0;
+    overflow: hidden;
+    max-height: 80vh;
+}
+
+.vui-notification-item {
+    display: flex;
+    padding: 12px 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background-color 0.2s ease;
+    text-decoration: none;
+}
+
+.vui-notification-item:hover {
+    background-color: rgba(33, 33, 60, 0.8);
+}
+
+.vui-notification-item.unread {
+    background-color: rgba(94, 114, 228, 0.05);
 }
 
 .notification-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+    font-size: 1.2rem;
+    color: white;
 }
 
-.notification-icon.primary {
-  background: var(--vui-primary-gradient);
-}
-
-.notification-icon.info {
-  background: var(--vui-info-gradient);
-}
-
-.notification-icon.success {
-  background: var(--vui-success-gradient);
-}
-
-.notification-icon.warning {
-  background: var(--vui-warning-gradient);
-}
-
-.notification-icon.danger {
-  background: var(--vui-danger-gradient);
-}
-
-.notification-text {
-  flex: 1;
+.notification-content {
+    flex: 1;
 }
 
 .notification-title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 3px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0 0 3px 0;
+    font-size: 0.9rem;
 }
 
-.notification-message {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
+.notification-text {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0 0 3px 0;
+    font-size: 0.85rem;
 }
 
 .notification-time {
-  font-size: 0.75rem;
-  color: var(--text-disabled);
-  margin-top: 5px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.75rem;
 }
 
-/* نمودار میله‌ای */
-.bar-chart-card {
-  background: linear-gradient(145deg, rgba(30, 30, 60, 0.6), rgba(20, 20, 40, 0.8)) !important;
-  border-radius: 16px;
-  padding: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  margin-bottom: 20px;
-  height: 100%;
+.vui-dropdown-footer {
+    display: block;
+    padding: 10px 15px;
+    text-align: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    text-decoration: none;
 }
 
-.bar-chart-wrapper {
-  height: 200px;
+.vui-dropdown-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* جدول آخرین فعالیت‌ها */
-.activity-table {
-  width: 100%;
+/* قابلیت ریسپانسیو بهتر */
+@media (max-width: 991.98px) {
+    .vui-dashboard-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
-.activity-table th,
-.activity-table td {
-  padding: 12px 15px;
-  text-align: right;
-}
-
-.activity-table th {
-  color: var(--text-secondary);
-  font-weight: 600;
-  font-size: 0.9rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.activity-table td {
-  color: var(--text-primary);
-  font-size: 0.9rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.activity-table tr:last-child td {
-  border-bottom: none;
-}
-
-.activity-table tr:hover td {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.activity-user {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.activity-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  overflow: hidden;
-  background: var(--vui-bg-card);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  color: var(--text-primary);
-  flex-shrink: 0;
-}
-
-.activity-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.activity-info {
-  flex: 1;
-}
-
-.activity-name {
-  font-weight: 600;
-  color: var(--text-primary);
-  font-size: 0.9rem;
-}
-
-.activity-action {
-  color: var(--text-secondary);
-  font-size: 0.8rem;
-}
-
-.activity-status {
-  padding: 5px 10px;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  text-align: center;
-}
-
-.activity-status.success {
-  background: rgba(1, 181, 116, 0.2);
-  color: #4ade80;
-}
-
-.activity-status.warning {
-  background: rgba(255, 181, 71, 0.2);
-  color: #fcd34d;
-}
-
-.activity-status.danger {
-  background: rgba(236, 64, 122, 0.2);
-  color: #f87171;
-}
-
-.activity-status.info {
-  background: rgba(57, 184, 255, 0.2);
-  color: #38bdf8;
-}
-
-.activity-time {
-  font-size: 0.8rem;
-  color: var(--text-disabled);
-  white-space: nowrap;
-}
-
-/* رفع مشکل پاپ آپ‌ها */
-.modal-content {
-  background: rgba(30, 30, 60, 0.95) !important;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: 16px !important;
-  color: var(--text-primary) !important;
-}
-
-.modal-header {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-}
-
-.modal-footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
-}
-
-.btn-close {
-  color: white !important;
-  filter: invert(1);
-  opacity: 0.7 !important;
-}
-
-.btn-close:hover {
-  opacity: 1 !important;
-}
-
-/* متریک‌های کلیدی */
-.key-metrics {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 20px;
-  margin-top: 20px;
-}
-
-.metric-item {
-  background: linear-gradient(145deg, rgba(40, 40, 70, 0.6), rgba(30, 30, 50, 0.8)) !important;
-  border-radius: 12px;
-  padding: 15px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  transition: all 0.3s ease;
-}
-
-.metric-item:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.metric-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  margin-bottom: 15px;
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text-primary);
-}
-
-.metric-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 5px;
-}
-
-.metric-label {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
+@media (max-width: 767.98px) {
+    .vui-dashboard-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .vui-page-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .vui-page-header-actions {
+        margin-top: 15px;
+        width: 100%;
+        justify-content: flex-start;
+    }
+    
+    .vui-system-status-bar {
+        flex-direction: column;
+        gap: 10px;
+    }
 }

@@ -1,184 +1,206 @@
 /**
- * بهبود عملکرد منوهای کشویی - رفع مشکل پروفایل و نوتیفیکیشن
+ * اصلاحات منوهای کشویی
+ * این فایل اسکریپت‌های لازم برای رفع مشکلات منوهای کشویی را ارائه می‌دهد
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-  // بهبود عملکرد درپ‌داون bootstrap
-  initDropdownFixes();
-  
-  // بهبود عملکرد منوی نوتیفیکیشن
-  initNotificationDropdown();
-  
-  // بهبود عملکرد منوی پروفایل
-  initProfileDropdown();
+    // بهبود عملکرد منوهای کشویی
+    fixDropdownMenus();
+    
+    // رفع مشکل منوهای پروفایل و اعلان‌ها
+    fixSpecialDropdowns();
+    
+    // بهبود تعامل با منوهای پروفایل و اعلان‌ها
+    enhanceNotificationCenter();
+    enhanceProfileDropdown();
 });
 
 /**
- * بهبود عملکرد کلی منوهای کشویی بوت‌استرپ
+ * رفع مشکلات منوهای کشویی عمومی
  */
-function initDropdownFixes() {
-  // هماهنگ‌سازی با راست‌چین بودن قالب
-  document.querySelectorAll('.dropdown-menu').forEach(function(menu) {
-    if (menu.classList.contains('dropdown-menu-end')) {
-      menu.style.left = 'auto';
-      menu.style.right = '0';
-    }
-  });
-  
-  // بهبود انیمیشن منوهای کشویی
-  const dropdownToggles = document.querySelectorAll('[data-bs-toggle="dropdown"]');
-  
-  dropdownToggles.forEach(function(toggle) {
-    toggle.addEventListener('shown.bs.dropdown', function(e) {
-      const dropdown = document.querySelector(`[aria-labelledby="${toggle.id}"]`) || 
-                       toggle.nextElementSibling;
-                       
-      if (dropdown && dropdown.classList.contains('dropdown-menu')) {
-        dropdown.style.opacity = '0';
-        dropdown.style.transform = 'translateY(10px)';
-        
-        setTimeout(function() {
-          dropdown.style.opacity = '1';
-          dropdown.style.transform = 'translateY(0)';
-          dropdown.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-        }, 0);
-      }
+function fixDropdownMenus() {
+    // یافتن تمامی منوهای کشویی
+    var dropdownToggles = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+    
+    // اضافه کردن کلاس‌های لازم و اصلاح موقعیت منوها
+    dropdownToggles.forEach(function(toggle) {
+        // بررسی وضعیت منوی کشویی
+        toggle.addEventListener('click', function(e) {
+            // یافتن منوی مربوطه
+            var dropdownMenu = this.nextElementSibling;
+            if (!dropdownMenu || !dropdownMenu.classList.contains('dropdown-menu')) {
+                dropdownMenu = this.parentElement.querySelector('.dropdown-menu');
+            }
+            
+            if (dropdownMenu) {
+                // تأخیر کوتاه برای اطمینان از نمایش درست
+                setTimeout(function() {
+                    // بررسی وضعیت نمایش
+                    if (dropdownMenu.classList.contains('show')) {
+                        // اطمینان از نمایش کامل
+                        dropdownMenu.style.display = 'block';
+                        dropdownMenu.style.opacity = '1';
+                        dropdownMenu.style.visibility = 'visible';
+                        
+                        // تنظیم موقعیت صحیح در صفحه
+                        positionDropdownMenu(dropdownMenu, toggle);
+                    }
+                }, 10);
+            }
+        });
     });
-  });
+    
+    // بستن منوها با کلیک خارج از منو
+    document.addEventListener('click', function(e) {
+        var target = e.target;
+        var isDropdownToggle = target.hasAttribute('data-bs-toggle') && 
+                              target.getAttribute('data-bs-toggle') === 'dropdown';
+        var isInsideDropdown = target.closest('.dropdown-menu') !== null;
+        
+        if (!isDropdownToggle && !isInsideDropdown) {
+            var openDropdowns = document.querySelectorAll('.dropdown-menu.show');
+            openDropdowns.forEach(function(menu) {
+                menu.classList.remove('show');
+            });
+        }
+    });
 }
 
 /**
- * بهبود عملکرد منوی نوتیفیکیشن
+ * رفع مشکلات خاص منوهای پروفایل و اعلان‌ها
  */
-function initNotificationDropdown() {
-  const notificationToggle = document.querySelector('.notification-bell button');
-  const notificationDropdown = document.querySelector('.notification-dropdown');
-  
-  if (notificationToggle && notificationDropdown) {
-    // اضافه کردن کلاس‌های مورد نیاز
-    notificationDropdown.classList.add('dropdown-menu-end');
+function fixSpecialDropdowns() {
+    // رفع مشکل منوی پروفایل
+    var profileDropdown = document.querySelector('.profile-dropdown .dropdown-menu');
+    if (profileDropdown) {
+        ensureFullVisibility(profileDropdown);
+    }
     
-    // اطمینان از مقادیر z-index صحیح
-    notificationDropdown.style.zIndex = '1050';
+    // رفع مشکل منوی اعلان‌ها
+    var notificationDropdown = document.querySelector('.notification-center .dropdown-menu');
+    if (notificationDropdown) {
+        ensureFullVisibility(notificationDropdown);
+    }
+}
+
+/**
+ * اطمینان از نمایش کامل یک منوی کشویی
+ */
+function ensureFullVisibility(menu) {
+    menu.style.maxHeight = '80vh';
+    menu.style.overflowY = 'auto';
+    menu.style.display = 'block';
+    menu.style.opacity = '1';
+    menu.style.visibility = 'visible';
     
-    // نمایش نوتیفیکیشن با کلیک
-    notificationToggle.addEventListener('click', function(e) {
-      if (!notificationDropdown.classList.contains('show-manually')) {
-        e.stopPropagation();
-        showDropdown(notificationDropdown);
-      } else {
-        e.stopPropagation();
-        hideDropdown(notificationDropdown);
-      }
+    // پوزیشن منو
+    menu.style.position = 'absolute';
+    menu.style.transform = 'none';
+    menu.style.top = '100%';
+    menu.style.right = '0';
+    menu.style.left = 'auto';
+    
+    // z-index بالا برای رفع مشکلات نمایشی
+    menu.style.zIndex = '1050';
+}
+
+/**
+ * تنظیم موقعیت منوی کشویی بر اساس موقعیت دکمه
+ */
+function positionDropdownMenu(menu, toggle) {
+    // بررسی آیا منو از صفحه خارج می‌شود
+    var rect = menu.getBoundingClientRect();
+    var toggleRect = toggle.getBoundingClientRect();
+    var windowWidth = window.innerWidth;
+    
+    // تنظیم موقعیت بر اساس RTL یا LTR
+    var isRTL = document.dir === 'rtl' || 
+                document.documentElement.getAttribute('dir') === 'rtl';
+    
+    if (isRTL) {
+        // برای قالب‌های RTL
+        if (rect.right > windowWidth) {
+            menu.style.right = '0';
+            menu.style.left = 'auto';
+        } else if (rect.left < 0) {
+            menu.style.left = '0';
+            menu.style.right = 'auto';
+        }
+    } else {
+        // برای قالب‌های LTR
+        if (rect.right > windowWidth) {
+            menu.style.left = 'auto';
+            menu.style.right = '0';
+        } else if (rect.left < 0) {
+            menu.style.left = '0';
+            menu.style.right = 'auto';
+        }
+    }
+    
+    // تنظیم برای حالت موبایل
+    if (windowWidth <= 768) {
+        menu.style.position = 'fixed';
+        menu.style.top = (toggleRect.bottom + window.scrollY) + 'px';
+        
+        if (isRTL) {
+            menu.style.right = '10px';
+            menu.style.left = '10px';
+        } else {
+            menu.style.left = '10px';
+            menu.style.right = '10px';
+        }
+        
+        menu.style.width = 'calc(100% - 20px)';
+        menu.style.maxWidth = '400px';
+    }
+}
+
+/**
+ * بهبود عملکرد مرکز اعلان‌ها
+ */
+function enhanceNotificationCenter() {
+    var notificationToggle = document.querySelector('.notification-center [data-bs-toggle="dropdown"]');
+    if (!notificationToggle) return;
+    
+    notificationToggle.addEventListener('click', function() {
+        setTimeout(function() {
+            var menu = document.querySelector('.notification-center .dropdown-menu');
+            if (menu && menu.classList.contains('show')) {
+                // تنظیمات خاص برای منوی اعلان‌ها
+                menu.style.width = '320px';
+                menu.style.maxHeight = '80vh';
+                
+                // اسکرول به بالای لیست
+                var notificationList = menu.querySelector('.notification-list');
+                if (notificationList) {
+                    notificationList.scrollTop = 0;
+                }
+                
+                // علامت‌گذاری اعلان‌ها به عنوان خوانده‌شده
+                var unreadBadge = document.querySelector('.notification-badge');
+                if (unreadBadge) {
+                    unreadBadge.style.display = 'none';
+                }
+            }
+        }, 10);
     });
-    
-    // بستن با کلیک بیرون
-    document.addEventListener('click', function(e) {
-      if (!notificationDropdown.contains(e.target) && 
-          !notificationToggle.contains(e.target) &&
-          notificationDropdown.classList.contains('show-manually')) {
-        hideDropdown(notificationDropdown);
-      }
-    });
-    
-    // بستن با کلیک روی آیتم‌ها
-    notificationDropdown.querySelectorAll('a').forEach(function(item) {
-      item.addEventListener('click', function() {
-        hideDropdown(notificationDropdown);
-      });
-    });
-  }
 }
 
 /**
  * بهبود عملکرد منوی پروفایل
  */
-function initProfileDropdown() {
-  const profileToggle = document.querySelector('.user-dropdown button');
-  const profileDropdown = document.querySelector('.user-dropdown .dropdown-menu');
-  
-  if (profileToggle && profileDropdown) {
-    // اضافه کردن کلاس‌های مورد نیاز
-    profileDropdown.classList.add('dropdown-menu-end');
+function enhanceProfileDropdown() {
+    var profileToggle = document.querySelector('.profile-dropdown [data-bs-toggle="dropdown"]');
+    if (!profileToggle) return;
     
-    // اطمینان از مقادیر z-index صحیح
-    profileDropdown.style.zIndex = '1050';
-    
-    // نمایش پروفایل با کلیک
-    profileToggle.addEventListener('click', function(e) {
-      if (!profileDropdown.classList.contains('show-manually')) {
-        e.stopPropagation();
-        showDropdown(profileDropdown);
-      } else {
-        e.stopPropagation();
-        hideDropdown(profileDropdown);
-      }
+    profileToggle.addEventListener('click', function() {
+        setTimeout(function() {
+            var menu = document.querySelector('.profile-dropdown .dropdown-menu');
+            if (menu && menu.classList.contains('show')) {
+                // تنظیمات خاص برای منوی پروفایل
+                menu.style.width = '280px';
+                menu.style.maxHeight = '80vh';
+            }
+        }, 10);
     });
-    
-    // بستن با کلیک بیرون
-    document.addEventListener('click', function(e) {
-      if (!profileDropdown.contains(e.target) && 
-          !profileToggle.contains(e.target) &&
-          profileDropdown.classList.contains('show-manually')) {
-        hideDropdown(profileDropdown);
-      }
-    });
-    
-    // بستن با کلیک روی آیتم‌ها
-    profileDropdown.querySelectorAll('a').forEach(function(item) {
-      if (!item.classList.contains('dropdown-item-text')) {
-        item.addEventListener('click', function() {
-          hideDropdown(profileDropdown);
-        });
-      }
-    });
-  }
 }
-
-/**
- * نمایش منوی کشویی با انیمیشن
- */
-function showDropdown(dropdown) {
-  dropdown.classList.add('show', 'show-manually');
-  dropdown.style.display = 'block';
-  dropdown.style.opacity = '0';
-  dropdown.style.transform = 'translateY(10px)';
-  
-  setTimeout(function() {
-    dropdown.style.opacity = '1';
-    dropdown.style.transform = 'translateY(0)';
-    dropdown.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-  }, 10);
-}
-
-/**
- * مخفی کردن منوی کشویی با انیمیشن
- */
-function hideDropdown(dropdown) {
-  dropdown.style.opacity = '0';
-  dropdown.style.transform = 'translateY(10px)';
-  
-  setTimeout(function() {
-    dropdown.classList.remove('show', 'show-manually');
-    dropdown.style.display = 'none';
-  }, 300);
-}
-
-/**
- * رفع مشکل رنگ‌های متن و بک‌گراند
- */
-document.addEventListener('DOMContentLoaded', function() {
-  // رفع مشکل بخش‌های سفید
-  document.querySelectorAll('.card, .container-fluid, .white-bg, .light-bg').forEach(function(element) {
-    element.style.backgroundColor = 'transparent';
-  });
-  
-  // اطمینان از رنگ متن‌ها
-  document.querySelectorAll('.card-title, .card-text, .card-header, .card-body, h1, h2, h3, h4, h5, h6, p, .text-content').forEach(function(element) {
-    // بررسی اینکه آیا متن خوانده می‌شود
-    const color = window.getComputedStyle(element).color;
-    if (color === 'rgb(0, 0, 0)' || color === '#000000' || color === '#000' || color === 'black') {
-      element.style.color = 'rgba(255, 255, 255, 0.9)';
-    }
-  });
-});

@@ -1,158 +1,236 @@
 /**
- * Vision UI Dashboard - Sidebar Controller
- * کنترل‌کننده سایدبار با قابلیت جمع و باز شدن
+ * کنترل‌کننده سایدبار
+ * این اسکریپت امکان جمع/باز کردن سایدبار را فراهم می‌کند
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-  // راه‌اندازی کنترل‌کننده سایدبار
-  initSidebarController();
-  
-  // بررسی وضعیت ذخیره شده سایدبار
-  loadSidebarState();
+    // تنظیم اولیه سایدبار
+    initSidebar();
+    
+    // اضافه کردن دکمه جمع/باز کردن سایدبار
+    addSidebarToggleButton();
+    
+    // حفظ وضعیت سایدبار در localStorage
+    loadSidebarState();
+    
+    // فعال‌سازی منوهای آکاردئونی
+    setupAccordionMenus();
+    
+    // فعال کردن منوی فعلی بر اساس URL
+    highlightCurrentPage();
 });
 
 /**
- * راه‌اندازی کنترل‌کننده سایدبار
+ * تنظیم اولیه سایدبار
  */
-function initSidebarController() {
-  const sidebarToggle = document.getElementById('sidebarToggle');
-  
-  if (sidebarToggle) {
-    // رویداد کلیک روی دکمه جمع/باز کردن
-    sidebarToggle.addEventListener('click', function() {
-      toggleSidebar();
-    });
+function initSidebar() {
+    var sidebar = document.querySelector('.vui-sidebar');
+    if (!sidebar) return;
     
-    // رویداد کلیک روی بخش‌های سایدبار برای موبایل
-    const sidebarItems = document.querySelectorAll('.vui-sidebar-nav-item a');
+    // اضافه کردن کلاس‌های نیاز برای انیمیشن
+    sidebar.classList.add('sidebar-transition');
     
-    sidebarItems.forEach(item => {
-      item.addEventListener('click', function() {
-        if (window.innerWidth <= 992) {
-          document.body.classList.remove('sidebar-open');
-        }
-      });
-    });
+    // تنظیم عرض اولیه
+    sidebar.style.width = '260px';
     
-    // دکمه منوی موبایل
-    const mobileToggle = document.querySelector('.mobile-sidebar-toggle');
-    
-    if (mobileToggle) {
-      mobileToggle.addEventListener('click', function() {
-        document.body.classList.toggle('sidebar-open');
-      });
-    }
-    
-    // اضافه کردن دکمه موبایل اگر وجود نداشته باشد
-    else {
-      const header = document.querySelector('.vui-header');
-      
-      if (header) {
-        const mobileBtn = document.createElement('div');
-        mobileBtn.className = 'mobile-sidebar-toggle';
-        mobileBtn.innerHTML = '<i class="bi bi-list"></i>';
-        
-        header.insertBefore(mobileBtn, header.firstChild);
-        
-        mobileBtn.addEventListener('click', function() {
-          document.body.classList.toggle('sidebar-open');
-        });
-      }
-    }
-    
-    // پیاده‌سازی زیرمنوها
-    const submenuItems = document.querySelectorAll('.vui-sidebar-nav-item.has-submenu');
-    
-    submenuItems.forEach(item => {
-      const submenuToggle = item.querySelector('.vui-sidebar-nav-text');
-      
-      if (submenuToggle) {
-        submenuToggle.addEventListener('click', function(e) {
-          e.preventDefault();
-          item.classList.toggle('open');
-        });
-      }
-    });
-    
-    // بستن سایدبار با کلیک بیرون از آن (برای موبایل)
-    document.addEventListener('click', function(e) {
-      if (window.innerWidth <= 992) {
-        const sidebar = document.querySelector('.vui-sidebar');
-        const mobileToggle = document.querySelector('.mobile-sidebar-toggle');
-        
-        if (sidebar && mobileToggle) {
-          if (!sidebar.contains(e.target) && !mobileToggle.contains(e.target) && document.body.classList.contains('sidebar-open')) {
-            document.body.classList.remove('sidebar-open');
-          }
-        }
-      }
-    });
-    
-    // گوش دادن به تغییر سایز صفحه
-    window.addEventListener('resize', function() {
-      if (window.innerWidth > 992) {
-        document.body.classList.remove('sidebar-open');
-      }
-    });
-  }
+    // تنظیم transition برای انیمیشن نرم
+    sidebar.style.transition = 'width 0.3s ease, transform 0.3s ease';
 }
 
 /**
- * تغییر وضعیت سایدبار بین حالت جمع و باز
+ * اضافه کردن دکمه جمع/باز کردن سایدبار
+ */
+function addSidebarToggleButton() {
+    var sidebar = document.querySelector('.vui-sidebar');
+    if (!sidebar) return;
+    
+    // ایجاد دکمه
+    var toggleButton = document.createElement('button');
+    toggleButton.className = 'sidebar-toggle-btn';
+    toggleButton.setAttribute('title', 'جمع کردن/بازکردن منو');
+    toggleButton.innerHTML = '<i class="bi bi-arrow-bar-left"></i>';
+    
+    // اضافه کردن دکمه به سایدبار
+    sidebar.appendChild(toggleButton);
+    
+    // اضافه کردن رویداد کلیک
+    toggleButton.addEventListener('click', function() {
+        toggleSidebar();
+    });
+}
+
+/**
+ * جمع/باز کردن سایدبار
  */
 function toggleSidebar() {
-  document.body.classList.toggle('sidebar-collapsed');
-  
-  // ذخیره وضعیت
-  saveSidebarState();
-  
-  // ایجاد رویداد سفارشی برای مطلع کردن سایر اسکریپت‌ها
-  const event = new CustomEvent('sidebarToggle', {
-    detail: { collapsed: document.body.classList.contains('sidebar-collapsed') }
-  });
-  
-  document.dispatchEvent(event);
+    var sidebar = document.querySelector('.vui-sidebar');
+    var content = document.querySelector('.vui-content-wrapper');
+    var isCollapsed = sidebar.classList.contains('collapsed');
+    
+    if (isCollapsed) {
+        // باز کردن سایدبار
+        sidebar.classList.remove('collapsed');
+        sidebar.style.width = '260px';
+        
+        // تغییر آیکون دکمه
+        var toggleButton = sidebar.querySelector('.sidebar-toggle-btn i');
+        if (toggleButton) toggleButton.className = 'bi bi-arrow-bar-left';
+        
+        // تنظیم فاصله محتوا
+        if (content) content.style.marginRight = '260px';
+        
+        // نمایش متن منوها
+        showMenuTexts();
+    } else {
+        // جمع کردن سایدبار
+        sidebar.classList.add('collapsed');
+        sidebar.style.width = '70px';
+        
+        // تغییر آیکون دکمه
+        var toggleButton = sidebar.querySelector('.sidebar-toggle-btn i');
+        if (toggleButton) toggleButton.className = 'bi bi-arrow-bar-right';
+        
+        // تنظیم فاصله محتوا
+        if (content) content.style.marginRight = '70px';
+        
+        // پنهان کردن متن منوها
+        hideMenuTexts();
+    }
+    
+    // ذخیره وضعیت سایدبار
+    saveSidebarState(!isCollapsed);
+}
+
+/**
+ * نمایش متن منوهای سایدبار
+ */
+function showMenuTexts() {
+    var menuItems = document.querySelectorAll('.vui-sidebar .nav-link span');
+    menuItems.forEach(function(span) {
+        span.style.display = 'inline';
+        span.style.opacity = '1';
+        span.style.width = 'auto';
+    });
+    
+    // نمایش لوگو
+    var logoText = document.querySelector('.vui-sidebar .sidebar-brand-text');
+    if (logoText) logoText.style.display = 'block';
+}
+
+/**
+ * پنهان کردن متن منوهای سایدبار
+ */
+function hideMenuTexts() {
+    var menuItems = document.querySelectorAll('.vui-sidebar .nav-link span');
+    menuItems.forEach(function(span) {
+        span.style.display = 'none';
+        span.style.opacity = '0';
+        span.style.width = '0';
+    });
+    
+    // پنهان کردن لوگو
+    var logoText = document.querySelector('.vui-sidebar .sidebar-brand-text');
+    if (logoText) logoText.style.display = 'none';
 }
 
 /**
  * ذخیره وضعیت سایدبار در localStorage
  */
-function saveSidebarState() {
-  const collapsed = document.body.classList.contains('sidebar-collapsed');
-  
-  try {
-    localStorage.setItem('sidebar-collapsed', collapsed ? 'true' : 'false');
-  } catch (error) {
-    console.error('Error saving sidebar state:', error);
-  }
+function saveSidebarState(isExpanded) {
+    try {
+        localStorage.setItem('vui-sidebar-expanded', isExpanded ? 'true' : 'false');
+    } catch (e) {
+        console.log('خطا در ذخیره وضعیت سایدبار:', e);
+    }
 }
 
 /**
- * بارگذاری وضعیت ذخیره شده سایدبار از localStorage
+ * بازیابی وضعیت سایدبار از localStorage
  */
 function loadSidebarState() {
-  try {
-    const collapsed = localStorage.getItem('sidebar-collapsed');
-    
-    if (collapsed === 'true') {
-      document.body.classList.add('sidebar-collapsed');
-    } else {
-      document.body.classList.remove('sidebar-collapsed');
+    try {
+        var isExpanded = localStorage.getItem('vui-sidebar-expanded');
+        
+        if (isExpanded === 'false') {
+            // اگر قبلاً جمع شده بود، دوباره جمع شود
+            var sidebar = document.querySelector('.vui-sidebar');
+            if (sidebar && !sidebar.classList.contains('collapsed')) {
+                toggleSidebar();
+            }
+        }
+    } catch (e) {
+        console.log('خطا در بازیابی وضعیت سایدبار:', e);
     }
-  } catch (error) {
-    console.error('Error loading sidebar state:', error);
-  }
 }
 
-// افزودن متدها به window برای دسترسی مستقیم
-window.sidebarController = {
-  toggle: toggleSidebar,
-  collapse: function() {
-    document.body.classList.add('sidebar-collapsed');
-    saveSidebarState();
-  },
-  expand: function() {
-    document.body.classList.remove('sidebar-collapsed');
-    saveSidebarState();
-  }
-};
+/**
+ * راه‌اندازی منوهای آکاردئونی سایدبار
+ */
+function setupAccordionMenus() {
+    var accordionToggles = document.querySelectorAll('.vui-sidebar [data-bs-toggle="collapse"]');
+    
+    accordionToggles.forEach(function(toggle) {
+        toggle.addEventListener('click', function(e) {
+            var target = this.getAttribute('data-bs-target') || this.getAttribute('href');
+            if (!target) return;
+            
+            // جلوگیری از بسته شدن منو در حالت جمع شده سایدبار
+            var sidebar = document.querySelector('.vui-sidebar');
+            if (sidebar.classList.contains('collapsed')) {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleSidebar(); // باز کردن سایدبار
+                
+                // با تأخیر منو را باز کن
+                setTimeout(function() {
+                    var targetElement = document.querySelector(target);
+                    if (targetElement && !targetElement.classList.contains('show')) {
+                        var bsCollapse = new bootstrap.Collapse(targetElement, {
+                            toggle: true
+                        });
+                    }
+                }, 300);
+            }
+        });
+    });
+}
+
+/**
+ * هایلایت کردن منوی فعال بر اساس URL صفحه
+ */
+function highlightCurrentPage() {
+    var currentPath = window.location.pathname;
+    var menuItems = document.querySelectorAll('.vui-sidebar .nav-link');
+    
+    menuItems.forEach(function(item) {
+        var href = item.getAttribute('href');
+        if (!href || href === '#') return;
+        
+        // بررسی آیا لینک با مسیر فعلی مطابقت دارد
+        if (currentPath === href || 
+            (href !== '/admin' && currentPath.startsWith(href))) {
+            item.classList.add('active');
+            
+            // باز کردن والد آکاردئونی اگر وجود داشته باشد
+            var parent = item.closest('.collapse');
+            if (parent) {
+                parent.classList.add('show');
+                var trigger = document.querySelector('[data-bs-target="#' + parent.id + '"]') || 
+                             document.querySelector('[href="#' + parent.id + '"]');
+                if (trigger) {
+                    trigger.classList.remove('collapsed');
+                    trigger.setAttribute('aria-expanded', 'true');
+                    
+                    // فعال کردن والد منو
+                    var parentItem = trigger.closest('.nav-item');
+                    if (parentItem) {
+                        var parentLink = parentItem.querySelector('.nav-link');
+                        if (parentLink) parentLink.classList.add('active');
+                    }
+                }
+            }
+        } else {
+            item.classList.remove('active');
+        }
+    });
+}
