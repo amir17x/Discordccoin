@@ -1,0 +1,1975 @@
+### مستندسازی جامع و دقیق منوی کناری (Sidebar) پنل ادمین ربات دیسکورد Ccoin با دسته‌بندی‌های مشخص
+
+#### مقدمه
+این مستند به تحلیل و مستندسازی منوی کناری (Sidebar) پنل ادمین ربات دیسکورد Ccoin می‌پردازد. با توجه به توضیحات ارائه‌شده، بخش‌های منو به دسته‌بندی‌های مشخص تقسیم شده‌اند: **اصلی**، **اقتصاد**، **گیم‌پلی**، **اجتماعی**، **سیستم**، و **توسعه**. هر بخش به‌صورت دقیق توضیح داده می‌شود، نحوه مدیریت آن‌ها در پنل ادمین شرح داده می‌شود، و کدهای لازم برای پیاده‌سازی هر بخش با جزئیات کامل ارائه و مستندسازی می‌شود. هدف این است که یک پنل ادمین جامع و حرفه‌ای برای مدیریت تمام جنبه‌های ربات دیسکورد Ccoin ایجاد شود.
+
+---
+
+### 1. دسته‌بندی و تحلیل منوی کناری (Sidebar)
+
+#### 1.1. دسته‌بندی‌های منوی کناری
+بر اساس توضیحات شما، منوی کناری به دسته‌بندی‌های زیر تقسیم می‌شود:
+
+1. **اصلی:**
+   - دشبورد (📊)
+   - کاربران (👥)
+
+2. **اقتصاد:**
+   - تراکنش‌ها (💸)
+   - سهام (📈)
+   - لاتاری (🎰)
+   - مدیریت اقتصاد (💰)
+   - تنظیمات سرقت (🔒)
+
+3. **گیم‌پلی:**
+   - کلن‌ها (🏰)
+   - آیتم‌ها (🛠️)
+   - ماموریت‌ها (🎯)
+   - بازی‌ها (🎮)
+   - جایزه‌ها (🎁)
+   - فروشگاه (🛒)
+
+4. **اجتماعی:**
+   - سیستم دوستی (🤝)
+   - کاربران بلاک‌شده (🚫)
+   - چت‌های خصوصی (💬)
+   - رتبه‌بندی (🏆)
+   - رای‌گیری (🗳️)
+   - دعوت‌ها (📩)
+
+5. **سیستم:**
+   - لاگ‌ها (📜)
+   - تنظیمات (⚙️)
+   - وضعیت ربات (🤖)
+   - پشتیبان‌گیری (💾)
+
+6. **توسعه:**
+   - API (🔗)
+   - مستندات (📖)
+   - وب‌هوک (🪝)
+
+#### 1.2. هدف کلی منو
+- **دسترسی سریع:** منوی کناری به ادمین امکان می‌دهد به‌سرعت به بخش‌های مختلف پنل دسترسی پیدا کند.
+- **مدیریت جامع:** هر دسته‌بندی برای مدیریت یک جنبه خاص از ربات (مانند اقتصاد، گیم‌پلی، و اجتماعی) طراحی شده است.
+- **طراحی کاربرپسند:** استفاده از آیکون‌ها و دسته‌بندی‌های مشخص باعث می‌شود منو جذاب و قابل‌فهم باشد.
+
+---
+
+### 2. توضیحات و مدیریت هر بخش
+
+#### 2.1. دسته‌بندی اصلی
+
+##### 2.1.1. دشبورد (📊)
+###### توضیح:
+دشبورد صفحه اصلی پنل ادمین است که یک نمای کلی از وضعیت ربات ارائه می‌دهد. این بخش شامل کارت‌های آماری، نمودارها، و اطلاعات کلی مانند تعداد کاربرها، کلن‌ها، سی‌کوین در گردش، و وضعیت سرور است.
+
+###### نحوه مدیریت:
+- **نمایش آمار:** نمایش تعداد کاربرها، کلن‌ها، سی‌کوین، کریستال، و وضعیت لاتاری و سهام.
+- **نمودارها:** نمایش نمودارهای میله‌ای و دایره‌ای برای رشد سی‌کوین، فعالیت کاربران، و فروش محصولات.
+- **وضعیت سرور:** نمایش مصرف CPU و RAM و وضعیت ربات (روشن/خاموش).
+- **قابلیت‌ها:**
+  - مشاهده سریع آمار.
+  - نمودارهای تعاملی با قابلیت زوم و فیلتر.
+
+###### کد پیاده‌سازی:
+```javascript
+// server/routes/dashboard.js
+const express = require('express');
+const router = express.Router();
+const mongoose = require('mongoose');
+
+// مدل‌های دیتابیس
+const User = mongoose.model('User', new mongoose.Schema({
+  discordId: String,
+  ccoin: Number,
+  crystal: Number,
+  messages: Number,
+  voiceActivity: Number,
+}));
+const Clan = mongoose.model('Clan', new mongoose.Schema({
+  name: String,
+  members: [String],
+  ccoin: Number,
+}));
+
+// مسیر دشبورد
+router.get('/stats', async (req, res) => {
+  try {
+    const userCount = await User.countDocuments();
+    const clanCount = await Clan.countDocuments();
+    const totalCcoin = await User.aggregate([
+      { $group: { _id: null, total: { $sum: "$ccoin" } } }
+    ]);
+    const totalCrystal = await User.aggregate([
+      { $group: { _id: null, total: { $sum: "$crystal" } } }
+    ]);
+
+    res.json({
+      users: userCount,
+      clans: clanCount,
+      ccoin: totalCcoin[0]?.total || 0,
+      crystal: totalCrystal[0]?.total || 0,
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در دریافت آمار' });
+  }
+});
+
+// فرانت‌اند (React)
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Line } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+
+const Dashboard = () => {
+  const [stats, setStats] = useState({ users: 0, clans: 0, ccoin: 0, crystal: 0 });
+  const [chartData, setChartData] = useState({ labels: [], datasets: [] });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      const response = await axios.get('/api/dashboard/stats');
+      setStats(response.data);
+    };
+
+    const fetchChartData = async () => {
+      // فرض می‌کنیم داده‌های نمودار از API دریافت می‌شوند
+      setChartData({
+        labels: ['روز 1', 'روز 2', 'روز 3', 'روز 4', 'روز 5'],
+        datasets: [
+          {
+            label: 'رشد سی‌کوین',
+            data: [1000, 2000, 1500, 3000, 2500],
+            borderColor: '#F59E0B',
+            backgroundColor: 'rgba(245, 158, 11, 0.2)',
+            fill: true,
+          },
+        ],
+      });
+    };
+
+    fetchStats();
+    fetchChartData();
+  }, []);
+
+  return (
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-6">📊 دشبورد</h1>
+      <div className="grid grid-cols-4 gap-4 mb-6">
+        <div className="glass p-4">
+          <h3 className="text-lg font-semibold">کاربرها</h3>
+          <p className="text-2xl">{stats.users}</p>
+        </div>
+        <div className="glass p-4">
+          <h3 className="text-lg font-semibold">کلن‌ها</h3>
+          <p className="text-2xl">{stats.clans}</p>
+        </div>
+        <div className="glass p-4">
+          <h3 className="text-lg font-semibold">سی‌کوین</h3>
+          <p className="text-2xl">{stats.ccoin}</p>
+        </div>
+        <div className="glass p-4">
+          <h3 className="text-lg font-semibold">کریستال</h3>
+          <p className="text-2xl">{stats.crystal}</p>
+        </div>
+      </div>
+      <div className="glass p-4">
+        <Line data={chartData} />
+      </div>
+    </div>
+  );
+};
+
+export default Dashboard;
+```
+
+##### 2.1.2. کاربران (👥)
+###### توضیح:
+این بخش برای مدیریت کاربران سرور طراحی شده است. ادمین می‌تواند لیست کاربران، اطلاعات آن‌ها (مانند سی‌کوین، کریستال، و رتبه)، و فعالیت‌هایشان را مشاهده و ویرایش کند.
+
+###### نحوه مدیریت:
+- **نمایش:** جدول کاربران با ستون‌های نام، آیدی، سی‌کوین، کریستال، بانک، پول نقد، رتبه، پیام‌ها، و فعالیت صوتی.
+- **جستجو و فیلتر:** امکان جستجو بر اساس نام یا آیدی و فیلتر بر اساس رتبه.
+- **ویرایش:** تغییر سی‌کوین، کریستال، یا نقش کاربر (Leader, Co-Leader, Elder, Member).
+- **حذف و اضافه:** حذف کاربر یا اضافه کردن کاربر جدید.
+- **رتبه‌بندی:** نمایش Top 10 کاربر بر اساس سی‌کوین، کریستال، یا پیام‌ها.
+
+###### کد پیاده‌سازی:
+```javascript
+// server/routes/users.js
+const express = require('express');
+const router = express.Router();
+
+// مسیر کاربران
+router.get('/', async (req, res) => {
+  try {
+    const users = await User.find();
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در دریافت کاربران' });
+  }
+});
+
+router.put('/:id', async (req, res) => {
+  try {
+    await User.findOneAndUpdate({ discordId: req.params.id }, req.body);
+    res.json({ message: 'کاربر به‌روزرسانی شد' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در به‌روزرسانی کاربر' });
+  }
+});
+
+router.delete('/:id', async (req, res) => {
+  try {
+    await User.deleteOne({ discordId: req.params.id });
+    res.json({ message: 'کاربر حذف شد' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در حذف کاربر' });
+  }
+});
+
+// فرانت‌اند (React)
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const Users = () => {
+  const [users, setUsers] = useState([]);
+  const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      const response = await axios.get('/api/users');
+      setUsers(response.data);
+    };
+    fetchUsers();
+  }, []);
+
+  const handleEdit = async (id, newCcoin) => {
+    await axios.put(`/api/users/${id}`, { ccoin: newCcoin });
+    setUsers(users.map(user => user.discordId === id ? { ...user, ccoin: newCcoin } : user));
+  };
+
+  const handleDelete = async (id) => {
+    await axios.delete(`/api/users/${id}`);
+    setUsers(users.filter(user => user.discordId !== id));
+  };
+
+  const filteredUsers = users.filter(user =>
+    user.discordId.includes(search) || user.username.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-6">👥 کاربران</h1>
+      <input
+        type="text"
+        placeholder="جستجو..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="mb-4 p-2 rounded bg-gray-800 text-white w-full"
+      />
+      <table className="w-full text-left glass p-4">
+        <thead>
+          <tr>
+            <th>نام</th>
+            <th>آیدی</th>
+            <th>سی‌کوین</th>
+            <th>کریستال</th>
+            <th>اقدامات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredUsers.map(user => (
+            <tr key={user.discordId}>
+              <td>{user.username}</td>
+              <td>{user.discordId}</td>
+              <td>{user.ccoin}</td>
+              <td>{user.crystal}</td>
+              <td>
+                <button onClick={() => handleEdit(user.discordId, prompt('سی‌کوین جدید:', user.ccoin))} className="text-blue-500 mr-2">ویرایش</button>
+                <button onClick={() => handleDelete(user.discordId)} className="text-red-500">حذف</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default Users;
+```
+
+#### 2.2. دسته‌بندی اقتصاد
+
+##### 2.2.1. تراکنش‌ها (💸)
+###### توضیح:
+این بخش برای نمایش و مدیریت تراکنش‌های مالی (مانند خرید، انتقال، و سرقت) طراحی شده است.
+
+###### نحوه مدیریت:
+- **نمایش:** جدول تراکنش‌ها با ستون‌های کاربر، نوع (خرید، انتقال، سرقت)، مقدار، و تاریخ.
+- **فیلتر:** فیلتر بر اساس نوع، کاربر، یا تاریخ.
+- **نمودار:** نمایش نمودار تراکنش‌ها (روزانه، هفتگی، ماهانه).
+
+###### کد پیاده‌سازی:
+```javascript
+// server/routes/transactions.js
+const Transaction = mongoose.model('Transaction', new mongoose.Schema({
+  userId: String,
+  type: String,
+  amount: Number,
+  date: Date,
+}));
+
+router.get('/', async (req, res) => {
+  try {
+    const transactions = await Transaction.find().sort({ date: -1 });
+    res.json(transactions);
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در دریافت تراکنش‌ها' });
+  }
+});
+
+// فرانت‌اند (React)
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Line } from 'react-chartjs-2';
+
+const Transactions = () => {
+  const [transactions, setTransactions] = useState([]);
+  const [chartData, setChartData] = useState({ labels: [], datasets: [] });
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      const response = await axios.get('/api/transactions');
+      setTransactions(response.data);
+
+      // داده‌های نمودار
+      const labels = response.data.map(tx => new Date(tx.date).toLocaleDateString());
+      const data = response.data.map(tx => tx.amount);
+      setChartData({
+        labels,
+        datasets: [
+          {
+            label: 'تراکنش‌ها',
+            data,
+            borderColor: '#F59E0B',
+            backgroundColor: 'rgba(245, 158, 11, 0.2)',
+            fill: true,
+          },
+        ],
+      });
+    };
+    fetchTransactions();
+  }, []);
+
+  return (
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-6">💸 تراکنش‌ها</h1>
+      <table className="w-full text-left glass p-4 mb-6">
+        <thead>
+          <tr>
+            <th>کاربر</th>
+            <th>نوع</th>
+            <th>مقدار</th>
+            <th>تاریخ</th>
+          </tr>
+        </thead>
+        <tbody>
+          {transactions.map(tx => (
+            <tr key={tx._id}>
+              <td>{tx.userId}</td>
+              <td>{tx.type}</td>
+              <td>{tx.amount}</td>
+              <td>{new Date(tx.date).toLocaleString()}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="glass p-4">
+        <Line data={chartData} />
+      </div>
+    </div>
+  );
+};
+
+export default Transactions;
+```
+
+##### 2.2.2. سهام (📈)
+###### توضیح:
+این بخش برای مدیریت سیستم سهام طراحی شده است که کاربران می‌توانند در آن سرمایه‌گذاری کنند و سود یا ضرر کنند.
+
+###### نحوه مدیریت:
+- **نمایش:** جدول سهام با ستون‌های نام سهام، قیمت فعلی، تغییرات (درصد)، و تعداد سهام خریداری‌شده توسط کاربران.
+- **مدیریت:** تغییر قیمت سهام، تنظیم نرخ سود/ضرر، و افزودن/حذف سهام.
+- **نمودار:** نمایش نمودار تغییرات قیمت سهام در بازه‌های زمانی مختلف.
+
+###### کد پیاده‌سازی:
+```javascript
+// server/routes/stocks.js
+const Stock = mongoose.model('Stock', new mongoose.Schema({
+  name: String,
+  price: Number,
+  change: Number,
+  userInvestments: [{ userId: String, shares: Number }],
+}));
+
+router.get('/', async (req, res) => {
+  try {
+    const stocks = await Stock.find();
+    res.json(stocks);
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در دریافت سهام' });
+  }
+});
+
+router.post('/update-price', async (req, res) => {
+  try {
+    const { stockId, newPrice } = req.body;
+    await Stock.findByIdAndUpdate(stockId, { price: newPrice });
+    res.json({ message: 'قیمت سهام به‌روزرسانی شد' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در به‌روزرسانی قیمت' });
+  }
+});
+
+// فرانت‌اند (React)
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Line } from 'react-chartjs-2';
+
+const Stocks = () => {
+  const [stocks, setStocks] = useState([]);
+  const [chartData, setChartData] = useState({ labels: [], datasets: [] });
+
+  useEffect(() => {
+    const fetchStocks = async () => {
+      const response = await axios.get('/api/stocks');
+      setStocks(response.data);
+
+      // فرض می‌کنیم داده‌های قیمت سهام در یک بازه زمانی داریم
+      setChartData({
+        labels: ['روز 1', 'روز 2', 'روز 3', 'روز 4', 'روز 5'],
+        datasets: response.data.map(stock => ({
+          label: stock.name,
+          data: [stock.price - 20, stock.price - 10, stock.price, stock.price + 10, stock.price + 5],
+          borderColor: stock.change > 0 ? '#34D399' : '#EF4444',
+          fill: false,
+        })),
+      });
+    };
+    fetchStocks();
+  }, []);
+
+  const handleUpdatePrice = async (stockId, newPrice) => {
+    await axios.post('/api/stocks/update-price', { stockId, newPrice });
+    setStocks(stocks.map(stock => stock._id === stockId ? { ...stock, price: newPrice } : stock));
+  };
+
+  return (
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-6">📈 سهام</h1>
+      <table className="w-full text-left glass p-4 mb-6">
+        <thead>
+          <tr>
+            <th>نام سهام</th>
+            <th>قیمت</th>
+            <th>تغییرات</th>
+            <th>اقدامات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {stocks.map(stock => (
+            <tr key={stock._id}>
+              <td>{stock.name}</td>
+              <td>{stock.price}</td>
+              <td className={stock.change > 0 ? 'text-green-500' : 'text-red-500'}>{stock.change}%</td>
+              <td>
+                <button onClick={() => handleUpdatePrice(stock._id, prompt('قیمت جدید:', stock.price))} className="text-blue-500">به‌روزرسانی قیمت</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="glass p-4">
+        <Line data={chartData} />
+      </div>
+    </div>
+  );
+};
+
+export default Stocks;
+```
+
+##### 2.2.3. لاتاری (🎰)
+###### توضیح:
+این بخش برای مدیریت سیستم لاتاری طراحی شده است که کاربران می‌توانند با خرید بلیط در قرعه‌کشی شرکت کنند.
+
+###### نحوه مدیریت:
+- **نمایش:** جدول لاتاری‌ها با ستون‌های تاریخ قرعه‌کشی، جایزه، تعداد شرکت‌کنندگان، و برنده.
+- **ایجاد:** ایجاد لاتاری جدید با جایزه و هزینه بلیط.
+- **مدیریت:** انتخاب برنده به‌صورت تصادفی و توزیع جایزه.
+- **آمار:** نمایش تعداد بلیط‌های فروخته‌شده و نمودار شرکت‌کنندگان.
+
+###### کد پیاده‌سازی:
+```javascript
+// server/routes/lottery.js
+const Lottery = mongoose.model('Lottery', new mongoose.Schema({
+  date: Date,
+  prize: Number,
+  participants: [String],
+  winner: String,
+}));
+
+router.get('/', async (req, res) => {
+  try {
+    const lotteries = await Lottery.find();
+    res.json(lotteries);
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در دریافت لاتاری‌ها' });
+  }
+});
+
+router.post('/create', async (req, res) => {
+  try {
+    const { prize, date } = req.body;
+    const lottery = new Lottery({ prize, date, participants: [], winner: null });
+    await lottery.save();
+    res.json({ message: 'لاتاری ایجاد شد' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در ایجاد لاتاری' });
+  }
+});
+
+router.post('/draw', async (req, res) => {
+  try {
+    const { lotteryId } = req.body;
+    const lottery = await Lottery.findById(lotteryId);
+    if (lottery.participants.length === 0) return res.status(400).json({ error: 'هیچ شرکت‌کننده‌ای وجود ندارد' });
+    const winner = lottery.participants[Math.floor(Math.random() * lottery.participants.length)];
+    lottery.winner = winner;
+    await lottery.save();
+    res.json({ message: `برنده: ${winner}` });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در قرعه‌کشی' });
+  }
+});
+
+// فرانت‌اند (React)
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const Lottery = () => {
+  const [lotteries, setLotteries] = useState([]);
+
+  useEffect(() => {
+    const fetchLotteries = async () => {
+      const response = await axios.get('/api/lottery');
+      setLotteries(response.data);
+    };
+    fetchLotteries();
+  }, []);
+
+  const handleCreateLottery = async () => {
+    const prize = prompt('جایزه لاتاری:');
+    const date = prompt('تاریخ قرعه‌کشی (YYYY-MM-DD):');
+    await axios.post('/api/lottery/create', { prize, date });
+    window.location.reload();
+  };
+
+  const handleDraw = async (lotteryId) => {
+    const response = await axios.post('/api/lottery/draw', { lotteryId });
+    alert(response.data.message);
+    window.location.reload();
+  };
+
+  return (
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-6">🎰 لاتاری</h1>
+      <button onClick={handleCreateLottery} className="bg-blue-500 text-white py-2 px-4 rounded mb-4">ایجاد لاتاری جدید</button>
+      <table className="w-full text-left glass p-4">
+        <thead>
+          <tr>
+            <th>تاریخ</th>
+            <th>جایزه</th>
+            <th>شرکت‌کنندگان</th>
+            <th>برنده</th>
+            <th>اقدامات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {lotteries.map(lottery => (
+            <tr key={lottery._id}>
+              <td>{new Date(lottery.date).toLocaleDateString()}</td>
+              <td>{lottery.prize}</td>
+              <td>{lottery.participants.length}</td>
+              <td>{lottery.winner || 'مشخص نشده'}</td>
+              <td>
+                {!lottery.winner && <button onClick={() => handleDraw(lottery._id)} className="text-green-500">قرعه‌کشی</button>}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default Lottery;
+```
+
+##### 2.2.4. مدیریت اقتصاد (💰)
+###### توضیح:
+این بخش برای مدیریت کلی اقتصاد ربات (مانند نرخ تبدیل، محدودیت‌ها، و تنظیمات مالی) طراحی شده است.
+
+###### نحوه مدیریت:
+- **نمایش:** نمایش نرخ تبدیل سی‌کوین به کریستال، محدودیت انتقال، و شانس سرقت.
+- **تنظیمات:** تغییر نرخ تبدیل، محدودیت انتقال، و فعال/غیرفعال کردن سرقت.
+- **آمار:** نمایش مجموع سی‌کوین و کریستال در گردش.
+
+###### کد پیاده‌سازی:
+```javascript
+// server/routes/economy.js
+const EconomySettings = mongoose.model('EconomySettings', new mongoose.Schema({
+  conversionRate: Number,
+  transferLimit: Number,
+  robberyChance: Number,
+  robberyEnabled: Boolean,
+}));
+
+router.get('/settings', async (req, res) => {
+  try {
+    const settings = await EconomySettings.findOne();
+    res.json(settings || { conversionRate: 0, transferLimit: 0, robberyChance: 0, robberyEnabled: false });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در دریافت تنظیمات اقتصاد' });
+  }
+});
+
+router.put('/settings', async (req, res) => {
+  try {
+    await EconomySettings.findOneAndUpdate({}, req.body, { upsert: true });
+    res.json({ message: 'تنظیمات اقتصاد به‌روزرسانی شد' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در به‌روزرسانی تنظیمات' });
+  }
+});
+
+// فرانت‌اند (React)
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const EconomyManagement = () => {
+  const [settings, setSettings] = useState({ conversionRate: 0, transferLimit: 0, robberyChance: 0, robberyEnabled: false });
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const response = await axios.get('/api/economy/settings');
+      setSettings(response.data);
+    };
+    fetchSettings();
+  }, []);
+
+  const handleUpdateSettings = async () => {
+    await axios.put('/api/economy/settings', settings);
+    alert('تنظیمات به‌روزرسانی شد');
+  };
+
+  return (
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-6">💰 مدیریت اقتصاد</h1>
+      <div className="glass p-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label>نرخ تبدیل (سی‌کوین به کریستال):</label>
+            <input
+              type="number"
+              value={settings.conversionRate}
+              onChange={(e) => setSettings({ ...settings, conversionRate: parseInt(e.target.value) })}
+              className="p-2 rounded bg-gray-800 text-white w-full"
+            />
+          </div>
+          <div>
+            <label>محدودیت انتقال (حداکثر):</label>
+            <input
+              type="number"
+              value={settings.transferLimit}
+              onChange={(e) => setSettings({ ...settings, transferLimit: parseInt(e.target.value) })}
+              className="p-2 rounded bg-gray-800 text-white w-full"
+            />
+          </div>
+          <div>
+            <label>شانس سرقت (%):</label>
+            <input
+              type="number"
+              value={settings.robberyChance}
+              onChange={(e) => setSettings({ ...settings, robberyChance: parseInt(e.target.value) })}
+              className="p-2 rounded bg-gray-800 text-white w-full"
+            />
+          </div>
+          <div>
+            <label>فعال کردن سرقت:</label>
+            <input
+              type="checkbox"
+              checked={settings.robberyEnabled}
+              onChange={(e) => setSettings({ ...settings, robberyEnabled: e.target.checked })}
+            />
+          </div>
+        </div>
+        <button onClick={handleUpdateSettings} className="bg-blue-500 text-white py-2 px-4 rounded mt-4">ذخیره</button>
+      </div>
+    </div>
+  );
+};
+
+export default EconomyManagement;
+```
+
+##### 2.2.5. تنظیمات سرقت (🔒)
+###### توضیح:
+این بخش برای تنظیمات مربوط به سیستم سرقت (مانند شانس موفقیت و محدودیت‌ها) طراحی شده است.
+
+###### نحوه مدیریت:
+- **نمایش:** نمایش شانس سرقت، محدودیت سرقت، و محصولات محافظتی (مانند Wallet Lock).
+- **تنظیمات:** تغییر شانس سرقت، فعال/غیرفعال کردن سرقت، و تنظیم محصولات محافظتی.
+- **آمار:** نمایش تعداد سرقت‌های موفق و ناموفق.
+
+###### کد پیاده‌سازی:
+```javascript
+// server/routes/robbery.js
+router.get('/settings', async (req, res) => {
+  try {
+    const settings = await EconomySettings.findOne();
+    res.json(settings || { robberyChance: 0, robberyEnabled: false });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در دریافت تنظیمات سرقت' });
+  }
+});
+
+router.put('/settings', async (req, res) => {
+  try {
+    await EconomySettings.findOneAndUpdate({}, req.body, { upsert: true });
+    res.json({ message: 'تنظیمات سرقت به‌روزرسانی شد' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در به‌روزرسانی تنظیمات' });
+  }
+});
+
+// فرانت‌اند (React)
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const RobberySettings = () => {
+  const [settings, setSettings] = useState({ robberyChance: 0, robberyEnabled: false });
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const response = await axios.get('/api/robbery/settings');
+      setSettings(response.data);
+    };
+    fetchSettings();
+  }, []);
+
+  const handleUpdateSettings = async () => {
+    await axios.put('/api/robbery/settings', settings);
+    alert('تنظیمات به‌روزرسانی شد');
+  };
+
+  return (
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-6">🔒 تنظیمات سرقت</h1>
+      <div className="glass p-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label>شانس سرقت (%):</label>
+            <input
+              type="number"
+              value={settings.robberyChance}
+              onChange={(e) => setSettings({ ...settings, robberyChance: parseInt(e.target.value) })}
+              className="p-2 rounded bg-gray-800 text-white w-full"
+            />
+          </div>
+          <div>
+            <label>فعال کردن سرقت:</label>
+            <input
+              type="checkbox"
+              checked={settings.robberyEnabled}
+              onChange={(e) => setSettings({ ...settings, robberyEnabled: e.target.checked })}
+            />
+          </div>
+        </div>
+        <button onClick={handleUpdateSettings} className="bg-blue-500 text-white py-2 px-4 rounded mt-4">ذخیره</button>
+      </div>
+    </div>
+  );
+};
+
+export default RobberySettings;
+```
+
+#### 2.3. دسته‌بندی گیم‌پلی
+
+##### 2.3.1. کلن‌ها (🏰)
+###### توضیح:
+این بخش برای مدیریت کلن‌ها طراحی شده است. ادمین می‌تواند کلن‌ها را ایجاد، ویرایش، یا حذف کند و نقش‌های اعضا را مدیریت کند.
+
+###### نحوه مدیریت:
+- **نمایش:** جدول کلن‌ها با ستون‌های نام، آیدی، اعضا، سی‌کوین کلن، و نقش‌ها.
+- **ایجاد:** ایجاد کلن جدید با هزینه 10,000 سی‌کوین.
+- **ویرایش:** تغییر نام، اعضا، سی‌کوین، یا نقش‌ها.
+- **حذف:** حذف کلن.
+- **مدیریت نقش‌ها:** تغییر نقش اعضا (Leader, Co-Leader, Elder, Member).
+
+###### کد پیاده‌سازی:
+```javascript
+// server/routes/clans.js
+router.get('/', async (req, res) => {
+  try {
+    const clans = await Clan.find();
+    res.json(clans);
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در دریافت کلن‌ها' });
+  }
+});
+
+router.post('/create', async (req, res) => {
+  try {
+    const { name, leaderId } = req.body;
+    const clan = new Clan({ name, members: [leaderId], ccoin: 0 });
+    await clan.save();
+    res.json({ message: 'کلن ایجاد شد' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در ایجاد کلن' });
+  }
+});
+
+router.put('/:id', async (req, res) => {
+  try {
+    await Clan.findByIdAndUpdate(req.params.id, req.body);
+    res.json({ message: 'کلن به‌روزرسانی شد' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در به‌روزرسانی کلن' });
+  }
+});
+
+router.delete('/:id', async (req, res) => {
+  try {
+    await Clan.findByIdAndDelete(req.params.id);
+    res.json({ message: 'کلن حذف شد' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در حذف کلن' });
+  }
+});
+
+// فرانت‌اند (React)
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const Clans = () => {
+  const [clans, setClans] = useState([]);
+
+  useEffect(() => {
+    const fetchClans = async () => {
+      const response = await axios.get('/api/clans');
+      setClans(response.data);
+    };
+    fetchClans();
+  }, []);
+
+  const handleCreateClan = async () => {
+    const name = prompt('نام کلن:');
+    const leaderId = prompt('آیدی رهبر:');
+    await axios.post('/api/clans/create', { name, leaderId });
+    window.location.reload();
+  };
+
+  const handleEdit = async (id, newName) => {
+    await axios.put(`/api/clans/${id}`, { name: newName });
+    setClans(clans.map(clan => clan._id === id ? { ...clan, name: newName } : clan));
+  };
+
+  const handleDelete = async (id) => {
+    await axios.delete(`/api/clans/${id}`);
+    setClans(clans.filter(clan => clan._id !== id));
+  };
+
+  return (
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-6">🏰 کلن‌ها</h1>
+      <button onClick={handleCreateClan} className="bg-blue-500 text-white py-2 px-4 rounded mb-4">ایجاد کلن جدید</button>
+      <table className="w-full text-left glass p-4">
+        <thead>
+          <tr>
+            <th>نام</th>
+            <th>اعضا</th>
+            <th>سی‌کوین</th>
+            <th>اقدامات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {clans.map(clan => (
+            <tr key={clan._id}>
+              <td>{clan.name}</td>
+              <td>{clan.members.length}</td>
+              <td>{clan.ccoin}</td>
+              <td>
+                <button onClick={() => handleEdit(clan._id, prompt('نام جدید:', clan.name))} className="text-blue-500 mr-2">ویرایش</button>
+                <button onClick={() => handleDelete(clan._id)} className="text-red-500">حذف</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default Clans;
+```
+
+##### 2.3.2. آیتم‌ها (🛠️)
+###### توضیح:
+این بخش برای مدیریت آیتم‌های بازی (مانند Mystery Box Key) طراحی شده است.
+
+###### نحوه مدیریت:
+- **نمایش:** جدول آیتم‌ها با ستون‌های نام، توضیحات، قیمت، و موجودی.
+- **ایجاد:** اضافه کردن آیتم جدید.
+- **ویرایش:** تغییر قیمت، توضیحات، یا موجودی.
+- **حذف:** حذف آیتم.
+
+###### کد پیاده‌سازی:
+```javascript
+// server/routes/items.js
+const Item = mongoose.model('Item', new mongoose.Schema({
+  name: String,
+  description: String,
+  price: Number,
+  stock: Number,
+}));
+
+router.get('/', async (req, res) => {
+  try {
+    const items = await Item.find();
+    res.json(items);
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در دریافت آیتم‌ها' });
+  }
+});
+
+router.post('/create', async (req, res) => {
+  try {
+    const item = new Item(req.body);
+    await item.save();
+    res.json({ message: 'آیتم ایجاد شد' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در ایجاد آیتم' });
+  }
+});
+
+router.put('/:id', async (req, res) => {
+  try {
+    await Item.findByIdAndUpdate(req.params.id, req.body);
+    res.json({ message: 'آیتم به‌روزرسانی شد' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در به‌روزرسانی آیتم' });
+  }
+});
+
+router.delete('/:id', async (req, res) => {
+  try {
+    await Item.findByIdAndDelete(req.params.id);
+    res.json({ message: 'آیتم حذف شد' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در حذف آیتم' });
+  }
+});
+
+// فرانت‌اند (React)
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const Items = () => {
+  const [items, setItems] = useState([]);
+
+  useEffect(() => {
+    const fetchItems = async () => {
+      const response = await axios.get('/api/items');
+      setItems(response.data);
+    };
+    fetchItems();
+  }, []);
+
+  const handleCreateItem = async () => {
+    const name = prompt('نام آیتم:');
+    const description = prompt('توضیحات:');
+    const price = prompt('قیمت:');
+    const stock = prompt('موجودی:');
+    await axios.post('/api/items/create', { name, description, price: parseInt(price), stock: parseInt(stock) });
+    window.location.reload();
+  };
+
+  const handleEdit = async (id, field, value) => {
+    await axios.put(`/api/items/${id}`, { [field]: value });
+    setItems(items.map(item => item._id === id ? { ...item, [field]: value } : item));
+  };
+
+  const handleDelete = async (id) => {
+    await axios.delete(`/api/items/${id}`);
+    setItems(items.filter(item => item._id !== id));
+  };
+
+  return (
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-6">🛠️ آیتم‌ها</h1>
+      <button onClick={handleCreateItem} className="bg-blue-500 text-white py-2 px-4 rounded mb-4">ایجاد آیتم جدید</button>
+      <table className="w-full text-left glass p-4">
+        <thead>
+          <tr>
+            <th>نام</th>
+            <th>توضیحات</th>
+            <th>قیمت</th>
+            <th>موجودی</th>
+            <th>اقدامات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map(item => (
+            <tr key={item._id}>
+              <td>{item.name}</td>
+              <td>{item.description}</td>
+              <td>{item.price}</td>
+              <td>{item.stock}</td>
+              <td>
+                <button onClick={() => handleEdit(item._id, 'price', prompt('قیمت جدید:', item.price))} className="text-blue-500 mr-2">ویرایش</button>
+                <button onClick={() => handleDelete(item._id)} className="text-red-500">حذف</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default Items;
+```
+
+##### 2.3.3. ماموریت‌ها (🎯)
+###### توضیح:
+این بخش برای مدیریت ماموریت‌ها (کوئست‌ها) طراحی شده است.
+
+###### نحوه مدیریت:
+- **نمایش:** جدول ماموریت‌ها با ستون‌های نام، توضیحات، جایزه، و وضعیت.
+- **ایجاد:** اضافه کردن ماموریت جدید.
+- **ویرایش:** تغییر جایزه، توضیحات، یا وضعیت.
+- **حذف:** حذف ماموریت.
+- **آمار:** نمایش تعداد ماموریت‌های تکمیل‌شده.
+
+###### کد پیاده‌سازی:
+```javascript
+// server/routes/quests.js
+const Quest = mongoose.model('Quest', new mongoose.Schema({
+  name: String,
+  description: String,
+  reward: Number,
+  status: String,
+}));
+
+router.get('/', async (req, res) => {
+  try {
+    const quests = await Quest.find();
+    res.json(quests);
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در دریافت ماموریت‌ها' });
+  }
+});
+
+router.post('/create', async (req, res) => {
+  try {
+    const quest = new Quest(req.body);
+    await quest.save();
+    res.json({ message: 'ماموریت ایجاد شد' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در ایجاد ماموریت' });
+  }
+});
+
+router.put('/:id', async (req, res) => {
+  try {
+    await Quest.findByIdAndUpdate(req.params.id, req.body);
+    res.json({ message: 'ماموریت به‌روزرسانی شد' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در به‌روزرسانی ماموریت' });
+  }
+});
+
+router.delete('/:id', async (req, res) => {
+  try {
+    await Quest.findByIdAndDelete(req.params.id);
+    res.json({ message: 'ماموریت حذف شد' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در حذف ماموریت' });
+  }
+});
+
+// فرانت‌اند (React)
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const Quests = () => {
+  const [quests, setQuests] = useState([]);
+
+  useEffect(() => {
+    const fetchQuests = async () => {
+      const response = await axios.get('/api/quests');
+      setQuests(response.data);
+    };
+    fetchQuests();
+  }, []);
+
+  const handleCreateQuest = async () => {
+    const name = prompt('نام ماموریت:');
+    const description = prompt('توضیحات:');
+    const reward = prompt('جایزه:');
+    const status = prompt('وضعیت (فعال/غیرفعال):');
+    await axios.post('/api/quests/create', { name, description, reward: parseInt(reward), status });
+    window.location.reload();
+  };
+
+  const handleEdit = async (id, field, value) => {
+    await axios.put(`/api/quests/${id}`, { [field]: value });
+    setQuests(quests.map(quest => quest._id === id ? { ...quest, [field]: value } : quest));
+  };
+
+  const handleDelete = async (id) => {
+    await axios.delete(`/api/quests/${id}`);
+    setQuests(quests.filter(quest => quest._id !== id));
+  };
+
+  return (
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-6">🎯 ماموریت‌ها</h1>
+      <button onClick={handleCreateQuest} className="bg-blue-500 text-white py-2 px-4 rounded mb-4">ایجاد ماموریت جدید</button>
+      <table className="w-full text-left glass p-4">
+        <thead>
+          <tr>
+            <th>نام</th>
+            <th>توضیحات</th>
+            <th>جایزه</th>
+            <th>وضعیت</th>
+            <th>اقدامات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {quests.map(quest => (
+            <tr key={quest._id}>
+              <td>{quest.name}</td>
+              <td>{quest.description}</td>
+              <td>{quest.reward}</td>
+              <td>{quest.status}</td>
+              <td>
+                <button onClick={() => handleEdit(quest._id, 'reward', prompt('جایزه جدید:', quest.reward))} className="text-blue-500 mr-2">ویرایش</button>
+                <button onClick={() => handleDelete(quest._id)} className="text-red-500">حذف</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default Quests;
+```
+
+##### 2.3.4. بازی‌ها (🎮)
+###### توضیح:
+این بخش برای مدیریت بازی‌های ربات (مانند حدس عدد) طراحی شده است.
+
+###### نحوه مدیریت:
+- **نمایش:** جدول بازی‌ها با ستون‌های نام، توضیحات، جایزه، و وضعیت.
+- **ایجاد:** اضافه کردن بازی جدید.
+- **ویرایش:** تغییر جایزه، قوانین، یا وضعیت.
+- **حذف:** حذف بازی.
+- **آمار:** نمایش تعداد بازی‌های انجام‌شده.
+
+###### کد پیاده‌سازی:
+```javascript
+// server/routes/games.js
+const Game = mongoose.model('Game', new mongoose.Schema({
+  name: String,
+  description: String,
+  reward: Number,
+  status: String,
+}));
+
+router.get('/', async (req, res) => {
+  try {
+    const games = await Game.find();
+    res.json(games);
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در دریافت بازی‌ها' });
+  }
+});
+
+router.post('/create', async (req, res) => {
+  try {
+    const game = new Game(req.body);
+    await game.save();
+    res.json({ message: 'بازی ایجاد شد' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در ایجاد بازی' });
+  }
+});
+
+router.put('/:id', async (req, res) => {
+  try {
+    await Game.findByIdAndUpdate(req.params.id, req.body);
+    res.json({ message: 'بازی به‌روزرسانی شد' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در به‌روزرسانی بازی' });
+  }
+});
+
+router.delete('/:id', async (req, res) => {
+  try {
+    await Game.findByIdAndDelete(req.params.id);
+    res.json({ message: 'بازی حذف شد' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در حذف بازی' });
+  }
+});
+
+// فرانت‌اند (React)
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const Games = () => {
+  const [games, setGames] = useState([]);
+
+  useEffect(() => {
+    const fetchGames = async () => {
+      const response = await axios.get('/api/games');
+      setGames(response.data);
+    };
+    fetchGames();
+  }, []);
+
+  const handleCreateGame = async () => {
+    const name = prompt('نام بازی:');
+    const description = prompt('توضیحات:');
+    const reward = prompt('جایزه:');
+    const status = prompt('وضعیت (فعال/غیرفعال):');
+    await axios.post('/api/games/create', { name, description, reward: parseInt(reward), status });
+    window.location.reload();
+  };
+
+  const handleEdit = async (id, field, value) => {
+    await axios.put(`/api/games/${id}`, { [field]: value });
+    setGames(games.map(game => game._id === id ? { ...game, [field]: value } : game));
+  };
+
+  const handleDelete = async (id) => {
+    await axios.delete(`/api/games/${id}`);
+    setGames(games.filter(game => game._id !== id));
+  };
+
+  return (
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-6">🎮 بازی‌ها</h1>
+      <button onClick={handleCreateGame} className="bg-blue-500 text-white py-2 px-4 rounded mb-4">ایجاد بازی جدید</button>
+      <table className="w-full text-left glass p-4">
+        <thead>
+          <tr>
+            <th>نام</th>
+            <th>توضیحات</th>
+            <th>جایزه</th>
+            <th>وضعیت</th>
+            <th>اقدامات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {games.map(game => (
+            <tr key={game._id}>
+              <td>{game.name}</td>
+              <td>{game.description}</td>
+              <td>{game.reward}</td>
+              <td>{game.status}</td>
+              <td>
+                <button onClick={() => handleEdit(game._id, 'reward', prompt('جایزه جدید:', game.reward))} className="text-blue-500 mr-2">ویرایش</button>
+                <button onClick={() => handleDelete(game._id)} className="text-red-500">حذف</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default Games;
+```
+
+##### 2.3.5. جایزه‌ها (🎁)
+###### توضیح:
+این بخش برای مدیریت جایزه‌ها (مانند جایزه روزانه) طراحی شده است.
+
+###### نحوه مدیریت:
+- **نمایش:** جدول جایزه‌ها با ستون‌های نام، مقدار، دوره، و وضعیت.
+- **ایجاد:** اضافه کردن جایزه جدید.
+- **ویرایش:** تغییر مقدار، دوره، یا وضعیت.
+- **حذف:** حذف جایزه.
+- **تخصیص:** تخصیص جایزه به کاربر.
+
+###### کد پیاده‌سازی:
+```javascript
+// server/routes/rewards.js
+const Reward = mongoose.model('Reward', new mongoose.Schema({
+  name: String,
+  amount: Number,
+  period: Number,
+  status: String,
+}));
+
+router.get('/', async (req, res) => {
+  try {
+    const rewards = await Reward.find();
+    res.json(rewards);
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در دریافت جایزه‌ها' });
+  }
+});
+
+router.post('/create', async (req, res) => {
+  try {
+    const reward = new Reward(req.body);
+    await reward.save();
+    res.json({ message: 'جایزه ایجاد شد' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در ایجاد جایزه' });
+  }
+});
+
+router.put('/:id', async (req, res) => {
+  try {
+    await Reward.findByIdAndUpdate(req.params.id, req.body);
+    res.json({ message: 'جایزه به‌روزرسانی شد' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در به‌روزرسانی جایزه' });
+  }
+});
+
+router.delete('/:id', async (req, res) => {
+  try {
+    await Reward.findByIdAndDelete(req.params.id);
+    res.json({ message: 'جایزه حذف شد' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در حذف جایزه' });
+  }
+});
+
+// فرانت‌اند (React)
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const Rewards = () => {
+  const [rewards, setRewards] = useState([]);
+
+  useEffect(() => {
+    const fetchRewards = async () => {
+      const response = await axios.get('/api/rewards');
+      setRewards(response.data);
+    };
+    fetchRewards();
+  }, []);
+
+  const handleCreateReward = async () => {
+    const name = prompt('نام جایزه:');
+    const amount = prompt('مقدار:');
+    const period = prompt('دوره (ساعت):');
+    const status = prompt('وضعیت (فعال/غیرفعال):');
+    await axios.post('/api/rewards/create', { name, amount: parseInt(amount), period: parseInt(period), status });
+    window.location.reload();
+  };
+
+  const handleEdit = async (id, field, value) => {
+    await axios.put(`/api/rewards/${id}`, { [field]: value });
+    setRewards(rewards.map(reward => reward._id === id ? { ...reward, [field]: value } : reward));
+  };
+
+  const handleDelete = async (id) => {
+    await axios.delete(`/api/rewards/${id}`);
+    setRewards(rewards.filter(reward => reward._id !== id));
+  };
+
+  return (
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-6">🎁 جایزه‌ها</h1>
+      <button onClick={handleCreateReward} className="bg-blue-500 text-white py-2 px-4 rounded mb-4">ایجاد جایزه جدید</button>
+      <table className="w-full text-left glass p-4">
+        <thead>
+          <tr>
+            <th>نام</th>
+            <th>مقدار</th>
+            <th>دوره</th>
+            <th>وضعیت</th>
+            <th>اقدامات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rewards.map(reward => (
+            <tr key={reward._id}>
+              <td>{reward.name}</td>
+              <td>{reward.amount}</td>
+              <td>{reward.period}</td>
+              <td>{reward.status}</td>
+              <td>
+                <button onClick={() => handleEdit(reward._id, 'amount', prompt('مقدار جدید:', reward.amount))} className="text-blue-500 mr-2">ویرایش</button>
+                <button onClick={() => handleDelete(reward._id)} className="text-red-500">حذف</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default Rewards;
+```
+
+##### 2.3.6. فروشگاه (🛒)
+###### توضیح:
+این بخش برای مدیریت محصولات فروشگاه (مانند Wallet Lock، Voice Booster) طراحی شده است.
+
+###### نحوه مدیریت:
+- **نمایش:** جدول محصولات با ستون‌های نام، قیمت (سی‌کوین/کریستال)، شانس سرقت، و دوره.
+- **ایجاد:** اضافه کردن محصول جدید.
+- **ویرایش:** تغییر قیمت، شانس‌ها، یا دوره.
+- **حذف:** حذف محصول.
+- **خرید:** خرید محصول برای کاربر.
+
+###### کد پیاده‌سازی:
+```javascript
+// server/routes/shop.js
+const Product = mongoose.model('Product', new mongoose.Schema({
+  name: String,
+  priceCcoin: Number,
+  priceCrystal: Number,
+  robberyChance: Number,
+  period: Number,
+  description: String,
+}));
+
+router.get('/', async (req, res) => {
+  try {
+    const products = await Product.find();
+    res.json(products);
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در دریافت محصولات' });
+  }
+});
+
+router.post('/create', async (req, res) => {
+  try {
+    const product = new Product(req.body);
+    await product.save();
+    res.json({ message: 'محصول ایجاد شد' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در ایجاد محصول' });
+  }
+});
+
+router.put('/:id', async (req, res) => {
+  try {
+    await Product.findByIdAndUpdate(req.params.id, req.body);
+    res.json({ message: 'محصول به‌روزرسانی شد' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در به‌روزرسانی محصول' });
+  }
+});
+
+router.delete('/:id', async (req, res) => {
+  try {
+    await Product.findByIdAndDelete(req.params.id);
+    res.json({ message: 'محصول حذف شد' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در حذف محصول' });
+  }
+});
+
+// فرانت‌اند (React)
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const Shop = () => {
+  const [products, setProducts] = useState([]);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const response = await axios.get('/api/shop');
+      setProducts(response.data);
+    };
+    fetchProducts();
+  }, []);
+
+  const handleCreateProduct = async () => {
+    const name = prompt('نام محصول:');
+    const priceCcoin = prompt('قیمت (سی‌کوین):');
+    const priceCrystal = prompt('قیمت (کریستال):');
+    const robberyChance = prompt('شانس سرقت (%):');
+    const period = prompt('دوره (ساعت):');
+    const description = prompt('توضیحات:');
+    await axios.post('/api/shop/create', { name, priceCcoin: parseInt(priceCcoin), priceCrystal: parseInt(priceCrystal), robberyChance: parseInt(robberyChance), period: parseInt(period), description });
+    window.location.reload();
+  };
+
+  const handleEdit = async (id, field, value) => {
+    await axios.put(`/api/shop/${id}`, { [field]: value });
+    setProducts(products.map(product => product._id === id ? { ...product, [field]: value } : product));
+  };
+
+  const handleDelete = async (id) => {
+    await axios.delete(`/api/shop/${id}`);
+    setProducts(products.filter(product => product._id !== id));
+  };
+
+  return (
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-6">🛒 فروشگاه</h1>
+      <button onClick={handleCreateProduct} className="bg-blue-500 text-white py-2 px-4 rounded mb-4">ایجاد محصول جدید</button>
+      <table className="w-full text-left glass p-4">
+        <thead>
+          <tr>
+            <th>نام</th>
+            <th>قیمت (سی‌کوین)</th>
+            <th>قیمت (کریستال)</th>
+            <th>شانس سرقت</th>
+            <th>دوره</th>
+            <th>اقدامات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {products.map(product => (
+            <tr key={product._id}>
+              <td>{product.name}</td>
+              <td>{product.priceCcoin}</td>
+              <td>{product.priceCrystal}</td>
+              <td>{product.robberyChance}%</td>
+              <td>{product.period} ساعت</td>
+              <td>
+                <button onClick={() => handleEdit(product._id, 'priceCcoin', prompt('قیمت جدید (سی‌کوین):', product.priceCcoin))} className="text-blue-500 mr-2">ویرایش</button>
+                <button onClick={() => handleDelete(product._id)} className="text-red-500">حذف</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default Shop;
+```
+
+#### 2.4. دسته‌بندی اجتماعی
+
+##### 2.4.1. سیستم دوستی (🤝)
+###### توضیح:
+این بخش برای مدیریت سیستم دوستی بین کاربران طراحی شده است.
+
+###### نحوه مدیریت:
+- **نمایش:** جدول دوستی‌ها با ستون‌های کاربر، دوست، و تاریخ دوستی.
+- **مدیریت:** حذف دوستی یا ارسال درخواست دوستی از طرف کاربر.
+- **آمار:** نمایش تعداد دوستی‌های هر کاربر.
+
+###### کد پیاده‌سازی:
+```javascript
+// server/routes/friends.js
+const Friendship = mongoose.model('Friendship', new mongoose.Schema({
+  userId: String,
+  friendId: String,
+  date: Date,
+}));
+
+router.get('/', async (req, res) => {
+  try {
+    const friendships = await Friendship.find();
+    res.json(friendships);
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در دریافت دوستی‌ها' });
+  }
+});
+
+router.delete('/:id', async (req, res) => {
+  try {
+    await Friendship.findByIdAndDelete(req.params.id);
+    res.json({ message: 'دوستی حذف شد' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در حذف دوستی' });
+  }
+});
+
+// فرانت‌اند (React)
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const Friends = () => {
+  const [friendships, setFriendships] = useState([]);
+
+  useEffect(() => {
+    const fetchFriendships = async () => {
+      const response = await axios.get('/api/friends');
+      setFriendships(response.data);
+    };
+    fetchFriendships();
+  }, []);
+
+  const handleDelete = async (id) => {
+    await axios.delete(`/api/friends/${id}`);
+    setFriendships(friendships.filter(friendship => friendship._id !== id));
+  };
+
+  return (
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-6">🤝 سیستم دوستی</h1>
+      <table className="w-full text-left glass p-4">
+        <thead>
+          <tr>
+            <th>کاربر</th>
+            <th>دوست</th>
+            <th>تاریخ</th>
+            <th>اقدامات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {friendships.map(friendship => (
+            <tr key={friendship._id}>
+              <td>{friendship.userId}</td>
+              <td>{friendship.friendId}</td>
+              <td>{new Date(friendship.date).toLocaleDateString()}</td>
+              <td>
+                <button onClick={() => handleDelete(friendship._id)} className="text-red-500">حذف</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default Friends;
+```
+
+##### 2.4.2. کاربران بلاک‌شده (🚫)
+###### توضیح:
+این بخش برای مدیریت کاربران بلاک‌شده طراحی شده است.
+
+###### نحوه مدیریت:
+- **نمایش:** جدول کاربران بلاک‌شده با ستون‌های کاربر، دلیل بلاک، و تاریخ.
+- **مدیریت:** حذف کاربر از لیست بلاک یا افزودن کاربر جدید به لیست.
+- **آمار:** نمایش تعداد کاربران بلاک‌شده.
+
+###### کد پیاده‌سازی:
+```javascript
+// server/routes/blocked-users.js
+const BlockedUser = mongoose.model('BlockedUser', new mongoose.Schema({
+  userId: String,
+  reason: String,
+  date: Date,
+}));
+
+router.get('/', async (req, res) => {
+  try {
+    const blockedUsers = await BlockedUser.find();
+    res.json(blockedUsers);
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در دریافت کاربران بلاک‌شده' });
+  }
+});
+
+router.post('/block', async (req, res) => {
+  try {
+    const { userId, reason } = req.body;
+    const blockedUser = new BlockedUser({ userId, reason, date: new Date() });
+    await blockedUser.save();
+    res.json({ message: 'کاربر بلاک شد' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در بلاک کردن کاربر' });
+  }
+});
+
+router.delete('/:id', async (req, res) => {
+  try {
+    await BlockedUser.findByIdAndDelete(req.params.id);
+    res.json({ message: 'کاربر از بلاک خارج شد' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در حذف کاربر از بلاک' });
+  }
+});
+
+// فرانت‌اند (React)
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const BlockedUsers = () => {
+  const [blockedUsers, setBlockedUsers] = useState([]);
+
+  useEffect(() => {
+    const fetchBlockedUsers = async () => {
+      const response = await axios.get('/api/blocked-users');
+      setBlockedUsers(response.data);
+    };
+    fetchBlockedUsers();
+  }, []);
+
+  const handleBlockUser = async () => {
+    const userId = prompt('آیدی کاربر:');
+    const reason = prompt('دلیل بلاک:');
+    await axios.post('/api/blocked-users/block', { userId, reason });
+    window.location.reload();
+  };
+
+  const handleUnblock = async (id) => {
+    await axios.delete(`/api/blocked-users/${id}`);
+    setBlockedUsers(blockedUsers.filter(user => user._id !== id));
+  };
+
+  return (
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-6">🚫 کاربران بلاک‌شده</h1>
+      <button onClick={handleBlockUser} className="bg-blue-500 text-white py-2 px-4 rounded mb-4">بلاک کردن کاربر</button>
+      <table className="w-full text-left glass p-4">
+        <thead>
+          <tr>
+            <th>کاربر</th>
+            <th>دلیل</th>
+            <th>تاریخ</th>
+            <th>اقدامات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {blockedUsers.map(user => (
+            <tr key={user._id}>
+              <td>{user.userId}</td>
+              <td>{user.reason}</td>
+              <td>{new Date(user.date).toLocaleDateString()}</td>
+              <td>
+                <button onClick={() => handleUnblock(user._id)} className="text-green-500">رفع بلاک</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default BlockedUsers;
+```
+
+##### 2.4.3. چت‌های خصوصی (💬)
+###### توضیح:
+این بخش برای مدیریت چت‌های خصوصی بین کاربران طراحی شده است.
+
+###### نحوه مدیریت:
+- **نمایش:** جدول چت‌ها با ستون‌های فرستنده، گیرنده، پیام، و تاریخ.
+- **مدیریت:** حذف پیام یا مسدود کردن چت بین دو کاربر.
+- **آمار:** نمایش تعداد پیام‌های خصوصی.
+
+###### کد پیاده‌سازی:
+```javascript
+// server/routes/private-chats.js
+const PrivateChat = mongoose.model('PrivateChat', new mongoose.Schema({
+  senderId: String,
+  receiverId: String,
+  message: String,
+  date: Date,
+}));
+
+router.get('/', async (req, res) => {
+  try {
+    const chats = await PrivateChat.find().sort({ date: -1 });
+    res.json(chats);
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در دریافت چت‌ها' });
+  }
+});
+
+router.delete('/:id', async (req, res) => {
+  try {
+    await PrivateChat.findByIdAndDelete(req.params.id);
+    res.json({ message: 'پیام حذف شد' });
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در حذف پیام' });
+  }
+});
+
+// فرانت‌اند (React)
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const PrivateChats = () => {
+  const [chats, setChats] = useState([]);
+
+  useEffect(() => {
+    const fetchChats = async () => {
+      const response = await axios.get('/api/private-chats');
+      setChats(response.data);
+    };
+    fetchChats();
+  }, []);
+
+  const handleDelete = async (id) => {
+    await axios.delete(`/api/private-chats/${id}`);
+    setChats(chats.filter(chat => chat._id !== id));
+  };
+
+  return (
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-6">💬 چت‌های خصوصی</h1>
+      <table className="w-full text-left glass p-4">
+        <thead>
+          <tr>
+            <th>فرستنده</th>
+            <th>گیرنده</th>
+            <th>پیام</th>
+            <th>تاریخ</th>
+            <th>اقدامات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {chats.map(chat => (
+            <tr key={chat._id}>
+              <td>{chat.senderId}</td>
+              <td>{chat.receiverId}</td>
+              <td>{chat.message}</td>
+              <td>{new Date(chat.date).toLocaleString()}</td>
+              <td>
+                <button onClick={() => handleDelete(chat._id)} className="text-red-500">حذف</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default PrivateChats;
+```
+
+##### 2.4.4. رتبه‌بندی (🏆)
+###### توضیح:
+این بخش برای نمایش و مدیریت رتبه‌بندی کاربران طراحی شده است.
+
+###### نحوه مدیریت:
+- **نمایش:** جدول رتبه‌بندی با ستون‌های رتبه، کاربر، سی‌کوین، کریستال، و پیام‌ها.
+- **فیلتر:** فیلتر بر اساس معیار (سی‌کوین، کریستال، پیام‌ها) و بازه زمانی (روزانه، هفتگی، ماهانه).
+- **مدیریت:** تغییر رتبه کاربر یا حذف از رتبه‌بندی.
+
+###### کد پیاده‌سازی:
+```javascript
+// server/routes/rankings.js
+router.get('/', async (req, res) => {
+  try {
+    const { criteria = 'ccoin', period = 'all' } = req.query;
+    const users = await User.find().sort({ [criteria]: -1 }).limit(10);
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: 'خطا در دریافت رتبه‌بندی' });
+  }
+});
+
+// فرانت‌اند (React)
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const Rankings = () => {
+  const [users, setUsers] = useState([]);
+  const [criteria, setCriteria] = useState('ccoin');
+  const [period, setPeriod] = useState('all');
+
+  useEffect(() => {
+    const fetchRankings = async () => {
+      const response = await axios.get(`/api/rankings?criteria=${criteria}&period=${period}`);
+      setUsers(response.data);
+    };
+    fetchRankings();
+  }, [criteria, period]);
+
+  return (
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-6">🏆 رتبه‌بندی</h1>
+      <div className="mb-4">
+        <label>معیار:</label>
+        <select value={criteria} onChange={(e) => setCriteria(e.target.value)} className="p-2 rounded bg-gray-800 text-white">
+          <option value="ccoin">سی‌کوین</option>
+          <option value="crystal">کریستال</option>
+          <option value="messages">پیام‌ها</option>
+        </select>
+        <label className="ml-4">بازه زمانی:</label>
+        <select value={period} onChange={(e) => setPeriod(e.target.value)} className="p-2 rounded bg-gray-800 text-white">
+          <option value="all">همه</option>
+          <option value="daily">روزانه</option>
+          <option value="weekly">هفتگی</option>
+          <option value="monthly">ماهانه</option>
+        </select>
+      </div>
+      <table className="w-full text-left glass p-4">
+        <thead>
+          <tr>
+            <th>رتبه</th>
+            <th>کاربر</th>
+            <th>سی‌کوین</th>
+            <th>کریستال</th>
+            <th>پیام‌ها</th>
+          </tr>
+        </thead>
+        <tbody>
+          {users.map((user, index) => (
+            <tr key={user.discordId}>
+              <td>{index + 1}</td>
+              <td>{user.username}</td>
+              <td>{user.ccoin}</td>
+              <td>{user.crystal}</td>
+              <td>{user.messages}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default Rankings;
+```
+
+##### 2.4.5. رای‌گیری (🗳️)
+###### توضیح:
+این بخش برای مدیریت سیستم رای‌گیری طراحی شده است.
+
+###### نحوه مدیریت:
+- **نمایش:** جدول رای‌گیری‌ها با ستون‌های عنوان، گزینه‌ها، تعداد آرا، و وضعیت.
+- **ایجاد:** ایجاد رای‌گیری جدید با گزینه‌ها.
+- **مدیریت:** پایان دادن به رای‌گیری یا حذف آن.
+- **آمار:** نمایش تعداد آرا برای هر گزینه.
+
+###### کد پیاده‌سازی:
+```javascript
+// server/routes/votes.js
+const Vote = mongoose.model('Vote', new mongoose.Schema({
+  title: String,
+  options: [{ name: String, votes: Number }],
+  status: String,
+}));
+
+router.get('/', async (req, res) => {
+  try {
+    const votes = await Vote.find();
+    res.json(votes);
+  } catch (error) {
+    res.status(500).json({ error: 'خط

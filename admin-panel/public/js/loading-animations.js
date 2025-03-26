@@ -1,54 +1,80 @@
 /**
  * Vision UI Dashboard - Loading Animations
- * انیمیشن‌های بارگذاری جذاب برای عناصر داشبورد
+ * انیمیشن‌های بارگذاری برای حالت‌های مختلف
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-  initLoadingSystem();
+  // راه‌اندازی لودر اصلی صفحه
+  initMainLoader();
+  
+  // راه‌اندازی لودرهای درون صفحه‌ای
+  initComponentLoaders();
+  
+  // اضافه کردن رویدادها به دکمه‌های دارای لودر
+  initLoadingButtons();
 });
 
 /**
- * راه‌اندازی سیستم انیمیشن‌های بارگذاری
+ * راه‌اندازی و مدیریت لودر اصلی صفحه
  */
-function initLoadingSystem() {
-  // ایجاد لودر اصلی برای صفحه
-  createMainLoader();
+function initMainLoader() {
+  const mainLoader = document.querySelector('.loader-container');
+  if (!mainLoader) return;
   
-  // ایجاد اسکلتون‌ها برای محتوای در حال بارگذاری
-  createContentSkeletons();
+  // نمایش لودر در هنگام بارگذاری صفحه
+  showMainLoader();
   
-  // هندل کردن انیمیشن‌های لودینگ عناصر مختلف
-  setupDynamicLoading();
+  // مخفی کردن لودر پس از بارگذاری کامل صفحه
+  window.addEventListener('load', () => {
+    hideMainLoader();
+  });
   
-  // پنهان کردن لودر اصلی بعد از آماده شدن صفحه
-  // این تایمر برای شبیه‌سازی بارگذاری است
-  setTimeout(hideMainLoader, 1000);
+  // رویداد برای نمایش لودر هنگام انتقال بین صفحات
+  document.addEventListener('pageTransition', () => {
+    showMainLoader();
+  });
+  
+  // مخفی کردن لودر پس از بارگذاری صفحه جدید
+  document.addEventListener('pageLoaded', () => {
+    hideMainLoader();
+  });
+  
+  // ایجاد لودر پیشرفته اگر وجود نداشته باشد
+  createAdvancedLoader();
 }
 
 /**
- * ایجاد لودر اصلی برای صفحه
+ * ایجاد لودر پیشرفته با انیمیشن و متن
  */
-function createMainLoader() {
-  // بررسی وجود لودر قبلی
-  if (document.querySelector('.loader-container')) return;
+function createAdvancedLoader() {
+  const simpleLoader = document.querySelector('.loader-container .loader');
+  if (!simpleLoader) return;
   
-  const loaderContainer = document.createElement('div');
-  loaderContainer.className = 'loader-container';
+  // ایجاد لودر پیشرفته با انیمیشن
+  const advancedLoader = document.createElement('div');
+  advancedLoader.className = 'vui-loader';
   
-  loaderContainer.innerHTML = `
-    <div class="vui-loader">
-      <div class="vui-loader-logo">
-        <img src="/img/ccoin-logo.png" alt="CCoin" onerror="this.src = '/img/logo.png'; this.onerror=null;">
-      </div>
-      <div class="vui-loader-spinner"></div>
-      <div class="vui-loader-text">در حال بارگذاری داشبورد</div>
-      <div class="progress-loader">
-        <div class="progress-bar" id="mainProgressBar"></div>
-      </div>
+  // افزودن لوگو (اگر وجود داشته باشد)
+  let logoSrc = '/img/logo.png';
+  const logoImg = document.querySelector('link[rel="icon"]');
+  if (logoImg && logoImg.href) {
+    logoSrc = logoImg.href;
+  }
+  
+  // افزودن محتوای لودر
+  advancedLoader.innerHTML = `
+    <div class="vui-loader-logo">
+      <img src="${logoSrc}" alt="Logo" onerror="this.src='/img/coin.svg'; this.onerror=null;">
+    </div>
+    <div class="vui-loader-spinner"></div>
+    <div class="vui-loader-text">در حال بارگذاری...</div>
+    <div class="progress-loader">
+      <div class="progress-bar" style="width: 0%"></div>
     </div>
   `;
   
-  document.body.appendChild(loaderContainer);
+  // جایگزینی لودر ساده با لودر پیشرفته
+  simpleLoader.parentNode.replaceChild(advancedLoader, simpleLoader);
   
   // شبیه‌سازی پیشرفت بارگذاری
   simulateLoadingProgress();
@@ -58,552 +84,505 @@ function createMainLoader() {
  * شبیه‌سازی پیشرفت بارگذاری
  */
 function simulateLoadingProgress() {
-  const progressBar = document.getElementById('mainProgressBar');
+  const progressBar = document.querySelector('.progress-bar');
   if (!progressBar) return;
   
-  let width = 0;
-  const interval = setInterval(function() {
-    if (width >= 100) {
+  let progress = 0;
+  
+  // افزایش پیشرفت با سرعت نامنظم برای شبیه‌سازی بارگذاری واقعی
+  const interval = setInterval(() => {
+    // محاسبه میزان افزایش (کندتر در نزدیکی 100%)
+    const increment = progress < 70 ? 
+      Math.random() * 10 : // پیشرفت سریع‌تر در ابتدا
+      Math.random() * 3;   // پیشرفت کندتر در انتها
+    
+    progress = Math.min(progress + increment, 99);
+    progressBar.style.width = `${progress}%`;
+    
+    // توقف در 99% تا بارگذاری کامل صفحه
+    if (progress >= 99) {
       clearInterval(interval);
-    } else {
-      // افزایش سرعت در مراحل مختلف
-      if (width < 30) {
-        width += 2;
-      } else if (width < 60) {
-        width += 1;
-      } else if (width < 80) {
-        width += 0.5;
-      } else {
-        width += 0.2;
-      }
-      progressBar.style.width = width + '%';
     }
-  }, 30);
+  }, 200);
+  
+  // تکمیل پیشرفت پس از بارگذاری صفحه
+  window.addEventListener('load', () => {
+    clearInterval(interval);
+    progressBar.style.width = '100%';
+  });
 }
 
 /**
- * پنهان کردن لودر اصلی
+ * نمایش لودر اصلی صفحه
+ */
+function showMainLoader() {
+  const loaderContainer = document.querySelector('.loader-container');
+  if (!loaderContainer) return;
+  
+  // حذف کلاس d-none با تاخیر برای اعمال انیمیشن
+  setTimeout(() => {
+    loaderContainer.classList.remove('d-none');
+  }, 0);
+}
+
+/**
+ * مخفی کردن لودر اصلی صفحه با انیمیشن
  */
 function hideMainLoader() {
   const loaderContainer = document.querySelector('.loader-container');
-  if (loaderContainer) {
-    // تضمین 100% شدن نوار پیشرفت
-    const progressBar = document.getElementById('mainProgressBar');
-    if (progressBar) {
-      progressBar.style.width = '100%';
-    }
+  if (!loaderContainer) return;
+  
+  // تکمیل پیشرفت نوار بارگذاری
+  const progressBar = document.querySelector('.progress-bar');
+  if (progressBar) {
+    progressBar.style.width = '100%';
+  }
+  
+  // تاخیر برای نمایش 100% قبل از مخفی شدن
+  setTimeout(() => {
+    loaderContainer.classList.add('d-none');
     
-    // پنهان کردن لودر با تاخیر کوتاه
-    setTimeout(() => {
-      loaderContainer.classList.add('d-none');
+    // تغییر متن لودر برای دفعه بعد
+    const loaderText = document.querySelector('.vui-loader-text');
+    if (loaderText) {
+      const texts = [
+        'در حال بارگذاری...',
+        'لطفاً صبر کنید...',
+        'در حال دریافت اطلاعات...',
+        'آماده‌سازی داشبورد...'
+      ];
       
-      // حذف لودر از DOM بعد از اتمام انیمیشن
-      setTimeout(() => {
-        loaderContainer.remove();
-      }, 500);
-    }, 300);
+      // انتخاب تصادفی متن
+      const randomText = texts[Math.floor(Math.random() * texts.length)];
+      loaderText.textContent = randomText;
+    }
+  }, 500);
+}
+
+/**
+ * راه‌اندازی لودرهای کامپوننت‌ها
+ */
+function initComponentLoaders() {
+  // المان‌هایی که باید با تاخیر بارگذاری شوند
+  const lazyLoadElements = document.querySelectorAll('[data-loading="true"]');
+  
+  lazyLoadElements.forEach(element => {
+    // ایجاد وضعیت بارگذاری
+    showComponentLoader(element);
+    
+    // شبیه‌سازی زمان بارگذاری تصادفی
+    const loadTime = Math.random() * 2000 + 500; // 0.5 تا 2.5 ثانیه
+    
+    // مخفی کردن لودر پس از بارگذاری
+    setTimeout(() => {
+      hideComponentLoader(element);
+    }, loadTime);
+  });
+  
+  // بارگذاری با اسکرول
+  initLazyLoading();
+}
+
+/**
+ * راه‌اندازی بارگذاری تنبل برای المان‌ها
+ */
+function initLazyLoading() {
+  // بررسی پشتیبانی مرورگر از Intersection Observer
+  if (!('IntersectionObserver' in window)) return;
+  
+  // المان‌هایی که باید با اسکرول بارگذاری شوند
+  const lazyElements = document.querySelectorAll('[data-lazy-load="true"]');
+  
+  // تنظیم آبزرور
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const element = entry.target;
+        
+        // بارگذاری المان
+        showComponentLoader(element);
+        
+        // زمان بارگذاری تصادفی
+        const loadTime = Math.random() * 1500 + 500; // 0.5 تا 2 ثانیه
+        
+        setTimeout(() => {
+          hideComponentLoader(element);
+          
+          // حذف از آبزرور پس از بارگذاری
+          observer.unobserve(element);
+        }, loadTime);
+      }
+    });
+  }, {
+    threshold: 0.1, // المان حداقل 10% نمایان باشد
+    rootMargin: '0px 0px 100px 0px' // بارگذاری کمی زودتر از رسیدن به المان
+  });
+  
+  // افزودن المان‌ها به آبزرور
+  lazyElements.forEach(element => {
+    observer.observe(element);
+  });
+}
+
+/**
+ * نمایش لودر برای یک کامپوننت
+ * @param {HTMLElement} element - المان کامپوننت
+ */
+function showComponentLoader(element) {
+  // اضافه کردن کلاس loading
+  element.classList.add('loading');
+  
+  // در صورت وجود ویژگی data-skeleton، استفاده از اسکلتون
+  if (element.hasAttribute('data-skeleton')) {
+    const skeletonType = element.getAttribute('data-skeleton');
+    createSkeleton(element, skeletonType);
+  } else {
+    // ایجاد لودر ساده
+    createSimpleLoader(element);
   }
 }
 
 /**
- * ایجاد اسکلتون‌ها برای محتوای در حال بارگذاری
+ * مخفی کردن لودر از یک کامپوننت
+ * @param {HTMLElement} element - المان کامپوننت
  */
-function createContentSkeletons() {
-  // ایجاد اسکلتون برای کارت‌های آمار
-  createStatCardSkeletons();
+function hideComponentLoader(element) {
+  // حذف کلاس loading
+  element.classList.remove('loading');
   
-  // ایجاد اسکلتون برای چارت‌ها
-  createChartSkeletons();
+  // حذف اسکلتون
+  const skeleton = element.querySelector('.skeleton-container');
+  if (skeleton) {
+    // افکت محو شدن اسکلتون
+    skeleton.style.opacity = '0';
+    
+    // حذف پس از پایان انیمیشن
+    setTimeout(() => {
+      skeleton.remove();
+      
+      // نمایش محتوای اصلی
+      showElementContent(element);
+    }, 300);
+  }
   
-  // ایجاد اسکلتون برای جدول‌ها
-  createTableSkeletons();
-  
-  // ایجاد اسکلتون برای فید فعالیت‌ها
-  createActivityFeedSkeletons();
+  // حذف لودر ساده
+  const loader = element.querySelector('.chart-loader');
+  if (loader) {
+    loader.remove();
+    
+    // نمایش محتوای اصلی
+    showElementContent(element);
+  }
 }
 
 /**
- * ایجاد اسکلتون برای کارت‌های آمار
+ * نمایش محتوای اصلی المان با افکت
+ * @param {HTMLElement} element - المان هدف
  */
-function createStatCardSkeletons() {
-  // پیدا کردن کانتینر کارت‌های آمار
-  const statContainers = document.querySelectorAll('.stat-cards-container, .dashboard-stats-row');
-  
-  statContainers.forEach(container => {
-    // پنهان کردن موقت کارت‌های فعلی
-    const existingCards = container.querySelectorAll('.vui-card, .vui-stat-card-advanced, .card');
-    existingCards.forEach(card => {
-      card.style.display = 'none';
-    });
+function showElementContent(element) {
+  // بررسی و اضافه کردن کلاس‌های انیمیشن
+  if (!element.classList.contains('fade-in') && 
+      !element.classList.contains('slide-in-up') && 
+      !element.classList.contains('slide-in-right')) {
     
-    // تعیین تعداد کارت‌های اسکلتون
-    const skeletonCount = existingCards.length || 4;
+    // انتخاب افکت بر اساس ویژگی data-animation
+    const animation = element.getAttribute('data-animation') || 'fade-in';
+    element.classList.add(animation);
     
-    // ایجاد اسکلتون‌ها
-    for (let i = 0; i < skeletonCount; i++) {
-      const skeleton = document.createElement('div');
-      skeleton.className = 'stat-card-skeleton skeleton-loader';
-      skeleton.innerHTML = `
-        <div class="stat-card-header-skeleton">
-          <div class="stat-card-icon-skeleton skeleton-loader"></div>
-          <div class="stat-card-actions-skeleton skeleton-loader"></div>
-        </div>
-        <div class="stat-card-title-skeleton skeleton-loader"></div>
-        <div class="stat-card-value-skeleton skeleton-loader"></div>
-        <div class="stat-card-meta-skeleton skeleton-loader"></div>
-        <div class="stat-card-progress-skeleton skeleton-loader"></div>
-      `;
-      
-      // اضافه کردن تاخیر برای انیمیشن آبشاری
-      skeleton.style.animationDelay = `${i * 0.1}s`;
-      
-      container.appendChild(skeleton);
-    }
-  });
+    // حذف کلاس انیمیشن پس از اتمام
+    setTimeout(() => {
+      element.classList.remove(animation);
+    }, 1000);
+  }
 }
 
 /**
- * ایجاد اسکلتون برای چارت‌ها
+ * ایجاد لودر ساده برای یک المان
+ * @param {HTMLElement} element - المان هدف
  */
-function createChartSkeletons() {
-  // پیدا کردن کانتینر چارت‌ها
-  const chartContainers = document.querySelectorAll('.chart-container, .dashboard-charts-row');
+function createSimpleLoader(element) {
+  // بررسی وجود لودر قبلی
+  if (element.querySelector('.chart-loader')) return;
   
-  chartContainers.forEach(container => {
-    // پنهان کردن موقت چارت‌های فعلی
-    const existingCharts = container.querySelectorAll('.vui-card, .chart-card, .card');
-    existingCharts.forEach(chart => {
-      chart.style.display = 'none';
-    });
-    
-    // تعیین تعداد چارت‌های اسکلتون
-    const skeletonCount = existingCharts.length || 2;
-    
-    // ایجاد اسکلتون‌ها
-    for (let i = 0; i < skeletonCount; i++) {
-      const skeleton = document.createElement('div');
-      skeleton.className = 'chart-skeleton';
-      skeleton.innerHTML = `
-        <div class="chart-header-skeleton">
-          <div class="chart-title-skeleton skeleton-loader"></div>
-          <div class="chart-filters-skeleton">
-            <div class="chart-filter-skeleton skeleton-loader"></div>
-            <div class="chart-filter-skeleton skeleton-loader"></div>
-            <div class="chart-filter-skeleton skeleton-loader"></div>
+  // ایجاد لودر
+  const loader = document.createElement('div');
+  loader.className = 'chart-loader';
+  
+  // اضافه کردن به المان
+  element.appendChild(loader);
+}
+
+/**
+ * ایجاد اسکلتون بر اساس نوع المان
+ * @param {HTMLElement} element - المان هدف
+ * @param {string} type - نوع اسکلتون
+ */
+function createSkeleton(element, type) {
+  // بررسی وجود اسکلتون قبلی
+  if (element.querySelector('.skeleton-container')) return;
+  
+  // ایجاد کانتینر اسکلتون
+  const skeletonContainer = document.createElement('div');
+  skeletonContainer.className = 'skeleton-container';
+  skeletonContainer.style.position = 'absolute';
+  skeletonContainer.style.top = '0';
+  skeletonContainer.style.left = '0';
+  skeletonContainer.style.width = '100%';
+  skeletonContainer.style.height = '100%';
+  skeletonContainer.style.zIndex = '5';
+  skeletonContainer.style.borderRadius = 'inherit';
+  skeletonContainer.style.overflow = 'hidden';
+  skeletonContainer.style.transition = 'opacity 0.3s ease';
+  
+  // ایجاد HTML اسکلتون بر اساس نوع
+  let skeletonHTML = '';
+  
+  switch(type) {
+    case 'stat-card':
+      skeletonHTML = `
+        <div class="stat-card-skeleton">
+          <div class="stat-card-header-skeleton">
+            <div class="stat-card-icon-skeleton skeleton-loader"></div>
+            <div class="stat-card-actions-skeleton skeleton-loader"></div>
           </div>
+          <div class="stat-card-title-skeleton skeleton-loader"></div>
+          <div class="stat-card-value-skeleton skeleton-loader"></div>
+          <div class="stat-card-meta-skeleton skeleton-loader"></div>
+          <div class="stat-card-progress-skeleton skeleton-loader"></div>
         </div>
-        <div class="chart-body-skeleton skeleton-loader"></div>
       `;
-      
-      // اضافه کردن تاخیر برای انیمیشن آبشاری
-      skeleton.style.animationDelay = `${i * 0.2}s`;
-      
-      container.appendChild(skeleton);
-    }
-  });
-}
-
-/**
- * ایجاد اسکلتون برای جدول‌ها
- */
-function createTableSkeletons() {
-  // پیدا کردن کانتینر جدول‌ها
-  const tableContainers = document.querySelectorAll('.table-container, .dashboard-tables-row');
-  
-  tableContainers.forEach(container => {
-    // پنهان کردن موقت جدول‌های فعلی
-    const existingTables = container.querySelectorAll('.vui-card, .table-card, .card, .vui-data-table');
-    existingTables.forEach(table => {
-      table.style.display = 'none';
-    });
+      break;
     
-    // ایجاد اسکلتون
-    const skeleton = document.createElement('div');
-    skeleton.className = 'table-skeleton';
-    
-    // هدر جدول
-    let tableHeader = `
-      <div class="table-header-skeleton">
-        <div class="table-avatar-skeleton skeleton-loader"></div>
-    `;
-    
-    // ایجاد ستون‌های هدر
-    for (let i = 0; i < 4; i++) {
-      tableHeader += `<div class="table-header-item-skeleton skeleton-loader"></div>`;
-    }
-    
-    tableHeader += `</div>`;
-    
-    // ردیف‌های جدول
-    let tableRows = '';
-    for (let i = 0; i < 5; i++) {
-      tableRows += `
-        <div class="table-row-skeleton">
-          <div class="table-avatar-skeleton skeleton-loader"></div>
-      `;
-      
-      // ایجاد سلول‌های ردیف
-      for (let j = 0; j < 4; j++) {
-        tableRows += `<div class="table-cell-skeleton skeleton-loader"></div>`;
-      }
-      
-      tableRows += `</div>`;
-    }
-    
-    skeleton.innerHTML = tableHeader + tableRows;
-    
-    container.appendChild(skeleton);
-  });
-}
-
-/**
- * ایجاد اسکلتون برای فید فعالیت‌ها
- */
-function createActivityFeedSkeletons() {
-  // پیدا کردن کانتینر فید فعالیت‌ها
-  const activityContainers = document.querySelectorAll('.activity-container, .dashboard-activity-row');
-  
-  activityContainers.forEach(container => {
-    // پنهان کردن موقت فید‌های فعلی
-    const existingFeeds = container.querySelectorAll('.vui-card, .activity-card, .card, .vui-activity-feed');
-    existingFeeds.forEach(feed => {
-      feed.style.display = 'none';
-    });
-    
-    // ایجاد اسکلتون
-    const skeleton = document.createElement('div');
-    skeleton.className = 'activity-feed-skeleton';
-    
-    // هدر فید
-    let feedHeader = `
-      <div class="activity-header-skeleton">
-        <div class="activity-title-skeleton skeleton-loader"></div>
-        <div class="activity-action-skeleton skeleton-loader"></div>
-      </div>
-    `;
-    
-    // آیتم‌های فید
-    let feedItems = '';
-    for (let i = 0; i < 5; i++) {
-      feedItems += `
-        <div class="activity-item-skeleton">
-          <div class="activity-icon-skeleton skeleton-loader"></div>
-          <div class="activity-content-skeleton">
-            <div class="activity-title-item-skeleton skeleton-loader"></div>
-            <div class="activity-time-skeleton skeleton-loader"></div>
-            <div class="activity-desc-skeleton skeleton-loader"></div>
+    case 'chart':
+      skeletonHTML = `
+        <div class="chart-skeleton">
+          <div class="chart-header-skeleton">
+            <div class="chart-title-skeleton skeleton-loader"></div>
+            <div class="chart-filters-skeleton">
+              <div class="chart-filter-skeleton skeleton-loader"></div>
+              <div class="chart-filter-skeleton skeleton-loader"></div>
+              <div class="chart-filter-skeleton skeleton-loader"></div>
+            </div>
           </div>
+          <div class="chart-body-skeleton skeleton-loader"></div>
         </div>
       `;
+      break;
+    
+    case 'table':
+      skeletonHTML = `
+        <div class="table-skeleton">
+          <div class="table-header-skeleton">
+            <div class="table-header-item-skeleton skeleton-loader"></div>
+            <div class="table-header-item-skeleton skeleton-loader"></div>
+            <div class="table-header-item-skeleton skeleton-loader"></div>
+          </div>
+          ${Array.from({length: 5}).map(() => `
+            <div class="table-row-skeleton">
+              <div class="table-cell-skeleton skeleton-loader"></div>
+              <div class="table-cell-skeleton skeleton-loader"></div>
+              <div class="table-cell-skeleton skeleton-loader"></div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      break;
+    
+    case 'activity':
+      skeletonHTML = `
+        <div class="activity-feed-skeleton">
+          <div class="activity-header-skeleton">
+            <div class="activity-title-skeleton skeleton-loader"></div>
+            <div class="activity-action-skeleton skeleton-loader"></div>
+          </div>
+          ${Array.from({length: 3}).map(() => `
+            <div class="activity-item-skeleton">
+              <div class="activity-icon-skeleton skeleton-loader"></div>
+              <div class="activity-content-skeleton">
+                <div class="activity-title-item-skeleton skeleton-loader"></div>
+                <div class="activity-desc-skeleton skeleton-loader"></div>
+                <div class="activity-time-skeleton skeleton-loader"></div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      break;
+    
+    default:
+      // اسکلتون پیش‌فرض
+      skeletonHTML = `
+        <div style="padding: 20px;">
+          <div class="skeleton-loader" style="height: 20px; margin-bottom: 15px;"></div>
+          <div class="skeleton-loader" style="height: 100px; margin-bottom: 15px;"></div>
+          <div class="skeleton-loader" style="height: 15px; width: 70%; margin-bottom: 10px;"></div>
+          <div class="skeleton-loader" style="height: 15px; width: 50%;"></div>
+        </div>
+      `;
+  }
+  
+  // تنظیم محتوای اسکلتون
+  skeletonContainer.innerHTML = skeletonHTML;
+  
+  // اضافه کردن اسکلتون به المان
+  element.style.position = 'relative';
+  element.appendChild(skeletonContainer);
+  
+  // پنهان کردن فرزندان برای جلوگیری از تداخل با اسکلتون
+  Array.from(element.children).forEach(child => {
+    if (child !== skeletonContainer) {
+      child.style.visibility = 'hidden';
     }
-    
-    skeleton.innerHTML = feedHeader + feedItems;
-    
-    container.appendChild(skeleton);
   });
 }
 
 /**
- * تنظیم انیمیشن‌های لودینگ پویا برای اجزای مختلف
+ * راه‌اندازی دکمه‌های دارای حالت بارگذاری
  */
-function setupDynamicLoading() {
-  // انیمیشن لودینگ برای دکمه‌ها هنگام کلیک
-  setupButtonLoadingAnimation();
-  
-  // لودینگ برای بخش‌های محتوا هنگام بروزرسانی
-  setupContentLoadingAnimation();
-}
-
-/**
- * تنظیم انیمیشن لودینگ برای دکمه‌ها هنگام کلیک
- */
-function setupButtonLoadingAnimation() {
-  // یافتن تمام دکمه‌هایی که نیاز به انیمیشن لودینگ دارند
-  const buttons = document.querySelectorAll('.vui-btn, .btn-primary, .btn-info, .btn-success, .btn-warning');
+function initLoadingButtons() {
+  const buttons = document.querySelectorAll('.btn[data-loading-text]');
   
   buttons.forEach(button => {
-    button.addEventListener('click', function(e) {
-      // بررسی اینکه آیا دکمه نیاز به انیمیشن لودینگ دارد یا خیر
-      if (this.hasAttribute('data-loading') && this.getAttribute('data-loading') === 'true') {
+    button.addEventListener('click', (e) => {
+      // بررسی آیا دکمه غیرفعال است
+      if (button.classList.contains('disabled') || button.disabled) {
         e.preventDefault();
-        
-        // اضافه کردن اسپینر به دکمه
-        if (!this.querySelector('.btn-spinner')) {
-          const text = this.innerHTML;
-          this.setAttribute('data-original-text', text);
-          
-          // فعال کردن حالت لودینگ
-          this.innerHTML = `<span class="btn-spinner"></span> در حال پردازش...`;
-          this.classList.add('disabled');
-          this.disabled = true;
-          
-          // شبیه‌سازی زمان بارگذاری
-          const originalButton = this;
-          setTimeout(function() {
-            originalButton.innerHTML = originalButton.getAttribute('data-original-text');
-            originalButton.classList.remove('disabled');
-            originalButton.disabled = false;
-            
-            // اجرای عملیات بعد از بارگذاری
-            if (originalButton.hasAttribute('data-success-message')) {
-              const successMsg = originalButton.getAttribute('data-success-message');
-              showToast(successMsg, 'success');
-            }
-          }, 2000);
-        }
+        return;
       }
-    });
-  });
-}
-
-/**
- * تنظیم انیمیشن لودینگ برای بخش‌های محتوا هنگام بروزرسانی
- */
-function setupContentLoadingAnimation() {
-  // یافتن تمام دکمه‌های رفرش
-  const refreshButtons = document.querySelectorAll('[data-refresh-target]');
-  
-  refreshButtons.forEach(button => {
-    button.addEventListener('click', function() {
-      // دریافت هدف رفرش
-      const targetId = this.getAttribute('data-refresh-target');
-      const targetElement = document.getElementById(targetId);
       
-      if (targetElement) {
-        // فعال کردن حالت لودینگ
-        targetElement.classList.add('loading');
+      // اگر ویژگی data-prevent-default تنظیم شده باشد، از عملکرد پیش‌فرض جلوگیری می‌کنیم
+      if (button.hasAttribute('data-prevent-default')) {
+        e.preventDefault();
+      }
+      
+      // نمایش وضعیت بارگذاری
+      showButtonLoading(button);
+      
+      // ذخیره متن اصلی دکمه برای بازیابی بعدی
+      if (!button.hasAttribute('data-original-text')) {
+        button.setAttribute('data-original-text', button.innerHTML);
+      }
+      
+      // اگر ویژگی data-auto-reset تنظیم شده باشد، وضعیت بارگذاری را با تاخیر حذف می‌کنیم
+      if (button.hasAttribute('data-auto-reset')) {
+        const resetDelay = parseInt(button.getAttribute('data-auto-reset')) || 2000;
         
-        // شبیه‌سازی زمان بارگذاری
-        setTimeout(function() {
-          // پایان حالت لودینگ
-          targetElement.classList.remove('loading');
-          
-          // نمایش پیام موفقیت
-          showToast('محتوا با موفقیت به‌روزرسانی شد', 'success');
-        }, 1500);
+        setTimeout(() => {
+          hideButtonLoading(button);
+        }, resetDelay);
       }
     });
   });
 }
 
 /**
- * جایگزینی اسکلتون‌ها با محتوای واقعی
+ * نمایش وضعیت بارگذاری دکمه
+ * @param {HTMLElement} button - دکمه
  */
-function replaceSkeleton() {
-  // حذف اسکلتون‌های کارت‌های آمار
-  const statCardSkeletons = document.querySelectorAll('.stat-card-skeleton');
-  statCardSkeletons.forEach(skeleton => {
-    skeleton.style.opacity = '0';
-    setTimeout(() => {
-      skeleton.remove();
-    }, 300);
-  });
+function showButtonLoading(button) {
+  // غیرفعال کردن دکمه
+  button.classList.add('disabled');
+  button.disabled = true;
   
-  // حذف اسکلتون‌های چارت‌ها
-  const chartSkeletons = document.querySelectorAll('.chart-skeleton');
-  chartSkeletons.forEach(skeleton => {
-    skeleton.style.opacity = '0';
-    setTimeout(() => {
-      skeleton.remove();
-    }, 300);
-  });
+  // دریافت متن بارگذاری
+  const loadingText = button.getAttribute('data-loading-text') || 'در حال پردازش...';
   
-  // حذف اسکلتون‌های جدول‌ها
-  const tableSkeletons = document.querySelectorAll('.table-skeleton');
-  tableSkeletons.forEach(skeleton => {
-    skeleton.style.opacity = '0';
-    setTimeout(() => {
-      skeleton.remove();
-    }, 300);
-  });
+  // ایجاد اسپینر
+  const spinner = document.createElement('span');
+  spinner.className = 'btn-spinner';
   
-  // حذف اسکلتون‌های فید فعالیت‌ها
-  const activitySkeletons = document.querySelectorAll('.activity-feed-skeleton');
-  activitySkeletons.forEach(skeleton => {
-    skeleton.style.opacity = '0';
-    setTimeout(() => {
-      skeleton.remove();
-    }, 300);
-  });
-  
-  // نمایش مجدد محتوای اصلی
-  const hiddenElements = document.querySelectorAll('[style*="display: none"]');
-  hiddenElements.forEach(element => {
-    element.style.display = '';
-    element.style.opacity = '0';
-    element.style.transform = 'translateY(10px)';
-    element.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-    
-    setTimeout(() => {
-      element.style.opacity = '1';
-      element.style.transform = 'translateY(0)';
-    }, 100);
-  });
+  // تغییر محتوای دکمه
+  button.innerHTML = '';
+  button.appendChild(spinner);
+  button.appendChild(document.createTextNode(' ' + loadingText));
 }
 
 /**
- * نمایش پیام (Toast)
- * @param {string} message - متن پیام
- * @param {string} type - نوع پیام (success, error, info)
+ * حذف وضعیت بارگذاری دکمه
+ * @param {HTMLElement} button - دکمه
  */
-function showToast(message, type = 'info') {
-  // بررسی وجود کانتینر toast قبلی
-  let toastContainer = document.querySelector('.vui-toast-container');
+function hideButtonLoading(button) {
+  // فعال کردن دکمه
+  button.classList.remove('disabled');
+  button.disabled = false;
   
-  if (!toastContainer) {
-    toastContainer = document.createElement('div');
-    toastContainer.className = 'vui-toast-container';
-    toastContainer.style.position = 'fixed';
-    toastContainer.style.bottom = '20px';
-    toastContainer.style.left = '20px';
-    toastContainer.style.zIndex = '9999';
-    document.body.appendChild(toastContainer);
+  // بازیابی متن اصلی
+  const originalText = button.getAttribute('data-original-text');
+  if (originalText) {
+    button.innerHTML = originalText;
+  }
+}
+
+/**
+ * نمایش وضعیت "بدون داده" برای نمودارها
+ * @param {HTMLElement} chartContainer - کانتینر نمودار
+ * @param {string} message - پیام نمایشی
+ */
+function showNoDataState(chartContainer, message = 'داده‌ای برای نمایش وجود ندارد') {
+  // حذف لودر قبلی
+  const existingLoader = chartContainer.querySelector('.chart-loader');
+  if (existingLoader) {
+    existingLoader.remove();
   }
   
-  // ایجاد toast جدید
-  const toast = document.createElement('div');
-  toast.className = `vui-toast ${type}`;
-  toast.style.backgroundColor = 'var(--card-bg)';
-  toast.style.color = 'var(--text-primary)';
-  toast.style.padding = '12px 20px';
-  toast.style.borderRadius = '8px';
-  toast.style.marginTop = '10px';
-  toast.style.boxShadow = 'var(--card-shadow)';
-  toast.style.display = 'flex';
-  toast.style.alignItems = 'center';
-  toast.style.animationName = 'fadeIn';
-  toast.style.animationDuration = '0.3s';
-  toast.style.borderLeft = `4px solid ${type === 'success' ? '#01b574' : type === 'error' ? '#f53939' : '#2152ff'}`;
+  // ایجاد وضعیت بدون داده
+  const noDataElement = document.createElement('div');
+  noDataElement.className = 'chart-no-data';
   
-  // آیکون مناسب برای هر نوع toast
-  let icon = '';
-  if (type === 'success') icon = '<i class="bi bi-check-circle-fill" style="color:#01b574;margin-right:8px;"></i>';
-  else if (type === 'error') icon = '<i class="bi bi-x-circle-fill" style="color:#f53939;margin-right:8px;"></i>';
-  else icon = '<i class="bi bi-info-circle-fill" style="color:#2152ff;margin-right:8px;"></i>';
+  noDataElement.innerHTML = `
+    <div class="chart-no-data-icon">
+      <i class="bi bi-bar-chart"></i>
+    </div>
+    <div class="chart-no-data-text">${message}</div>
+  `;
   
-  toast.innerHTML = `${icon} ${message}`;
+  // اضافه کردن به کانتینر
+  chartContainer.style.position = 'relative';
+  chartContainer.appendChild(noDataElement);
+}
+
+/**
+ * حذف وضعیت "بدون داده"
+ * @param {HTMLElement} chartContainer - کانتینر نمودار
+ */
+function hideNoDataState(chartContainer) {
+  const noDataElement = chartContainer.querySelector('.chart-no-data');
+  if (noDataElement) {
+    noDataElement.remove();
+  }
+}
+
+/**
+ * اعمال افکت اسکلتون به یک المان
+ * @param {string} selector - انتخابگر CSS
+ * @param {string} type - نوع اسکلتون
+ */
+function applySkeletonLoader(selector, type) {
+  const element = document.querySelector(selector);
+  if (!element) return;
   
-  // افزودن به کانتینر
-  toastContainer.appendChild(toast);
+  // نمایش اسکلتون
+  showComponentLoader(element);
+  element.setAttribute('data-skeleton', type);
   
-  // حذف بعد از 3 ثانیه
+  // زمان بارگذاری تصادفی
+  const loadTime = Math.random() * 2000 + 1000; // 1 تا 3 ثانیه
+  
+  // مخفی کردن اسکلتون پس از بارگذاری
   setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateX(-20px)';
-    toast.style.transition = 'all 0.3s ease';
-    
-    setTimeout(() => {
-      toast.remove();
-      
-      // حذف کانتینر اگر خالی است
-      if (toastContainer.children.length === 0) {
-        toastContainer.remove();
-      }
-    }, 300);
-  }, 3000);
+    hideComponentLoader(element);
+  }, loadTime);
 }
 
-// زمان‌بندی برای نمایش مجدد محتوای اصلی بعد از اتمام لودینگ
-setTimeout(replaceSkeleton, 1500);
-
-// API عمومی
-window.visionUiLoading = {
-  showLoader: function(targetElement) {
-    if (typeof targetElement === 'string') {
-      targetElement = document.getElementById(targetElement);
-    }
-    
-    if (targetElement) {
-      targetElement.classList.add('loading');
-    }
-  },
-  hideLoader: function(targetElement) {
-    if (typeof targetElement === 'string') {
-      targetElement = document.getElementById(targetElement);
-    }
-    
-    if (targetElement) {
-      targetElement.classList.remove('loading');
-    }
-  },
-  showButtonLoading: function(button, loadingText = 'در حال پردازش...') {
-    if (typeof button === 'string') {
-      button = document.getElementById(button);
-    }
-    
-    if (button) {
-      const text = button.innerHTML;
-      button.setAttribute('data-original-text', text);
-      button.innerHTML = `<span class="btn-spinner"></span> ${loadingText}`;
-      button.classList.add('disabled');
-      button.disabled = true;
-    }
-  },
-  hideButtonLoading: function(button) {
-    if (typeof button === 'string') {
-      button = document.getElementById(button);
-    }
-    
-    if (button && button.hasAttribute('data-original-text')) {
-      button.innerHTML = button.getAttribute('data-original-text');
-      button.classList.remove('disabled');
-      button.disabled = false;
-    }
-  },
-  createSkeletonLoader: function(type, count = 1) {
-    const container = document.createElement('div');
-    
-    switch (type) {
-      case 'stat-card':
-        for (let i = 0; i < count; i++) {
-          const skeleton = document.createElement('div');
-          skeleton.className = 'stat-card-skeleton skeleton-loader';
-          skeleton.innerHTML = `
-            <div class="stat-card-header-skeleton">
-              <div class="stat-card-icon-skeleton skeleton-loader"></div>
-              <div class="stat-card-actions-skeleton skeleton-loader"></div>
-            </div>
-            <div class="stat-card-title-skeleton skeleton-loader"></div>
-            <div class="stat-card-value-skeleton skeleton-loader"></div>
-            <div class="stat-card-meta-skeleton skeleton-loader"></div>
-            <div class="stat-card-progress-skeleton skeleton-loader"></div>
-          `;
-          container.appendChild(skeleton);
-        }
-        break;
-      
-      case 'table-row':
-        for (let i = 0; i < count; i++) {
-          const skeleton = document.createElement('div');
-          skeleton.className = 'table-row-skeleton';
-          skeleton.innerHTML = `
-            <div class="table-avatar-skeleton skeleton-loader"></div>
-            <div class="table-cell-skeleton skeleton-loader"></div>
-            <div class="table-cell-skeleton skeleton-loader"></div>
-            <div class="table-cell-skeleton skeleton-loader"></div>
-            <div class="table-cell-skeleton skeleton-loader"></div>
-          `;
-          container.appendChild(skeleton);
-        }
-        break;
-      
-      case 'activity-item':
-        for (let i = 0; i < count; i++) {
-          const skeleton = document.createElement('div');
-          skeleton.className = 'activity-item-skeleton';
-          skeleton.innerHTML = `
-            <div class="activity-icon-skeleton skeleton-loader"></div>
-            <div class="activity-content-skeleton">
-              <div class="activity-title-item-skeleton skeleton-loader"></div>
-              <div class="activity-time-skeleton skeleton-loader"></div>
-              <div class="activity-desc-skeleton skeleton-loader"></div>
-            </div>
-          `;
-          container.appendChild(skeleton);
-        }
-        break;
-    }
-    
-    return container;
-  }
+// افزودن متدها به window برای دسترسی مستقیم
+window.visionUiLoaders = {
+  showMainLoader: showMainLoader,
+  hideMainLoader: hideMainLoader,
+  showComponentLoader: showComponentLoader,
+  hideComponentLoader: hideComponentLoader,
+  showButtonLoading: showButtonLoading,
+  hideButtonLoading: hideButtonLoading,
+  showNoDataState: showNoDataState,
+  hideNoDataState: hideNoDataState,
+  applySkeletonLoader: applySkeletonLoader
 };

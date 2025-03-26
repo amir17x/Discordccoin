@@ -1,1651 +1,1877 @@
 /**
- * Vision UI Dashboard Styles
- * استایل‌های مخصوص داشبورد Vision UI
+ * Vision UI Dashboard - Main Styles
+ * استایل‌های اصلی تم ویژن UI با گلس‌مورفیسم و تم تیره
  */
 
+/* ==================== متغیرهای تم ==================== */
+
 :root {
-  /* گرادیان‌های رنگی Vision UI */
-  --vui-primary-gradient: linear-gradient(310deg, #2152ff, #21d4fd);
-  --vui-info-gradient: linear-gradient(310deg, #2152ff, #21d4fd);
-  --vui-success-gradient: linear-gradient(310deg, #17ad37, #98ec2d);
-  --vui-warning-gradient: linear-gradient(310deg, #f53939, #fbcf33);
-  --vui-danger-gradient: linear-gradient(310deg, #ea0606, #ff667c);
-  --vui-dark-gradient: linear-gradient(310deg, #141727, #3a416f);
-  --vui-light-gradient: linear-gradient(310deg, #ced4da, #ebeff4);
+  /* رنگ‌های اصلی تم */
+  --vui-primary: rgba(67, 24, 255, 1);
+  --vui-primary-light: rgba(87, 44, 255, 1);
+  --vui-primary-dark: rgba(47, 4, 235, 1);
   
-  /* رنگ‌های تخت */
-  --vui-primary: #0075ff;
-  --vui-info: #0075ff;
-  --vui-success: #01b574;
-  --vui-warning: #fb8c00;
-  --vui-danger: #e91e63;
-  --vui-dark: #141727;
-  --vui-light: #ebeff4;
+  --vui-info: rgba(57, 184, 255, 1);
+  --vui-info-light: rgba(77, 204, 255, 1);
+  --vui-info-dark: rgba(37, 164, 235, 1);
   
-  /* رنگ‌های پس‌زمینه */
-  --vui-body-bg: #061325;
-  --vui-card-bg: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.69) 76.65%);
+  --vui-success: rgba(1, 181, 116, 1);
+  --vui-success-light: rgba(21, 201, 136, 1);
+  --vui-success-dark: rgba(0, 161, 96, 1);
+  
+  --vui-warning: rgba(255, 181, 71, 1);
+  --vui-warning-light: rgba(255, 201, 91, 1);
+  --vui-warning-dark: rgba(235, 161, 51, 1);
+  
+  --vui-danger: rgba(236, 64, 122, 1);
+  --vui-danger-light: rgba(255, 84, 142, 1);
+  --vui-danger-dark: rgba(216, 44, 102, 1);
+  
+  /* پیش‌زمینه و پس‌زمینه */
+  --vui-bg-primary: rgba(8, 8, 20, 1);
+  --vui-bg-secondary: rgba(14, 14, 26, 0.9);
+  --vui-bg-card: rgba(26, 26, 38, 0.5);
+  --vui-bg-hover: rgba(67, 24, 255, 0.1);
+  --vui-bg-active: rgba(67, 24, 255, 0.2);
+  
+  /* متن‌ها */
+  --text-primary: rgba(255, 255, 255, 0.95);
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-disabled: rgba(255, 255, 255, 0.4);
+  --text-hint: rgba(255, 255, 255, 0.5);
+  
+  /* مرزها */
+  --border-color: rgba(255, 255, 255, 0.1);
+  --border-active: rgba(67, 24, 255, 0.5);
   
   /* سایه‌ها */
-  --vui-box-shadow: 0 20px 27px 0 rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 15px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.5);
+  --shadow-primary: 0 5px 15px rgba(67, 24, 255, 0.4);
   
-  /* سایدبار */
-  --vui-sidebar-width: 280px;
-  --vui-sidebar-collapsed-width: 80px;
-  --vui-card-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.2), 0 1px 5px 0 rgba(0, 0, 0, 0.12);
+  /* گرادینت‌ها */
+  --vui-primary-gradient: linear-gradient(135deg, var(--vui-primary) 0%, rgba(117, 81, 255, 1) 100%);
+  --vui-info-gradient: linear-gradient(135deg, var(--vui-info) 0%, rgba(105, 234, 203, 1) 100%);
+  --vui-success-gradient: linear-gradient(135deg, var(--vui-success) 0%, rgba(152, 236, 45, 1) 100%);
+  --vui-warning-gradient: linear-gradient(135deg, var(--vui-warning) 0%, rgba(255, 138, 0, 1) 100%);
+  --vui-danger-gradient: linear-gradient(135deg, var(--vui-danger) 0%, rgba(216, 27, 96, 1) 100%);
   
-  /* زاویه‌های گرد */
-  --vui-border-radius-sm: 0.5rem;
-  --vui-border-radius: 0.75rem;
-  --vui-border-radius-lg: 1rem;
-  --vui-border-radius-xl: 1.5rem;
-}
-
-/* استایل کارت‌های آماری */
-.vui-stat-card {
-  position: relative;
-  padding: 1rem 1.5rem;
-  border-radius: var(--vui-border-radius);
-  background: var(--vui-card-bg);
-  backdrop-filter: blur(120px);
-  box-shadow: var(--vui-card-shadow);
-  overflow: hidden;
-  transition: all 0.2s ease;
-  height: 100%;
-}
-
-.vui-stat-card:hover {
-  transform: translateY(-5px);
-}
-
-.vui-stat-card .stat-icon {
-  position: absolute;
-  top: 1rem;
-  right: 1.5rem;
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.vui-stat-card .stat-icon i {
-  font-size: 1.5rem;
-  color: #fff;
-}
-
-.vui-stat-card .stat-title {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.875rem;
-  margin-bottom: 1rem;
-}
-
-.vui-stat-card .stat-value {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #fff;
-  margin-bottom: 0.5rem;
-}
-
-.vui-stat-card .stat-sub {
-  font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.vui-stat-card .stat-sub.up {
-  color: #01b574;
-}
-
-.vui-stat-card .stat-sub.down {
-  color: #e91e63;
-}
-
-/* استایل کارت‌های عمومی */
-.vui-card {
-  position: relative;
-  padding: 1.5rem;
-  border-radius: var(--vui-border-radius);
-  background: var(--vui-card-bg);
-  backdrop-filter: blur(120px);
-  box-shadow: var(--vui-card-shadow);
-  transition: all 0.3s ease;
-  height: 100%;
-}
-
-/* استایل دکمه‌ها */
-.vui-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  padding: 0.675rem 1.5rem;
-  border-radius: var(--vui-border-radius);
-  transition: all 0.15s ease-in;
-  cursor: pointer;
-  outline: none;
-  border: none;
-  color: white;
-  background-color: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
-}
-
-.vui-btn:hover {
-  background-color: rgba(255, 255, 255, 0.15);
-  transform: translateY(-1px);
-}
-
-.vui-btn:active {
-  transform: translateY(0);
-}
-
-.vui-btn-primary {
-  background: var(--vui-primary-gradient);
-  color: white;
-}
-
-.vui-btn-info {
-  background: var(--vui-info-gradient);
-  color: white;
-}
-
-.vui-btn-success {
-  background: var(--vui-success-gradient);
-  color: white;
-}
-
-.vui-btn-warning {
-  background: var(--vui-warning-gradient);
-  color: white;
-}
-
-.vui-btn-danger {
-  background: var(--vui-danger-gradient);
-  color: white;
-}
-
-.vui-btn-outline {
-  background: transparent;
-  color: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.vui-btn-outline:hover {
-  border-color: rgba(255, 255, 255, 0.4);
-  background: transparent;
-}
-
-/* استایل مدال */
-.vui-modal-content {
-  background: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.8) 76.65%);
-  backdrop-filter: blur(120px);
-  border: none;
-  border-radius: var(--vui-border-radius-lg);
-  box-shadow: 0 30px 50px -12px rgba(0, 0, 0, 0.4);
-  overflow: hidden;
-}
-
-.vui-modal-header {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.vui-modal-body {
-  padding: 1.5rem;
-}
-
-.vui-modal-footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 1rem;
-}
-
-.vui-modal-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  margin: 0 auto;
-}
-
-.vui-modal-icon i {
-  font-size: 2.5rem;
-  color: white;
-}
-
-.vui-modal-icon.primary {
-  background: var(--vui-primary-gradient);
-}
-
-.vui-modal-icon.success {
-  background: var(--vui-success-gradient);
-}
-
-.vui-modal-icon.warning {
-  background: var(--vui-warning-gradient);
-}
-
-.vui-modal-icon.danger {
-  background: var(--vui-danger-gradient);
-}
-
-.btn-close-light {
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 1.5rem;
-  cursor: pointer;
-  transition: color 0.15s ease-in-out;
-}
-
-.btn-close-light:hover {
-  color: rgba(255, 255, 255, 0.9);
-}
-
-/* پالس افکت برای دکمه‌ها */
-.pulse {
-  position: relative;
-  overflow: visible;
-}
-
-.pulse:before {
-  content: '';
-  display: block;
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-  border-radius: inherit;
-  animation: pulse-animation 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
-  z-index: -1;
-}
-
-@keyframes pulse-animation {
-  0% {
-    transform: scale(1);
-    opacity: 0.8;
-    box-shadow: 0 0 0 0 rgba(33, 82, 255, 0.7);
-  }
-  70% {
-    transform: scale(1.05);
-    opacity: 0;
-    box-shadow: 0 0 0 10px rgba(33, 82, 255, 0);
-  }
-  100% {
-    transform: scale(1);
-    opacity: 0;
-  }
-}
-
-/* استایل آیتم‌های دراپ‌داون */
-.vui-dropdown-header {
-  color: rgba(255, 255, 255, 0.8);
-  font-weight: 600;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.vui-dropdown-divider {
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  margin: 0.25rem 0;
-}
-
-.vui-dropdown-item {
-  display: block;
-  padding: 0.75rem 1rem;
-  color: rgba(255, 255, 255, 0.8);
-  font-weight: 500;
-  transition: all 0.15s ease;
-  background-color: transparent;
-}
-
-.vui-dropdown-item:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  color: white;
-  text-decoration: none;
-}
-
-.vui-dropdown-footer {
-  display: block;
-  text-align: center;
-  padding: 0.75rem 1rem;
-  color: var(--vui-primary);
-  font-weight: 600;
-  transition: all 0.15s ease;
-}
-
-.vui-dropdown-footer:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  text-decoration: none;
-}
-
-/* استایل بج */
-.vui-badge {
-  display: inline-block;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-align: center;
-  border-radius: 0.375rem;
-}
-
-.vui-badge.primary {
-  background: var(--vui-primary-gradient);
-  color: white;
-}
-
-.vui-badge.info {
-  background: var(--vui-info-gradient);
-  color: white;
-}
-
-.vui-badge.success {
-  background: var(--vui-success-gradient);
-  color: white;
-}
-
-.vui-badge.warning {
-  background: var(--vui-warning-gradient);
-  color: white;
-}
-
-.vui-badge.danger {
-  background: var(--vui-danger-gradient);
-  color: white;
-}
-
-/* استایل آیتم‌های اعلان */
-.vui-notification-item {
-  display: flex;
-  align-items: flex-start;
-  padding: 1rem;
-  transition: all 0.15s ease;
-  text-decoration: none;
-  position: relative;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.vui-notification-item:last-child {
-  border-bottom: none;
-}
-
-.vui-notification-item:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  text-decoration: none;
-}
-
-.vui-notification-item.unread {
-  background-color: rgba(0, 117, 255, 0.05);
-}
-
-.vui-notification-item .notification-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  margin-right: 1rem;
-  flex-shrink: 0;
-}
-
-.vui-notification-item .notification-icon i {
-  color: white;
-  font-size: 1.2rem;
-}
-
-.vui-notification-item .notification-content {
-  flex: 1;
-}
-
-.vui-notification-item .notification-title {
-  font-weight: 600;
-  margin-bottom: 0.25rem;
-  color: white;
-}
-
-.vui-notification-item .notification-text {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.875rem;
-  margin-bottom: 0.5rem;
-}
-
-.vui-notification-item .notification-time {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.75rem;
-}
-
-/* استایل کامپوننت آواتار */
-.vui-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 600;
-}
-
-.vui-user-button {
-  display: flex;
-  align-items: center;
-  background: transparent;
-  border: none;
-  color: white;
-  transition: all 0.15s ease;
-  padding: 0.5rem;
-  border-radius: var(--vui-border-radius);
-}
-
-.vui-user-button:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-/* استایل جستجو */
-.vui-search-input {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.vui-search-input input {
-  background-color: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: white;
-  padding: 0.5rem 1rem 0.5rem 2.5rem;
-  border-radius: var(--vui-border-radius);
-  width: 100%;
-  transition: all 0.2s ease;
-}
-
-.vui-search-input input:focus {
-  background-color: rgba(255, 255, 255, 0.1);
-  border-color: rgba(0, 117, 255, 0.5);
-  outline: none;
-}
-
-.vui-search-input .search-icon {
-  position: absolute;
-  left: 0.75rem;
-  color: rgba(255, 255, 255, 0.5);
-  pointer-events: none;
-}
-
-/* استایل برای دکمه‌های آیکون */
-.vui-btn-icon {
-  width: 38px;
-  height: 38px;
+  /* گردی گوشه‌ها */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  
+  /* فاصله‌ها */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  
+  /* ابعاد سایدبار */
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 80px;
+  --header-height: 70px;
+  
+  /* انیمیشن‌ها */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+  
+  /* تنظیمات نمودارها */
+  --chart-primary-color: rgba(67, 24, 255, 1);
+  --chart-primary-gradient-start: rgba(67, 24, 255, 0.9);
+  --chart-primary-gradient-stop: rgba(117, 81, 255, 0.4);
+  
+  --chart-info-color: rgba(57, 184, 255, 1);
+  --chart-info-gradient-start: rgba(57, 184, 255, 0.9);
+  --chart-info-gradient-stop: rgba(105, 234, 203, 0.4);
+  
+  --chart-success-color: rgba(1, 181, 116, 1);
+  --chart-success-gradient-start: rgba(1, 181, 116, 0.9);
+  --chart-success-gradient-stop: rgba(152, 236, 45, 0.4);
+  
+  --chart-warning-color: rgba(255, 181, 71, 1);
+  --chart-warning-gradient-start: rgba(255, 181, 71, 0.9);
+  --chart-warning-gradient-stop: rgba(255, 138, 0, 0.4);
+  
+  --chart-danger-color: rgba(236, 64, 122, 1);
+  --chart-danger-gradient-start: rgba(236, 64, 122, 0.9);
+  --chart-danger-gradient-stop: rgba(216, 27, 96, 0.4);
+}
+
+/* ==================== استایل‌های پایه ==================== */
+
+* {
+  margin: 0;
   padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-  transition: all 0.15s ease;
-  background-color: rgba(255, 255, 255, 0.05);
+  box-sizing: border-box;
 }
 
-.vui-btn-icon:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-/* استایل برای پاسخگویی */
-@media (max-width: 768px) {
-  .vui-stat-card .stat-icon {
-    width: 40px;
-    height: 40px;
-    top: 0.75rem;
-    right: 1rem;
-  }
-  
-  .vui-stat-card .stat-icon i {
-    font-size: 1.25rem;
-  }
-  
-  .vui-stat-card .stat-value {
-    font-size: 1.5rem;
-  }
-  
-  .vui-notification-item .notification-icon {
-    width: 32px;
-    height: 32px;
-  }
-  
-  .vui-notification-item .notification-icon i {
-    font-size: 1rem;
-  }
-}
-
-/* استایل سایدبار */
-.vui-sidebar {
-  position: fixed;
-  top: 0;
-  right: 0;
-  height: 100vh;
-  width: var(--vui-sidebar-width);
-  background: var(--vui-card-bg);
-  backdrop-filter: blur(120px);
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  box-shadow: var(--vui-card-shadow);
-  transition: all 0.3s ease;
-  overflow-y: auto;
+html, body {
+  height: 100%;
+  font-family: 'Vazirmatn', Tahoma, Arial, sans-serif;
+  background-color: var(--vui-bg-primary);
+  color: var(--text-primary);
   overflow-x: hidden;
 }
 
-.vui-sidebar .sidebar-header {
-  display: flex;
-  align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+body {
+  background-image: radial-gradient(
+    circle at 30% 40%, 
+    rgba(67, 24, 255, 0.1) 0%, 
+    rgba(0, 0, 0, 0) 60%
+  );
+  background-size: 100% 100%;
+  background-attachment: fixed;
 }
 
-.vui-sidebar .sidebar-header .logo-container {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: 1rem;
-  overflow: hidden;
+/* سبک اسکرول‌بار */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 
-.vui-sidebar .sidebar-header .logo-container img {
-  width: 32px;
-  height: 32px;
-  object-fit: contain;
-  filter: brightness(10);
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-.vui-sidebar .sidebar-header h4 {
-  flex: 1;
-  margin: 0;
+*::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.vui-user-card {
-  display: flex;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  margin: 1rem;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: var(--vui-border-radius);
-  backdrop-filter: blur(30px);
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
 }
 
-.vui-user-card .user-info {
-  margin-right: 1rem;
-  flex: 1;
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.3);
 }
 
-.vui-user-card .user-name {
-  display: block;
-  font-weight: 600;
-  color: white;
-}
-
-.vui-user-card .user-role {
-  display: block;
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.vui-sidebar-nav {
-  flex: 1;
-  padding: 1.5rem 1rem;
-  overflow-y: auto;
-}
-
-.vui-nav-heading {
-  color: rgba(255, 255, 255, 0.4);
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  padding: 0 0.5rem;
-  margin-bottom: 0.75rem;
-}
-
-.vui-nav {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 1.5rem;
-}
-
-.vui-nav-item {
-  margin-bottom: 0.25rem;
-}
-
-.vui-nav-link {
-  display: flex;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  color: rgba(255, 255, 255, 0.6);
-  border-radius: var(--vui-border-radius);
-  transition: all 0.15s ease;
+a {
+  color: var(--vui-primary);
   text-decoration: none;
-  position: relative;
+  transition: color var(--transition-fast);
 }
 
-.vui-nav-link .icon-box {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: 0.75rem;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  transition: all 0.15s ease;
+a:hover {
+  color: var(--vui-primary-light);
+  text-decoration: none;
 }
 
-.vui-nav-link.active,
-.vui-nav-link:hover {
-  color: white;
-  background: linear-gradient(90deg, rgba(33, 212, 253, 0.1) 0%, rgba(183, 33, 255, 0.1) 100%);
-  border-right: 3px solid var(--vui-primary);
-}
+/* ==================== لیوت اصلی داشبورد ==================== */
 
-.vui-nav-link.active .icon-box,
-.vui-nav-link:hover .icon-box {
-  background: var(--vui-primary-gradient);
-}
-
-.vui-nav-link .vui-badge {
-  margin-right: auto;
-  background: var(--vui-primary-gradient);
-}
-
-.vui-divider {
-  height: 1px;
-  background: rgba(255, 255, 255, 0.05);
-  margin: 1rem 0;
-}
-
-.vui-sidebar-footer {
-  padding: 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+.vui-dashboard {
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  align-items: center;
-}
-
-.vui-sidebar-footer .vui-version {
-  margin-top: 1rem;
-  text-align: center;
-}
-
-.vui-btn-gradient-primary {
-  background: var(--vui-primary-gradient);
-  color: white;
-  border: none;
-}
-
-.vui-btn-lg {
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-}
-
-/* Sidebar responsive */
-@media (max-width: 992px) {
-  .vui-sidebar {
-    transform: translateX(var(--vui-sidebar-width));
-  }
-  
-  .vui-sidebar.show {
-    transform: translateX(0);
-  }
-}
-
-/* Sidebar overlay */
-.vui-sidebar-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(2px);
-  z-index: 999;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.3s ease;
-}
-
-.vui-sidebar-overlay.active {
-  opacity: 1;
-  visibility: visible;
-}
-
-/* Classes for mobile view */
-.vui-mobile .vui-content-wrapper {
-  margin-right: 0;
-}
-
-/* استایل لیوت اصلی */
-.vui-dashboard {
-  background: var(--vui-body-bg);
-  color: white;
-  min-height: 100vh;
-  font-family: 'Vazirmatn', sans-serif;
 }
 
 .vui-layout {
   display: flex;
-  position: relative;
   min-height: 100vh;
+  position: relative;
 }
 
 .vui-content-wrapper {
   flex: 1;
-  margin-right: var(--vui-sidebar-width);
-  transition: all 0.3s ease;
-  position: relative;
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
+  margin-right: var(--sidebar-width);
+  transition: margin var(--transition-normal);
 }
 
-.vui-main-content {
-  flex: 1;
-  padding: 2rem;
-  position: relative;
+/* حالت جمع شده سایدبار */
+body.sidebar-collapsed .vui-content-wrapper {
+  margin-right: var(--sidebar-collapsed-width);
 }
 
-/* استایل هدر */
-.vui-header {
-  display: flex;
-  align-items: center;
-  padding: 1rem 2rem;
-  background: rgba(0, 0, 0, 0.1);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.vui-header .menu-toggle {
-  display: none;
-  background: transparent;
-  border: none;
-  color: white;
-  font-size: 1.25rem;
-  cursor: pointer;
-  margin-left: 1rem;
-}
-
-/* لیوت ریسپانسیو */
+/* حالت موبایل */
 @media (max-width: 992px) {
   .vui-content-wrapper {
     margin-right: 0;
   }
   
-  .vui-header .menu-toggle {
-    display: block;
+  body.sidebar-open .vui-content-wrapper {
+    filter: blur(3px);
+    pointer-events: none;
   }
 }
 
-/* استایل فوتر */
-.vui-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem;
-  background: var(--vui-card-bg);
-  backdrop-filter: blur(120px);
-  border-radius: var(--vui-border-radius);
-  margin-top: 2rem;
+.vui-main-content {
+  flex: 1;
+  padding: var(--spacing-lg);
+  padding-top: calc(var(--header-height) + var(--spacing-lg));
+  transition: all var(--transition-normal);
 }
 
-.vui-footer .footer-brand {
-  display: flex;
-  align-items: center;
-}
-
-.vui-footer .logo-container {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.vui-footer .logo-container img {
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
-  filter: brightness(10);
-}
-
-.vui-footer-link {
-  color: rgba(255, 255, 255, 0.7);
-  text-decoration: none;
-  margin-left: 1.5rem;
-  font-size: 0.875rem;
-  transition: all 0.15s ease;
-}
-
-.vui-footer-link:hover {
-  color: white;
-  text-decoration: none;
-}
-
-@media (max-width: 576px) {
-  .vui-modal-icon {
-    width: 60px;
-    height: 60px;
-  }
-  
-  .vui-modal-icon i {
-    font-size: 2rem;
-  }
-  
-  .vui-avatar {
-    width: 36px;
-    height: 36px;
-  }
-  
-  .vui-footer {
-    flex-direction: column;
-  }
-  
-  .vui-footer .footer-brand {
-    margin-bottom: 1rem;
-  }
-  
-  .vui-footer .footer-links {
-    display: flex;
-    justify-content: center;
-    width: 100%;
-  }
-  
-  .vui-footer-link {
-    margin: 0 0.75rem;
+@media (max-width: 768px) {
+  .vui-main-content {
+    padding: var(--spacing-md);
+    padding-top: calc(var(--header-height) + var(--spacing-md));
   }
 }
-/* جستجو در سایدبار */
-.vui-search-box {
-  position: relative;
-  margin-bottom: 1rem;
-}
 
-.vui-search-box i {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.9rem;
-}
+/* ==================== سایدبار ==================== */
 
-.vui-search-input {
-  width: 100%;
-  padding: 0.6rem 2.2rem 0.6rem 0.8rem;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  color: white;
-  font-size: 0.85rem;
-  transition: all 0.2s ease;
-}
-
-.vui-search-input:focus {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.1);
-  outline: none;
-}
-
-.vui-search-input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
-}
-
-/* وضعیت کاربر */
-.user-status {
-  display: flex;
-  align-items: center;
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.6);
-  margin-top: 0.2rem;
-}
-
-.user-status i {
-  font-size: 0.6rem;
-  margin-left: 0.3rem;
-}
-
-/* پالس دات برای نمایش وضعیت */
-.pulse-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  display: inline-block;
-  position: relative;
-}
-
-.pulse-dot.green {
-  background-color: #01b574;
-}
-
-.pulse-dot.red {
-  background-color: #ec407a;
-}
-
-.pulse-dot.yellow {
-  background-color: #ffb547;
-}
-
-.pulse-dot::after {
-  content: '';
-  position: absolute;
-  width: 100%;
-  height: 100%;
+.vui-sidebar {
+  position: fixed;
   top: 0;
-  left: 0;
-  border-radius: 50%;
-  animation: pulse 1.5s infinite;
-  box-shadow: 0 0 0 0 rgba(1, 181, 116, 0.7);
-}
-
-.pulse-dot.green::after {
-  box-shadow: 0 0 0 0 rgba(1, 181, 116, 0.7);
-}
-
-.pulse-dot.red::after {
-  box-shadow: 0 0 0 0 rgba(236, 64, 122, 0.7);
-}
-
-.pulse-dot.yellow::after {
-  box-shadow: 0 0 0 0 rgba(255, 181, 71, 0.7);
-}
-
-@keyframes pulse {
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(1, 181, 116, 0.7);
-  }
-  70% {
-    transform: scale(1);
-    box-shadow: 0 0 0 6px rgba(1, 181, 116, 0);
-  }
-  100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(1, 181, 116, 0);
-  }
-}
-
-/* اطلاعات سیستم */
-.vui-system-info {
-  width: 100%;
-  margin-top: 1rem;
+  right: 0;
+  width: var(--sidebar-width);
+  height: 100%;
+  background: rgba(14, 14, 26, 0.8);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-left: 1px solid var(--border-color);
+  box-shadow: -5px 0 20px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
-  align-items: center;
-}
-
-.vui-system-status {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  margin-bottom: 0.5rem;
-}
-
-.status-item {
-  display: flex;
-  align-items: center;
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.status-item i {
-  margin-left: 0.25rem;
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.status-item strong {
-  font-weight: 600;
-  color: white;
-}
-
-/* افکت های گرافیکی عنوان منو */
-.vui-nav-heading {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  margin-bottom: 0.75rem;
-  display: flex;
-  align-items: center;
-  letter-spacing: 0.5px;
-}
-
-.vui-nav-heading i {
-  font-size: 0.8rem;
-  margin-left: 0.2rem;
-  background: var(--vui-primary-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-/* بهبود استایل آیتم‌های منو */
-.vui-nav-link::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 3px;
-  height: 100%;
-  background: var(--vui-primary-gradient);
-  border-radius: 4px 0 0 4px;
-  transform: translateX(3px);
-  opacity: 0;
-  transition: all 0.3s ease;
-}
-
-.vui-nav-link.active::before {
-  transform: translateX(0);
-  opacity: 1;
-}
-
-.vui-nav-link::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.03) 0%, 
-    rgba(255, 255, 255, 0) 50%,
-    rgba(255, 255, 255, 0) 100%);
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.vui-nav-link:hover::after, .vui-nav-link.active::after {
-  opacity: 1;
-}
-
-/* استایل‌های داشبورد با کارت‌های پیشرفته */
-.vui-dashboard-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.vui-stat-card-advanced {
-  position: relative;
-  padding: 1.25rem;
-  border-radius: var(--vui-border-radius);
-  background: var(--vui-card-bg);
-  backdrop-filter: blur(120px);
-  transition: all 0.3s ease;
+  z-index: 1000;
+  transition: all var(--transition-normal);
   overflow: hidden;
-  height: 100%;
 }
 
-.vui-stat-card-advanced::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.03) 0%, 
-    rgba(255, 255, 255, 0) 50%, 
-    rgba(255, 255, 255, 0.03) 100%);
-  pointer-events: none;
-  z-index: 0;
+/* حالت جمع شده سایدبار */
+body.sidebar-collapsed .vui-sidebar {
+  width: var(--sidebar-collapsed-width);
 }
 
-.vui-stat-card-advanced:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+/* حالت موبایل */
+@media (max-width: 992px) {
+  .vui-sidebar {
+    transform: translateX(100%);
+  }
+  
+  body.sidebar-open .vui-sidebar {
+    transform: translateX(0);
+  }
 }
 
-.vui-stat-card-advanced .stat-header {
+.vui-sidebar-brand {
+  padding: var(--spacing-lg);
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1rem;
-  position: relative;
-  z-index: 1;
+  align-items: center;
+  height: var(--header-height);
+  border-bottom: 1px solid var(--border-color);
 }
 
-.vui-stat-card-advanced .stat-icon-container {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+.vui-sidebar-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--vui-primary-gradient);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-primary);
   overflow: hidden;
-  position: relative;
 }
 
-.vui-stat-card-advanced .stat-icon-container::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 60%);
-  pointer-events: none;
+.vui-sidebar-logo img {
+  width: 70%;
+  height: auto;
+  object-fit: contain;
 }
 
-.vui-stat-card-advanced .stat-icon-container i {
-  font-size: 1.5rem;
-  color: white;
-  transition: transform 0.3s ease;
+.vui-sidebar-title {
+  margin-right: var(--spacing-md);
+  font-size: 1.25rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: opacity var(--transition-fast);
 }
 
-.vui-stat-card-advanced:hover .stat-icon-container i {
-  transform: scale(1.1);
+body.sidebar-collapsed .vui-sidebar-title {
+  opacity: 0;
+  visibility: hidden;
 }
 
-.vui-stat-card-advanced .stat-title {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.875rem;
-  margin-bottom: 0.5rem;
-  position: relative;
-  z-index: 1;
+.vui-sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-md) 0;
 }
 
-.vui-stat-card-advanced .stat-value {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: white;
-  margin-bottom: 0.5rem;
-  position: relative;
-  z-index: 1;
+.vui-sidebar-nav-section {
+  margin-bottom: var(--spacing-lg);
+  padding: 0 var(--spacing-md);
 }
 
-.vui-stat-card-advanced .stat-meta {
+.vui-sidebar-nav-section-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  padding: var(--spacing-sm) var(--spacing-md);
+  transition: opacity var(--transition-fast);
+}
+
+body.sidebar-collapsed .vui-sidebar-nav-section-title {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.vui-sidebar-nav-item {
   display: flex;
   align-items: center;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.75rem;
+  padding: 10px var(--spacing-md);
+  margin-bottom: 6px;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+  cursor: pointer;
   position: relative;
-  z-index: 1;
-}
-
-.vui-stat-card-advanced .stat-meta i {
-  margin-left: 0.25rem;
-}
-
-.vui-stat-card-advanced .stat-meta.up {
-  color: var(--vui-success);
-}
-
-.vui-stat-card-advanced .stat-meta.down {
-  color: var(--vui-danger);
-}
-
-.vui-stat-card-advanced .stat-progress {
-  height: 6px;
-  width: 100%;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-  margin-top: 1rem;
   overflow: hidden;
-  position: relative;
-  z-index: 1;
 }
 
-.vui-stat-card-advanced .stat-progress-bar {
+.vui-sidebar-nav-item:hover {
+  color: var(--text-primary);
+  background: var(--vui-bg-hover);
+}
+
+.vui-sidebar-nav-item.active {
+  color: white;
+  background: var(--vui-bg-active);
+}
+
+.vui-sidebar-nav-item.active::before {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--vui-primary-gradient);
+}
+
+.vui-sidebar-nav-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: var(--spacing-md);
+  font-size: 1.25rem;
+}
+
+.vui-sidebar-nav-text {
+  flex: 1;
+  transition: opacity var(--transition-fast);
+}
+
+body.sidebar-collapsed .vui-sidebar-nav-text {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.vui-sidebar-nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--vui-primary-gradient);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  transition: opacity var(--transition-fast);
+}
+
+body.sidebar-collapsed .vui-sidebar-nav-badge {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.vui-sidebar-footer {
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+}
+
+.vui-sidebar-footer-info {
+  flex: 1;
+  transition: opacity var(--transition-fast);
+}
+
+body.sidebar-collapsed .vui-sidebar-footer-info {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.vui-sidebar-user {
+  display: flex;
+  align-items: center;
+}
+
+.vui-sidebar-user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--vui-bg-card);
+  border: 2px solid var(--border-color);
+}
+
+.vui-sidebar-user-avatar img {
+  width: 100%;
   height: 100%;
-  border-radius: 3px;
-  width: 0;
-  transition: width 1.5s ease;
+  object-fit: cover;
 }
 
-/* بخش های پیشرفته */
-.vui-advanced-charts {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+.vui-sidebar-user-info {
+  margin-right: var(--spacing-md);
+}
+
+.vui-sidebar-user-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.vui-sidebar-user-role {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.vui-sidebar-toggle {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--vui-bg-card);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vui-sidebar-toggle:hover {
+  background: var(--vui-bg-hover);
+}
+
+.vui-sidebar-toggle i {
+  font-size: 1.2rem;
+  transition: transform var(--transition-fast);
+}
+
+body.sidebar-collapsed .vui-sidebar-toggle i {
+  transform: rotate(180deg);
+}
+
+/* زیرمنوها */
+.vui-sidebar-nav-item.has-submenu .vui-sidebar-nav-arrow {
+  transition: transform var(--transition-fast);
+}
+
+.vui-sidebar-nav-item.has-submenu.open .vui-sidebar-nav-arrow {
+  transform: rotate(90deg);
+}
+
+.vui-sidebar-submenu {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height var(--transition-normal);
+}
+
+.vui-sidebar-nav-item.has-submenu.open .vui-sidebar-submenu {
+  max-height: 500px;
+}
+
+.vui-sidebar-submenu-item {
+  padding: 8px var(--spacing-md) 8px calc(var(--spacing-md) + 34px);
+  margin-bottom: 2px;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.vui-sidebar-submenu-item:hover {
+  color: var(--text-primary);
+  background: var(--vui-bg-hover);
+}
+
+.vui-sidebar-submenu-item.active {
+  color: white;
+  background: var(--vui-bg-active);
+}
+
+/* ==================== هدر ==================== */
+
+.vui-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: var(--sidebar-width);
+  height: var(--header-height);
+  padding: 0 var(--spacing-lg);
+  background: rgba(14, 14, 26, 0.8);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 990;
+  transition: right var(--transition-normal);
+}
+
+body.sidebar-collapsed .vui-header {
+  right: var(--sidebar-collapsed-width);
 }
 
 @media (max-width: 992px) {
-  .vui-advanced-charts {
-    grid-template-columns: 1fr;
+  .vui-header {
+    right: 0;
+    padding: 0 var(--spacing-md);
   }
 }
 
-.vui-activity-feed {
+.vui-header-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.vui-header-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+}
+
+.vui-header-breadcrumb-item {
+  color: var(--text-secondary);
+}
+
+.vui-header-breadcrumb-separator {
+  color: var(--text-disabled);
+}
+
+.vui-header-breadcrumb-item:last-child {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.vui-header-search {
+  flex: 1;
+  max-width: 400px;
+  margin: 0 var(--spacing-lg);
+}
+
+.vui-header-search-input {
+  width: 100%;
+  padding: 10px 15px;
+  padding-right: 40px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  color: var(--text-primary);
+  transition: all var(--transition-fast);
+  font-size: 0.875rem;
+}
+
+.vui-header-search-input:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--border-active);
+}
+
+.vui-header-search-icon {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+.vui-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.vui-header-action-item {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+}
+
+.vui-header-action-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.vui-header-action-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--vui-danger-gradient);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(236, 64, 122, 0.5);
+}
+
+.vui-header-welcome {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.vui-header-welcome strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* دکمه موبایل برای سایدبار */
+.mobile-sidebar-toggle {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.mobile-sidebar-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+@media (max-width: 992px) {
+  .mobile-sidebar-toggle {
+    display: flex;
+  }
+  
+  .vui-header-search {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .vui-header-welcome {
+    display: none;
+  }
+}
+
+/* ==================== فوتر ==================== */
+
+.vui-footer {
+  padding: var(--spacing-lg);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  background: rgba(14, 14, 26, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+}
+
+.logo-container {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-container img {
+  width: 70%;
+  height: auto;
+}
+
+.footer-links {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.vui-footer-link {
+  color: var(--text-secondary);
+  transition: color var(--transition-fast);
+}
+
+.vui-footer-link:hover {
+  color: var(--text-primary);
+}
+
+@media (max-width: 768px) {
+  .vui-footer {
+    flex-direction: column;
+    gap: var(--spacing-md);
+    text-align: center;
+    padding: var(--spacing-md);
+  }
+}
+
+/* ==================== کارت‌ها ==================== */
+
+.vui-card {
+  background: var(--vui-bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  transition: all var(--transition-fast);
+  position: relative;
   height: 100%;
 }
 
-.vui-activity-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
+.vui-card:hover {
+  box-shadow: var(--shadow-md);
 }
 
-.vui-activity-list {
-  list-style: none;
-  padding: 0;
+.vui-card-header {
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.vui-card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
   margin: 0;
 }
 
-.vui-activity-item {
-  position: relative;
-  padding-right: 2rem;
-  padding-bottom: 1.5rem;
-  padding-left: 1rem;
-  border-radius: 0.75rem;
-  transition: all 0.3s ease;
+.vui-card-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin-top: var(--spacing-xs);
 }
 
-.vui-activity-item::before {
+.vui-card-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.vui-card-action {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vui-card-action:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.vui-card-body {
+  padding: var(--spacing-lg);
+}
+
+.vui-card-footer {
+  padding: var(--spacing-lg);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* کارت‌های آماری */
+.vui-stat-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.vui-stat-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-md);
+}
+
+.vui-stat-card-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: white;
+  background: var(--vui-primary-gradient);
+  box-shadow: var(--shadow-primary);
+}
+
+.vui-stat-card-icon.info {
+  background: var(--vui-info-gradient);
+  box-shadow: 0 5px 15px rgba(57, 184, 255, 0.4);
+}
+
+.vui-stat-card-icon.success {
+  background: var(--vui-success-gradient);
+  box-shadow: 0 5px 15px rgba(1, 181, 116, 0.4);
+}
+
+.vui-stat-card-icon.warning {
+  background: var(--vui-warning-gradient);
+  box-shadow: 0 5px 15px rgba(255, 181, 71, 0.4);
+}
+
+.vui-stat-card-icon.danger {
+  background: var(--vui-danger-gradient);
+  box-shadow: 0 5px 15px rgba(236, 64, 122, 0.4);
+}
+
+.vui-stat-card-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: var(--spacing-sm) 0;
+}
+
+.vui-stat-card-title {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin-bottom: var(--spacing-md);
+}
+
+.vui-stat-card-meta {
+  display: flex;
+  align-items: center;
+  font-size: 0.75rem;
+  margin-bottom: var(--spacing-sm);
+}
+
+.vui-stat-card-meta i {
+  margin-left: var(--spacing-xs);
+}
+
+.vui-stat-card-meta.up {
+  color: var(--vui-success);
+}
+
+.vui-stat-card-meta.down {
+  color: var(--vui-danger);
+}
+
+.vui-stat-card-progress {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: auto;
+}
+
+.vui-stat-card-progress-bar {
+  height: 100%;
+  background: var(--vui-primary-gradient);
+  border-radius: 2px;
+}
+
+.vui-stat-card-progress-bar.info {
+  background: var(--vui-info-gradient);
+}
+
+.vui-stat-card-progress-bar.success {
+  background: var(--vui-success-gradient);
+}
+
+.vui-stat-card-progress-bar.warning {
+  background: var(--vui-warning-gradient);
+}
+
+.vui-stat-card-progress-bar.danger {
+  background: var(--vui-danger-gradient);
+}
+
+/* طرح‌های مختلف کارت */
+.vui-card.transparent {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.vui-card.gradient {
+  background: var(--vui-primary-gradient);
+  border: none;
+}
+
+.vui-card.gradient-hover {
+  position: relative;
+  z-index: 1;
+  border: none;
+}
+
+.vui-card.gradient-hover::before {
   content: '';
   position: absolute;
   top: 0;
-  right: 0.5rem;
-  height: 100%;
-  width: 2px;
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.vui-activity-item::after {
-  content: '';
-  position: absolute;
-  top: 0.25rem;
-  right: 0.1rem;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
   background: var(--vui-primary-gradient);
-  transition: all 0.3s ease;
+  opacity: 0;
+  z-index: -1;
+  transition: opacity var(--transition-normal);
 }
 
-.vui-activity-item:hover::after {
-  transform: scale(1.2);
+.vui-card.gradient-hover:hover::before {
+  opacity: 0.8;
 }
 
-.vui-activity-item:last-child {
-  padding-bottom: 0;
+/* ==================== دکمه‌ها ==================== */
+
+.vui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: none;
+  outline: none;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  text-decoration: none;
+  user-select: none;
+  font-family: inherit;
 }
 
-.vui-activity-item:last-child::before {
-  display: none;
+.vui-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-.vui-activity-content {
-  background: rgba(255, 255, 255, 0.03);
-  padding: 1rem;
-  border-radius: 0.75rem;
-  border-right: 3px solid var(--vui-primary);
-  transition: all 0.3s ease;
+/* استایل‌های دکمه */
+.vui-btn-primary {
+  background: var(--vui-primary-gradient);
+  color: white;
+  box-shadow: var(--shadow-primary);
 }
 
-.vui-activity-item:hover .vui-activity-content {
-  background: rgba(255, 255, 255, 0.05);
+.vui-btn-primary:hover:not(:disabled) {
+  box-shadow: 0 5px 20px rgba(67, 24, 255, 0.6);
   transform: translateY(-2px);
 }
 
-.vui-activity-title {
-  font-weight: 600;
-  margin-bottom: 0.25rem;
+.vui-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 3px 10px rgba(67, 24, 255, 0.4);
+}
+
+.vui-btn-info {
+  background: var(--vui-info-gradient);
   color: white;
+  box-shadow: 0 5px 15px rgba(57, 184, 255, 0.4);
 }
 
-.vui-activity-time {
+.vui-btn-info:hover:not(:disabled) {
+  box-shadow: 0 5px 20px rgba(57, 184, 255, 0.6);
+  transform: translateY(-2px);
+}
+
+.vui-btn-info:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 3px 10px rgba(57, 184, 255, 0.4);
+}
+
+.vui-btn-success {
+  background: var(--vui-success-gradient);
+  color: white;
+  box-shadow: 0 5px 15px rgba(1, 181, 116, 0.4);
+}
+
+.vui-btn-success:hover:not(:disabled) {
+  box-shadow: 0 5px 20px rgba(1, 181, 116, 0.6);
+  transform: translateY(-2px);
+}
+
+.vui-btn-success:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 3px 10px rgba(1, 181, 116, 0.4);
+}
+
+.vui-btn-warning {
+  background: var(--vui-warning-gradient);
+  color: white;
+  box-shadow: 0 5px 15px rgba(255, 181, 71, 0.4);
+}
+
+.vui-btn-warning:hover:not(:disabled) {
+  box-shadow: 0 5px 20px rgba(255, 181, 71, 0.6);
+  transform: translateY(-2px);
+}
+
+.vui-btn-warning:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 3px 10px rgba(255, 181, 71, 0.4);
+}
+
+.vui-btn-danger {
+  background: var(--vui-danger-gradient);
+  color: white;
+  box-shadow: 0 5px 15px rgba(236, 64, 122, 0.4);
+}
+
+.vui-btn-danger:hover:not(:disabled) {
+  box-shadow: 0 5px 20px rgba(236, 64, 122, 0.6);
+  transform: translateY(-2px);
+}
+
+.vui-btn-danger:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 3px 10px rgba(236, 64, 122, 0.4);
+}
+
+.vui-btn-light {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.vui-btn-light:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.vui-btn-light:active:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.vui-btn-dark {
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--text-primary);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.vui-btn-dark:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.vui-btn-dark:active:not(:disabled) {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.vui-btn-outline {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.vui-btn-outline:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.vui-btn-outline-primary {
+  background: transparent;
+  border: 1px solid var(--vui-primary);
+  color: var(--vui-primary);
+}
+
+.vui-btn-outline-primary:hover:not(:disabled) {
+  background: rgba(67, 24, 255, 0.1);
+}
+
+/* اندازه‌های دکمه */
+.vui-btn-sm {
+  padding: 7px 15px;
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.5);
-  margin-bottom: 0.5rem;
+  border-radius: var(--radius-sm);
 }
 
-.vui-activity-desc {
+.vui-btn-lg {
+  padding: 12px 25px;
+  font-size: 1rem;
+  border-radius: var(--radius-lg);
+}
+
+/* دکمه‌های گرد */
+.vui-btn-rounded {
+  border-radius: 50px;
+}
+
+/* دکمه‌های آیکون */
+.vui-btn-icon {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.vui-btn-icon.vui-btn-sm {
+  width: 30px;
+  height: 30px;
+  font-size: 0.75rem;
+}
+
+.vui-btn-icon.vui-btn-lg {
+  width: 50px;
+  height: 50px;
+  font-size: 1.25rem;
+}
+
+/* ==================== فرم‌ها ==================== */
+
+.vui-form-group {
+  margin-bottom: var(--spacing-md);
+}
+
+.vui-form-label {
+  display: block;
+  margin-bottom: var(--spacing-sm);
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+  color: var(--text-primary);
 }
 
-/* میز‌های داده */
-.vui-data-table {
+.vui-form-control {
+  position: relative;
+  margin-bottom: var(--spacing-lg);
+}
+
+.vui-form-control label {
+  position: absolute;
+  right: 15px;
+  top: 12px;
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+  pointer-events: none;
+  font-size: 0.875rem;
+}
+
+.vui-form-control label.active {
+  top: -20px;
+  font-size: 0.75rem;
+  color: var(--vui-primary);
+}
+
+.vui-form-control.focused {
+  z-index: 1;
+}
+
+.vui-form-input,
+.vui-form-textarea,
+.vui-form-select {
+  width: 100%;
+  padding: 12px 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  transition: all var(--transition-fast);
+  font-size: 0.875rem;
+  font-family: inherit;
+}
+
+.vui-form-input::placeholder,
+.vui-form-textarea::placeholder {
+  color: var(--text-hint);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.vui-form-input:focus::placeholder,
+.vui-form-textarea:focus::placeholder {
+  opacity: 1;
+}
+
+.vui-form-input:focus,
+.vui-form-textarea:focus,
+.vui-form-select:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--border-active);
+  box-shadow: 0 0 0 3px rgba(67, 24, 255, 0.2);
+}
+
+.vui-form-textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.vui-form-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: left 15px center;
+  background-size: 16px;
+  padding-left: 40px;
+}
+
+/* چکباکس و رادیو */
+.vui-checkbox,
+.vui-radio {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  margin-bottom: var(--spacing-sm);
+  user-select: none;
+}
+
+.vui-checkbox input,
+.vui-radio input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.checkbox-box,
+.radio-circle {
+  width: 20px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: var(--spacing-sm);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.checkbox-box {
+  border-radius: var(--radius-sm);
+}
+
+.radio-circle {
+  border-radius: 50%;
+}
+
+.checkbox-box.checked,
+.radio-circle.checked {
+  background: var(--vui-primary-gradient);
+  border-color: var(--vui-primary);
+}
+
+.checkbox-box.checked::after {
+  content: '';
+  width: 6px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  margin-bottom: 2px;
+}
+
+.radio-circle.checked::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: white;
+}
+
+.checkbox-label,
+.radio-label {
+  font-size: 0.875rem;
+  user-select: none;
+}
+
+/* اسلایدر */
+.vui-slider {
+  position: relative;
+  margin: var(--spacing-md) 0;
+}
+
+.vui-slider input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  outline: none;
+}
+
+.vui-slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--vui-primary-gradient);
+  cursor: pointer;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+  transition: all var(--transition-fast);
+}
+
+.vui-slider input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--vui-primary-gradient);
+  cursor: pointer;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+  transition: all var(--transition-fast);
+  border: none;
+}
+
+.vui-slider input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.vui-slider input[type="range"]::-moz-range-thumb:hover {
+  transform: scale(1.2);
+}
+
+.slider-value {
+  position: absolute;
+  top: -25px;
+  background: var(--vui-primary-gradient);
+  color: white;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  transform: translateX(-50%);
+}
+
+.slider-value::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: var(--vui-primary) transparent transparent transparent;
+}
+
+/* وضعیت‌های فرم */
+.vui-form-input.is-invalid,
+.vui-form-textarea.is-invalid,
+.vui-form-select.is-invalid {
+  border-color: var(--vui-danger);
+}
+
+.vui-form-input.is-valid,
+.vui-form-textarea.is-valid,
+.vui-form-select.is-valid {
+  border-color: var(--vui-success);
+}
+
+.invalid-feedback {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--vui-danger);
+}
+
+/* ==================== جدول‌ها ==================== */
+
+.vui-table-responsive {
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  background: var(--vui-bg-card);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  margin-bottom: var(--spacing-lg);
+}
+
+.vui-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
 }
 
-.vui-data-table th {
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.8);
-  font-weight: 600;
+.vui-table th,
+.vui-table td {
+  padding: 12px 15px;
   text-align: right;
-  padding: 1rem;
-  font-size: 0.875rem;
-  transition: all 0.3s ease;
+  border-bottom: 1px solid var(--border-color);
 }
 
-.vui-data-table th:first-child {
-  border-top-right-radius: 0.75rem;
+.vui-table th {
+  font-weight: 600;
+  color: var(--text-primary);
+  background: rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
-.vui-data-table th:last-child {
-  border-top-left-radius: 0.75rem;
+.vui-table td {
+  color: var(--text-secondary);
 }
 
-.vui-data-table tbody tr {
-  transition: all 0.3s ease;
+.vui-table tbody tr {
+  transition: all var(--transition-fast);
 }
 
-.vui-data-table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.03);
+.vui-table tbody tr:last-child td {
+  border-bottom: none;
 }
 
-.vui-data-table td {
-  padding: 1rem;
-  color: rgba(255, 255, 255, 0.7);
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.vui-data-table .table-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  overflow: hidden;
-  background: var(--vui-primary-gradient);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.vui-data-table .table-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.vui-data-table .action-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.vui-table tbody tr:hover {
   background: rgba(255, 255, 255, 0.05);
-  color: white;
-  border: none;
+}
+
+.vui-table-striped tbody tr:nth-child(odd) {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.vui-table-striped tbody tr:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.vui-table-bordered th,
+.vui-table-bordered td {
+  border: 1px solid var(--border-color);
+}
+
+.vui-table-hover tbody tr {
   cursor: pointer;
-  transition: all 0.3s ease;
 }
 
-.vui-data-table .action-btn:hover {
-  background: var(--vui-primary-gradient);
-  transform: translateY(-2px);
+/* ==================== هشدارها و پیام‌ها ==================== */
+
+.vui-alert {
+  padding: 15px 20px;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-md);
+  display: flex;
+  align-items: flex-start;
+  position: relative;
+  overflow: hidden;
 }
 
-.vui-data-table .status-badge {
+.vui-alert::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 4px;
+}
+
+.vui-alert-icon {
+  margin-left: var(--spacing-md);
+  font-size: 1.25rem;
+  display: flex;
+  flex-shrink: 0;
+}
+
+.vui-alert-content {
+  flex: 1;
+}
+
+.vui-alert-title {
+  font-weight: 600;
+  margin-bottom: 5px;
+  font-size: 0.95rem;
+}
+
+.vui-alert-message {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.vui-alert-close {
+  font-size: 1.25rem;
+  opacity: 0.5;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+  margin-right: var(--spacing-md);
+  flex-shrink: 0;
+}
+
+.vui-alert-close:hover {
+  opacity: 1;
+}
+
+.vui-alert-primary {
+  background: rgba(67, 24, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.vui-alert-primary::before {
+  background: var(--vui-primary);
+}
+
+.vui-alert-info {
+  background: rgba(57, 184, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.vui-alert-info::before {
+  background: var(--vui-info);
+}
+
+.vui-alert-success {
+  background: rgba(1, 181, 116, 0.1);
+  color: var(--text-primary);
+}
+
+.vui-alert-success::before {
+  background: var(--vui-success);
+}
+
+.vui-alert-warning {
+  background: rgba(255, 181, 71, 0.1);
+  color: var(--text-primary);
+}
+
+.vui-alert-warning::before {
+  background: var(--vui-warning);
+}
+
+.vui-alert-danger {
+  background: rgba(236, 64, 122, 0.1);
+  color: var(--text-primary);
+}
+
+.vui-alert-danger::before {
+  background: var(--vui-danger);
+}
+
+/* ==================== بدج‌ها و لیبل‌ها ==================== */
+
+.vui-badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.25rem 0.75rem;
-  border-radius: 50rem;
+  justify-content: center;
+  padding: 3px 10px;
+  border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 600;
+  color: white;
 }
 
-.vui-data-table .status-badge i {
-  margin-left: 0.25rem;
-  font-size: 0.675rem;
+.vui-badge-sm {
+  padding: 2px 8px;
+  font-size: 0.7rem;
 }
 
-.vui-data-table .status-badge.active {
-  background: rgba(1, 181, 116, 0.1);
-  color: #01b574;
+.vui-badge-lg {
+  padding: 4px 12px;
+  font-size: 0.8rem;
 }
 
-.vui-data-table .status-badge.pending {
-  background: rgba(255, 171, 0, 0.1);
-  color: #ffab00;
+.vui-badge-primary {
+  background: var(--vui-primary-gradient);
 }
 
-.vui-data-table .status-badge.inactive {
-  background: rgba(236, 64, 122, 0.1);
-  color: #ec407a;
+.vui-badge-info {
+  background: var(--vui-info-gradient);
 }
 
-/* سیستم نوتیفیکیشن پیشرفته */
-.vui-notification-center {
-  position: relative;
+.vui-badge-success {
+  background: var(--vui-success-gradient);
 }
 
-.vui-notification-dropdown {
-  position: absolute;
-  top: 100%;
+.vui-badge-warning {
+  background: var(--vui-warning-gradient);
+}
+
+.vui-badge-danger {
+  background: var(--vui-danger-gradient);
+}
+
+.vui-badge-light {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.vui-badge-dark {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* ==================== مودال‌ها ==================== */
+
+.vui-modal {
+  position: fixed;
+  top: 0;
   left: 0;
-  width: 360px;
-  background: var(--vui-card-bg);
-  backdrop-filter: blur(120px);
-  border-radius: var(--vui-border-radius);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  z-index: 100;
-  overflow: hidden;
-  transform: translateY(10px);
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
   opacity: 0;
   visibility: hidden;
-  transition: all 0.3s ease;
+  transition: all var(--transition-normal);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
 }
 
-.vui-notification-center.active .vui-notification-dropdown {
-  transform: translateY(0);
+.vui-modal.show {
   opacity: 1;
   visibility: visible;
 }
 
-.vui-notification-header {
+.vui-modal-dialog {
+  background: var(--vui-bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 95%;
+  max-width: 500px;
+  max-height: 95vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(50px);
+  transition: transform var(--transition-normal);
+  border: 1px solid var(--border-color);
+}
+
+.vui-modal.show .vui-modal-dialog {
+  transform: translateY(0);
+}
+
+.vui-modal-header {
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.vui-notification-title {
-  font-weight: 600;
-  color: white;
-}
-
-.vui-notification-mark-all {
-  font-size: 0.75rem;
-  color: var(--vui-primary);
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.vui-notification-mark-all:hover {
-  text-decoration: underline;
-}
-
-.vui-notification-body {
-  max-height: 360px;
-  overflow-y: auto;
-}
-
-.vui-notification-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  color: rgba(255, 255, 255, 0.5);
-  text-align: center;
-}
-
-.vui-notification-empty i {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-  opacity: 0.5;
-}
-
-.vui-notification-footer {
-  display: flex;
-  justify-content: center;
-  padding: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.vui-notification-footer a {
-  color: var(--vui-primary);
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.vui-notification-footer a:hover {
-  text-decoration: underline;
-}
-
-.vui-notification-item {
-  display: flex;
-  align-items: flex-start;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  transition: all 0.3s ease;
-  position: relative;
-}
-
-.vui-notification-item:last-child {
-  border-bottom: none;
-}
-
-.vui-notification-item:hover {
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.vui-notification-item.unread::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  right: 1rem;
-  transform: translateY(-50%);
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--vui-primary);
-}
-
-.vui-notification-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: 1rem;
-  flex-shrink: 0;
-}
-
-.vui-notification-icon.primary {
-  background: var(--vui-primary-gradient);
-}
-
-.vui-notification-icon.success {
-  background: var(--vui-success-gradient);
-}
-
-.vui-notification-icon.warning {
-  background: var(--vui-warning-gradient);
-}
-
-.vui-notification-icon.danger {
-  background: var(--vui-danger-gradient);
-}
-
-.vui-notification-icon i {
-  color: white;
+.vui-modal-title {
   font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
 }
 
-.vui-notification-content {
+.vui-modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+  padding: 0;
+  line-height: 1;
+}
+
+.vui-modal-close:hover {
+  color: var(--text-primary);
+}
+
+.vui-modal-body {
+  padding: var(--spacing-lg);
+  overflow-y: auto;
   flex: 1;
 }
 
-.vui-notification-content h6 {
-  margin: 0 0 0.25rem;
-  font-weight: 600;
-  color: white;
-}
-
-.vui-notification-content p {
-  margin: 0 0 0.25rem;
-  font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.vui-notification-time {
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-/* آیکون‌های انیمیشنی */
-.vui-animated-icon {
-  position: relative;
-  display: inline-block;
-}
-
-.vui-animated-icon::after {
-  content: '';
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--vui-primary);
-  border: 2px solid var(--vui-dark);
-  transform: scale(0);
-  opacity: 0;
-  animation: pop 1s ease-in-out infinite;
-}
-
-@keyframes pop {
-  0% {
-    transform: scale(0);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(0);
-    opacity: 0;
-  }
-}
-
-/* نشانگر تعداد موارد جدید */
-.vui-badge-counter {
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  min-width: 18px;
-  height: 18px;
-  border-radius: 9px;
-  background: var(--vui-danger);
-  color: white;
-  font-size: 0.7rem;
-  font-weight: 600;
+.vui-modal-footer {
+  padding: var(--spacing-lg);
+  border-top: 1px solid var(--border-color);
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 0 5px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  justify-content: flex-end;
+  gap: var(--spacing-md);
+}
+
+.vui-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1040;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+/* مودال سایز بزرگ */
+.vui-modal-lg .vui-modal-dialog {
+  max-width: 800px;
+}
+
+/* مودال سایز کوچک */
+.vui-modal-sm .vui-modal-dialog {
+  max-width: 300px;
+}
+
+/* مودال تمام صفحه */
+.vui-modal-fullscreen .vui-modal-dialog {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  border-radius: 0;
+  margin: 0;
+}
+
+/* ==================== پاپ‌اور و تولتیپ ==================== */
+
+/* تولتیپ */
+.vui-tooltip {
+  position: absolute;
+  z-index: 1070;
+  display: block;
+  padding: 5px 10px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 400;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+  max-width: 200px;
+}
+
+.vui-tooltip.visible {
+  opacity: 1;
+}
+
+.vui-tooltip::after {
+  content: '';
+  position: absolute;
+  border-width: 5px;
+  border-style: solid;
+}
+
+.vui-tooltip.top::after {
+  bottom: -10px;
+  left: 50%;
+  margin-left: -5px;
+  border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
+}
+
+.vui-tooltip.bottom::after {
+  top: -10px;
+  left: 50%;
+  margin-left: -5px;
+  border-color: transparent transparent rgba(0, 0, 0, 0.8) transparent;
+}
+
+.vui-tooltip.left::after {
+  top: 50%;
+  right: -10px;
+  margin-top: -5px;
+  border-color: transparent transparent transparent rgba(0, 0, 0, 0.8);
+}
+
+.vui-tooltip.right::after {
+  top: 50%;
+  left: -10px;
+  margin-top: -5px;
+  border-color: transparent rgba(0, 0, 0, 0.8) transparent transparent;
+}
+
+/* پاپ‌اور */
+.vui-popover {
+  position: absolute;
+  z-index: 1060;
+  display: block;
+  background: var(--vui-bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-md);
+  max-width: 300px;
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.9);
+  transform-origin: top center;
+  transition: all var(--transition-fast);
+}
+
+.vui-popover.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+}
+
+.vui-popover-header {
+  padding: 10px 15px;
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.vui-popover-body {
+  padding: 10px 15px;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.vui-popover::after {
+  content: '';
+  position: absolute;
+  border-width: 10px;
+  border-style: solid;
+}
+
+.vui-popover.top::after {
+  bottom: -20px;
+  left: 50%;
+  margin-left: -10px;
+  border-color: var(--vui-bg-card) transparent transparent transparent;
+}
+
+.vui-popover.bottom::after {
+  top: -20px;
+  left: 50%;
+  margin-left: -10px;
+  border-color: transparent transparent var(--vui-bg-card) transparent;
+}
+
+.vui-popover.left::after {
+  top: 50%;
+  right: -20px;
+  margin-top: -10px;
+  border-color: transparent transparent transparent var(--vui-bg-card);
+}
+
+.vui-popover.right::after {
+  top: 50%;
+  left: -20px;
+  margin-top: -10px;
+  border-color: transparent var(--vui-bg-card) transparent transparent;
+}
+
+/* افکت گلس‌مورفیسم در همه جا */
+.glassmorphism {
+  background: rgba(26, 26, 38, 0.5) !important;
+  backdrop-filter: blur(5px) !important;
+  -webkit-backdrop-filter: blur(5px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
 }

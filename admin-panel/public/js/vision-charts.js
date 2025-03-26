@@ -1,675 +1,1079 @@
 /**
- * Vision UI Dashboard - نمودارهای سازگار با Chart.js v2.9.4
- * این فایل تمام کدهای مربوط به نمودارها را در یک فایل جمع‌آوری کرده 
- * و از تداخل بین اسکریپت‌های مختلف جلوگیری می‌کند
+ * Vision UI Dashboard - Charts
+ * نمودارهای پیشرفته و زیبا مطابق با طراحی Vision UI
  */
 
-// متغیرهای نمودارها
-var userActivityChart = null;
-var gamesChart = null;
-var transactionsChart = null;
-var economyPieChart = null;
-
-// مقادیر پیش‌فرض نمودارها برای زمانی که داده واقعی موجود نیست
-var defaultChartData = {
-  userActivity: [120, 115, 130, 125, 150, 170, 160],
-  games: [35, 25, 20, 15, 5],
-  deposits: [500, 700, 550, 800, 950, 700, 600],
-  withdrawals: [300, 450, 400, 600, 700, 500, 400],
-  economy: [65, 20, 15]
-};
-
-// متغیر برای نگهداری داده‌های واقعی
-window.chartData = window.chartData || {};
-
-// راه‌اندازی تمام نمودارها
 document.addEventListener('DOMContentLoaded', function() {
-  // تاخیر کوتاه برای اطمینان از لود کامل DOM
-  setTimeout(function() {
-    initializeVisionCharts();
-  }, 500);
+  // تنظیم گزینه‌های پیش‌فرض Chart.js
+  initChartDefaults();
+  
+  // راه‌اندازی نمودارها
+  initializeCharts();
+  
+  // راه‌اندازی رویدادهای فیلتر
+  initChartFilters();
 });
 
 /**
- * راه‌اندازی تمام نمودارهای Vision UI
+ * تنظیم گزینه‌های پیش‌فرض برای تمام نمودارها
  */
-function initializeVisionCharts() {
-  try {
-    // بررسی وجود کتابخانه Chart.js
-    if (typeof Chart === 'undefined') {
-      console.error('کتابخانه Chart.js بارگذاری نشده است');
-      return;
+function initChartDefaults() {
+  // بررسی وجود Chart.js
+  if (typeof Chart === 'undefined') {
+    console.warn('Chart.js not loaded');
+    return;
+  }
+  
+  // تنظیم پالت رنگ‌های پیش‌فرض
+  const primaryGradient = createGradientConfig('primary');
+  const infoGradient = createGradientConfig('info');
+  const successGradient = createGradientConfig('success');
+  const warningGradient = createGradientConfig('warning');
+  const dangerGradient = createGradientConfig('danger');
+  
+  // تنظیم فونت‌ها و رنگ‌ها
+  Chart.defaults.font.family = 'Vazirmatn, Tahoma, sans-serif';
+  Chart.defaults.font.size = 11;
+  Chart.defaults.color = 'rgba(255, 255, 255, 0.8)';
+  
+  // تنظیم سایه برای متن‌ها
+  Chart.defaults.plugins.tooltip.titleFont = { weight: 'normal', size: 12 };
+  Chart.defaults.plugins.tooltip.bodyFont = { weight: 'normal', size: 11 };
+  Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+  Chart.defaults.plugins.tooltip.borderColor = 'rgba(255, 255, 255, 0.1)';
+  Chart.defaults.plugins.tooltip.borderWidth = 1;
+  Chart.defaults.plugins.tooltip.cornerRadius = 8;
+  Chart.defaults.plugins.tooltip.padding = 8;
+  Chart.defaults.plugins.tooltip.position = 'nearest';
+  Chart.defaults.plugins.tooltip.displayColors = true;
+  Chart.defaults.plugins.tooltip.enabled = true;
+  Chart.defaults.plugins.tooltip.mode = 'index';
+  Chart.defaults.plugins.tooltip.intersect = false;
+  Chart.defaults.plugins.tooltip.rtl = true;
+  
+  // تنظیم عنوان‌ها
+  Chart.defaults.plugins.title.font = { weight: 'normal', size: 14 };
+  Chart.defaults.plugins.title.color = 'rgba(255, 255, 255, 0.9)';
+  Chart.defaults.plugins.title.align = 'start';
+  Chart.defaults.plugins.title.padding = { top: 0, bottom: 20 };
+  
+  // تنظیم محورها
+  Chart.defaults.scales.linear.grid = { 
+    color: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    tickColor: 'rgba(255, 255, 255, 0.1)'
+  };
+  
+  Chart.defaults.scales.category.grid = { 
+    display: false
+  };
+  
+  // تنظیم لجندها
+  Chart.defaults.plugins.legend.position = 'bottom';
+  Chart.defaults.plugins.legend.align = 'start';
+  Chart.defaults.plugins.legend.labels.boxWidth = 10;
+  Chart.defaults.plugins.legend.labels.padding = 15;
+  Chart.defaults.plugins.legend.title.display = false;
+  Chart.defaults.plugins.legend.rtl = true;
+  
+  // ایجاد وضعیت پیش‌فرض برای انیمیشن
+  Chart.defaults.animation = {
+    duration: 1500,
+    easing: 'easeOutQuart',
+    delay: function(context) {
+      return context.dataIndex * 50 + context.datasetIndex * 100;
+    }
+  };
+  
+  // تنظیم استایل برای دستگاه‌های موبایل
+  Chart.defaults.maintainAspectRatio = false;
+  Chart.defaults.responsive = true;
+  
+  // تنظیم موقعیت دقیق‌تر تولتیپ‌ها
+  const tooltipHandler = Chart.Tooltip.prototype.handleEvent;
+  Chart.Tooltip.prototype.handleEvent = function(e) {
+    const result = tooltipHandler.call(this, e);
+    const position = this.chart.canvas.getBoundingClientRect();
+    
+    if (e.type === 'mousemove') {
+      this._active = this._chart.getElementsAtEventForMode(e, 'nearest', {
+        intersect: false
+      }, false);
+      
+      this._lastEvent = e;
     }
     
-    // فونت پیش‌فرض برای تمام نمودارها
-    Chart.defaults.global.defaultFontFamily = 'Vazirmatn';
+    return result;
+  };
+  
+  // پلاگین سفارشی برای نمایش متن وسط نمودارهای دایره‌ای
+  Chart.register({
+    id: 'centerTextPlugin',
+    beforeDraw: function(chart) {
+      if (chart.config.type === 'doughnut' || chart.config.type === 'pie') {
+        if (chart.config.options.elements?.center) {
+          const centerConfig = chart.config.options.elements.center;
+          
+          const ctx = chart.ctx;
+          const chartArea = chart.chartArea;
+          
+          ctx.save();
+          
+          if (centerConfig.image) {
+            const img = new Image();
+            img.src = centerConfig.image;
+            
+            const x = (chartArea.left + chartArea.right) / 2;
+            const y = (chartArea.top + chartArea.bottom) / 2;
+            const radius = centerConfig.radius || 30;
+            
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, 2 * Math.PI);
+            ctx.closePath();
+            ctx.clip();
+            
+            ctx.drawImage(
+              img, 
+              x - radius, 
+              y - radius, 
+              radius * 2, 
+              radius * 2
+            );
+          }
+          
+          if (centerConfig.text) {
+            const ctx = chart.ctx;
+            const chartArea = chart.chartArea;
+            
+            // تنظیم استایل متن
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            const centerX = (chartArea.left + chartArea.right) / 2;
+            const centerY = (chartArea.top + chartArea.bottom) / 2;
+            
+            // اگر چند خط متن وجود داشته باشد
+            const textLines = centerConfig.text.split('\n');
+            
+            for (let i = 0; i < textLines.length; i++) {
+              ctx.font = centerConfig.fontStyle || 'normal 16px Vazirmatn';
+              ctx.fillStyle = centerConfig.fontColor || '#fff';
+              
+              const lineHeight = centerConfig.lineHeight || 25;
+              const offset = (textLines.length - 1) * lineHeight / 2;
+              
+              ctx.fillText(
+                textLines[i], 
+                centerX, 
+                centerY - offset + (i * lineHeight)
+              );
+            }
+          }
+          
+          ctx.restore();
+        }
+      }
+    }
+  });
+  
+  // پلاگین سفارشی برای نمایش گرادینت در نمودارها
+  Chart.register({
+    id: 'chartGradientPlugin',
+    beforeRender: function(chart) {
+      const ctx = chart.ctx;
+      
+      if (chart.config.type === 'line' || chart.config.type === 'bar' || chart.config.type === 'radar') {
+        const datasets = chart.config.data.datasets;
+        const chartArea = chart.chartArea;
+        
+        for (let i = 0; i < datasets.length; i++) {
+          const dataset = datasets[i];
+          
+          if (dataset.gradient) {
+            const gradientType = dataset.gradient.type || 'linear';
+            let gradient;
+            
+            if (gradientType === 'linear') {
+              // گرادینت خطی
+              gradient = ctx.createLinearGradient(
+                chartArea.left, chartArea.bottom,
+                chartArea.left, chartArea.top
+              );
+            } else if (gradientType === 'radial') {
+              // گرادینت شعاعی
+              const centerX = (chartArea.left + chartArea.right) / 2;
+              const centerY = (chartArea.top + chartArea.bottom) / 2;
+              const radius = Math.max(chartArea.right - chartArea.left, chartArea.bottom - chartArea.top) / 2;
+              
+              gradient = ctx.createRadialGradient(
+                centerX, centerY, 0,
+                centerX, centerY, radius
+              );
+            }
+            
+            // اضافه کردن توقف‌های رنگی به گرادینت
+            if (gradient) {
+              dataset.gradient.stops.forEach(stop => {
+                gradient.addColorStop(stop.offset, stop.color);
+              });
+              
+              if (dataset.backgroundColor) {
+                dataset.backgroundColor = gradient;
+              }
+              
+              if (dataset.borderColor && !dataset.gradient.bordersOnly) {
+                dataset.borderColor = gradient;
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+/**
+ * ایجاد پیکربندی گرادینت برای رنگ‌های مختلف
+ * @param {string} colorType - نوع رنگ (primary, info, success, warning, danger)
+ * @param {boolean} isBgOnly - آیا فقط برای پس زمینه استفاده می‌شود
+ * @return {object} پیکربندی گرادینت
+ */
+function createGradientConfig(colorType, isBgOnly = false) {
+  return {
+    gradient: {
+      type: 'linear',
+      bordersOnly: isBgOnly,
+      stops: [
+        { offset: 0, color: `var(--chart-${colorType}-gradient-start)` },
+        { offset: 1, color: `var(--chart-${colorType}-gradient-stop)` }
+      ]
+    },
+    backgroundColor: `var(--chart-${colorType}-color)`,
+    borderColor: `var(--chart-${colorType}-color)`
+  };
+}
+
+/**
+ * راه‌اندازی همه نمودارها
+ */
+function initializeCharts() {
+  // نمودارهای درآمد
+  initRevenueCharts();
+  
+  // نمودارهای کاربران
+  initUserCharts();
+  
+  // نمودارهای آیتم
+  initItemCharts();
+  
+  // نمودارهای بازی
+  initGameCharts();
+  
+  // نمودارهای اقتصادی
+  initEconomyCharts();
+  
+  // نمودارهای صفحات دیگر
+  initClanCharts();
+  initQuizCharts();
+  initQuestCharts();
+  
+  // رفرش‌کردن نمودارها هر 60 ثانیه
+  setInterval(refreshCharts, 60000);
+}
+
+/**
+ * راه‌اندازی رویدادهای فیلتر نمودارها
+ */
+function initChartFilters() {
+  // دکمه‌های فیلتر نمودارها
+  const filterButtons = document.querySelectorAll('.vui-chart-filters button');
+  
+  filterButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      const chartId = this.closest('.vui-chart-card').dataset.chartId;
+      const filter = this.dataset.filter;
+      const chart = getChartById(chartId);
+      
+      if (!chart) return;
+      
+      // حذف کلاس active از همه دکمه‌ها
+      this.parentNode.querySelectorAll('button').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      
+      // اضافه کردن کلاس active به دکمه انتخاب شده
+      this.classList.add('active');
+      
+      // اعمال فیلتر
+      applyChartFilter(chart, filter);
+    });
+  });
+}
+
+/**
+ * دریافت نمودار با شناسه
+ * @param {string} chartId - شناسه نمودار
+ * @return {Chart|null} آبجکت نمودار یا null
+ */
+function getChartById(chartId) {
+  return Chart.getChart(chartId);
+}
+
+/**
+ * اعمال فیلتر به نمودار
+ * @param {Chart} chart - آبجکت نمودار
+ * @param {string} filter - فیلتر (today, week, month, year)
+ */
+function applyChartFilter(chart, filter) {
+  // نمایش لودر
+  const chartContainer = chart.canvas.parentNode;
+  if (chartContainer) {
+    const loader = document.createElement('div');
+    loader.className = 'chart-loader';
+    chartContainer.appendChild(loader);
+  }
+  
+  // شبیه‌سازی دریافت داده با تاخیر
+  setTimeout(() => {
+    // حذف لودر
+    if (chartContainer) {
+      const loader = chartContainer.querySelector('.chart-loader');
+      if (loader) loader.remove();
+    }
     
-    // ساخت نمودارها
-    setupUserActivityChart();
-    setupGamesChart();
-    setupTransactionsChart();
-    setupEconomyPieChart();
+    // بروزرسانی داده‌ها بر اساس فیلتر
+    switch(filter) {
+      case 'today':
+        updateChartDataForToday(chart);
+        break;
+      case 'week':
+        updateChartDataForWeek(chart);
+        break;
+      case 'month':
+        updateChartDataForMonth(chart);
+        break;
+      case 'year':
+        updateChartDataForYear(chart);
+        break;
+      case 'all':
+        updateChartDataForAll(chart);
+        break;
+    }
     
-    console.log('نمودارهای Vision UI با موفقیت راه‌اندازی شدند');
-  } catch (error) {
-    console.error('خطا در راه‌اندازی نمودارها:', error);
+    // بروزرسانی نمودار
+    chart.update();
+  }, 500);
+}
+
+/**
+ * بروزرسانی داده‌های نمودار برای امروز
+ * @param {Chart} chart - آبجکت نمودار
+ */
+function updateChartDataForToday(chart) {
+  // بسته به نوع نمودار، داده‌های مختلفی را برگشت می‌دهیم
+  const chartId = chart.canvas.id;
+  
+  // اینجا می‌توانید داده‌های واقعی را از سرور دریافت کنید
+  // فعلاً داده‌های تستی برمی‌گردانیم
+  
+  // بررسی اینکه کدام نمودار است و داده‌های مناسب را به‌روزرسانی کنیم
+  if (chartId === 'revenueChart') {
+    chart.data.labels = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00'];
+    chart.data.datasets[0].data = [12, 19, 13, 25, 32, 28, 34, 42];
+  }
+  else if (chartId === 'userActivityChart') {
+    chart.data.labels = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00'];
+    chart.data.datasets[0].data = [55, 67, 73, 82, 95, 102, 89, 76];
+  }
+  
+  // و سایر نمودارها...
+}
+
+/**
+ * بروزرسانی داده‌های نمودار برای هفته جاری
+ * @param {Chart} chart - آبجکت نمودار
+ */
+function updateChartDataForWeek(chart) {
+  const chartId = chart.canvas.id;
+  
+  if (chartId === 'revenueChart') {
+    chart.data.labels = ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه'];
+    chart.data.datasets[0].data = [82, 96, 114, 125, 138, 157, 178];
+  }
+  else if (chartId === 'userActivityChart') {
+    chart.data.labels = ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه'];
+    chart.data.datasets[0].data = [312, 287, 342, 298, 387, 425, 392];
+  }
+  
+  // و سایر نمودارها...
+}
+
+/**
+ * بروزرسانی داده‌های نمودار برای ماه جاری
+ * @param {Chart} chart - آبجکت نمودار
+ */
+function updateChartDataForMonth(chart) {
+  const chartId = chart.canvas.id;
+  const days = Array.from({length: 30}, (_, i) => `${i+1}`);
+  
+  if (chartId === 'revenueChart') {
+    chart.data.labels = days;
+    chart.data.datasets[0].data = Array.from({length: 30}, () => Math.floor(Math.random() * 500 + 1000));
+  }
+  else if (chartId === 'userActivityChart') {
+    chart.data.labels = days;
+    chart.data.datasets[0].data = Array.from({length: 30}, () => Math.floor(Math.random() * 200 + 300));
+  }
+  
+  // و سایر نمودارها...
+}
+
+/**
+ * بروزرسانی داده‌های نمودار برای سال جاری
+ * @param {Chart} chart - آبجکت نمودار
+ */
+function updateChartDataForYear(chart) {
+  const chartId = chart.canvas.id;
+  const months = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
+  
+  if (chartId === 'revenueChart') {
+    chart.data.labels = months;
+    chart.data.datasets[0].data = [2500, 3200, 2800, 3800, 4200, 3900, 4600, 5100, 4800, 5500, 6200, 5800];
+  }
+  else if (chartId === 'userActivityChart') {
+    chart.data.labels = months;
+    chart.data.datasets[0].data = [850, 920, 980, 1050, 1120, 1180, 1250, 1320, 1380, 1450, 1520, 1600];
+  }
+  
+  // و سایر نمودارها...
+}
+
+/**
+ * بروزرسانی داده‌های نمودار برای همه زمان‌ها
+ * @param {Chart} chart - آبجکت نمودار
+ */
+function updateChartDataForAll(chart) {
+  const chartId = chart.canvas.id;
+  const years = ['1399', '1400', '1401', '1402', '1403'];
+  
+  if (chartId === 'revenueChart') {
+    chart.data.labels = years;
+    chart.data.datasets[0].data = [35000, 48000, 62000, 78000, 95000];
+  }
+  else if (chartId === 'userActivityChart') {
+    chart.data.labels = years;
+    chart.data.datasets[0].data = [5400, 7800, 9300, 12600, 15200];
+  }
+  
+  // و سایر نمودارها...
+}
+
+/**
+ * به‌روزرسانی دوره‌ای نمودارها
+ */
+function refreshCharts() {
+  // دریافت همه نمودارهای فعال
+  const activeCharts = Chart.instances;
+  
+  if (activeCharts.length > 0) {
+    activeCharts.forEach(chart => {
+      // یافتن دکمه فعال
+      const chartElement = chart.canvas.parentNode;
+      const chartCard = chartElement.closest('.vui-chart-card');
+      
+      if (chartCard) {
+        const activeFilterButton = chartCard.querySelector('.vui-chart-filters button.active');
+        
+        if (activeFilterButton) {
+          // دریافت فیلتر فعال
+          const activeFilter = activeFilterButton.dataset.filter;
+          
+          // بروزرسانی نمودار با فیلتر فعلی
+          applyChartFilter(chart, activeFilter);
+        }
+      }
+    });
   }
 }
 
 /**
- * نمودار فعالیت کاربران
+ * نمودارهای اختصاصی درآمد و هزینه
  */
-function setupUserActivityChart() {
-  var chartElement = document.getElementById('userActivityChart');
-  if (!chartElement) return;
-  
-  try {
-    // داده‌های نمودار: استفاده از داده واقعی یا پیش‌فرض
-    var chartData = window.chartData.userActivity || defaultChartData.userActivity;
-    
-    // برچسب‌های محور افقی
-    var labels = ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه'];
-    
-    // نابودی نمودار قبلی اگر وجود داشته باشد
-    if (userActivityChart instanceof Chart) {
-      userActivityChart.destroy();
-    }
-    
-    // ایجاد gradient برای پس‌زمینه نمودار
-    var ctx = chartElement.getContext('2d');
-    var gradient = ctx.createLinearGradient(0, 0, 0, 300);
-    gradient.addColorStop(0, 'rgba(67, 24, 255, 0.8)');
-    gradient.addColorStop(1, 'rgba(67, 24, 255, 0.2)');
-    
-    // تنظیمات نمودار - سازگار با نسخه 2.9.4
-    var config = {
+function initRevenueCharts() {
+  // نمودار درآمد کلی
+  const revenueChartEl = document.getElementById('revenueChart');
+  if (revenueChartEl) {
+    const revenueChart = new Chart(revenueChartEl, {
       type: 'line',
       data: {
-        labels: labels,
+        labels: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'],
         datasets: [{
-          label: 'کاربران فعال',
-          data: chartData,
-          backgroundColor: gradient,
-          borderColor: 'rgba(67, 24, 255, 1)',
+          label: 'درآمد (Ccoin)',
+          data: [2500, 3200, 2800, 3800, 4200, 3900, 4600, 5100, 4800, 5500, 6200, 5800],
+          ...createGradientConfig('primary'),
           borderWidth: 2,
-          pointBackgroundColor: 'rgba(67, 24, 255, 1)',
-          pointBorderColor: '#fff',
-          pointBorderWidth: 2,
-          pointRadius: 4,
-          pointHoverRadius: 6,
           fill: true,
-          lineTension: 0.4
+          tension: 0.4,
+          pointRadius: 4,
+          pointBackgroundColor: 'white',
+          pointBorderColor: 'var(--vui-primary)',
+          pointBorderWidth: 2,
+          pointHoverRadius: 6,
+          pointHoverBackgroundColor: 'white',
+          pointHoverBorderColor: 'var(--vui-primary)',
+          pointHoverBorderWidth: 2
         }]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        legend: {
-          display: false
-        },
-        tooltips: {
-          mode: 'index',
-          intersect: false,
-          backgroundColor: 'rgba(22, 24, 39, 0.8)',
-          titleFontColor: '#fff',
-          bodyFontColor: '#fff',
-          borderColor: 'rgba(255, 255, 255, 0.1)',
-          borderWidth: 1,
-          xPadding: 10,
-          yPadding: 10,
-          displayColors: false,
-          caretPadding: 6,
-          callbacks: {
-            label: function(tooltipItem, data) {
-              return 'کاربران فعال: ' + tooltipItem.yLabel.toLocaleString('fa-IR');
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `${context.dataset.label}: ${context.parsed.y.toLocaleString()} Ccoin`;
+              }
             }
           }
         },
         scales: {
-          xAxes: [{
-            gridLines: {
-              display: false,
-              drawBorder: false
-            },
+          y: {
+            beginAtZero: true,
             ticks: {
-              fontColor: 'rgba(255, 255, 255, 0.7)'
-            }
-          }],
-          yAxes: [{
-            gridLines: {
-              borderDash: [5, 5],
-              color: 'rgba(255, 255, 255, 0.1)',
-              drawBorder: false
-            },
-            ticks: {
-              fontColor: 'rgba(255, 255, 255, 0.7)',
-              padding: 10
-            }
-          }]
-        }
-      }
-    };
-    
-    // ایجاد نمودار
-    userActivityChart = new Chart(chartElement, config);
-    
-  } catch (error) {
-    console.error('خطا در رسم نمودار فعالیت کاربران:', error);
-    showChartError(chartElement, 'خطا در رسم نمودار فعالیت کاربران');
-  }
-}
-
-/**
- * نمودار دایره‌ای بازی‌ها
- */
-function setupGamesChart() {
-  var chartElement = document.getElementById('gamesChart');
-  if (!chartElement) return;
-  
-  try {
-    // داده‌های نمودار
-    var chartData = window.chartData.games || defaultChartData.games;
-    
-    // برچسب‌های نمودار
-    var labels = ['سکه شیر یا خط', 'سنگ کاغذ قیچی', 'حدس عدد', 'بازی تاس', 'چرخ شانس'];
-    
-    // رنگ‌های نمودار به سبک Vision UI
-    var backgroundColors = [
-      'rgba(67, 24, 255, 0.8)',
-      'rgba(57, 184, 255, 0.8)',
-      'rgba(1, 181, 116, 0.8)',
-      'rgba(255, 181, 71, 0.8)',
-      'rgba(236, 64, 122, 0.8)'
-    ];
-    
-    var borderColors = [
-      'rgba(67, 24, 255, 1)',
-      'rgba(57, 184, 255, 1)',
-      'rgba(1, 181, 116, 1)',
-      'rgba(255, 181, 71, 1)',
-      'rgba(236, 64, 122, 1)'
-    ];
-    
-    // نابودی نمودار قبلی اگر وجود داشته باشد
-    if (gamesChart instanceof Chart) {
-      gamesChart.destroy();
-    }
-    
-    // تنظیمات نمودار - سازگار با نسخه 2.9.4
-    var config = {
-      type: 'doughnut',
-      data: {
-        labels: labels,
-        datasets: [{
-          data: chartData,
-          backgroundColor: backgroundColors,
-          borderColor: borderColors,
-          borderWidth: 2
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutoutPercentage: 70,
-        legend: {
-          position: 'right',
-          labels: {
-            fontColor: 'rgba(255, 255, 255, 0.7)',
-            padding: 15,
-            boxWidth: 12
-          }
-        },
-        tooltips: {
-          backgroundColor: 'rgba(22, 24, 39, 0.8)',
-          titleFontColor: '#fff',
-          bodyFontColor: '#fff',
-          borderColor: 'rgba(255, 255, 255, 0.1)',
-          borderWidth: 1,
-          xPadding: 10,
-          yPadding: 10,
-          displayColors: true,
-          callbacks: {
-            label: function(tooltipItem, data) {
-              var dataset = data.datasets[tooltipItem.datasetIndex];
-              var total = dataset.data.reduce(function(previousValue, currentValue) {
-                return previousValue + currentValue;
-              }, 0);
-              var currentValue = dataset.data[tooltipItem.index];
-              var percentage = Math.floor(((currentValue/total) * 100)+0.5);
-              return data.labels[tooltipItem.index] + ': ' + percentage + "%";
+              callback: function(value) {
+                return value.toLocaleString();
+              }
             }
           }
         }
       }
-    };
-    
-    // ایجاد نمودار
-    gamesChart = new Chart(chartElement, config);
-    
-  } catch (error) {
-    console.error('خطا در رسم نمودار بازی‌ها:', error);
-    showChartError(chartElement, 'خطا در رسم نمودار بازی‌ها');
+    });
   }
-}
-
-/**
- * نمودار تراکنش‌های انجام شده
- */
-function setupTransactionsChart() {
-  var chartElement = document.getElementById('transactionsChart');
-  if (!chartElement) return;
   
-  try {
-    // داده‌های نمودار
-    var depositData = window.chartData.deposits || defaultChartData.deposits;
-    var withdrawalData = window.chartData.withdrawals || defaultChartData.withdrawals;
-    
-    // برچسب‌های محور افقی
-    var labels = ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه'];
-    
-    // نابودی نمودار قبلی اگر وجود داشته باشد
-    if (transactionsChart instanceof Chart) {
-      transactionsChart.destroy();
-    }
-    
-    // تنظیمات نمودار - سازگار با نسخه 2.9.4
-    var config = {
-      type: 'line',
+  // نمودار مقایسه‌ای درآمد و هزینه
+  const incomeExpenseChartEl = document.getElementById('incomeExpenseChart');
+  if (incomeExpenseChartEl) {
+    const incomeExpenseChart = new Chart(incomeExpenseChartEl, {
+      type: 'bar',
       data: {
-        labels: labels,
+        labels: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور'],
         datasets: [
           {
-            label: 'واریز',
-            data: depositData,
-            backgroundColor: 'rgba(1, 181, 116, 0.2)',
-            borderColor: 'rgba(1, 181, 116, 1)',
-            borderWidth: 2,
-            fill: true,
-            lineTension: 0.4
+            label: 'درآمد',
+            data: [2500, 3200, 2800, 3800, 4200, 3900],
+            ...createGradientConfig('success'),
+            borderWidth: 0,
+            borderRadius: 4
           },
           {
-            label: 'برداشت',
-            data: withdrawalData,
-            backgroundColor: 'rgba(236, 64, 122, 0.2)',
-            borderColor: 'rgba(236, 64, 122, 1)',
-            borderWidth: 2,
-            fill: true,
-            lineTension: 0.4
+            label: 'هزینه',
+            data: [1800, 2100, 1700, 2300, 2700, 2400],
+            ...createGradientConfig('danger'),
+            borderWidth: 0,
+            borderRadius: 4
           }
         ]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        legend: {
-          position: 'top',
-          align: 'end',
-          labels: {
-            fontColor: 'rgba(255, 255, 255, 0.7)',
-            padding: 20,
-            boxWidth: 12,
-            usePointStyle: true
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return value.toLocaleString();
+              }
+            }
           }
         },
-        tooltips: {
-          mode: 'index',
-          intersect: false,
-          backgroundColor: 'rgba(22, 24, 39, 0.8)',
-          titleFontColor: '#fff',
-          bodyFontColor: '#fff',
-          borderColor: 'rgba(255, 255, 255, 0.1)',
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `${context.dataset.label}: ${context.parsed.y.toLocaleString()} Ccoin`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+  
+  // نمودار توزیع هزینه‌ها
+  const expenseDistributionChartEl = document.getElementById('expenseDistributionChart');
+  if (expenseDistributionChartEl) {
+    const expenseDistributionChart = new Chart(expenseDistributionChartEl, {
+      type: 'doughnut',
+      data: {
+        labels: ['بازی‌ها', 'خرید آیتم', 'انتقال سکه', 'خرید لاتاری', 'سرمایه‌گذاری'],
+        datasets: [{
+          data: [35, 25, 15, 15, 10],
+          backgroundColor: [
+            'var(--vui-primary)',
+            'var(--vui-info)',
+            'var(--vui-success)',
+            'var(--vui-warning)',
+            'var(--vui-danger)'
+          ],
+          borderColor: [
+            'rgba(67, 24, 255, 1)',
+            'rgba(57, 184, 255, 1)',
+            'rgba(1, 181, 116, 1)',
+            'rgba(255, 181, 71, 1)',
+            'rgba(236, 64, 122, 1)'
+          ],
           borderWidth: 1,
-          xPadding: 10,
-          yPadding: 10,
-          callbacks: {
-            label: function(tooltipItem, data) {
-              return data.datasets[tooltipItem.datasetIndex].label + ': ' + 
-                     tooltipItem.yLabel.toLocaleString('fa-IR') + ' Ccoin';
+          hoverOffset: 5
+        }]
+      },
+      options: {
+        cutout: '70%',
+        elements: {
+          center: {
+            text: '100%\nCcoin',
+            fontStyle: 'bold 18px Vazirmatn',
+            fontColor: 'white',
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `${context.label}: ${context.raw}%`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+}
+
+/**
+ * نمودارهای اختصاصی کاربران
+ */
+function initUserCharts() {
+  // نمودار فعالیت کاربران
+  const userActivityChartEl = document.getElementById('userActivityChart');
+  if (userActivityChartEl) {
+    const userActivityChart = new Chart(userActivityChartEl, {
+      type: 'line',
+      data: {
+        labels: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'],
+        datasets: [{
+          label: 'تعداد کاربران فعال',
+          data: [850, 920, 980, 1050, 1120, 1180, 1250, 1320, 1380, 1450, 1520, 1600],
+          ...createGradientConfig('info'),
+          borderWidth: 2,
+          fill: 'start',
+          tension: 0.4,
+          pointRadius: 4,
+          pointBackgroundColor: 'white',
+          pointBorderColor: 'var(--vui-info)',
+          pointBorderWidth: 2,
+          pointHoverRadius: 6,
+          pointHoverBackgroundColor: 'white',
+          pointHoverBorderColor: 'var(--vui-info)',
+          pointHoverBorderWidth: 2
+        }]
+      },
+      options: {
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `${context.dataset.label}: ${context.parsed.y.toLocaleString()} کاربر`;
+              }
             }
           }
         },
         scales: {
-          xAxes: [{
-            gridLines: {
-              display: false,
-              drawBorder: false
-            },
+          y: {
+            beginAtZero: true,
             ticks: {
-              fontColor: 'rgba(255, 255, 255, 0.7)'
-            }
-          }],
-          yAxes: [{
-            gridLines: {
-              borderDash: [5, 5],
-              color: 'rgba(255, 255, 255, 0.1)',
-              drawBorder: false
-            },
-            ticks: {
-              fontColor: 'rgba(255, 255, 255, 0.7)',
-              padding: 10,
               callback: function(value) {
-                return value.toLocaleString('fa-IR');
+                return value.toLocaleString();
               }
             }
-          }]
+          }
         }
       }
-    };
-    
-    // ایجاد نمودار
-    transactionsChart = new Chart(chartElement, config);
-  } catch (error) {
-    console.error('خطا در رسم نمودار تراکنش‌ها:', error);
-    showChartError(chartElement, 'خطا در رسم نمودار تراکنش‌ها');
+    });
   }
-}
-
-/**
- * نمودار دایره‌ای اقتصاد
- */
-function setupEconomyPieChart() {
-  var chartElement = document.getElementById('economyPieChart');
-  if (!chartElement) return;
   
-  try {
-    // داده‌های نمودار
-    var chartData = window.chartData.economy || defaultChartData.economy;
-    
-    // برچسب‌های نمودار
-    var labels = ['کیف پول کاربران', 'حساب بانکی کاربران', 'خزانه سیستم'];
-    
-    // رنگ‌های نمودار به سبک Vision UI
-    var backgroundColors = [
-      'rgba(1, 181, 116, 0.8)',
-      'rgba(67, 24, 255, 0.8)',
-      'rgba(255, 181, 71, 0.8)'
-    ];
-    
-    var borderColors = [
-      'rgba(1, 181, 116, 1)',
-      'rgba(67, 24, 255, 1)',
-      'rgba(255, 181, 71, 1)'
-    ];
-    
-    // نابودی نمودار قبلی اگر وجود داشته باشد
-    if (economyPieChart instanceof Chart) {
-      economyPieChart.destroy();
-    }
-    
-    // تنظیمات نمودار - سازگار با نسخه 2.9.4
-    var config = {
+  // نمودار جنسیت کاربران
+  const userGenderChartEl = document.getElementById('userGenderChart');
+  if (userGenderChartEl) {
+    const userGenderChart = new Chart(userGenderChartEl, {
       type: 'pie',
       data: {
-        labels: labels,
+        labels: ['مرد', 'زن', 'نامشخص'],
         datasets: [{
-          data: chartData,
-          backgroundColor: backgroundColors,
-          borderColor: borderColors,
-          borderWidth: 2
+          data: [62, 32, 6],
+          backgroundColor: [
+            'var(--vui-primary)',
+            'var(--vui-info)',
+            'var(--vui-warning)'
+          ],
+          borderColor: 'rgba(0, 0, 0, 0.1)',
+          borderWidth: 1,
+          hoverOffset: 5
         }]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        legend: {
-          position: 'bottom',
-          labels: {
-            fontColor: 'rgba(255, 255, 255, 0.7)',
-            padding: 15,
-            boxWidth: 12
-          }
-        },
-        tooltips: {
-          backgroundColor: 'rgba(22, 24, 39, 0.8)',
-          titleFontColor: '#fff',
-          bodyFontColor: '#fff',
-          borderColor: 'rgba(255, 255, 255, 0.1)',
-          borderWidth: 1,
-          xPadding: 10,
-          yPadding: 10,
-          displayColors: true,
-          callbacks: {
-            label: function(tooltipItem, data) {
-              var dataset = data.datasets[tooltipItem.datasetIndex];
-              var total = dataset.data.reduce(function(previousValue, currentValue) {
-                return previousValue + currentValue;
-              }, 0);
-              var currentValue = dataset.data[tooltipItem.index];
-              var percentage = Math.floor(((currentValue/total) * 100)+0.5);
-              return data.labels[tooltipItem.index] + ': ' + percentage + "%";
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `${context.label}: ${context.raw}%`;
+              }
             }
           }
         }
       }
-    };
-    
-    // ایجاد نمودار
-    economyPieChart = new Chart(chartElement, config);
-    
-  } catch (error) {
-    console.error('خطا در رسم نمودار اقتصاد:', error);
-    showChartError(chartElement, 'خطا در رسم نمودار اقتصاد');
-  }
-}
-
-/**
- * نمایش خطا در نمودار
- */
-function showChartError(chartElement, errorMessage) {
-  if (!chartElement || !chartElement.parentNode) return;
-  
-  var errorDiv = document.createElement('div');
-  errorDiv.className = 'alert alert-danger text-center my-3';
-  errorDiv.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i>' + errorMessage;
-  
-  chartElement.style.display = 'none';
-  
-  // حذف پیام خطای قبلی اگر وجود داشته باشد
-  var existingErrors = chartElement.parentNode.querySelectorAll('.alert-danger');
-  for (var i = 0; i < existingErrors.length; i++) {
-    chartElement.parentNode.removeChild(existingErrors[i]);
-  }
-  
-  chartElement.parentNode.appendChild(errorDiv);
-}
-
-/**
- * بروزرسانی نمودارها با داده‌های جدید
- */
-function updateCharts(newData) {
-  if (!newData) return;
-  
-  // ذخیره داده‌ها در متغیر جهانی
-  Object.assign(window.chartData, newData);
-  
-  // بروزرسانی هر نمودار اگر موجود باشد
-  if (userActivityChart && newData.userActivity) {
-    userActivityChart.data.datasets[0].data = newData.userActivity;
-    userActivityChart.update();
-  }
-  
-  if (gamesChart && newData.games) {
-    gamesChart.data.datasets[0].data = newData.games;
-    gamesChart.update();
-  }
-  
-  if (transactionsChart) {
-    if (newData.deposits) {
-      transactionsChart.data.datasets[0].data = newData.deposits;
-    }
-    if (newData.withdrawals) {
-      transactionsChart.data.datasets[1].data = newData.withdrawals;
-    }
-    if (newData.deposits || newData.withdrawals) {
-      transactionsChart.update();
-    }
-  }
-  
-  if (economyPieChart && newData.economy) {
-    economyPieChart.data.datasets[0].data = newData.economy;
-    economyPieChart.update();
-  }
-}
-
-/**
- * تازه‌سازی آمارها از سرور
- */
-function refreshStats() {
-  // نمایش لودر
-  document.querySelector('.loader-container')?.classList.remove('d-none');
-  
-  // ارسال درخواست AJAX
-  fetch('/admin/api/dashboard-stats')
-    .then(response => response.json())
-    .then(data => {
-      // بروزرسانی آمارها
-      updateStatCards(data);
-      // بروزرسانی نمودارها
-      updateCharts(data.charts);
-    })
-    .catch(error => {
-      console.error('خطا در بارگذاری آمارها:', error);
-      // نمایش خطا به کاربر
-      showToast('خطا در بارگذاری آمارها. لطفاً دوباره تلاش کنید.', 'error');
-    })
-    .finally(() => {
-      // مخفی کردن لودر
-      document.querySelector('.loader-container')?.classList.add('d-none');
     });
-}
-
-/**
- * بروزرسانی کارت‌های آماری با مقادیر جدید
- */
-function updateStatCards(data) {
-  if (!data) return;
+  }
   
-  // بروزرسانی کاربران
-  updateStatValue('usersCount', data.usersCount);
-  updateStatMeta('newUsersCount', data.newUsersCount, true);
-  updateStatProgress('usersProgress', Math.min(((data.usersCount || 0) / 1000) * 100, 100));
-  
-  // بروزرسانی کلن‌ها
-  updateStatValue('clansCount', data.clansCount);
-  updateStatMeta('newClansCount', data.newClansCount, true);
-  updateStatProgress('clansProgress', Math.min(((data.clansCount || 0) / 100) * 100, 100));
-  
-  // بروزرسانی سی‌کوین
-  updateStatValue('totalCcoin', data.totalCcoin);
-  updateStatMeta('ccoinGrowth', data.ccoinGrowth, data.ccoinGrowth > 0);
-  updateStatProgress('ccoinProgress', Math.min(((data.totalCcoin || 0) / 1000000) * 100, 100));
-  
-  // بروزرسانی کریستال
-  updateStatValue('totalCrystal', data.totalCrystal);
-  updateStatMeta('crystalGrowth', data.crystalGrowth, data.crystalGrowth > 0);
-  updateStatProgress('crystalProgress', Math.min(((data.totalCrystal || 0) / 100000) * 100, 100));
-}
-
-/**
- * بروزرسانی مقدار یک کارت آماری
- */
-function updateStatValue(id, value) {
-  const element = document.getElementById(id);
-  if (element) {
-    // ذخیره مقدار برای انیمیشن
-    element.setAttribute('data-value', value);
-    // اعمال مقدار با انیمیشن
-    animateStatNumber(element, value);
+  // نمودار سنی کاربران
+  const userAgeChartEl = document.getElementById('userAgeChart');
+  if (userAgeChartEl) {
+    const userAgeChart = new Chart(userAgeChartEl, {
+      type: 'bar',
+      data: {
+        labels: ['13-17', '18-24', '25-34', '35-44', '45+'],
+        datasets: [{
+          label: 'توزیع سنی',
+          data: [12, 38, 35, 10, 5],
+          ...createGradientConfig('primary'),
+          borderWidth: 0,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return `${value}%`;
+              }
+            }
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `${context.label}: ${context.raw}%`;
+              }
+            }
+          }
+        }
+      }
+    });
   }
 }
 
 /**
- * بروزرسانی متا یک کارت آماری
+ * نمودارهای اختصاصی آیتم‌ها
  */
-function updateStatMeta(id, value, isPositive = true) {
-  const element = document.getElementById(id);
-  if (element) {
-    element.textContent = value;
-    element.parentElement?.classList.remove('up', 'down');
-    element.parentElement?.classList.add(isPositive ? 'up' : 'down');
-    
-    const iconElement = element.parentElement?.querySelector('i');
-    if (iconElement) {
-      iconElement.className = isPositive ? 'bi bi-arrow-up-right' : 'bi bi-arrow-down-right';
-    }
+function initItemCharts() {
+  // نمودار آیتم‌های فروخته شده
+  const itemSalesChartEl = document.getElementById('itemSalesChart');
+  if (itemSalesChartEl) {
+    const itemSalesChart = new Chart(itemSalesChartEl, {
+      type: 'bar',
+      data: {
+        labels: ['آیتم 1', 'آیتم 2', 'آیتم 3', 'آیتم 4', 'آیتم 5'],
+        datasets: [{
+          label: 'فروش آیتم‌ها',
+          data: [483, 421, 375, 289, 256],
+          ...createGradientConfig('success'),
+          borderWidth: 0,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        scales: {
+          x: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return value.toLocaleString();
+              }
+            }
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `${context.dataset.label}: ${context.parsed.x.toLocaleString()}`;
+              }
+            }
+          }
+        }
+      }
+    });
   }
 }
 
 /**
- * بروزرسانی نوار پیشرفت یک کارت آماری
+ * نمودارهای اختصاصی بازی‌ها
  */
-function updateStatProgress(id, percentage) {
-  const element = document.getElementById(id);
-  if (element) {
-    // ذخیره مقدار برای انیمیشن
-    element.setAttribute('data-value', percentage);
-    // اعمال مقدار با انیمیشن
-    animateProgressBar(element, percentage);
+function initGameCharts() {
+  // نمودار آمار بازی‌ها
+  const gameStatsChartEl = document.getElementById('gameStatsChart');
+  if (gameStatsChartEl) {
+    const gameStatsChart = new Chart(gameStatsChartEl, {
+      type: 'radar',
+      data: {
+        labels: ['شیر یا خط', 'سنگ کاغذ قیچی', 'حدس عدد', 'چرخ شانس', 'دزدی'],
+        datasets: [{
+          label: 'تعداد بازی',
+          data: [85, 72, 65, 92, 78],
+          borderColor: 'var(--vui-primary)',
+          backgroundColor: 'rgba(67, 24, 255, 0.2)',
+          pointBackgroundColor: 'white',
+          pointBorderColor: 'var(--vui-primary)',
+          pointBorderWidth: 2,
+          pointRadius: 4,
+          pointHoverRadius: 6
+        }]
+      },
+      options: {
+        scales: {
+          r: {
+            angleLines: {
+              color: 'rgba(255, 255, 255, 0.1)'
+            },
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)'
+            },
+            pointLabels: {
+              font: {
+                size: 12
+              }
+            },
+            ticks: {
+              backdropColor: 'transparent',
+              color: 'rgba(255, 255, 255, 0.7)'
+            }
+          }
+        }
+      }
+    });
   }
 }
 
 /**
- * انیمیشن تغییر عدد
+ * نمودارهای اختصاصی اقتصادی
  */
-function animateStatNumber(element, targetValue, duration = 1000) {
-  if (!element) return;
-  
-  const startValue = parseFloat(element.textContent.replace(/,/g, '')) || 0;
-  const startTime = performance.now();
-  
-  function updateValue(currentTime) {
-    const elapsedTime = currentTime - startTime;
-    
-    if (elapsedTime >= duration) {
-      element.textContent = Number(targetValue).toLocaleString('fa-IR');
-    } else {
-      const progress = elapsedTime / duration;
-      const ease = 1 - Math.pow(1 - progress, 3); // easeOutCubic
-      const currentValue = startValue + (targetValue - startValue) * ease;
-      element.textContent = Math.round(currentValue).toLocaleString('fa-IR');
-      requestAnimationFrame(updateValue);
-    }
+function initEconomyCharts() {
+  // نمودار اقتصادی عرضه پول
+  const economyChartEl = document.getElementById('economyChart');
+  if (economyChartEl) {
+    const economyChart = new Chart(economyChartEl, {
+      type: 'line',
+      data: {
+        labels: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور'],
+        datasets: [
+          {
+            label: 'عرضه کل',
+            data: [1200000, 1350000, 1450000, 1580000, 1750000, 1900000],
+            borderColor: 'var(--vui-primary)',
+            backgroundColor: 'rgba(67, 24, 255, 0.1)',
+            borderWidth: 2,
+            fill: false,
+            tension: 0.4
+          },
+          {
+            label: 'موجودی بانکی',
+            data: [850000, 950000, 1020000, 1150000, 1280000, 1400000],
+            borderColor: 'var(--vui-info)',
+            backgroundColor: 'rgba(57, 184, 255, 0.1)',
+            borderWidth: 2,
+            fill: false,
+            tension: 0.4
+          },
+          {
+            label: 'موجودی کیف پول',
+            data: [350000, 400000, 430000, 430000, 470000, 500000],
+            borderColor: 'var(--vui-success)',
+            backgroundColor: 'rgba(1, 181, 116, 0.1)',
+            borderWidth: 2,
+            fill: false,
+            tension: 0.4
+          }
+        ]
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                if (value >= 1000000) {
+                  return `${(value / 1000000).toLocaleString()}M`;
+                } else if (value >= 1000) {
+                  return `${(value / 1000).toLocaleString()}K`;
+                }
+                return value.toLocaleString();
+              }
+            }
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `${context.dataset.label}: ${context.parsed.y.toLocaleString()} Ccoin`;
+              }
+            }
+          }
+        }
+      }
+    });
   }
-  
-  requestAnimationFrame(updateValue);
 }
 
 /**
- * انیمیشن نوار پیشرفت
+ * نمودارهای اختصاصی کلن‌ها
  */
-function animateProgressBar(element, targetValue, duration = 1000) {
-  if (!element) return;
-  
-  const startValue = parseFloat(element.style.width) || 0;
-  const startTime = performance.now();
-  
-  function updateValue(currentTime) {
-    const elapsedTime = currentTime - startTime;
-    
-    if (elapsedTime >= duration) {
-      element.style.width = targetValue + '%';
-    } else {
-      const progress = elapsedTime / duration;
-      const ease = 1 - Math.pow(1 - progress, 3); // easeOutCubic
-      const currentValue = startValue + (targetValue - startValue) * ease;
-      element.style.width = currentValue + '%';
-      requestAnimationFrame(updateValue);
-    }
+function initClanCharts() {
+  // نمودار مقایسه کلن‌ها (امتیاز)
+  const clanScoreChartEl = document.getElementById('clanScoreChart');
+  if (clanScoreChartEl) {
+    const clanScoreChart = new Chart(clanScoreChartEl, {
+      type: 'bar',
+      data: {
+        labels: ['کلن 1', 'کلن 2', 'کلن 3', 'کلن 4', 'کلن 5'],
+        datasets: [{
+          label: 'امتیاز کلن',
+          data: [1250, 980, 850, 720, 650],
+          ...createGradientConfig('primary'),
+          borderWidth: 0,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        scales: {
+          x: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return value.toLocaleString();
+              }
+            }
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `${context.dataset.label}: ${context.parsed.x.toLocaleString()} امتیاز`;
+              }
+            }
+          }
+        }
+      }
+    });
   }
-  
-  requestAnimationFrame(updateValue);
 }
 
 /**
- * نمایش پیام به کاربر
+ * نمودارهای اختصاصی کوئیزها
  */
-function showToast(message, type = 'info') {
-  // اگر قبلاً تابع توست وجود داشته باشد از آن استفاده می‌کنیم
-  if (typeof showVuiToast === 'function') {
-    showVuiToast(message, type);
-    return;
+function initQuizCharts() {
+  // نمودار نتایج کوئیزها
+  const quizResultsChartEl = document.getElementById('quizResultsChart');
+  if (quizResultsChartEl) {
+    const quizResultsChart = new Chart(quizResultsChartEl, {
+      type: 'pie',
+      data: {
+        labels: ['پاسخ‌های درست', 'پاسخ‌های نادرست', 'بی‌پاسخ'],
+        datasets: [{
+          data: [68, 27, 5],
+          backgroundColor: [
+            'var(--vui-success)',
+            'var(--vui-danger)',
+            'var(--vui-warning)'
+          ],
+          borderColor: 'rgba(0, 0, 0, 0.1)',
+          borderWidth: 1,
+          hoverOffset: 5
+        }]
+      },
+      options: {
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `${context.label}: ${context.raw}%`;
+              }
+            }
+          }
+        }
+      }
+    });
   }
-  
-  // در غیر این صورت از آلرت استفاده می‌کنیم
-  alert(message);
 }
+
+/**
+ * نمودارهای اختصاصی کوئست‌ها
+ */
+function initQuestCharts() {
+  // نمودار پیشرفت کوئست‌ها
+  const questProgressChartEl = document.getElementById('questProgressChart');
+  if (questProgressChartEl) {
+    const questProgressChart = new Chart(questProgressChartEl, {
+      type: 'bar',
+      data: {
+        labels: ['کوئست 1', 'کوئست 2', 'کوئست 3', 'کوئست 4', 'کوئست 5'],
+        datasets: [{
+          label: 'پیشرفت',
+          data: [85, 62, 45, 93, 27],
+          ...createGradientConfig('info'),
+          borderWidth: 0,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100,
+            ticks: {
+              callback: function(value) {
+                return `${value}%`;
+              }
+            }
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `${context.dataset.label}: ${context.parsed.y}%`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+}
+
+// نمایش پیام‌های خطا در کنسول
+window.addEventListener('error', function(e) {
+  console.error('Chart.js Error:', e.message);
+});
+
+// افزودن متدها به window برای دسترسی مستقیم
+window.visionUiCharts = {
+  initChartDefaults: initChartDefaults,
+  initializeCharts: initializeCharts,
+  refreshCharts: refreshCharts,
+  applyChartFilter: applyChartFilter,
+  getChartById: getChartById,
+  createGradientConfig: createGradientConfig
+};
