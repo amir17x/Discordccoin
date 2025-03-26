@@ -1,6 +1,6 @@
 /**
- * Vision UI Dashboard - Notification Center
- * مرکز اعلان‌های متحرک با انتقال‌های ظریف
+ * Vision UI Dashboard - Notification Center (Simplified)
+ * مرکز اعلان‌های متحرک با انتقال‌های ظریف - نسخه ساده‌سازی شده و سازگار با مرورگرهای قدیمی‌تر
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -51,36 +51,6 @@ var sampleNotifications = [
     time: new Date(Date.now() - 2 * 60 * 60000), // 2 ساعت پیش
     read: true,
     category: 'system'
-  },
-  {
-    id: 5,
-    type: 'primary',
-    icon: 'bi bi-gem',
-    title: 'آیتم جدید اضافه شد',
-    description: 'آیتم جدید "کلید طلایی" به فروشگاه اضافه شد.',
-    time: new Date(Date.now() - 3 * 60 * 60000), // 3 ساعت پیش
-    read: false,
-    category: 'item'
-  },
-  {
-    id: 6,
-    type: 'info',
-    icon: 'bi bi-people',
-    title: 'کلن جدید ایجاد شد',
-    description: 'کلن جدید "شوالیه‌های سیاه" توسط user#5678 ایجاد شد.',
-    time: new Date(Date.now() - 5 * 60 * 60000), // 5 ساعت پیش
-    read: true,
-    category: 'clan'
-  },
-  {
-    id: 7,
-    type: 'success',
-    icon: 'bi bi-trophy',
-    title: 'دستاورد جدید اضافه شد',
-    description: 'دستاورد جدید "قهرمان ناشناس" به سیستم اضافه شد.',
-    time: new Date(Date.now() - 10 * 60 * 60000), // 10 ساعت پیش
-    read: true,
-    category: 'achievement'
   }
 ];
 
@@ -222,25 +192,26 @@ function renderNotifications() {
   
   // رندر اعلان‌ها
   for (var i = 0; i < filteredNotifications.length; i++) {
-    (function(notification, index) {
-      var notificationItem = document.createElement('li');
-      notificationItem.className = 'vui-notification-item ' + (notification.read ? '' : 'unread');
-      notificationItem.setAttribute('data-id', notification.id);
-      
-      // اعمال تاخیر به انیمیشن برای حالت آبشاری
-      notificationItem.style.animationDelay = (index * 0.05) + 's';
-      
-      notificationItem.innerHTML = '<div class="vui-notification-icon ' + notification.type + '">' +
-        '<i class="' + notification.icon + '"></i>' +
-        '</div>' +
-        '<div class="vui-notification-content">' +
-        '<h6 class="vui-notification-title">' + notification.title + '</h6>' +
-        '<p class="vui-notification-desc">' + notification.description + '</p>' +
-        '<span class="vui-notification-time">' + formatRelativeTime(notification.time) + '</span>' +
-        '</div>';
-      
-      notificationList.appendChild(notificationItem);
-    })(filteredNotifications[i], i);
+    var notification = filteredNotifications[i];
+    var index = i;
+    
+    var notificationItem = document.createElement('li');
+    notificationItem.className = 'vui-notification-item ' + (notification.read ? '' : 'unread');
+    notificationItem.setAttribute('data-id', notification.id);
+    
+    // اعمال تاخیر به انیمیشن برای حالت آبشاری
+    notificationItem.style.animationDelay = (index * 0.05) + 's';
+    
+    notificationItem.innerHTML = '<div class="vui-notification-icon ' + notification.type + '">' +
+      '<i class="' + notification.icon + '"></i>' +
+      '</div>' +
+      '<div class="vui-notification-content">' +
+      '<h6 class="vui-notification-title">' + notification.title + '</h6>' +
+      '<p class="vui-notification-desc">' + notification.description + '</p>' +
+      '<span class="vui-notification-time">' + formatRelativeTime(notification.time) + '</span>' +
+      '</div>';
+    
+    notificationList.appendChild(notificationItem);
   }
 }
 
@@ -253,20 +224,20 @@ function setupNotificationEvents() {
   // رویداد تب‌های فیلتر
   var tabs = notificationCenter.querySelectorAll('.vui-notification-tab');
   for (var i = 0; i < tabs.length; i++) {
-    (function(tab) {
-      tab.addEventListener('click', function() {
-        for (var j = 0; j < tabs.length; j++) {
-          tabs[j].classList.remove('active');
-        }
-        this.classList.add('active');
-        
-        // تنظیم فیلتر فعلی
-        activeFilter = this.getAttribute('data-filter');
-        
-        // رندر مجدد اعلان‌ها
-        renderNotifications();
-      });
-    })(tabs[i]);
+    var tab = tabs[i];
+    
+    tab.addEventListener('click', function() {
+      for (var j = 0; j < tabs.length; j++) {
+        tabs[j].classList.remove('active');
+      }
+      this.classList.add('active');
+      
+      // تنظیم فیلتر فعلی
+      activeFilter = this.getAttribute('data-filter');
+      
+      // رندر مجدد اعلان‌ها
+      renderNotifications();
+    });
   }
   
   // رویداد علامت‌گذاری همه به عنوان خوانده شده
@@ -299,27 +270,25 @@ function setupNotificationEvents() {
   // رویداد کلیک روی اعلان‌ها
   notificationList.addEventListener('click', function(e) {
     var notificationItem = e.target.closest('.vui-notification-item');
-    if (notificationItem) {
-      if (!notificationItem.classList.contains('empty-state')) {
-        var notificationId = parseInt(notificationItem.getAttribute('data-id'));
-        
-        // علامت‌گذاری به عنوان خوانده شده
-        for (var i = 0; i < notifications.length; i++) {
-          if (notifications[i].id === notificationId) {
-            notifications[i].read = true;
-            break;
-          }
+    if (notificationItem && !notificationItem.classList.contains('empty-state')) {
+      var notificationId = parseInt(notificationItem.getAttribute('data-id'));
+      
+      // علامت‌گذاری به عنوان خوانده شده
+      for (var i = 0; i < notifications.length; i++) {
+        if (notifications[i].id === notificationId) {
+          notifications[i].read = true;
+          break;
         }
-        
-        // رندر مجدد اعلان‌ها
-        renderNotifications();
-        
-        // به‌روزرسانی تعداد اعلان‌های خوانده نشده
-        updateUnreadCount();
-        
-        // به‌روزرسانی نشانگر اعلان‌ها
-        updateNotificationIndicator();
       }
+      
+      // رندر مجدد اعلان‌ها
+      renderNotifications();
+      
+      // به‌روزرسانی تعداد اعلان‌های خوانده نشده
+      updateUnreadCount();
+      
+      // به‌روزرسانی نشانگر اعلان‌ها
+      updateNotificationIndicator();
     }
   });
   
@@ -341,16 +310,12 @@ function setupNotificationEvents() {
   document.addEventListener('click', function(e) {
     var notificationButton = document.querySelector('.notification-button');
     
-    if (notificationCenter) {
-      if (notificationCenter.classList.contains('show')) {
-        if (!notificationCenter.contains(e.target)) {
-          if (notificationButton) {
-            if (!notificationButton.contains(e.target)) {
-              notificationCenter.classList.remove('show');
-            }
-          }
-        }
-      }
+    if (notificationCenter && 
+        notificationCenter.classList.contains('show') && 
+        !notificationCenter.contains(e.target) && 
+        notificationButton && 
+        !notificationButton.contains(e.target)) {
+      notificationCenter.classList.remove('show');
     }
   });
   
@@ -409,57 +374,6 @@ function updateNotificationIndicator() {
 }
 
 /**
- * ایجاد یک اعلان جدید
- * @param {Object} notification - اطلاعات اعلان
- */
-function addNotification(notification) {
-  // ایجاد شناسه منحصر به فرد
-  var maxId = 0;
-  for (var i = 0; i < notifications.length; i++) {
-    if (notifications[i].id > maxId) {
-      maxId = notifications[i].id;
-    }
-  }
-  var id = maxId + 1;
-  
-  // افزودن اعلان جدید به ابتدای آرایه
-  var newNotification = {
-    id: id,
-    time: new Date(),
-    read: false
-  };
-  
-  // کپی ویژگی‌های موجود در notification به newNotification
-  for (var key in notification) {
-    if (notification.hasOwnProperty(key)) {
-      newNotification[key] = notification[key];
-    }
-  }
-  
-  // افزودن به آرایه اعلان‌ها
-  notifications.unshift(newNotification);
-  
-  // رندر مجدد اعلان‌ها
-  renderNotifications();
-  
-  // به‌روزرسانی تعداد اعلان‌های خوانده نشده
-  updateUnreadCount();
-  
-  // به‌روزرسانی نشانگر اعلان‌ها
-  updateNotificationIndicator();
-  
-  // نمایش پاپ‌آپ اعلان
-  showNotificationPopup({
-    type: notification.type,
-    title: notification.title,
-    message: notification.description,
-    icon: notification.icon
-  });
-  
-  return id;
-}
-
-/**
  * نمایش پاپ‌آپ اعلان
  * @param {Object} options - تنظیمات پاپ‌آپ
  */
@@ -467,20 +381,25 @@ function showNotificationPopup(options) {
   // حذف پاپ‌آپ‌های قبلی
   var existingPopups = document.querySelectorAll('.vui-notification-popup');
   for (var i = 0; i < existingPopups.length; i++) {
-    (function(popup, index) {
-      // تنظیم موقعیت عمودی بالاتر برای پاپ‌آپ‌های موجود
-      popup.style.transform = 'translateY(-' + ((index + 1) * 70) + 'px)';
-      
-      // حذف بعد از مدتی
+    var popup = existingPopups[i];
+    var index = i;
+    
+    // تنظیم موقعیت عمودی بالاتر برای پاپ‌آپ‌های موجود
+    popup.style.transform = 'translateY(-' + ((index + 1) * 70) + 'px)';
+    
+    // حذف بعد از مدتی
+    (function(popupToRemove) {
       setTimeout(function() {
-        popup.style.opacity = '0';
-        popup.style.transform = 'translateX(120%)';
+        popupToRemove.style.opacity = '0';
+        popupToRemove.style.transform = 'translateX(120%)';
         
         setTimeout(function() {
-          popup.remove();
+          if (popupToRemove.parentNode) {
+            popupToRemove.parentNode.removeChild(popupToRemove);
+          }
         }, 300);
       }, 3000);
-    })(existingPopups[i], i);
+    })(popup);
   }
   
   // ایجاد پاپ‌آپ جدید
@@ -513,22 +432,24 @@ function showNotificationPopup(options) {
       popup.style.transform = 'translateX(120%)';
       
       setTimeout(function() {
-        popup.remove();
+        if (popup.parentNode) {
+          popup.parentNode.removeChild(popup);
+        }
       }, 300);
     });
   }
   
   // حذف خودکار بعد از 5 ثانیه
   setTimeout(function() {
-    if (popup) {
-      if (document.body.contains(popup)) {
-        popup.style.opacity = '0';
-        popup.style.transform = 'translateX(120%)';
-        
-        setTimeout(function() {
-          popup.remove();
-        }, 300);
-      }
+    if (popup && document.body.contains(popup)) {
+      popup.style.opacity = '0';
+      popup.style.transform = 'translateX(120%)';
+      
+      setTimeout(function() {
+        if (popup.parentNode) {
+          popup.parentNode.removeChild(popup);
+        }
+      }, 300);
     }
   }, 5000);
 }
@@ -562,15 +483,26 @@ function formatRelativeTime(date) {
 
 // API عمومی
 window.visionUiNotifications = {
-  addNotification: addNotification,
-  showNotificationPopup: showNotificationPopup,
-  markAllAsRead: function() {
+  addNotification: function(notification) {
+    return addNotification(notification);
+  },
+  markAsRead: function(id) {
     for (var i = 0; i < notifications.length; i++) {
-      notifications[i].read = true;
+      if (notifications[i].id === id) {
+        notifications[i].read = true;
+        renderNotifications();
+        updateUnreadCount();
+        updateNotificationIndicator();
+        return true;
+      }
     }
-    
+    return false;
+  },
+  clearAll: function() {
+    notifications = [];
     renderNotifications();
     updateUnreadCount();
     updateNotificationIndicator();
+    return true;
   }
 };

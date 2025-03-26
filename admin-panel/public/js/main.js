@@ -44,21 +44,23 @@ function setupSidebar() {
   const sidebarToggle = document.getElementById('sidebar-toggle');
   const wrapper = document.querySelector('.wrapper');
   
-  if (sidebarToggle && wrapper) {
-    sidebarToggle.addEventListener('click', function() {
-      wrapper.classList.toggle('sidebar-collapsed');
+  if (sidebarToggle) {
+    if (wrapper) {
+      sidebarToggle.addEventListener('click', function() {
+        wrapper.classList.toggle('sidebar-collapsed');
+        
+        // ذخیره وضعیت در localStorage
+        if (wrapper.classList.contains('sidebar-collapsed')) {
+          localStorage.setItem('sidebar-collapsed', 'true');
+        } else {
+          localStorage.setItem('sidebar-collapsed', 'false');
+        }
+      });
       
-      // ذخیره وضعیت در localStorage
-      if (wrapper.classList.contains('sidebar-collapsed')) {
-        localStorage.setItem('sidebar-collapsed', 'true');
-      } else {
-        localStorage.setItem('sidebar-collapsed', 'false');
+      // بررسی وضعیت ذخیره شده در localStorage
+      if (localStorage.getItem('sidebar-collapsed') === 'true') {
+        wrapper.classList.add('sidebar-collapsed');
       }
-    });
-    
-    // بررسی وضعیت ذخیره شده در localStorage
-    if (localStorage.getItem('sidebar-collapsed') === 'true') {
-      wrapper.classList.add('sidebar-collapsed');
     }
   }
   
@@ -87,16 +89,22 @@ function handleSidebarOnMobile(mediaQuery) {
     
     // دکمه‌ی نمایش منو در موبایل
     const sidebarToggle = document.getElementById('sidebar-toggle');
-    if (sidebarToggle && sidebar) {
-      sidebarToggle.addEventListener('click', function() {
-        sidebar.classList.toggle('show');
-      });
+    if (sidebarToggle) {
+      if (sidebar) {
+        sidebarToggle.addEventListener('click', function() {
+          sidebar.classList.toggle('show');
+        });
+      }
     }
     
     // بستن منو با کلیک خارج از منو
     document.addEventListener('click', function(event) {
-      if (sidebar && !sidebar.contains(event.target) && !event.target.closest('#sidebar-toggle')) {
-        sidebar.classList.remove('show');
+      if (sidebar) {
+        if (!sidebar.contains(event.target)) {
+          if (!event.target.closest('#sidebar-toggle')) {
+            sidebar.classList.remove('show');
+          }
+        }
       }
     });
   }

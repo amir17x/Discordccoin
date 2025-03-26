@@ -117,7 +117,7 @@
     
     <!-- اسکریپت‌های ویژن UI پیشرفته -->
     <script src="/js/theme-switcher-simplified.js"></script>
-    <script src="/js/notification-center.js"></script>
+    <script src="/js/notification-center-simplified.js"></script>
     <script src="/js/loading-animations-simplified.js"></script>
     <script src="/js/micro-interactions-simplified.js"></script>
     <script src="/js/sidebar-controller.js"></script>
@@ -128,48 +128,55 @@
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         // گرفتن تمام لینک‌های داخلی
-        const internalLinks = document.querySelectorAll('a[href^="/admin"]');
+        var internalLinks = document.querySelectorAll('a[href^="/admin"]');
         
         // اضافه کردن رویداد کلیک به همه لینک‌های داخلی
-        internalLinks.forEach(function(link) {
-            link.addEventListener('click', function(e) {
-                // جلوگیری از کلیک در صورتی که لینک خارجی یا دارای target باشد
-                if (link.getAttribute('target') === '_blank' || link.getAttribute('data-bypass-loader') === 'true') {
-                    return;
-                }
-                
-                // نمایش لودینگ قبل از رفتن به صفحه جدید
-                const event = new Event('pageTransition');
-                document.dispatchEvent(event);
-                
-                // تاخیر کوتاه برای اطمینان از نمایش لودینگ قبل از تغییر صفحه
-                setTimeout(function() {
-                    window.location.href = link.getAttribute('href');
-                }, 100);
-                
-                e.preventDefault();
-            });
-        });
+        for (var i = 0; i < internalLinks.length; i++) {
+            (function(link) {
+                link.addEventListener('click', function(e) {
+                    // جلوگیری از کلیک در صورتی که لینک خارجی یا دارای target باشد
+                    if (link.getAttribute('target') === '_blank' || link.getAttribute('data-bypass-loader') === 'true') {
+                        return;
+                    }
+                    
+                    // نمایش لودینگ قبل از رفتن به صفحه جدید
+                    var event = document.createEvent('Event');
+                    event.initEvent('pageTransition', true, true);
+                    document.dispatchEvent(event);
+                    
+                    // تاخیر کوتاه برای اطمینان از نمایش لودینگ قبل از تغییر صفحه
+                    setTimeout(function() {
+                        window.location.href = link.getAttribute('href');
+                    }, 100);
+                    
+                    e.preventDefault();
+                });
+            })(internalLinks[i]);
+        }
         
         // مدیریت منوهای ساید‌بار
-        const sidebarMenuItems = document.querySelectorAll('.nav-link');
-        sidebarMenuItems.forEach(function(item) {
-            item.addEventListener('click', function(e) {
-                if (item.getAttribute('href') === '#' || item.getAttribute('data-bs-toggle') === 'collapse') {
-                    return; // اجازه دادن به منوهای کشویی برای باز شدن
-                }
-                
-                // نمایش لودینگ برای لینک‌های واقعی
-                const event = new Event('pageTransition');
-                document.dispatchEvent(event);
-            });
-        });
+        var sidebarMenuItems = document.querySelectorAll('.nav-link');
+        for (var i = 0; i < sidebarMenuItems.length; i++) {
+            (function(item) {
+                item.addEventListener('click', function(e) {
+                    if (item.getAttribute('href') === '#' || item.getAttribute('data-bs-toggle') === 'collapse') {
+                        return; // اجازه دادن به منوهای کشویی برای باز شدن
+                    }
+                    
+                    // نمایش لودینگ برای لینک‌های واقعی
+                    var event = document.createEvent('Event');
+                    event.initEvent('pageTransition', true, true);
+                    document.dispatchEvent(event);
+                });
+            })(sidebarMenuItems[i]);
+        }
     });
     
     // بهبود روند ناوبری با دکمه‌های مرورگر
     window.addEventListener('beforeunload', function() {
         // نمایش لودینگ هنگام خروج از صفحه
-        const event = new Event('pageTransition');
+        var event = document.createEvent('Event');
+        event.initEvent('pageTransition', true, true);
         document.dispatchEvent(event);
     });
     </script>
