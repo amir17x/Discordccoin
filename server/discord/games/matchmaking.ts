@@ -577,13 +577,17 @@ async function startGame(
     
     switch (gameType) {
       case 'dice_duel':
-        // handleDiceDuel(interaction, 'match', player1Id, player2Id);
-        // فعلاً پیاده‌سازی نشده
+        // نمایش پیام بازی در حال توسعه
         isImplemented = false;
+        // این قسمت بعداً تکمیل خواهد شد
         break;
       case 'duel':
-        // این بازی هنوز پیاده‌سازی نشده است
-        isImplemented = false;
+        // بازی دوئل پیاده‌سازی شده است
+        isImplemented = true;
+        
+        // فراخوانی بازی دوئل
+        const { handleDuel } = await import('./duel');
+        await handleDuel(interaction, 'match', player2Id);
         break;
       case 'rps':
         // handleRockPaperScissors(interaction, 'match', player1Id, player2Id);

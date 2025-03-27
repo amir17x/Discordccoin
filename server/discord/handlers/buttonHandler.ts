@@ -443,6 +443,14 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       if (gameType === 'duel') {
         if (params[1] === 'start') {
           await showMatchmakingMenu(interaction, 'duel', '⚔️ دوئل');
+        } else if (params[1] === 'weapon') {
+          const gameAndWeapon = params[2] + ':' + params[3];
+          const { handleDuel } = await import('../games/duel');
+          await handleDuel(interaction, 'weapon', gameAndWeapon);
+        } else if (params[1] === 'attack') {
+          const gameId = params[2];
+          const { handleDuel } = await import('../games/duel');
+          await handleDuel(interaction, 'attack', gameId);
         }
         return;
       }
