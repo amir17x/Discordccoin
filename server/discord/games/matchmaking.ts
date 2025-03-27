@@ -585,9 +585,48 @@ async function startGame(
         // بازی دوئل پیاده‌سازی شده است
         isImplemented = true;
         
-        // فراخوانی بازی دوئل
-        const { handleDuel } = await import('./duel');
-        await handleDuel(interaction, 'match', player2Id);
+        try {
+          // فراخوانی بازی دوئل
+          const { handleDuel } = await import('./duel');
+          // ارسال یک پیام اولیه قبل از شروع بازی
+          await interaction.followUp({
+            content: `🎮 در حال آماده‌سازی بازی ${getGameDisplayName(gameType)} بین <@${player1Id}> و <@${player2Id}>...`,
+            ephemeral: true
+          });
+          
+          // راه‌اندازی بازی با کمی تأخیر برای جلوگیری از تداخل
+          setTimeout(async () => {
+            try {
+              await handleDuel(interaction, 'match', player2Id);
+            } catch (error) {
+              console.error(`Error starting duel game:`, error);
+              // در صورت خطا، بازگرداندن Ccoin به هر دو بازیکن
+              const player1 = await storage.getUserByDiscordId(player1Id);
+              const player2 = await storage.getUserByDiscordId(player2Id);
+              
+              if (player1) {
+                await storage.addToWallet(player1.id, getGameEntryFee(gameType), 'game_refund', { gameType: gameType });
+              }
+              
+              if (player2) {
+                await storage.addToWallet(player2.id, getGameEntryFee(gameType), 'game_refund', { gameType: gameType });
+              }
+              
+              try {
+                // تلاش برای ارسال پیام خطا
+                await interaction.followUp({
+                  content: `⚠️ خطایی در شروع بازی ${getGameDisplayName(gameType)} رخ داد. مبلغ ${getGameEntryFee(gameType)} Ccoin به کیف پول شما برگردانده شد. لطفاً دوباره تلاش کنید.`,
+                  ephemeral: true
+                });
+              } catch (innerError) {
+                console.error("Failed to send error message:", innerError);
+              }
+            }
+          }, 1000);
+        } catch (error) {
+          console.error(`Error preparing duel game:`, error);
+          isImplemented = false;
+        }
         break;
       case 'rps':
         // handleRockPaperScissors(interaction, 'match', player1Id, player2Id);

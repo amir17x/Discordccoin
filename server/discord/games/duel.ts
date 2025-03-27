@@ -11,6 +11,26 @@ import {
 import { storage } from '../../storage';
 import { gamesMenu } from '../components/gamesMenu';
 
+/**
+ * تابع کمکی برای پاسخ به تعامل با توجه به وضعیت آن
+ * @param interaction تعامل
+ * @param options گزینه‌های پاسخ
+ */
+async function safeReply(interaction: MessageComponentInteraction, options: any) {
+  try {
+    if (interaction.deferred) {
+      return await interaction.editReply(options);
+    } else if (interaction.replied) {
+      return await interaction.followUp(options);
+    } else {
+      return await interaction.reply(options);
+    }
+  } catch (error) {
+    console.error("Error responding to interaction:", error);
+    return null;
+  }
+}
+
 // تنظیمات بازی
 const BET_AMOUNT = 50; // مقدار سکه برای شرکت در بازی
 const REWARD_AMOUNT = 80; // مقدار جایزه برای برنده
@@ -51,6 +71,18 @@ function createGameId(player1: string, player2: string): string {
 }
 
 /**
+ * بررسی آیا کاربر در حال حاضر مشغول بازی است
+ * @param userId شناسه کاربر
+ * @returns true اگر کاربر در حال بازی باشد
+ */
+function isUserPlaying(userId: string): boolean {
+  return Array.from(activeGames.values()).some(
+    game => (game.player1 === userId || game.player2 === userId) && 
+    (Date.now() - game.lastAction < 5 * 60 * 1000) // زمان غیرفعال 5 دقیقه
+  );
+}
+
+/**
  * مدیریت بازی دوئل
  * @param interaction تعامل با کاربر
  * @param action عملیات مورد نظر
@@ -64,7 +96,7 @@ export async function handleDuel(
   try {
     const user = await storage.getUserByDiscordId(interaction.user.id);
     if (!user) {
-      await interaction.reply({
+      await safeReply(interaction, {
         content: '❌ حساب کاربری شما یافت نشد! لطفا از منوی اصلی شروع کنید.',
         ephemeral: true
       });
@@ -73,7 +105,7 @@ export async function handleDuel(
 
     // اطمینان از اینکه تعامل در یک سرور رخ داده است
     if (!interaction.guild) {
-      await interaction.reply({
+      await safeReply(interaction, {
         content: '❌ این بازی فقط در سرورها قابل انجام است.',
         ephemeral: true
       });
@@ -84,7 +116,7 @@ export async function handleDuel(
       case 'match':
         // شروع بازی بین دو بازیکن (از طریق matchmaking)
         if (!targetId) {
-          await interaction.reply({
+          await safeReply(interaction, {
             content: '❌ خطا: بازیکن دوم مشخص نشده است.',
             ephemeral: true
           });
@@ -110,29 +142,41 @@ export async function handleDuel(
         const player2 = await storage.getUserByDiscordId(targetId);
 
         if (!player2) {
-          await interaction.reply({
-            content: '❌ حساب کاربری بازیکن دوم یافت نشد!',
-            ephemeral: true
-          });
+          try {
+            await safeReply(interaction, {
+              content: '❌ حساب کاربری بازیکن دوم یافت نشد!',
+              ephemeral: true
+            });
+          } catch (error) {
+            console.error("Error responding to interaction:", error);
+          }
           activeGames.delete(gameId);
           return;
         }
 
         // بررسی موجودی کافی
         if (player1.wallet < BET_AMOUNT) {
-          await interaction.reply({
-            content: `❌ موجودی کیف پول شما کافی نیست! شما به ${BET_AMOUNT} Ccoin نیاز دارید.`,
-            ephemeral: true
-          });
+          try {
+            await safeReply(interaction, {
+              content: `❌ موجودی کیف پول شما کافی نیست! شما به ${BET_AMOUNT} Ccoin نیاز دارید.`,
+              ephemeral: true
+            });
+          } catch (error) {
+            console.error("Error responding to interaction:", error);
+          }
           activeGames.delete(gameId);
           return;
         }
 
         if (player2.wallet < BET_AMOUNT) {
-          await interaction.reply({
-            content: `❌ موجودی کیف پول بازیکن دوم کافی نیست!`,
-            ephemeral: true
-          });
+          try {
+            await safeReply(interaction, {
+              content: `❌ موجودی کیف پول بازیکن دوم کافی نیست!`,
+              ephemeral: true
+            });
+          } catch (error) {
+            console.error("Error responding to interaction:", error);
+          }
           activeGames.delete(gameId);
           return;
         }
@@ -186,8 +230,8 @@ export async function handleDuel(
 
         // ذخیره شناسه پیام برای بروزرسانی آن در ادامه
         const game = activeGames.get(gameId);
-        if (game) {
-          game.message = reply.id;
+        if (game && reply) {
+          game.message = typeof reply.id === 'string' ? reply.id : '';
           activeGames.set(gameId, game);
         }
         break;
@@ -195,7 +239,7 @@ export async function handleDuel(
       case 'weapon':
         // انتخاب اسلحه
         if (!targetId) {
-          await interaction.reply({
+          await safeReply(interaction, {
             content: '❌ خطا: شناسه بازی نامعتبر است.',
             ephemeral: true
           });
@@ -207,7 +251,7 @@ export async function handleDuel(
         const duelGame = activeGames.get(fullGameId);
 
         if (!duelGame) {
-          await interaction.reply({
+          await safeReply(interaction, {
             content: '❌ بازی یافت نشد یا به پایان رسیده است.',
             ephemeral: true
           });
@@ -219,7 +263,7 @@ export async function handleDuel(
         const isPlayer2 = interaction.user.id === duelGame.player2;
 
         if (!isPlayer1 && !isPlayer2) {
-          await interaction.reply({
+          await safeReply(interaction, {
             content: '❌ شما بازیکن این بازی نیستید!',
             ephemeral: true
           });
@@ -229,18 +273,18 @@ export async function handleDuel(
         // ثبت انتخاب اسلحه
         if (isPlayer1 && !duelGame.weapon1) {
           duelGame.weapon1 = weapon;
-          await interaction.reply({
+          await safeReply(interaction, {
             content: `✅ شما ${getWeaponName(weapon)} را انتخاب کردید. منتظر بازیکن دیگر باشید...`,
             ephemeral: true
           });
         } else if (isPlayer2 && !duelGame.weapon2) {
           duelGame.weapon2 = weapon;
-          await interaction.reply({
+          await safeReply(interaction, {
             content: `✅ شما ${getWeaponName(weapon)} را انتخاب کردید. منتظر بازیکن دیگر باشید...`,
             ephemeral: true
           });
         } else {
-          await interaction.reply({
+          await safeReply(interaction, {
             content: '❌ شما قبلاً اسلحه خود را انتخاب کرده‌اید!',
             ephemeral: true
           });
@@ -258,7 +302,7 @@ export async function handleDuel(
       case 'attack':
         // حمله در دور بازی
         if (!targetId) {
-          await interaction.reply({
+          await safeReply(interaction, {
             content: '❌ خطا: شناسه بازی نامعتبر است.',
             ephemeral: true
           });
@@ -267,7 +311,7 @@ export async function handleDuel(
 
         const attackGame = activeGames.get(targetId);
         if (!attackGame) {
-          await interaction.reply({
+          await safeReply(interaction, {
             content: '❌ بازی یافت نشد یا به پایان رسیده است.',
             ephemeral: true
           });
@@ -277,7 +321,7 @@ export async function handleDuel(
         // بررسی آیا کاربر نوبتش است
         const playerTurn = attackGame.round % 2 === 1 ? attackGame.player1 : attackGame.player2;
         if (interaction.user.id !== playerTurn) {
-          await interaction.reply({
+          await safeReply(interaction, {
             content: '❌ نوبت شما نیست!',
             ephemeral: true
           });
@@ -287,7 +331,7 @@ export async function handleDuel(
         // محاسبه آسیب
         const attackerWeapon = playerTurn === attackGame.player1 ? attackGame.weapon1 : attackGame.weapon2;
         if (!attackerWeapon) {
-          await interaction.reply({
+          await safeReply(interaction, {
             content: '❌ شما هنوز اسلحه انتخاب نکرده‌اید!',
             ephemeral: true
           });
@@ -307,7 +351,7 @@ export async function handleDuel(
         activeGames.set(targetId, attackGame);
 
         // نمایش پیام حمله
-        await interaction.reply({
+        await safeReply(interaction, {
           content: `⚔️ شما با ${getWeaponName(attackerWeapon)} حمله کردید و ${damage} آسیب وارد کردید!`,
           ephemeral: true
         });
@@ -321,14 +365,14 @@ export async function handleDuel(
         break;
 
       default:
-        await interaction.reply({
+        await safeReply(interaction, {
           content: '❌ عملیات نامعتبر!',
           ephemeral: true
         });
     }
   } catch (error) {
     console.error('Error in duel game:', error);
-    await interaction.reply({
+    await safeReply(interaction, {
       content: '❌ خطایی در اجرای بازی رخ داد! لطفاً دوباره تلاش کنید.',
       ephemeral: true
     });
@@ -410,11 +454,13 @@ async function startDuelRound(
       );
 
     // بروزرسانی پیام بازی
-    await interaction.message.edit({
-      content: `<@${game.player1}> <@${game.player2}>`,
-      embeds: [updatedEmbed],
-      components: [attackButtonRow]
-    });
+    if (interaction.message) {
+      await interaction.message.edit({
+        content: `<@${game.player1}> <@${game.player2}>`,
+        embeds: [updatedEmbed],
+        components: [attackButtonRow]
+      });
+    }
   } catch (error) {
     console.error('Error starting duel round:', error);
   }
@@ -462,11 +508,13 @@ async function updateDuelGame(
       );
 
     // بروزرسانی پیام بازی
-    await interaction.message.edit({
-      content: `<@${game.player1}> <@${game.player2}>`,
-      embeds: [updatedEmbed],
-      components: [attackButtonRow]
-    });
+    if (interaction.message) {
+      await interaction.message.edit({
+        content: `<@${game.player1}> <@${game.player2}>`,
+        embeds: [updatedEmbed],
+        components: [attackButtonRow]
+      });
+    }
   } catch (error) {
     console.error('Error updating duel game:', error);
   }
@@ -537,28 +585,35 @@ async function endDuelGame(
       );
 
     // بروزرسانی پیام بازی
-    await interaction.message.edit({
-      content: `<@${game.player1}> <@${game.player2}>`,
-      embeds: [finalEmbed],
-      components: [endButtonsRow]
-    });
+    if (interaction.message) {
+      await interaction.message.edit({
+        content: `<@${game.player1}> <@${game.player2}>`,
+        embeds: [finalEmbed],
+        components: [endButtonsRow]
+      });
+    }
 
     // حذف بازی از لیست بازی‌های فعال
-    activeGames.delete(gameId);
+    setTimeout(() => {
+      activeGames.delete(gameId);
+    }, 60000); // پاکسازی بعد از یک دقیقه
+
   } catch (error) {
     console.error('Error ending duel game:', error);
   }
 }
 
-// تنظیم تایمر برای بررسی و حذف بازی‌های غیرفعال
-setInterval(() => {
-  const now = Date.now();
-  const GAME_TIMEOUT = 300000; // 5 دقیقه
-  
+/**
+ * تمیز کردن بازی‌های قدیمی
+ * این تابع بازی‌های غیرفعال را از حافظه حذف می‌کند
+ */
+export function cleanupOldGames(): void {
+  const currentTime = Date.now();
+  const timeLimit = 30 * 60 * 1000; // 30 دقیقه
+
   activeGames.forEach((game, gameId) => {
-    // اگر بیش از 5 دقیقه از آخرین اقدام گذشته باشد
-    if (now - game.lastAction > GAME_TIMEOUT) {
+    if (currentTime - game.lastAction > timeLimit) {
       activeGames.delete(gameId);
     }
   });
-}, 60000); // بررسی هر یک دقیقه
+}
