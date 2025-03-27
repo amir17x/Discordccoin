@@ -7,8 +7,147 @@ import { ButtonInteraction,
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
   MessageComponentInteraction,
+  TextChannel,
   User } from 'discord.js';
 import { storage } from '../../storage';
+import { client } from '../client';
+import { BET_AMOUNT, PLAYER_HEALTH, WEAPON_DAMAGE } from './duel';
+
+/**
+ * شروع مستقیم بازی دوئل بدون استفاده از تعامل
+ * @param channelId شناسه کانال
+ * @param player1Id شناسه بازیکن اول
+ * @param player2Id شناسه بازیکن دوم
+ * @param gameId شناسه بازی
+ */
+async function startDuelGameDirectly(channelId: string, player1Id: string, player2Id: string, gameId: string): Promise<void> {
+  try {
+    // ذخیره اطلاعات بازی با استفاده از ماژول duel
+    const duelModule = await import('./duel');
+    
+    // استفاده از تابع جدید createDuelGameDirectly اگر موجود باشد
+    if (typeof duelModule.createDuelGameDirectly === 'function') {
+      const createdGameId = await duelModule.createDuelGameDirectly(player1Id, player2Id, channelId);
+      if (createdGameId) {
+        console.log(`Duel game created successfully with ID: ${createdGameId}`);
+        return;
+      }
+    }
+    
+    // اگر تابع createDuelGameDirectly موجود نبود یا با خطا مواجه شد، روش قبلی را استفاده می‌کنیم
+    console.log("Falling back to legacy duel game creation method");
+    
+    // دریافت کانال
+    const channel = await client.channels.fetch(channelId);
+    if (!channel || !(channel instanceof TextChannel)) {
+      console.error("Invalid channel for duel game");
+      return;
+    }
+
+    // دریافت اطلاعات کاربران
+    const player1 = await storage.getUserByDiscordId(player1Id);
+    const player2 = await storage.getUserByDiscordId(player2Id);
+
+    if (!player1 || !player2) {
+      console.error("Players not found for duel game");
+      return;
+    }
+
+    // بررسی موجودی کافی
+    if (player1.wallet < BET_AMOUNT || player2.wallet < BET_AMOUNT) {
+      console.error("Insufficient balance for duel game");
+      return;
+    }
+
+    // کسر هزینه از بازیکنان
+    await storage.addToWallet(player1.id, -BET_AMOUNT, 'game_bet', { gameType: 'duel' });
+    await storage.addToWallet(player2.id, -BET_AMOUNT, 'game_bet', { gameType: 'duel' });
+
+    // ایجاد رابط بازی
+    const gameEmbed = new EmbedBuilder()
+      .setColor('#F1C40F')
+      .setTitle('⚔️ بازی دوئل')
+      .setDescription(`بازی بین <@${player1Id}> و <@${player2Id}> شروع شد!`)
+      .addFields(
+        { name: '📊 وضعیت', value: 'انتخاب اسلحه توسط بازیکنان', inline: false },
+        { name: `❤️ <@${player1Id}>`, value: `${PLAYER_HEALTH} / ${PLAYER_HEALTH}`, inline: true },
+        { name: `❤️ <@${player2Id}>`, value: `${PLAYER_HEALTH} / ${PLAYER_HEALTH}`, inline: true },
+        { name: '🔄 دور', value: '1', inline: false }
+      )
+      .setFooter({ text: 'هر بازیکن باید یک اسلحه انتخاب کند!' })
+      .setTimestamp();
+
+    // دکمه‌های انتخاب اسلحه
+    const weaponButtonsRow = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId(`game:duel:weapon:${gameId}:sword`)
+          .setLabel('🗡️ شمشیر')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId(`game:duel:weapon:${gameId}:axe`)
+          .setLabel('🪓 تبر')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId(`game:duel:weapon:${gameId}:dagger`)
+          .setLabel('🔪 خنجر')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId(`game:duel:weapon:${gameId}:hammer`)
+          .setLabel('🔨 چکش')
+          .setStyle(ButtonStyle.Primary)
+      );
+
+    // ارسال پیام به کانال
+    const message = await channel.send({
+      content: `<@${player1Id}> <@${player2Id}>`,
+      embeds: [gameEmbed],
+      components: [weaponButtonsRow]
+    });
+
+    // ایجاد یک تعامل مصنوعی برای اتصال به handleDuel
+    const channelObj = await client.channels.fetch(channelId);
+    if (channelObj && channelObj instanceof TextChannel) {
+      try {
+        // استفاده از API مستقیم برای ذخیره بازی
+        const gameData = {
+          player1: player1Id,
+          player2: player2Id,
+          health1: PLAYER_HEALTH,
+          health2: PLAYER_HEALTH,
+          round: 1,
+          channel: channelId,
+          message: message.id,
+          timestamp: Date.now(),
+          lastAction: Date.now()
+        };
+        
+        // استفاده از API داخلی برای اضافه کردن بازی به لیست بازی‌های فعال
+        if (typeof duelModule.addActiveGame === 'function') {
+          duelModule.addActiveGame(gameId, gameData);
+        } else {
+          console.error("addActiveGame function is not available in duel module");
+          
+          // یک روش جایگزین برای ارسال به کانال در صورت عدم وجود تابع
+          channelObj.send({
+            content: `⚠️ خطا در شروع بازی دوئل بین <@${player1Id}> و <@${player2Id}>. لطفاً دوباره تلاش کنید.`
+          });
+          
+          // برگرداندن سکه‌ها به بازیکنان
+          if (player1 && player2) {
+            await storage.addToWallet(player1.id, BET_AMOUNT, 'game_refund', { gameType: 'duel' });
+            await storage.addToWallet(player2.id, BET_AMOUNT, 'game_refund', { gameType: 'duel' });
+          }
+        }
+      } catch (error) {
+        console.error("Failed to initialize duel game:", error);
+      }
+    }
+
+  } catch (error) {
+    console.error("Error in startDuelGameDirectly:", error);
+  }
+}
 
 /**
  * کلاس مدیریت رقیب‌یابی (Matchmaking) برای بازی‌های رقابتی
@@ -597,7 +736,15 @@ async function startGame(
           // راه‌اندازی بازی با کمی تأخیر برای جلوگیری از تداخل
           setTimeout(async () => {
             try {
-              await handleDuel(interaction, 'match', player2Id);
+              // به جای استفاده از تعامل اصلی، یک پیام جدید به کانال ارسال می‌کنیم
+              // و از آن برای راه‌اندازی بازی استفاده می‌کنیم
+              if (interaction.channel) {
+                // ایجاد یک بازی دوئل جدید بدون استفاده از تعامل قبلی
+                const gameId = `duel_${player1Id}_${player2Id}`;
+                await startDuelGameDirectly(interaction.channel.id, player1Id, player2Id, gameId);
+              } else {
+                console.error("Channel not found for starting the game");
+              }
             } catch (error) {
               console.error(`Error starting duel game:`, error);
               // در صورت خطا، بازگرداندن Ccoin به هر دو بازیکن

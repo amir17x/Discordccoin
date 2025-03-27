@@ -27,23 +27,47 @@ async function safeReply(interaction: MessageComponentInteraction, options: any)
     }
   } catch (error) {
     console.error("Error responding to interaction:", error);
+    
+    // در صورت خطا، تلاش برای ارسال پیام به کانال
+    try {
+      if (options.content && interaction.channelId) {
+        // سعی می‌کنیم پیام را در کانال ارسال کنیم
+        const channel = await interaction.client.channels.fetch(interaction.channelId);
+        if (channel && 'send' in channel) {
+          // فقط محتوای متنی را ارسال می‌کنیم
+          // اگر پیام خصوصی است، ذکر می‌کنیم که برای چه کسی است
+          const contentToSend = options.ephemeral 
+            ? `${interaction.user}: ${options.content} (پیام خصوصی)`
+            : options.content;
+            
+          return await channel.send({
+            content: contentToSend,
+            embeds: options.embeds,
+            components: options.components
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Failed to send fallback message to channel:', e);
+    }
+    
     return null;
   }
 }
 
 // تنظیمات بازی
-const BET_AMOUNT = 50; // مقدار سکه برای شرکت در بازی
-const REWARD_AMOUNT = 80; // مقدار جایزه برای برنده
-const WEAPON_DAMAGE = {
+export const BET_AMOUNT = 50; // مقدار سکه برای شرکت در بازی
+export const REWARD_AMOUNT = 80; // مقدار جایزه برای برنده
+export const WEAPON_DAMAGE = {
   sword: { min: 15, max: 25 }, // شمشیر
   axe: { min: 10, max: 30 }, // تبر
   dagger: { min: 5, max: 40 }, // خنجر
   hammer: { min: 20, max: 20 } // چکش
 };
-const PLAYER_HEALTH = 100; // سلامتی اولیه بازیکنان
+export const PLAYER_HEALTH = 100; // سلامتی اولیه بازیکنان
 
 // ذخیره‌سازی بازی‌های فعال
-interface DuelGame {
+export interface DuelGame {
   player1: string;
   player2: string;
   health1: number;
@@ -59,6 +83,15 @@ interface DuelGame {
 
 // ذخیره بازی‌های فعال
 const activeGames = new Collection<string, DuelGame>();
+
+/**
+ * افزودن بازی جدید به لیست بازی‌های فعال
+ * @param gameId شناسه بازی
+ * @param gameData اطلاعات بازی
+ */
+export function addActiveGame(gameId: string, gameData: DuelGame): void {
+  activeGames.set(gameId, gameData);
+}
 
 /**
  * ایجاد شناسه منحصر به فرد برای بازی
@@ -221,7 +254,7 @@ export async function handleDuel(
           );
 
         // ارسال پیام با تگ هر دو بازیکن
-        const reply = await interaction.reply({
+        const reply = await safeReply(interaction, {
           content: `<@${interaction.user.id}> <@${targetId}>`,
           embeds: [gameEmbed],
           components: [weaponButtonsRow],
@@ -231,7 +264,19 @@ export async function handleDuel(
         // ذخیره شناسه پیام برای بروزرسانی آن در ادامه
         const game = activeGames.get(gameId);
         if (game && reply) {
-          game.message = typeof reply.id === 'string' ? reply.id : '';
+          // بررسی نوع پاسخ و استخراج شناسه پیام
+          let messageId = '';
+          if ('id' in reply) {
+            messageId = reply.id;
+          } else if (reply instanceof Object) {
+            // سعی در استخراج شناسه پیام از شیء با متدهای مختلف
+            const message = reply as any;
+            if (message.id) {
+              messageId = message.id;
+            }
+          }
+          
+          game.message = messageId;
           activeGames.set(gameId, game);
         }
         break;
@@ -600,6 +645,117 @@ async function endDuelGame(
 
   } catch (error) {
     console.error('Error ending duel game:', error);
+  }
+}
+
+/**
+ * ایجاد مستقیم یک بازی دوئل بدون نیاز به interaction
+ * @param player1Id شناسه بازیکن اول
+ * @param player2Id شناسه بازیکن دوم
+ * @param channelId شناسه کانال
+ */
+export async function createDuelGameDirectly(
+  player1Id: string,
+  player2Id: string,
+  channelId: string
+): Promise<string | null> {
+  try {
+    // بررسی کاربران در دیتابیس
+    const player1 = await storage.getUserByDiscordId(player1Id);
+    const player2 = await storage.getUserByDiscordId(player2Id);
+    
+    if (!player1 || !player2) {
+      console.error('یکی از بازیکنان در دیتابیس پیدا نشد');
+      return null;
+    }
+    
+    // بررسی موجودی کافی
+    if (player1.wallet < BET_AMOUNT || player2.wallet < BET_AMOUNT) {
+      console.error('یکی از بازیکنان موجودی کافی ندارد');
+      return null;
+    }
+    
+    // ایجاد شناسه بازی
+    const gameId = createGameId(player1Id, player2Id);
+    
+    // اضافه کردن بازی به لیست بازی‌های فعال
+    activeGames.set(gameId, {
+      player1: player1Id,
+      player2: player2Id,
+      health1: PLAYER_HEALTH,
+      health2: PLAYER_HEALTH,
+      round: 1,
+      channel: channelId,
+      message: '',
+      timestamp: Date.now(),
+      lastAction: Date.now()
+    });
+    
+    // کسر هزینه از بازیکنان
+    await storage.addToWallet(player1.id, -BET_AMOUNT, 'game_bet', { gameType: 'duel' });
+    await storage.addToWallet(player2.id, -BET_AMOUNT, 'game_bet', { gameType: 'duel' });
+    
+    // سعی می‌کنیم پیام را در کانال ارسال کنیم
+    const client = (await import('../client')).client;
+    const channel = await client.channels.fetch(channelId);
+    
+    if (channel && 'send' in channel) {
+      // ایجاد رابط بازی
+      const gameEmbed = new EmbedBuilder()
+        .setColor('#F1C40F')
+        .setTitle('⚔️ بازی دوئل')
+        .setDescription(`بازی بین <@${player1Id}> و <@${player2Id}> شروع شد!`)
+        .addFields(
+          { name: '📊 وضعیت', value: 'انتخاب اسلحه توسط بازیکنان', inline: false },
+          { name: `❤️ <@${player1Id}>`, value: `${PLAYER_HEALTH} / ${PLAYER_HEALTH}`, inline: true },
+          { name: `❤️ <@${player2Id}>`, value: `${PLAYER_HEALTH} / ${PLAYER_HEALTH}`, inline: true },
+          { name: '🔄 دور', value: '1', inline: false }
+        )
+        .setFooter({ text: 'هر بازیکن باید یک اسلحه انتخاب کند!' })
+        .setTimestamp();
+
+      // دکمه‌های انتخاب اسلحه
+      const weaponButtonsRow = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId(`game:duel:weapon:${gameId}:sword`)
+            .setLabel('🗡️ شمشیر')
+            .setStyle(ButtonStyle.Primary),
+          new ButtonBuilder()
+            .setCustomId(`game:duel:weapon:${gameId}:axe`)
+            .setLabel('🪓 تبر')
+            .setStyle(ButtonStyle.Primary),
+          new ButtonBuilder()
+            .setCustomId(`game:duel:weapon:${gameId}:dagger`)
+            .setLabel('🔪 خنجر')
+            .setStyle(ButtonStyle.Primary),
+          new ButtonBuilder()
+            .setCustomId(`game:duel:weapon:${gameId}:hammer`)
+            .setLabel('🔨 چکش')
+            .setStyle(ButtonStyle.Primary)
+        );
+        
+      // ارسال پیام
+      const message = await channel.send({
+        content: `<@${player1Id}> <@${player2Id}> لطفاً یک اسلحه انتخاب کنید!`,
+        embeds: [gameEmbed],
+        components: [weaponButtonsRow]
+      });
+      
+      // ذخیره شناسه پیام
+      const game = activeGames.get(gameId);
+      if (game && message) {
+        game.message = message.id;
+        activeGames.set(gameId, game);
+      }
+      
+      return gameId;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error in createDuelGameDirectly:', error);
+    return null;
   }
 }
 
