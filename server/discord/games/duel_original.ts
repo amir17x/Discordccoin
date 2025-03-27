@@ -59,11 +59,10 @@ async function safeReply(interaction: MessageComponentInteraction, options: any)
 export const BET_AMOUNT = 50; // مقدار سکه برای شرکت در بازی
 export const REWARD_AMOUNT = 80; // مقدار جایزه برای برنده
 export const WEAPON_DAMAGE = {
-  sword: { min: 15, max: 25, critical: 15 }, // شمشیر - تعادل خوب بین آسیب و شانس
-  axe: { min: 10, max: 30, critical: 20 }, // تبر - آسیب متغیر با شانس انتقادی بالا
-  dagger: { min: 5, max: 40, critical: 25 }, // خنجر - آسیب غیرقابل پیش‌بینی
-  hammer: { min: 20, max: 20, critical: 30 }, // چکش - آسیب ثابت با شانس انتقادی زیاد
-  spear: { min: 18, max: 22, critical: 10 } // نیزه - آسیب متعادل با شانس انتقادی کم
+  sword: { min: 15, max: 25 }, // شمشیر
+  axe: { min: 10, max: 30 }, // تبر
+  dagger: { min: 5, max: 40 }, // خنجر
+  hammer: { min: 20, max: 20 } // چکش
 };
 export const PLAYER_HEALTH = 100; // سلامتی اولیه بازیکنان
 
@@ -83,21 +82,9 @@ function createHealthBar(current: number, max: number = PLAYER_HEALTH): string {
   const emptyBlocks = 10 - filledBlocks;
   
   // ساخت نوار پیشرفت با بلوک‌های پر و خالی
-  // رنگ نوار بر اساس درصد سلامتی
-  let colorBar = '';
+  const bar = '█'.repeat(filledBlocks) + '▒'.repeat(emptyBlocks);
   
-  if (percent > 70) {
-    // سبز برای سلامتی بالا
-    colorBar = '🟩'.repeat(filledBlocks) + '⬜'.repeat(emptyBlocks);
-  } else if (percent > 30) {
-    // زرد برای سلامتی متوسط
-    colorBar = '🟨'.repeat(filledBlocks) + '⬜'.repeat(emptyBlocks);
-  } else {
-    // قرمز برای سلامتی پایین
-    colorBar = '🟥'.repeat(filledBlocks) + '⬜'.repeat(emptyBlocks);
-  }
-  
-  return `${colorBar} ${percent}%`;
+  return `${bar} ${percent}%`;
 }
 
 // ذخیره‌سازی بازی‌های فعال
@@ -514,8 +501,8 @@ async function startDuelRound(
       .setDescription(`بازی بین <@${game.player1}> و <@${game.player2}> در جریان است!`)
       .addFields(
         { name: '📊 وضعیت', value: `نوبت <@${firstPlayer}> برای حمله`, inline: false },
-        { name: `❤️ ****<@${game.player1}>****`, value: createHealthBar(game.health1), inline: true },
-        { name: `❤️ ****<@${game.player2}>****`, value: createHealthBar(game.health2), inline: true },
+        { name: `❤️ **`<@${game.player1}>`**`, value: createHealthBar(game.health1), inline: true },
+        { name: `❤️ **`<@${game.player2}>`**`, value: createHealthBar(game.health2), inline: true },
         { name: '🔄 دور', value: `${game.round}`, inline: false },
         { name: `🗡️ <@${game.player1}>`, value: `${getWeaponName(game.weapon1 || 'نامشخص')}`, inline: true },
         { name: `🗡️ <@${game.player2}>`, value: `${getWeaponName(game.weapon2 || 'نامشخص')}`, inline: true }
@@ -568,8 +555,8 @@ async function updateDuelGame(
       .setDescription(`بازی بین <@${game.player1}> و <@${game.player2}> در جریان است!`)
       .addFields(
         { name: '📊 وضعیت', value: `نوبت <@${nextPlayer}> برای حمله`, inline: false },
-        { name: `❤️ ****<@${game.player1}>****`, value: createHealthBar(game.health1), inline: true },
-        { name: `❤️ ****<@${game.player2}>****`, value: createHealthBar(game.health2), inline: true },
+        { name: `❤️ **`<@${game.player1}>`**`, value: createHealthBar(game.health1), inline: true },
+        { name: `❤️ **`<@${game.player2}>`**`, value: createHealthBar(game.health2), inline: true },
         { name: '🔄 دور', value: `${game.round}`, inline: false },
         { name: `🗡️ <@${game.player1}>`, value: `${getWeaponName(game.weapon1 || 'نامشخص')}`, inline: true },
         { name: `🗡️ <@${game.player2}>`, value: `${getWeaponName(game.weapon2 || 'نامشخص')}`, inline: true }
@@ -647,8 +634,8 @@ async function endDuelGame(
       .setDescription(`🏆 **بازی به پایان رسید!** 🏆\n\n**<@${winner}>** با مهارت و شجاعت خود در مبارزه پیروز شد!`)
       .addFields(
         { name: '🪙 جایزه', value: `**<@${winner}>** مبلغ **${totalReward} Ccoin** را به عنوان جایزه دریافت کرد!`, inline: false },
-        { name: `❤️ ****<@${game.player1}>****`, value: createHealthBar(game.health1), inline: true },
-        { name: `❤️ ****<@${game.player2}>****`, value: createHealthBar(game.health2), inline: true },
+        { name: `❤️ **`<@${game.player1}>`**`, value: createHealthBar(game.health1), inline: true },
+        { name: `❤️ **`<@${game.player2}>`**`, value: createHealthBar(game.health2), inline: true },
         { name: '🔄 دور', value: `${game.round}`, inline: false }
       )
       .setFooter({ text: 'برای بازی جدید، از منوی بازی‌ها استفاده کنید' })

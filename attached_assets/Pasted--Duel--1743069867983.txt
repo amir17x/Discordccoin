@@ -1,0 +1,296 @@
+خیلی خوبه که بالاخره بازی اجرا شد! 🎉 حالا که بازی Duel تونستی تست کنی و به یه سری مشکلات و بهبودهای بصری اشاره کردی، من این تغییرات رو برات اعمال می‌کنم و مستند رو به‌روز می‌کنم. بیایم قدم به قدم پیش بریم:
+
+1. **اضافه کردن هاله مشکی دور اسم بازیکن‌ها:** من نمی‌تونم مستقیماً تصویر رو ویرایش کنم، چون فقط می‌تونم تصاویری که خودم ساختم رو ویرایش کنم. اما می‌تونم یه توضیح دقیق بدم که چطور این کار رو توی کد ربات Ccoin پیاده‌سازی کنی تا اسم بازیکن‌ها با هاله مشکی نمایش داده بشه.
+
+2. **تغییر نوار خون به سبک نوار پیشرفتی که فرستادی:** من یه کد جدید برای نمایش نوار خون به سبک نوار پیشرفتی که فرستادی (با درصد و ستاره‌ها) اضافه می‌کنم.
+
+3. **پیام مرگ شیک و خفن با ایموجی‌ها:** یه پیام جذاب برای وقتی که یه بازیکن می‌میره اضافه می‌کنم و یه مکانیزم می‌ذارم که پیام‌ها اسپم نشن و فقط یه بار نمایش داده بشن.
+
+---
+
+### 🎮 **مستند به‌روز شده بازی Duel برای ربات Ccoin**
+
+#### 🌟 **1. تغییرات درخواستی**
+##### **1.1. هاله مشکی دور اسم بازیکن‌ها**
+برای اینکه اسم بازیکن‌ها با هاله مشکی نمایش داده بشه، می‌تونیم از **Embed** توی دیسکورد استفاده کنیم و با یه ترفند متنی، اسم‌ها رو با کاراکترهای خاص (مثل سایه) نمایش بدیم. این کار باعث می‌شه اسم‌ها یه افکت هاله‌مانند داشته باشن.
+
+##### **1.2. نوار خون به سبک نوار پیشرفت**
+نوار خون فعلی (100/100) رو به یه نوار پیشرفتی تغییر می‌دیم که شبیه تصویر ارسالی باشه. مثلاً:  
+`[██████████ 100%]`
+
+##### **1.3. پیام مرگ شیک و خفن**
+برای جلوگیری از اسپم شدن پیام‌ها، یه مکانیزم اضافه می‌کنیم که وقتی یه بازیکن می‌میره، فقط یه بار پیام مرگ نمایش داده بشه. پیام مرگ هم خیلی شیک و با ایموجی‌های خفن طراحی می‌شه.
+
+---
+
+#### ⚔️ **2. کد به‌روز شده برای ربات Ccoin**
+
+این کد شامل تغییرات درخواستی (هاله مشکی، نوار خون جدید، پیام مرگ) و رفع مشکل اسپم شدن پیام‌هاست. من کد قبلی رو بهبود می‌دم و این ویژگی‌ها رو اضافه می‌کنم.
+
+```python
+import discord
+from discord.ext import commands
+import asyncio
+import random
+
+# تنظیم ربات
+intents = discord.Intents.default()
+intents.message_content = True
+bot = commands.Bot(command_prefix='/', intents=intents)
+
+# دیتابیس ساده برای سکه‌ها و HP
+user_coins = {
+    123456789: 50,  # gamerx123 (فرضی)
+    987654321: 80   # اکانت دوم (فرضی)
+}
+
+# تنظیمات بازی Duel
+DUEL_COST = 50
+DUEL_REWARD = 80
+MIN_PLAYERS = 2
+duel_queue = []
+active_duels = {}
+
+# تابع برای ساخت نوار پیشرفت HP
+def create_health_bar(hp, max_hp=100):
+    percentage = int((hp / max_hp) * 100)
+    filled = int(percentage / 10)
+    empty = 10 - filled
+    bar = "█" * filled + "▒" * empty
+    return f"[{bar} {percentage}%]"
+
+@bot.event
+async def on_ready():
+    print(f'ربات {bot.user} آماده‌ست! 🚀')
+
+# دستور شروع دوئل
+@bot.command()
+async def duel(ctx):
+    user_id = ctx.author.id
+
+    # چک کردن سکه‌ها
+    if user_id not in user_coins or user_coins[user_id] < DUEL_COST:
+        await ctx.send(f'💸 سکه کافی نیست! حداقل {DUEL_COST} Coin لازمه. موجودی شما: {user_coins.get(user_id, 0)}')
+        return
+
+    # اضافه کردن به صف
+    if ctx.author not in duel_queue:
+        duel_queue.append(ctx.author)
+        await ctx.send(f'{ctx.author.mention} به صف Duel اضافه شد! 🎉 تعداد فعلی: {len(duel_queue)} نفر')
+
+    # چک کردن تعداد بازیکن‌ها
+    if len(duel_queue) >= MIN_PLAYERS:
+        player1, player2 = duel_queue[:2]
+        duel_queue.clear()
+
+        # کسر سکه‌ها
+        user_coins[player1.id] -= DUEL_COST
+        user_coins[player2.id] -= DUEL_COST
+
+        await ctx.send(f'🎉 حریف پیدا شد! {player1.mention} در مقابل {player2.mention} - آماده باشین!')
+        await start_duel(ctx, player1, player2)
+    else:
+        await ctx.send(f'در انتظار بازیکن دوم... ⏳ تعداد فعلی: {len(duel_queue)} نفر')
+
+# تابع شروع دوئل
+async def start_duel(ctx, player1, player2):
+    # تنظیمات اولیه بازی
+    duel_id = f"{player1.id}-{player2.id}"
+    active_duels[duel_id] = {
+        "player1": player1, "player2": player2,
+        "p1_hp": 100, "p2_hp": 100,
+        "p1_choice": None, "p2_choice": None,
+        "round": 0,
+        "p1_dead_message_sent": False,  # برای جلوگیری از اسپم
+        "p2_dead_message_sent": False
+    }
+
+    # حلقه گیم‌پلی (تا وقتی یکی بمیره)
+    while active_duels[duel_id]["p1_hp"] > 0 and active_duels[duel_id]["p2_hp"] > 0:
+        active_duels[duel_id]["round"] += 1
+        await ctx.send(f'🎮 راند {active_duels[duel_id]["round"]} شروع شد! انتخاب خودتون رو توی DM بفرستین.')
+
+        # نمایش HP با نوار پیشرفت
+        embed = discord.Embed(title="⚔️ وضعیت بازی Duel", color=discord.Color.red())
+        embed.add_field(
+            name=f"🌟 {player1.name} 🌟",
+            value=create_health_bar(active_duels[duel_id]["p1_hp"]),
+            inline=True
+        )
+        embed.add_field(
+            name=f"🌟 {player2.name} 🌟",
+            value=create_health_bar(active_duels[duel_id]["p2_hp"]),
+            inline=True
+        )
+        await ctx.send(embed=embed)
+
+        # ارسال گزینه‌ها به هر بازیکن
+        buttons = [
+            discord.ui.Button(label="حمله 🛡️", style=discord.ButtonStyle.red, custom_id="attack"),
+            discord.ui.Button(label="دفاع 🛡️🛡️", style=discord.ButtonStyle.green, custom_id="defend"),
+            discord.ui.Button(label="ضدحمله 🌟", style=discord.ButtonStyle.blurple, custom_id="counter")
+        ]
+        view = discord.ui.View()
+        for button in buttons:
+            view.add_item(button)
+
+        await player1.send("انتخاب کن:", view=view)
+        await player2.send("انتخاب کن:", view=view)
+
+        # انتظار برای انتخاب (10 ثانیه)
+        try:
+            await asyncio.sleep(10)
+            if not active_duels[duel_id]["p1_choice"] or not active_duels[duel_id]["p2_choice"]:
+                await ctx.send("⏳ یکی از بازیکن‌ها انتخاب نکرد! بازی لغو شد.")
+                del active_duels[duel_id]
+                return
+        except asyncio.TimeoutError:
+            await ctx.send("⏳ زمان انتخاب تموم شد! بازی لغو شد.")
+            del active_duels[duel_id]
+            return
+
+        # محاسبه نتیجه راند
+        p1_choice = active_duels[duel_id]["p1_choice"]
+        p2_choice = active_duels[duel_id]["p2_choice"]
+        damage = 0
+
+        if p1_choice == "attack":
+            if p2_choice == "defend":
+                damage = random.randint(5, 10)
+                active_duels[duel_id]["p2_hp"] -= damage
+                await ctx.send(f'🛡️ {player1.mention} حمله کرد! {player2.mention} دفاع کرد و {damage} خسارت گرفت.')
+            elif p2_choice == "counter":
+                damage = random.randint(15, 30)
+                active_duels[duel_id]["p1_hp"] -= damage
+                await ctx.send(f'⚡ {player2.mention} ضدحمله کرد! {player1.mention} {damage} خسارت گرفت.')
+            else:
+                damage = random.randint(10, 20)
+                active_duels[duel_id]["p2_hp"] -= damage
+                await ctx.send(f'🛡️ {player1.mention} حمله کرد! {player2.mention} {damage} خسارت گرفت.')
+
+        if p2_choice == "attack":
+            if p1_choice == "defend":
+                damage = random.randint(5, 10)
+                active_duels[duel_id]["p1_hp"] -= damage
+                await ctx.send(f'🛡️ {player2.mention} حمله کرد! {player1.mention} دفاع کرد و {damage} خسارت گرفت.')
+            elif p1_choice == "counter":
+                damage = random.randint(15, 30)
+                active_duels[duel_id]["p2_hp"] -= damage
+                await ctx.send(f'⚡ {player1.mention} ضدحمله کرد! {player2.mention} {damage} خسارت گرفت.')
+            else:
+                damage = random.randint(10, 20)
+                active_duels[duel_id]["p1_hp"] -= damage
+                await ctx.send(f'🛡️ {player2.mention} حمله کرد! {player1.mention} {damage} خسارت گرفت.')
+
+        # چک کردن مرگ بازیکن‌ها
+        if active_duels[duel_id]["p1_hp"] <= 0 and not active_duels[duel_id]["p1_dead_message_sent"]:
+            await ctx.send(f'💀 {player1.mention} تو مردی! ⚰️ خیلی تلاش کردی، اما حریفت قوی‌تر بود! 🕊️ بهتره دفعه بعد بیشتر تمرین کنی! ⚔️')
+            active_duels[duel_id]["p1_dead_message_sent"] = True
+        if active_duels[duel_id]["p2_hp"] <= 0 and not active_duels[duel_id]["p2_dead_message_sent"]:
+            await ctx.send(f'💀 {player2.mention} تو مردی! ⚰️ خیلی تلاش کردی، اما حریفت قوی‌تر بود! 🕊️ بهتره دفعه بعد بیشتر تمرین کنی! ⚔️')
+            active_duels[duel_id]["p2_dead_message_sent"] = True
+
+        # ریست انتخاب‌ها برای راند بعدی
+        active_duels[duel_id]["p1_choice"] = None
+        active_duels[duel_id]["p2_choice"] = None
+
+    # پایان بازی و اعلام برنده
+    p1_hp = max(active_duels[duel_id]["p1_hp"], 0)
+    p2_hp = max(active_duels[duel_id]["p2_hp"], 0)
+    if p1_hp > p2_hp:
+        winner = player1
+        loser = player2
+        user_coins[player1.id] += DUEL_REWARD
+    else:
+        winner = player2
+        loser = player1
+        user_coins[player2.id] += DUEL_REWARD
+
+    embed = discord.Embed(title="🏆 نتیجه بازی Duel", color=discord.Color.gold())
+    embed.add_field(
+        name=f"🌟 {winner.name} 🌟",
+        value=create_health_bar(max(p1_hp if winner == player1 else p2_hp, 0)),
+        inline=True
+    )
+    embed.add_field(
+        name=f"💀 {loser.name} 💀",
+        value=create_health_bar(max(p2_hp if loser == player2 else p1_hp, 0)),
+        inline=True
+    )
+    embed.set_footer(text=f"جایزه برنده: {DUEL_REWARD} Coin 💰")
+    await ctx.send(embed=embed)
+    await ctx.send(f'🎉 {winner.mention} برنده شد! جایزه: {DUEL_REWARD} Coin 💰')
+    del active_duels[duel_id]
+
+# مدیریت دکمه‌ها
+@bot.event
+async def on_interaction(interaction):
+    if interaction.type != discord.InteractionType.component:
+        return
+
+    duel_id = None
+    for key, duel in active_duels.items():
+        if interaction.user in (duel["player1"], duel["player2"]):
+            duel_id = key
+            break
+
+    if not duel_id:
+        return
+
+    if interaction.user == active_duels[duel_id]["player1"]:
+        active_duels[duel_id]["p1_choice"] = interaction.data["custom_id"]
+    else:
+        active_duels[duel_id]["p2_choice"] = interaction.data["custom_id"]
+
+    await interaction.response.send_message("انتخاب شما ثبت شد! ⏳ منتظر حریف باشین.", ephemeral=True)
+
+# اجرا کردن ربات
+bot.run('YOUR_BOT_TOKEN')  # توکن ربات رو اینجا بذارین
+```
+
+---
+
+#### 🛠️ **3. توضیح تغییرات در کد**
+1. **هاله مشکی دور اسم‌ها:**  
+   از **Embed** استفاده کردم و با کاراکترهای خاص (🌟) دور اسم‌ها یه افکت سایه‌مانند ایجاد کردم. برای هاله مشکی واقعی، می‌تونی از کتابخونه‌ای مثل `Pillow` برای تولید تصویر اسم‌ها با هاله مشکی استفاده کنی و اون تصویر رو توی Embed بفرستی. اما توی این کد، با ایموجی‌ها و Embed یه افکت مشابه ساختم.
+
+2. **نوار خون جدید:**  
+   تابع `create_health_bar` رو اضافه کردم که یه نوار پیشرفت مثل `[██████████ 100%]` می‌سازه. این نوار با درصد HP به‌روزرسانی می‌شه و خیلی شیک و کاربرپسنده.
+
+3. **پیام مرگ شیک و خفن:**  
+   پیام مرگ رو این‌جوری طراحی کردم:  
+   `💀 {player} تو مردی! ⚰️ خیلی تلاش کردی، اما حریفت قوی‌تر بود! 🕊️ بهتره دفعه بعد بیشتر تمرین کنی! ⚔️`  
+   برای جلوگیری از اسپم، دو متغیر `p1_dead_message_sent` و `p2_dead_message_sent` اضافه کردم که مطمئن می‌شم پیام مرگ فقط یه بار نمایش داده بشه.
+
+---
+
+#### 🎨 **4. نتیجه بصری**
+- **نمایش HP:**  
+  ```
+  ⚔️ وضعیت بازی Duel
+  🌟 gamerx123 🌟: [██████████ 100%]
+  🌟 y6isx 🌟: [█████ 50%]
+  ```
+- **پیام مرگ:**  
+  `💀 @gamerx123 تو مردی! ⚰️ خیلی تلاش کردی، اما حریفت قوی‌تر بود! 🕊️ بهتره دفعه بعد بیشتر تمرین کنی! ⚔️`
+
+---
+
+#### 📋 **5. پیشنهادات برای بهبود بیشتر**
+1. **اضافه کردن تصویر برای هاله مشکی:**  
+   اگر بخوای هاله مشکی واقعی دور اسم‌ها داشته باشی، می‌تونی از کتابخونه `Pillow` توی پایتون استفاده کنی تا اسم بازیکن‌ها رو روی یه تصویر با هاله مشکی رندر کنی و توی Embed بفرستی.
+
+2. **انیمیشن برای نوار خون:**  
+   می‌تونی با ارسال پیام‌های متوالی و به‌روزرسانی نوار خون، یه افکت انیمیشنی بسازی که HP به‌تدریج کم بشه.
+
+3. **پیام‌های متنوع مرگ:**  
+   چند پیام مرگ مختلف اضافه کن تا بازی هیجان‌انگیزتر بشه. مثلاً:  
+   - `☠️ {player} نابود شدی! ⚡ حریفت تو رو به خاک و خون کشید! 💥`  
+   - `🪦 {player} به آخر خط رسیدی! 🕸️ دفعه بعد بیشتر مراقب باش! 🛡️`
+
+---
+
+#### 🎉 **6. نتیجه‌گیری**
+با این تغییرات، بازی Duel حالا خیلی شیک‌تر و کاربرپسندتر شده! 😎 نوار خون به سبک نوار پیشرفت نمایش داده می‌شه، اسم‌ها با افکت هاله‌مانند توی Embed نشون داده می‌شن، و پیام مرگ فقط یه بار نمایش داده می‌شه تا اسپم نشه. می‌تونی این کد رو توی ربات Ccoin پیاده‌سازی کنی و یه تجربه خفن برای کاربرا بسازی! 🚀
+
+اگر باز هم بخوای تغییراتی بدم (مثلاً افکت‌های بیشتری اضافه کنم یا کد رو پیشرفته‌تر کنم)، بگو تا برات انجام بدم! 🌟
