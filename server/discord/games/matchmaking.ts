@@ -571,25 +571,58 @@ async function startGame(
   // بر اساس نوع بازی، تابع مربوطه را صدا می‌زنیم
   // این بخش در آینده با پیاده‌سازی کامل همه بازی‌ها تکمیل می‌شود
   
-  // فعلاً به صورت پیش‌فرض یک پیام نمایش می‌دهیم
   try {
-    await interaction.followUp({
-      content: `🎮 بازی ${getGameDisplayName(gameType)} بین <@${player1Id}> و <@${player2Id}> آغاز شد! به زودی نتیجه اعلام خواهد شد.`,
-      ephemeral: true
-    });
+    // بررسی اینکه آیا بازی پیاده‌سازی شده است یا خیر
+    let isImplemented = true;
     
-    // در اینجا بر اساس نوع بازی، تابع مربوطه را صدا می‌زنیم
-    // این بخش با پیاده‌سازی کامل بازی‌ها تکمیل می‌شود
     switch (gameType) {
       case 'dice_duel':
         // handleDiceDuel(interaction, 'match', player1Id, player2Id);
+        // فعلاً پیاده‌سازی نشده
+        isImplemented = false;
+        break;
+      case 'duel':
+        // این بازی هنوز پیاده‌سازی نشده است
+        isImplemented = false;
         break;
       case 'rps':
         // handleRockPaperScissors(interaction, 'match', player1Id, player2Id);
+        // فعلاً پیاده‌سازی نشده
+        isImplemented = false;
         break;
       // سایر بازی‌ها...
       default:
+        isImplemented = false;
         console.log(`Game type ${gameType} is not fully implemented yet`);
+    }
+    
+    if (isImplemented) {
+      // اگر بازی پیاده‌سازی شده بود، پیام شروع بازی نمایش داده می‌شود
+      await interaction.followUp({
+        content: `🎮 بازی ${getGameDisplayName(gameType)} بین <@${player1Id}> و <@${player2Id}> آغاز شد! به زودی نتیجه اعلام خواهد شد.`,
+        ephemeral: true
+      });
+    } else {
+      // اگر بازی هنوز پیاده‌سازی نشده بود، پیام خطا نمایش داده می‌شود
+      console.log(`Game type ${gameType} is not fully implemented yet`);
+      
+      // برگرداندن Ccoin به هر دو بازیکن
+      const player1 = await storage.getUserByDiscordId(player1Id);
+      const player2 = await storage.getUserByDiscordId(player2Id);
+      
+      if (player1) {
+        await storage.addToWallet(player1.id, getGameEntryFee(gameType), 'game_refund', { gameType: gameType });
+      }
+      
+      if (player2) {
+        await storage.addToWallet(player2.id, getGameEntryFee(gameType), 'game_refund', { gameType: gameType });
+      }
+      
+      // نمایش پیام خطا به کاربران
+      await interaction.followUp({
+        content: `⚠️ متأسفانه بازی ${getGameDisplayName(gameType)} هنوز به طور کامل پیاده‌سازی نشده است. مبلغ ${getGameEntryFee(gameType)} Ccoin به کیف پول شما برگردانده شد. لطفاً بعداً مجدداً تلاش کنید.`,
+        ephemeral: false
+      });
     }
   } catch (error) {
     console.error(`Error starting game ${gameType}:`, error);
