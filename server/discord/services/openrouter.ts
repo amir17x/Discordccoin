@@ -13,7 +13,8 @@ export async function generateOpenRouterResponse(prompt: string): Promise<string
       throw new Error('کلید API برای OpenRouter تنظیم نشده است');
     }
 
-    const modelName = botConfig.ai?.openrouter?.model || 'anthropic/claude-3-opus';
+    const aiSettings = botConfig.getAISettings();
+    const modelName = aiSettings.openrouter?.model || 'anthropic/claude-3-opus';
     const response = await axios.post(
       'https://openrouter.ai/api/v1/chat/completions',
       {
@@ -74,7 +75,8 @@ export class OpenRouterService {
         return -401; // خطای احراز هویت
       }
       
-      const modelName = botConfig.ai?.openrouter?.model || 'anthropic/claude-3-opus';
+      const aiSettings = botConfig.getAISettings();
+      const modelName = aiSettings.openrouter?.model || 'anthropic/claude-3-opus';
       const startTime = Date.now();
       
       // ارسال یک درخواست کوتاه برای تست سرعت

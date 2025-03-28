@@ -1,0 +1,598 @@
+با توجه به درخواست شما و تصاویری که از ربات `Ccoin` فرستادید، من می‌فهمم که می‌خواید رباتتون یه تجربه کاربری خاص و متفاوت داشته باشه و به جای اینکه یه چت‌بات ساده باشه، از هوش مصنوعی برای بخش‌های تحلیلی، پویا و خلاقانه استفاده کنه. همچنین می‌خواید که رباتتون منو-محور (Menu-Driven) باشه و تا حد امکان از ساختن دستورات جدید (Commands) جلوگیری بشه و همه‌چیز توی منوهای تعاملی (مثل دکمه‌ها و سلکت‌منوها) قرار بگیره. من این مستند رو بازسازی می‌کنم و تمرکزم رو می‌ذارم روی:
+
+1. **منو-محور کردن ربات:** همه قابلیت‌ها توی منوهای تعاملی (دکمه‌ها و سلکت‌منوها) قرار می‌گیرن.
+2. **استفاده از هوش مصنوعی برای تحلیل و خلاقیت:** به جای چت‌بات، از هوش مصنوعی برای تحلیل بازار، تولید محتوای طنز، مدیریت رویدادها، و پیشنهادات هوشمند استفاده می‌کنیم.
+3. **خاص و پویا کردن ربات:** ربات شما با هوش مصنوعی یه تجربه اقتصادی پویا و جذاب ارائه می‌ده که با چت‌بات‌های معمولی (مثل ChatGPT یا DeepSeek) فرق داره.
+
+من ریپازیتوری [Discordccoin](https://github.com/amir17x/Discordccoin) رو دوباره بررسی می‌کنم و بر اساس منوهای فعلی ربات (مثل `/menu` که توی تصاویر دیدم)، مستند رو بازسازی می‌کنم. بریم شروع کنیم! 🚀
+
+---
+
+## 📜 مستندسازی بازسازی‌شده: ارتقای ربات Ccoin با هوش مصنوعی (منو-محور)
+
+### 🎯 هدف پروژه
+هدف اینه که ربات `Ccoin` رو که یه ربات اقتصادی منو-محوره، با هوش مصنوعی‌های مختلف (Grok، OpenRouter، OpenAI، Gemini، و Hugging Face) ارتقا بدیم. این ارتقا شامل موارد زیره:
+
+- 🌟 **منو-محور بودن:** همه قابلیت‌ها توی منوهای تعاملی (دکمه‌ها و سلکت‌منوها) قرار می‌گیرن و از ساختن دستورات جدید تا حد امکان جلوگیری می‌شه.
+- 🧠 **استفاده از هوش مصنوعی برای تحلیل و خلاقیت:** هوش مصنوعی برای تحلیل بازار، تولید محتوای طنز، مدیریت رویدادها، پیشنهادات هوشمند، و پویاتر کردن اقتصاد ربات استفاده می‌شه (نه به‌عنوان چت‌بات).
+- 📢 **سیستم اعلانات هوشمند:** اعلان‌های پویا و جذاب برای بازار، رویدادها، و جوایز.
+- 💡 **ایده‌های خلاقانه:** اضافه کردن قابلیت‌های خاص که ربات شما رو از بقیه متمایز کنه.
+
+---
+
+### 🛠️ پیش‌نیازها
+1. **ریپازیتوری ربات:**
+   - ریپازیتوری [Discordccoin](https://github.com/amir17x/Discordccoin) رو کلون کنید:
+     ```bash
+     git clone https://github.com/amir17x/Discordccoin.git
+     cd Discordccoin
+     ```
+   - این ربات با پایتون و `discord.py` نوشته شده و منو-محوره (مثل `/menu` که توی تصاویر دیدم).
+
+2. **کلیدهای API هوش مصنوعی‌ها:**
+   - شما کلیدهای API همه هوش مصنوعی‌ها (Grok، OpenRouter، OpenAI، Gemini، Hugging Face) رو دارید. این کلیدها رو توی فایل `.env` ذخیره می‌کنیم.
+
+3. **نصب کتابخونه‌ها:**
+   - علاوه بر `discord.py`، نیاز به این کتابخونه‌ها داریم:
+     ```bash
+     pip install discord.py openai google-generativeai requests python-dotenv
+     ```
+
+4. **محیط توسعه:**
+   - پایتون 3.8 یا بالاتر.
+   - یه IDE مثل VSCode یا PyCharm.
+   - فایل `.env` برای کلیدها.
+
+---
+
+### 🗂️ ساختار پروژه
+ساختار فعلی ریپازیتوری شما:
+
+```
+Discordccoin/
+├── main.py         # فایل اصلی ربات
+├── cogs/           # پوشه برای cogها
+│   ├── economy.py  # دستورات اقتصادی (buy, sell, lottery, ...)
+│   ├── info.py     # دستورات اطلاعاتی (info, ...)
+│   └── ...
+├── config.py       # تنظیمات
+└── requirements.txt
+```
+
+تغییرات پیشنهادی:
+- یه فایل `ai_config.py` برای مدیریت تنظیمات هوش مصنوعی.
+- یه cog جدید به اسم `ai.py` برای قابلیت‌های هوش مصنوعی.
+- فایل `.env` برای کلیدهای API.
+
+ساختار نهایی:
+
+```
+Discordccoin/
+├── main.py
+├── cogs/
+│   ├── economy.py
+│   ├── info.py
+│   ├── ai.py        # cog جدید برای هوش مصنوعی
+│   └── ...
+├── ai_config.py     # تنظیمات هوش مصنوعی
+├── .env             # کلیدهای API
+└── requirements.txt
+```
+
+---
+
+### 🔑 تنظیم کلیدهای API
+فایل `.env` رو توی ریشه پروژه بسازید:
+
+```env
+DISCORD_TOKEN=توکن_ربات_دیسکورد_شما
+OPENAI_API_KEY=کلید_API_اوپن_ای_آی_شما
+OPENROUTER_API_KEY=کلید_API_اوپن_روتر_شما
+XAI_API_KEY=کلید_API_گراک_شما
+GEMINI_API_KEY=کلید_API_جمینی_شما
+HUGGINGFACE_API_KEY=کلید_API_هاگینگ_فیس_شما
+```
+
+---
+
+### 🧠 پیاده‌سازی APIهای هوش مصنوعی
+
+#### ۱. فایل `ai_config.py` (مدیریت تنظیمات هوش مصنوعی)
+این فایل برای مدیریت تنظیمات هوش مصنوعی و انتخاب API فعال استفاده می‌شه.
+
+```python
+import json
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# کلیدهای API
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+XAI_API_KEY = os.getenv("XAI_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
+
+# فایل برای ذخیره تنظیمات
+CONFIG_FILE = "ai_config.json"
+
+# تنظیمات پیش‌فرض
+default_config = {
+    "active_ai": "openai",  # هوش مصنوعی پیش‌فرض
+    "ai_providers": {
+        "openai": {"key": OPENAI_API_KEY, "model": "gpt-3.5-turbo"},
+        "openrouter": {"key": OPENROUTER_API_KEY, "model": "meta-ai/llama-3-8b-instruct"},
+        "grok": {"key": XAI_API_KEY, "model": "grok"},
+        "gemini": {"key": GEMINI_API_KEY, "model": "gemini-1.5-pro"},
+        "huggingface": {"key": HUGGINGFACE_API_KEY, "model": "microsoft/DialoGPT-medium"}
+    }
+}
+
+# لود کردن یا ساختن فایل تنظیمات
+def load_config():
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE, "r") as f:
+            return json.load(f)
+    else:
+        with open(CONFIG_FILE, "w") as f:
+            json.dump(default_config, f, indent=4)
+        return default_config
+
+# ذخیره تنظیمات
+def save_config(config):
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(config, f, indent=4)
+
+# گرفتن API فعال
+def get_active_ai():
+    config = load_config()
+    return config["active_ai"]
+
+# تنظیم API فعال
+def set_active_ai(ai_name):
+    config = load_config()
+    if ai_name in config["ai_providers"]:
+        config["active_ai"] = ai_name
+        save_config(config)
+        return True
+    return False
+```
+
+#### ۲. پیاده‌سازی APIها
+یه کلاس `AIProvider` می‌سازیم که بتونه با همه APIها کار کنه. این کلاس توی فایل `cogs/ai.py` میاد.
+
+```python
+import discord
+from discord.ext import commands
+from openai import OpenAI
+import google.generativeai as genai
+import requests
+from ai_config import get_active_ai, load_config
+
+class AIProvider:
+    def __init__(self):
+        self.config = load_config()
+        self.active_ai = get_active_ai()
+
+    async def get_response(self, prompt):
+        provider = self.config["ai_providers"][self.active_ai]
+        if self.active_ai == "openai":
+            return await self._openai_response(prompt, provider)
+        elif self.active_ai == "openrouter":
+            return await self._openrouter_response(prompt, provider)
+        elif self.active_ai == "grok":
+            return await self._grok_response(prompt, provider)
+        elif self.active_ai == "gemini":
+            return await self._gemini_response(prompt, provider)
+        elif self.active_ai == "huggingface":
+            return await self._huggingface_response(prompt, provider)
+
+    async def _openai_response(self, prompt, provider):
+        client = OpenAI(api_key=provider["key"])
+        response = client.chat.completions.create(
+            model=provider["model"],
+            messages=[
+                {"role": "system", "content": "You are an analytical and creative assistant for a Discord bot."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=150,
+            temperature=0.7
+        )
+        return response.choices[0].message.content.strip()
+
+    async def _openrouter_response(self, prompt, provider):
+        client = OpenAI(api_key=provider["key"], base_url="https://openrouter.ai/api/v1")
+        response = client.chat.completions.create(
+            model=provider["model"],
+            messages=[
+                {"role": "system", "content": "You are an analytical and creative assistant for a Discord bot."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=150,
+            temperature=0.7
+        )
+        return response.choices[0].message.content.strip()
+
+    async def _grok_response(self, prompt, provider):
+        url = "https://api.xai.com/v1/chat/completions"  # URL فرضی
+        headers = {"Authorization": f"Bearer {provider['key']}"}
+        payload = {
+            "model": provider["model"],
+            "messages": [
+                {"role": "system", "content": "You are an analytical and creative assistant for a Discord bot."},
+                {"role": "user", "content": prompt}
+            ],
+            "max_tokens": 150,
+            "temperature": 0.7
+        }
+        response = requests.post(url, headers=headers, json=payload)
+        return response.json()["choices"][0]["message"]["content"].strip()
+
+    async def _gemini_response(self, prompt, provider):
+        genai.configure(api_key=provider["key"])
+        model = genai.GenerativeModel(provider["model"])
+        response = model.generate_content(prompt)
+        return response.text.strip()
+
+    async def _huggingface_response(self, prompt, provider):
+        url = f"https://api-inference.huggingface.co/models/{provider['model']}"
+        headers = {"Authorization": f"Bearer {provider['key']}"}
+        payload = {"inputs": prompt}
+        response = requests.post(url, headers=headers, json=payload)
+        return response.json()[0]["generated_text"].strip()
+```
+
+---
+
+### 🌟 ارتقای ربات با هوش مصنوعی (منو-محور)
+
+#### ۱. اضافه کردن منوی تنظیمات هوش مصنوعی (برای ادمین)
+ما یه دکمه جدید به منوی اصلی (`/menu`) اضافه می‌کنیم که فقط ادمین‌ها بتونن ببیننش. این دکمه یه سلکت‌منو باز می‌کنه که ادمین می‌تونه هوش مصنوعی فعال رو انتخاب کنه.
+
+فایل `cogs/menu.py` (یا هر فایلی که منوی اصلی رو مدیریت می‌کنه) رو ویرایش می‌کنیم:
+
+```python
+import discord
+from discord.ext import commands
+from ai_config import get_active_ai, set_active_ai
+
+class MenuView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="🏠 اقتصاد", style=discord.ButtonStyle.green, custom_id="economy_menu")
+    async def economy_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+        # منوی اقتصاد (فعلی)
+        await interaction.response.send_message("منوی اقتصاد باز شد!", ephemeral=True)
+
+    @discord.ui.button(label="🎮 بازی‌ها", style=discord.ButtonStyle.blue, custom_id="games_menu")
+    async def games_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+        # منوی بازی‌ها (فعلی)
+        await interaction.response.send_message("منوی بازی‌ها باز شد!", ephemeral=True)
+
+    @discord.ui.button(label="🧠 هوش مصنوعی", style=discord.ButtonStyle.red, custom_id="ai_menu")
+    async def ai_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("❌ فقط ادمین‌ها می‌تونن به این بخش دسترسی داشته باشن!", ephemeral=True)
+            return
+        # سلکت‌منو برای انتخاب هوش مصنوعی
+        view = AISelectView()
+        await interaction.response.send_message("🧠 هوش مصنوعی فعال رو انتخاب کنید:", view=view, ephemeral=True)
+
+class AISelectView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.select(
+        placeholder="هوش مصنوعی رو انتخاب کنید...",
+        options=[
+            discord.SelectOption(label="OpenAI", value="openai", emoji="🤖"),
+            discord.SelectOption(label="OpenRouter", value="openrouter", emoji="🌐"),
+            discord.SelectOption(label="Grok", value="grok", emoji="👽"),
+            discord.SelectOption(label="Gemini", value="gemini", emoji="✨"),
+            discord.SelectOption(label="Hugging Face", value="huggingface", emoji="📚")
+        ],
+        custom_id="ai_select"
+    )
+    async def ai_select(self, select: discord.ui.Select, interaction: discord.Interaction):
+        ai_name = select.values[0]
+        if set_active_ai(ai_name):
+            await interaction.response.send_message(f"✅ هوش مصنوعی فعال به `{ai_name}` تغییر کرد!", ephemeral=True)
+        else:
+            await interaction.response.send_message(f"❌ مشکلی پیش اومد!", ephemeral=True)
+
+class Menu(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.slash_command(name="menu", description="📋 منوی اصلی ربات")
+    async def menu(self, ctx):
+        embed = discord.Embed(title="📋 منوی Ccoin", description="یه گزینه رو انتخاب کن!", color=discord.Color.blue())
+        embed.set_footer(text="Ccoin Bot v1.5")
+        view = MenuView()
+        await ctx.respond(embed=embed, view=view)
+
+async def setup(bot):
+    await bot.add_cog(Menu(bot))
+```
+
+#### توضیح:
+- یه دکمه "هوش مصنوعی" به منوی اصلی اضافه شده که فقط ادمین‌ها می‌تونن ببیننش.
+- با کلیک روی دکمه، یه سلکت‌منو باز می‌شه که ادمین می‌تونه هوش مصنوعی فعال رو انتخاب کنه.
+
+---
+
+#### ۲. استفاده از هوش مصنوعی توی بخش‌های مختلف
+
+##### ۲.۱. تحلیل بازار (Market Analysis)
+توی منوی اقتصاد (دکمه "اقتصاد")، یه دکمه جدید به اسم "تحلیل بازار" اضافه می‌کنیم که هوش مصنوعی یه تحلیل طنزآمیز و هوشمند از بازار بده.
+
+فایل `cogs/economy.py`:
+
+```python
+import discord
+from discord.ext import commands
+from cogs.ai import AIProvider
+
+class EconomyView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+        self.ai_provider = AIProvider()
+
+    @discord.ui.button(label="💸 خرید", style=discord.ButtonStyle.green, custom_id="buy")
+    async def buy_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+        await interaction.response.send_message("خرید انجام شد!", ephemeral=True)
+
+    @discord.ui.button(label="📉 فروش", style=discord.ButtonStyle.red, custom_id="sell")
+    async def sell_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+        await interaction.response.send_message("فروش انجام شد!", ephemeral=True)
+
+    @discord.ui.button(label="📊 تحلیل بازار", style=discord.ButtonStyle.blue, custom_id="market_analysis")
+    async def market_analysis(self, button: discord.ui.Button, interaction: discord.Interaction):
+        prompt = "یه تحلیل طنزآمیز و هوشمند از بازار اقتصادی یه ربات دیسکورد بگو. مثلاً درباره تغییرات قیمت، روند بازار، یا پیشنهاد برای خرید و فروش."
+        analysis = await self.ai_provider.get_response(prompt)
+        embed = discord.Embed(title="📊 تحلیل بازار Ccoin", description=analysis, color=discord.Color.gold())
+        embed.set_footer(text="تحلیل شده توسط هوش مصنوعی 🧠")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+class Economy(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    # این دستور توی منوی اصلی فراخوانی می‌شه، پس نیازی به تعریف جداگونه نیست
+    async def show_economy_menu(self, interaction: discord.Interaction):
+        embed = discord.Embed(title="💰 منوی اقتصاد", description="یه گزینه رو انتخاب کن!", color=discord.Color.green())
+        view = EconomyView()
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+async def setup(bot):
+    await bot.add_cog(Economy(bot))
+```
+
+##### مثال خروجی:
+**تحلیل بازار Ccoin**  
+"بازار Ccoin این روزا مثل یه ترن هواییه! 🎢 قیمتا یه روز بالا، یه روز پایین. پیشنهاد من؟ یه کم Ccoin ذخیره کن، شاید فردا قیمتا منفجر بشه! 💥"
+
+---
+
+##### ۲.۲. بخش Watching توی منوی اطلاعات
+توی منوی اطلاعات (دکمه "اطلاعات" توی `/menu`)، یه بخش "Watching" اضافه می‌کنیم که هوش مصنوعی جملات طنز و عمومی درباره اقتصاد، بازی‌ها، قرعه‌کشی، و جوایز تولید کنه.
+
+فایل `cogs/info.py`:
+
+```python
+import discord
+from discord.ext import commands
+from cogs.ai import AIProvider
+
+class InfoView(discord.ui.View):
+    def __init__(self, user):
+        super().__init__(timeout=None)
+        self.user = user
+        self.ai_provider = AIProvider()
+
+    @discord.ui.button(label="👤 پروفایل", style=discord.ButtonStyle.green, custom_id="profile")
+    async def profile_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+        embed = discord.Embed(title="📈 اطلاعات کاربر", color=discord.Color.blue())
+        embed.add_field(name="👤 کاربر", value=self.user.mention, inline=False)
+        embed.add_field(name="💰 موجودی", value="500 Ccoin", inline=True)
+        embed.add_field(name="🏆 رتبه", value="3", inline=True)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    @discord.ui.button(label="👀 Watching", style=discord.ButtonStyle.blue, custom_id="watching")
+    async def watching_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+        prompt = "یه جمله طنز و عمومی درباره اقتصاد، بازی‌ها، قرعه‌کشی، یا جوایز برای یه ربات دیسکورد بگو."
+        watching_message = await self.ai_provider.get_response(prompt)
+        embed = discord.Embed(title="👀 Watching", description=watching_message, color=discord.Color.purple())
+        embed.set_footer(text="تولید شده توسط هوش مصنوعی 🧠")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+class Info(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    async def show_info_menu(self, interaction: discord.Interaction):
+        embed = discord.Embed(title="📋 منوی اطلاعات", description="یه گزینه رو انتخاب کن!", color=discord.Color.blue())
+        view = InfoView(interaction.user)
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+async def setup(bot):
+    await bot.add_cog(Info(bot))
+```
+
+##### مثال خروجی:
+**Watching**  
+"بازار Ccoin داغه! فکر کنم وقتشه یه قرعه‌کشی جدید راه بندازیم، شاید این‌بار جایزه یه گنج واقعی باشه! 🏴‍☠️"
+
+---
+
+##### ۲.۳. سیستم اعلانات هوشمند
+یه سیستم اعلانات می‌سازیم که هوش مصنوعی اعلان‌های جذاب و پویا برای بازار اقتصادی تولید کنه. این اعلان‌ها توی یه کانال خاص ارسال می‌شن.
+
+فایل `cogs/notifications.py`:
+
+```python
+import discord
+from discord.ext import commands, tasks
+from cogs.ai import AIProvider
+
+class Notifications(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.ai_provider = AIProvider()
+        self.notification_channel_id = 123456789  # آیدی کانال اعلانات (توی سرورتون تنظیم کنید)
+        self.send_notification.start()
+
+    def cog_unload(self):
+        self.send_notification.cancel()
+
+    @tasks.loop(hours=1)  # هر ساعت یه اعلان
+    async def send_notification(self):
+        channel = self.bot.get_channel(self.notification_channel_id)
+        if not channel:
+            return
+
+        prompt = "یه اعلان جذاب و طنز برای یه ربات اقتصادی دیسکورد بساز که بازار رو پویاتر کنه. مثلاً درباره تغییرات قیمت، جوایز، یا رویدادهای جدید."
+        message = await self.ai_provider.get_response(prompt)
+        embed = discord.Embed(title="📢 اعلان جدید!", description=message, color=discord.Color.green())
+        embed.set_footer(text="Ccoin Bot - بازار داغه! 🔥")
+        await channel.send(embed=embed)
+
+    @send_notification.before_loop
+    async def before_notification(self):
+        await self.bot.wait_until_ready()
+
+async def setup(bot):
+    await bot.add_cog(Notifications(bot))
+```
+
+##### مثال اعلان:
+**اعلان جدید!**  
+"قیمت Ccoin یهو ۱۰٪ رفت بالا! 🚀 فکر کنم وقتشه دست به کار بشید و یه خرید حسابی کنید، شاید فردا یه جایزه ویژه منتظرتون باشه! 🎁"
+
+---
+
+##### ۲.۴. پیشنهادات هوشمند برای خرید و فروش
+توی منوی اقتصاد، یه دکمه "پیشنهاد هوشمند" اضافه می‌کنیم که هوش مصنوعی بر اساس وضعیت بازار پیشنهاد خرید یا فروش بده.
+
+فایل `cogs/economy.py` (ادامه):
+
+```python
+class EconomyView(discord.ui.View):
+    # بقیه دکمه‌ها (خرید، فروش، تحلیل بازار) قبلاً تعریف شدن
+
+    @discord.ui.button(label="🧠 پیشنهاد هوشمند", style=discord.ButtonStyle.grey, custom_id="smart_suggestion")
+    async def smart_suggestion(self, button: discord.ui.Button, interaction: discord.Interaction):
+        prompt = "با توجه به اینکه قیمت Ccoin توی یه هفته گذشته ۱۰٪ بالا رفته و بازار فعاله، یه پیشنهاد هوشمند برای خرید یا فروش به کاربر بده."
+        suggestion = await self.ai_provider.get_response(prompt)
+        embed = discord.Embed(title="🧠 پیشنهاد هوشمند", description=suggestion, color=discord.Color.orange())
+        embed.set_footer(text="تولید شده توسط هوش مصنوعی 🧠")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+```
+
+##### مثال خروجی:
+**پیشنهاد هوشمند**  
+"با توجه به رشد ۱۰٪ قیمت Ccoin، الان وقت خوبیه که یه مقدار Ccoin ذخیره کنی! 📈 شاید فردا قیمتا بیشترم بشه!"
+
+---
+
+##### ۲.۵. مدیریت رویدادها و قرعه‌کشی‌ها
+توی منوی قرعه‌کشی (دکمه "قرعه‌کشی" توی `/menu`)، هوش مصنوعی می‌تونه رویدادهای جدید پیشنهاد بده و جوایز رو مدیریت کنه.
+
+فایل `cogs/lottery.py`:
+
+```python
+import discord
+from discord.ext import commands
+from cogs.ai import AIProvider
+
+class LotteryView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+        self.ai_provider = AIProvider()
+
+    @discord.ui.button(label="🎟️ شرکت در قرعه‌کشی", style=discord.ButtonStyle.green, custom_id="join_lottery")
+    async def join_lottery(self, button: discord.ui.Button, interaction: discord.Interaction):
+        await interaction.response.send_message("شما توی قرعه‌کشی شرکت کردید!", ephemeral=True)
+
+    @discord.ui.button(label="🎉 پیشنهاد رویداد", style=discord.ButtonStyle.blue, custom_id="suggest_event")
+    async def suggest_event(self, button: discord.ui.Button, interaction: discord.Interaction):
+        prompt = "یه رویداد یا قرعه‌کشی جدید برای یه ربات اقتصادی دیسکورد پیشنهاد بده. مثلاً یه مسابقه با جایزه Ccoin یا یه رویداد ویژه."
+        suggestion = await self.ai_provider.get_response(prompt)
+        embed = discord.Embed(title="🎉 پیشنهاد رویداد جدید", description=suggestion, color=discord.Color.purple())
+        embed.set_footer(text="تولید شده توسط هوش مصنوعی 🧠")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+class Lottery(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    async def show_lottery_menu(self, interaction: discord.Interaction):
+        embed = discord.Embed(title="🎰 منوی قرعه‌کشی", description="یه گزینه رو انتخاب کن!", color=discord.Color.red())
+        view = LotteryView()
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+async def setup(bot):
+    await bot.add_cog(Lottery(bot))
+```
+
+##### مثال خروجی:
+**پیشنهاد رویداد جدید**  
+"چطوره یه قرعه‌کشی ویژه با جایزه ۱۰۰۰ Ccoin راه بندازیم؟ فقط کافیه ۱۰ نفر شرکت کنن! 🤑"
+
+---
+
+### 💡 ایده‌های خلاقانه برای بهبود ربات
+
+1. **🏆 سیستم رتبه‌بندی هوشمند:**
+   - هوش مصنوعی می‌تونه رفتار کاربرا رو تحلیل کنه (مثلاً تعداد خرید و فروش، شرکت توی قرعه‌کشی‌ها) و یه سیستم رتبه‌بندی پویا بسازه. مثلاً:  
+     "تبریک به @کاربر! تو این هفته بیشترین فعالیت رو داشتی و به رتبه 'Ccoin Master' رسیدی! 🏅"
+
+2. **📅 رویدادهای خودکار:**
+   - هوش مصنوعی می‌تونه هر هفته یه رویداد جدید پیشنهاد بده و توی کانال اعلانات اعلام کنه. مثلاً:  
+     "این هفته یه مسابقه خرید و فروش داریم! بیشترین تراکنش رو انجام بدید و ۵۰۰ Ccoin جایزه بگیرید! 🎉"
+
+3. **🎲 بازی‌های تحلیلی:**
+   - یه بازی به اسم "پیش‌بینی بازار" اضافه کنید که کاربرا باید پیش‌بینی کنن قیمت Ccoin توی ۲۴ ساعت آینده بالا می‌ره یا پایین. هوش مصنوعی می‌تونه این پیش‌بینی‌ها رو تحلیل کنه و به برنده‌ها جایزه بده.
+
+4. **💬 پیام‌های انگیزشی:**
+   - هوش مصنوعی می‌تونه پیام‌های انگیزشی برای کاربرا تولید کنه:  
+     "هی @کاربر! بازار داره داغ می‌شه، یه کم Ccoin بخر و خودتو برای قرعه‌کشی بعدی آماده کن! 🔥"
+
+---
+
+### 🚀 اجرا و تست
+1. **فایل‌های جدید رو اضافه کنید:**
+   - `ai_config.py` و `cogs/ai.py` رو بسازید.
+   - `cogs/menu.py`, `cogs/economy.py`, `cogs/info.py`, `cogs/lottery.py`, و `cogs/notifications.py` رو ویرایش یا اضافه کنید.
+
+2. **ربات رو اجرا کنید:**
+   ```bash
+   python main.py
+   ```
+
+3. **تست منوها:**
+   - `/menu` رو اجرا کنید.
+   - دکمه "هوش مصنوعی" رو (به‌عنوان ادمین) تست کنید و یه API انتخاب کنید.
+   - توی منوی اقتصاد، "تحلیل بازار" و "پیشنهاد هوشمند" رو تست کنید.
+   - توی منوی اطلاعات، "Watching" رو چک کنید.
+   - توی منوی قرعه‌کشی، "پیشنهاد رویداد" رو ببینید.
+
+---
+
+### 🐞 عیب‌یابی
+- **دکمه‌ها کار نمی‌کنن:** مطمئن بشید که `custom_id` دکمه‌ها توی کد درست تنظیم شده.
+- **هوش مصنوعی پاسخ نمی‌ده:** کلید API و مدل رو توی `ai_config.py` چک کنید.
+- **اعلانات ارسال نمی‌شن:** آیدی کانال اعلانات رو درست تنظیم کنید و مطمئن بشید ربات دسترسی داره.
+
+---
+
+### 🎉 نتیجه
+ربات `Ccoin` شما حالا:
+- کاملاً منو-محوره و همه قابلیت‌ها توی دکمه‌ها و سلکت‌منوها قرار گرفتن.
+- از هوش مصنوعی برای تحلیل بازار، پیشنهادات هوشمند، تولید محتوای طنز، و مدیریت رویدادها استفاده می‌کنه.
+- یه سیستم اعلانات هوشمند داره که بازار رو پویاتر می‌کنه.
+- با ایده‌های خلاقانه، از بقیه ربات‌ها متمایز شده.
+
+این مستند رو به Agent Replit بدید تا کدهای رباتتون رو ادیت کنه و این قابلیت‌ها رو پیاده‌سازی کنه! اگه سؤالی دارید، بفرمایید! 🌟

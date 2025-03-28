@@ -18,7 +18,8 @@ export async function generateGrokResponse(prompt: string): Promise<string> {
     }
 
     // مدل پیش‌فرض یا مدل تنظیم شده در تنظیمات
-    const model = botConfig.ai?.grokModel || 'grok-1';
+    const aiSettings = botConfig.getAISettings();
+    const model = aiSettings.grokModel || 'grok-1';
     
     // URL API Grok (باید با توجه به مستندات Grok تنظیم شود)
     // این URL فرضی است و باید بر اساس مستندات واقعی Grok تغییر کند
@@ -102,7 +103,8 @@ export class GrokService {
         return -401; // خطای احراز هویت
       }
       
-      const model = botConfig.ai?.grokModel || 'grok-1';
+      const aiSettings = botConfig.getAISettings();
+      const model = aiSettings.grokModel || 'grok-1';
       const startTime = Date.now();
       
       // URL API

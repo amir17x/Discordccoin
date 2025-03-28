@@ -24,8 +24,8 @@ export async function aiSettingsMenu(interaction: ButtonInteraction | ChatInputC
       return;
     }
 
-    // دریافت تنظیمات فعلی
-    const config = botConfig.getConfig();
+    // دریافت تنظیمات هوش مصنوعی فعلی
+    const aiSettings = botConfig.getAISettings();
     
     // ایجاد Embed برای نمایش تنظیمات هوش مصنوعی
     const embed = new EmbedBuilder()
@@ -36,8 +36,8 @@ export async function aiSettingsMenu(interaction: ButtonInteraction | ChatInputC
       .setThumbnail('https://img.icons8.com/fluency/48/artificial-intelligence.png')
       .setTimestamp();
     
-    // تنظیمات هوش مصنوعی فعلی
-    const aiService = config.ai?.service || 'huggingface';
+    // سرویس هوش مصنوعی فعلی
+    const aiService = aiSettings.service || 'huggingface';
     
     // افزودن فیلدها به Embed با اطلاعات همه سرویس‌های موجود
     embed.addFields(

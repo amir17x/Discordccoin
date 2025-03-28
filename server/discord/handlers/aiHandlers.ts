@@ -8,23 +8,33 @@ import { botConfig } from '../utils/config';
 /**
  * تغییر سرویس هوش مصنوعی
  * @param interaction تعامل دکمه
- * @param serviceName نام سرویس (openai یا huggingface)
+ * @param serviceName نام سرویس (openai, huggingface, googleai, grok, openrouter)
  */
 export async function handleSwitchAIService(
   interaction: ButtonInteraction, 
-  serviceName: 'openai' | 'huggingface'
+  serviceName: 'openai' | 'huggingface' | 'googleai' | 'grok' | 'openrouter'
 ) {
   try {
     // دیفر کردن پاسخ برای جلوگیری از خطای تایم‌اوت
     await interaction.deferUpdate();
     
     // بررسی تنظیمات فعلی
-    const currentService = botConfig.ai?.service || 'huggingface';
+    const aiSettings = botConfig.getAISettings();
+    const currentService = aiSettings.service || 'huggingface';
+    
+    // دریافت نام نمایشی سرویس
+    const serviceDisplayName = 
+      serviceName === 'openai' ? 'OpenAI (ChatGPT)' : 
+      serviceName === 'huggingface' ? 'Hugging Face' :
+      serviceName === 'googleai' ? 'Google AI (Gemini)' :
+      serviceName === 'grok' ? 'Grok' :
+      serviceName === 'openrouter' ? 'OpenRouter' :
+      'نامشخص';
     
     // اگر سرویس از قبل فعال بود، پیام دهیم و برگردیم
     if (currentService === serviceName) {
       await interaction.editReply({
-        content: `⚠️ سرویس ${serviceName === 'openai' ? 'OpenAI (ChatGPT)' : 'Hugging Face'} در حال حاضر فعال است.`
+        content: `⚠️ سرویس ${serviceDisplayName} در حال حاضر فعال است.`
       });
       return;
     }
@@ -37,7 +47,7 @@ export async function handleSwitchAIService(
       const successEmbed = new EmbedBuilder()
         .setColor('#2ECC71')
         .setTitle('✅ تغییر سرویس هوش مصنوعی انجام شد')
-        .setDescription(`سرویس هوش مصنوعی با موفقیت به ${serviceName === 'openai' ? 'OpenAI (ChatGPT)' : 'Hugging Face'} تغییر یافت.
+        .setDescription(`سرویس هوش مصنوعی با موفقیت به ${serviceDisplayName} تغییر یافت.
         
 تمام سیستم‌های هوش مصنوعی ربات از این پس از این سرویس استفاده خواهند کرد.`)
         .setFooter({ text: `درخواست‌دهنده: ${interaction.user.username} | ${new Date().toLocaleString()}` })
@@ -94,11 +104,20 @@ export async function handleTestAIService(interaction: ButtonInteraction) {
     const testPrompt = 'یک جمله انگیزشی کوتاه به زبان فارسی بنویس (حداکثر 100 کاراکتر)';
     const testResult = await testAIService(testPrompt);
     
+    // دریافت نام سرویس فعلی
+    const aiSettings = botConfig.getAISettings();
+    const serviceName = aiSettings.service === 'openai' ? 'OpenAI (ChatGPT)' : 
+                   aiSettings.service === 'huggingface' ? 'Hugging Face' :
+                   aiSettings.service === 'googleai' ? 'Google AI (Gemini)' :
+                   aiSettings.service === 'grok' ? 'Grok' :
+                   aiSettings.service === 'openrouter' ? 'OpenRouter' :
+                   'نامشخص';
+    
     // ساخت امبد نتیجه
     const resultEmbed = new EmbedBuilder()
       .setColor(testResult.success ? '#2ECC71' : '#E74C3C')
       .setTitle(testResult.success ? '✅ تست هوش مصنوعی موفقیت‌آمیز بود' : '❌ تست هوش مصنوعی ناموفق بود')
-      .setDescription(`**نتیجه تست سرویس ${botConfig.ai?.service === 'openai' ? 'OpenAI (ChatGPT)' : 'Hugging Face'}:**
+      .setDescription(`**نتیجه تست سرویس ${serviceName}:**
 
 ${testResult.success ? `پاسخ دریافتی: "${testResult.response}"` : `خطا: ${testResult.error}`}
 
@@ -135,7 +154,12 @@ export async function handleViewAIStatus(interaction: ButtonInteraction) {
       .addFields(
         { 
           name: '🤖 سرویس فعلی', 
-          value: aiStatus.service === 'openai' ? 'OpenAI (ChatGPT)' : 'Hugging Face', 
+          value: aiStatus.service === 'openai' ? 'OpenAI (ChatGPT)' : 
+                 aiStatus.service === 'huggingface' ? 'Hugging Face' :
+                 aiStatus.service === 'googleai' ? 'Google AI (Gemini)' :
+                 aiStatus.service === 'grok' ? 'Grok' :
+                 aiStatus.service === 'openrouter' ? 'OpenRouter' :
+                 'نامشخص', 
           inline: true 
         },
         { 
@@ -156,6 +180,21 @@ export async function handleViewAIStatus(interaction: ButtonInteraction) {
         { 
           name: '📊 درخواست‌های Hugging Face', 
           value: aiStatus.providerStats.huggingface.toLocaleString(), 
+          inline: true 
+        },
+        { 
+          name: '📊 درخواست‌های Google AI', 
+          value: aiStatus.providerStats.googleai ? aiStatus.providerStats.googleai.toLocaleString() : '0', 
+          inline: true 
+        },
+        { 
+          name: '📊 درخواست‌های Grok', 
+          value: aiStatus.providerStats.grok ? aiStatus.providerStats.grok.toLocaleString() : '0', 
+          inline: true 
+        },
+        { 
+          name: '📊 درخواست‌های OpenRouter', 
+          value: aiStatus.providerStats.openrouter ? aiStatus.providerStats.openrouter.toLocaleString() : '0', 
           inline: true 
         },
         { 
