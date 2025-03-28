@@ -562,7 +562,8 @@ const tipChannel = {
       const interval = interaction.options.getInteger('interval');
       
       // بررسی معتبر بودن کانال
-      if (!channel || channel.type !== 0) { // 0 = GUILD_TEXT
+      // ChannelType.GuildText = 0 در دیسکورد جدید
+      if (!channel || (channel.type !== 0 && channel.type !== 'GUILD_TEXT')) { // 0 = GUILD_TEXT
         await interaction.reply({
           content: '❌ لطفاً یک کانال متنی معتبر انتخاب کنید.',
           ephemeral: true

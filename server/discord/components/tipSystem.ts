@@ -1,15 +1,6 @@
 import { TextChannel } from 'discord.js';
 import { storage } from '../../storage';
 
-// تایپ تنظیمات کانال نکات برای نگهداری در دیتابیس
-interface TipChannelSettings {
-  guildId: string;       // آیدی سرور
-  channelId: string;     // آیدی کانال تنظیم شده
-  interval: number;      // فاصله زمانی ارسال نکات (به ساعت)
-  lastTipTime?: number;  // زمان آخرین نکته ارسال شده
-  isActive: boolean;     // وضعیت فعال بودن سیستم نکات
-}
-
 // آرایه نکات آموزشی و طنز
 const tipsList = [
   // نکات اقتصادی
@@ -80,7 +71,7 @@ export async function setTipChannel(guildId: string, channelId: string, interval
     }
     
     // ذخیره تنظیمات در دیتابیس
-    const settings: TipChannelSettings = {
+    const settings = {
       guildId,
       channelId,
       interval,
@@ -185,7 +176,9 @@ export async function checkAndSendTips(client: any): Promise<void> {
           
           const channel = guild.channels.cache.get(settings.channelId) as TextChannel;
           
-          if (!channel || channel.type !== 0) { // 0 = GUILD_TEXT
+          // بررسی نوع کانال: باید کانال متنی باشد
+          // ChannelType.GuildText = 0 در دیسکورد جدید
+          if (!channel || (channel.type !== 0 && channel.type !== 'GUILD_TEXT')) {
             console.log(`Channel ${settings.channelId} not found or not text channel, skipping tip`);
             continue;
           }
