@@ -507,7 +507,7 @@ export async function mainMenu(
             .setStyle(ButtonStyle.Danger),
         );
       
-      // Row 4: امکانات اضافی
+      // Row 4: امکانات اضافی با اضافه کردن دکمه هوش مصنوعی
       const row4 = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
           new ButtonBuilder()
@@ -515,8 +515,8 @@ export async function mainMenu(
             .setLabel('🐾 پت‌های من')
             .setStyle(ButtonStyle.Success),
           new ButtonBuilder()
-            .setCustomId('blackjack')
-            .setLabel('🃏 بلک‌جک')
+            .setCustomId('ai_assistant')
+            .setLabel('🧠 دستیار هوشمند')
             .setStyle(ButtonStyle.Primary),
           new ButtonBuilder()
             .setCustomId('donate')

@@ -9,6 +9,7 @@ import { storage } from '../storage';
 import { getLogger, LogType } from './utils/logger';
 import { botConfig } from './utils/config';
 import { setupTipSystem } from './components/tipSystem';
+import { setupAutoStatusUpdater } from './utils/aiStatusMessages';
 
 // کش برای برهم‌کنش‌های پرتکرار
 type InteractionCache = {
@@ -165,31 +166,7 @@ export async function initDiscordBot() {
         "بانک‌ها پر از سکه! 🏦 کی دزدی می‌کنه؟"
       ];
       
-      // تنظیم اولین پیام watching
-      let currentMessageIndex = Math.floor(Math.random() * watchingMessages.length);
-      if (client.user) {
-        client.user.setActivity(watchingMessages[currentMessageIndex], { type: 3 }); // type: 3 = WATCHING
-      }
-      
-      // تغییر خودکار پیام‌های watching هر 30 دقیقه
-      setInterval(() => {
-        try {
-          // انتخاب یک پیام تصادفی غیر از پیام فعلی
-          let newIndex;
-          do {
-            newIndex = Math.floor(Math.random() * watchingMessages.length);
-          } while (newIndex === currentMessageIndex && watchingMessages.length > 1);
-          
-          currentMessageIndex = newIndex;
-          
-          if (client.user) {
-            client.user.setActivity(watchingMessages[currentMessageIndex], { type: 3 }); // type: 3 = WATCHING
-            log(`Updated watching status: ${watchingMessages[currentMessageIndex]}`, 'discord');
-          }
-        } catch (error) {
-          console.error('Error updating watching status:', error);
-        }
-      }, 30 * 60 * 1000); // هر 30 دقیقه (به میلی‌ثانیه)
+      // توجه: قسمت تنظیم watching حذف شده زیرا حالا توسط سیستم هوش مصنوعی مدیریت می‌شود
       
       // راه‌اندازی سیستم نکات
       try {
@@ -198,6 +175,15 @@ export async function initDiscordBot() {
       } catch (tipError) {
         console.error('Error setting up tip system:', tipError);
         log('خطا در راه‌اندازی سیستم نکات: ' + tipError, 'error');
+      }
+      
+      // راه‌اندازی سیستم جملات طنز AI برای وضعیت Watching
+      try {
+        setupAutoStatusUpdater(client, 20); // هر 20 دقیقه به‌روزرسانی می‌شود
+        log('سیستم جملات طنز هوش مصنوعی با موفقیت راه‌اندازی شد', 'discord');
+      } catch (aiError) {
+        console.error('Error setting up AI status messages:', aiError);
+        log('خطا در راه‌اندازی سیستم جملات طنز هوش مصنوعی: ' + aiError, 'error');
       }
     });
 

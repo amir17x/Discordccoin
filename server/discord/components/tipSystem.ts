@@ -171,15 +171,19 @@ async function sendTip(client: Client, settings: TipChannelSettings) {
       return;
     }
 
-    // تعیین اینکه آیا از هوش مصنوعی استفاده شود (30% احتمال)
-    const useAI = Math.random() < 0.3;
+    // تعیین اینکه آیا از هوش مصنوعی استفاده شود (افزایش احتمال به 60%)
+    const useAI = Math.random() < 0.6;
     
     let tipText = '';
     let category = '';
+    let randomTopic = ''; // برای نگهداری موضوع اتفاقی نکته
     
     if (useAI) {
       // استفاده از هوش مصنوعی برای تولید نکته
       try {
+        // انتخاب یک موضوع اتفاقی برای نمایش در امبد
+        randomTopic = tipTopics[Math.floor(Math.random() * tipTopics.length)];
+        
         tipText = await generateAITip();
         category = 'ai';
         console.log(`🤖 نکته هوشمند با استفاده از Hugging Face تولید شد.`);
@@ -199,15 +203,33 @@ async function sendTip(client: Client, settings: TipChannelSettings) {
       tipText = categoryTips[Math.floor(Math.random() * categoryTips.length)];
     }
 
-    // ایجاد امبد برای نمایش نکته
+    // ایجاد امبد برای نمایش نکته - با طراحی جذاب‌تر برای نکات هوش مصنوعی
     const embed = new EmbedBuilder()
       .setColor(useAI ? '#8A2BE2' : '#0099ff') // رنگ متفاوت برای نکات هوشمند
-      .setTitle(useAI ? '🧠 نکته هوشمند AI' : '💡 نکته روز')
-      .setDescription(tipText)
-      .setFooter({ 
-        text: `دسته: ${getCategoryDisplayName(category)} | ${useAI ? 'تولید شده توسط هوش مصنوعی (Hugging Face)' : ''} | برای غیرفعال کردن نکات از دستور /admin استفاده کنید` 
-      })
-      .setTimestamp();
+      .setTitle(useAI ? '🧠 نکته هوشمند Ccoin' : '💡 نکته روز')
+      .setDescription(tipText);
+    
+    // اضافه کردن فیلد‌های بیشتر برای نکته‌های هوشمند
+    if (useAI) {
+      embed.addFields([
+        {
+          name: '🔍 موضوع',
+          value: randomTopic || category,
+          inline: true
+        },
+        {
+          name: '🤖 منبع',
+          value: 'هوش مصنوعی پیشرفته',
+          inline: true
+        }
+      ]);
+    }
+    
+    // اضافه کردن پاورقی
+    embed.setFooter({ 
+      text: `دسته: ${getCategoryDisplayName(category)} | ${useAI ? 'با قدرت هوش مصنوعی پیشرفته' : ''} | دستور /admin برای تنظیمات` 
+    })
+    .setTimestamp();
 
     // ارسال پیام
     await channel.send({ embeds: [embed] });

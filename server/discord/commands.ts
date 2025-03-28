@@ -811,11 +811,11 @@ const groupGames = {
 // Command for Hugging Face AI interaction
 const hf = {
   data: new SlashCommandBuilder()
-    .setName('hf')
-    .setDescription('🧠 گفتگو با هوش مصنوعی Hugging Face')
+    .setName('هوش')
+    .setDescription('🧠 گفتگو با هوش مصنوعی پیشرفته')
     .addStringOption(option => 
       option.setName('prompt')
-            .setDescription('سوال یا درخواست شما از هوش مصنوعی')
+            .setDescription('سوال یا درخواست خود را به فارسی یا انگلیسی وارد کنید')
             .setRequired(true)),
   
   async execute(interaction: any) {
@@ -878,13 +878,19 @@ const hf = {
           embeds: [errorEmbed]
         });
       } else {
-        // ایجاد Embed برای پاسخ
+        // ایجاد Embed برای پاسخ با ظاهر جذاب‌تر
         const chatEmbed = new EmbedBuilder()
           .setColor('#8A2BE2') // رنگ بنفش تیره
-          .setTitle('🤖 پاسخ هوش مصنوعی')
+          .setTitle('🧠 هوش مصنوعی Ccoin')
           .setDescription(response)
+          .addFields([
+            {
+              name: '💬 پرسش شما',
+              value: `\`\`\`${prompt.length > 100 ? prompt.substring(0, 100) + '...' : prompt}\`\`\``
+            }
+          ])
           .setFooter({ 
-            text: `درخواست: ${interaction.user.username} | با استفاده از Hugging Face`,
+            text: `درخواست توسط: ${interaction.user.username} | با قدرت هوش مصنوعی پیشرفته`,
             iconURL: interaction.user.displayAvatarURL() 
           })
           .setTimestamp();

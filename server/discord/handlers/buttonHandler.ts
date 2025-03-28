@@ -35,7 +35,7 @@ import {
   loggingSettingsMenu
 } from '../components/adminMenuExtended';
 import { investmentMenu, processInvestment } from '../components/investmentMenu';
-import { stocksMenu, processBuyStock, processSellStock } from '../components/stocksMenu';
+import { stocksMenu, processBuyStock, processSellStock, processStockAnalysis } from '../components/stocksMenu';
 import { lotteryMenu, processBuyLotteryTicket } from '../components/lotteryMenu';
 import { giveawayBridgeMenu, buyGiveawayTickets, checkGiveawayBalance } from '../components/giveawayBridge';
 import { tournamentsMenu, processJoinTournament } from '../components/tournamentsMenu';
@@ -178,6 +178,32 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     
     if (action === 'other_options') {
       await mainMenu(interaction, true);
+      return;
+    }
+    
+    // مدیریت دکمه دستیار هوشمند
+    if (action === 'ai_assistant') {
+      // ایجاد مودال برای دریافت سوال کاربر
+      const modal = new ModalBuilder()
+        .setCustomId('ai_assistant_modal')
+        .setTitle('🧠 دستیار هوشمند Ccoin');
+      
+      // افزودن فیلدهای ورودی به مودال
+      const promptInput = new TextInputBuilder()
+        .setCustomId('prompt')
+        .setLabel('سوال یا درخواست خود را بنویسید')
+        .setPlaceholder('مثال: چطور می‌توانم سکه‌های بیشتری در بازی Ccoin به دست بیاورم؟')
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true)
+        .setMinLength(5)
+        .setMaxLength(1000);
+      
+      // افزودن فیلدها به مودال
+      const firstActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(promptInput);
+      modal.addComponents(firstActionRow);
+      
+      // نمایش مودال به کاربر
+      await interaction.showModal(modal);
       return;
     }
 
@@ -1218,6 +1244,11 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     
     if (action === 'stocks_info') {
       await stocksMenu(interaction, 'info');
+      return;
+    }
+    
+    if (action === 'stocks_analysis') {
+      await stocksMenu(interaction, 'analysis');
       return;
     }
     

@@ -11,6 +11,7 @@ import {
 } from 'discord.js';
 import { storage } from '../../storage';
 import { StockData, UserStockData } from '@shared/schema';
+import { getAIStockAnalysis, getAIStockPricePrediction, generateMarketManipulationNews } from '../utils/aiMarketDynamics';
 
 /**
  * سیستم معاملات سهام
@@ -50,6 +51,75 @@ export async function stocksMenu(
     let components: ActionRowBuilder<ButtonBuilder | StringSelectMenuBuilder>[] = [];
 
     switch (subMenu) {
+      case 'analysis':
+        // AI Stock Analysis
+        embed
+          .setTitle('🤖 تحلیل هوشمند بازار سهام')
+          .setDescription('با استفاده از هوش مصنوعی، می‌توانید تحلیل‌های پیشرفته و پیش‌بینی‌های دقیق‌تری از بازار سهام دریافت کنید.')
+          .setThumbnail('https://img.icons8.com/fluency/48/artificial-intelligence.png');
+        
+        // Show available stocks for analysis
+        if (stocks.length > 0) {
+          // Create a select menu for stock analysis
+          const analysisMenu = new StringSelectMenuBuilder()
+            .setCustomId('stocks_select_analysis')
+            .setPlaceholder('یک سهام برای تحلیل هوشمند انتخاب کنید')
+            .setMinValues(1)
+            .setMaxValues(1);
+          
+          // Add each stock to analysis menu
+          stocks.forEach(stock => {
+            const priceTrend = stock.currentPrice > stock.previousPrice 
+              ? '📈' 
+              : (stock.currentPrice < stock.previousPrice ? '📉' : '📊');
+            
+            analysisMenu.addOptions(
+              new StringSelectMenuOptionBuilder()
+                .setLabel(`${stock.symbol} - ${stock.name}`)
+                .setDescription(`${stock.currentPrice} Ccoin ${priceTrend}`)
+                .setValue(`analyze_stock_${stock.id}`)
+            );
+          });
+          
+          const analysisRow = new ActionRowBuilder<StringSelectMenuBuilder>()
+            .addComponents(analysisMenu);
+          
+          components.push(analysisRow);
+          
+          // Add analysis features description
+          embed.addFields(
+            {
+              name: '🔍 تحلیل هوشمند سهام',
+              value: 'بررسی عملکرد، روندها و پیش‌بینی آینده سهام با استفاده از هوش مصنوعی',
+              inline: false
+            },
+            {
+              name: '📊 پیش‌بینی قیمت',
+              value: 'پیش‌بینی قیمت آینده سهام بر اساس داده‌های تاریخی و وضعیت فعلی بازار',
+              inline: false
+            },
+            {
+              name: '📰 اخبار هوشمند',
+              value: 'دریافت اخبار مهم و تأثیرگذار مرتبط با شرکت و صنعت مورد نظر',
+              inline: false
+            }
+          );
+        } else {
+          embed.setDescription('در حال حاضر هیچ سهامی برای تحلیل وجود ندارد.');
+        }
+        
+        // Add back button
+        const backToMainRow = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('stocks')
+              .setLabel('🔙 بازگشت به منوی سهام')
+              .setStyle(ButtonStyle.Secondary)
+          );
+        
+        components.push(backToMainRow);
+        break;
+        
       case 'main':
         // Main stock market menu
         embed
@@ -100,8 +170,8 @@ export async function stocksMenu(
               .setLabel('💼 پورتفولیو')
               .setStyle(ButtonStyle.Success),
             new ButtonBuilder()
-              .setCustomId('stocks_info')
-              .setLabel('ℹ️ راهنما')
+              .setCustomId('stocks_analysis')
+              .setLabel('🤖 تحلیل هوشمند')
               .setStyle(ButtonStyle.Secondary)
           );
 
@@ -424,6 +494,103 @@ export async function processBuyStock(
       content: '❌ خطایی در خرید سهام رخ داد. لطفا دوباره تلاش کنید.', 
       ephemeral: true 
     });
+  }
+}
+
+/**
+ * پردازش تحلیل هوشمند سهام با استفاده از هوش مصنوعی
+ */
+export async function processStockAnalysis(
+  interaction: MessageComponentInteraction | ModalSubmitInteraction,
+  stockId: number
+) {
+  try {
+    const user = await storage.getUserByDiscordId(interaction.user.id);
+    if (!user) {
+      return await interaction.reply({ 
+        content: '❌ حساب کاربری شما یافت نشد.', 
+        ephemeral: true 
+      });
+    }
+
+    const stock = await storage.getStock(stockId);
+    if (!stock) {
+      return await interaction.reply({ 
+        content: '❌ سهام مورد نظر یافت نشد.', 
+        ephemeral: true 
+      });
+    }
+
+    // نمایش وضعیت در حال بارگیری
+    await interaction.deferReply();
+
+    // دریافت تحلیل هوشمند از هوش مصنوعی
+    const analysis = await getAIStockAnalysis(stockId);
+    const prediction = await getAIStockPricePrediction(stockId);
+
+    const embed = new EmbedBuilder()
+      .setColor('#5865F2')
+      .setTitle(`🤖 تحلیل هوشمند سهام ${stock.symbol}`)
+      .setDescription(`تحلیل هوشمند سهام ${stock.name} (${stock.symbol}) با استفاده از هوش مصنوعی`)
+      .setThumbnail('https://img.icons8.com/fluency/48/artificial-intelligence.png')
+      .addFields(
+        { 
+          name: '📊 اطلاعات پایه', 
+          value: 
+            `💰 قیمت فعلی: ${stock.currentPrice} Ccoin\n` +
+            `🏭 صنعت: ${getSectorName(stock.sector)}\n` +
+            `📋 موجودی: ${stock.availableShares} سهم`, 
+          inline: false 
+        },
+        { 
+          name: '🔍 تحلیل هوشمند', 
+          value: analysis || 'متأسفانه در حال حاضر تحلیل هوشمند در دسترس نیست.', 
+          inline: false 
+        },
+        { 
+          name: '🔮 پیش‌بینی قیمت', 
+          value: prediction || 'متأسفانه در حال حاضر پیش‌بینی قیمت در دسترس نیست.', 
+          inline: false 
+        }
+      )
+      .setFooter({ text: 'تحلیل‌های هوشمند صرفاً جنبه اطلاعاتی دارند و توصیه سرمایه‌گذاری محسوب نمی‌شوند.' })
+      .setTimestamp();
+
+    // دکمه‌های عملیات
+    const row = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId(`buy_stock_${stockId}`)
+          .setLabel('💰 خرید این سهام')
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId('stocks_analysis')
+          .setLabel('🔄 تحلیل سهام دیگر')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('stocks')
+          .setLabel('🔙 بازگشت به منوی سهام')
+          .setStyle(ButtonStyle.Secondary)
+      );
+
+    // ارسال پاسخ نهایی
+    await interaction.editReply({ embeds: [embed], components: [row] });
+  } catch (error) {
+    console.error('Error processing stock analysis:', error);
+    try {
+      if (interaction.deferred) {
+        await interaction.editReply({ 
+          content: '❌ خطایی در تحلیل هوشمند سهام رخ داد. لطفا دوباره تلاش کنید.' 
+        });
+      } else {
+        await interaction.reply({ 
+          content: '❌ خطایی در تحلیل هوشمند سهام رخ داد. لطفا دوباره تلاش کنید.', 
+          ephemeral: true 
+        });
+      }
+    } catch (e) {
+      console.error('Error replying with error message:', e);
+    }
   }
 }
 

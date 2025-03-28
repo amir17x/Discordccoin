@@ -11,6 +11,7 @@ import { botConfig } from '../utils/config';
 import { adminMenu } from '../components/adminMenu';
 import { clansMenu } from '../components/clansMenu';
 import { handleQuizQuestionModalSubmit } from '../components/groupGames';
+import { huggingFaceService } from '../services/huggingface';
 
 /**
  * Handler for modal submissions

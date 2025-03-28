@@ -5,7 +5,7 @@ import { handleRockPaperScissors } from '../games/rockPaperScissors';
 import { handleNumberGuess } from '../games/numberGuess';
 import { handleRobbery } from '../components/robberyMenu';
 import { processInvestment } from '../components/investmentMenu';
-import { processBuyStock, processSellStock } from '../components/stocksMenu';
+import { processBuyStock, processSellStock, processStockAnalysis } from '../components/stocksMenu';
 import { processBuyLotteryTicket } from '../components/lotteryMenu';
 import { economyMenu } from '../components/economyMenu';
 
@@ -19,6 +19,14 @@ export async function handleSelectMenuInteraction(interaction: StringSelectMenuI
   const [prefix, type] = customId.split(':');
 
   try {
+    // Handle stock analysis menu selection
+    if (customId === 'stocks_select_analysis') {
+      // Extract the stock ID from the selected value
+      const stockId = parseInt(selectedValue.replace('analyze_stock_', ''));
+      await processStockAnalysis(interaction, stockId);
+      return;
+    }
+    
     if (prefix === 'menu') {
       if (type === 'game') {
         // Handle game selection
@@ -144,6 +152,15 @@ export async function handleSelectMenuInteraction(interaction: StringSelectMenuI
       modal.addComponents(actionRow);
       
       await interaction.showModal(modal);
+      return;
+    }
+    
+    if (customId === 'stocks_select_analysis') {
+      // Selected value format: analyze_stock_{stockId}
+      const stockId = parseInt(selectedValue.split('_')[2]);
+      
+      // Process stock analysis using AI
+      await processStockAnalysis(interaction, stockId);
       return;
     }
     

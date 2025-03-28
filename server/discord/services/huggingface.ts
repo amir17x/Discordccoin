@@ -21,7 +21,8 @@ const log = (message: string, level: 'info' | 'success' | 'error' | 'warning' = 
  */
 class HuggingFaceService {
   private client: HfInference | null = null;
-  private defaultModel = 'gpt2'; // مدل پیشفرض - می‌توانید تغییر دهید
+  // استفاده از مدل چندزبانه با پشتیبانی بهتر از زبان فارسی
+  private defaultModel = 'mistralai/Mistral-7B-Instruct-v0.2'; // مدل پیشفرض مناسب برای زبان فارسی
   
   /**
    * مقداردهی اولیه سرویس Hugging Face
@@ -131,10 +132,19 @@ class HuggingFaceService {
       const maxTokens = options.maxTokens || 150;
       const temperature = options.temperature !== undefined ? options.temperature : 0.7;
 
+      // اضافه کردن دستورالعمل زبان فارسی به ابتدای پرامپت با تأکید بیشتر
+      const enhancedPrompt = `[دستورالعمل مهم: شما یک دستیار هوشمند برای کاربران ایرانی هستید]
+[شما باید در هر شرایطی فقط به زبان فارسی (پارسی) پاسخ دهید - نه عربی، نه انگلیسی]
+[حتی اگر سوال به زبان دیگری پرسیده شده باشد، پاسخ را به فارسی روان و قابل فهم ارائه دهید]
+[از کلمات و اصطلاحات رایج در زبان فارسی استاندارد استفاده کنید]
+[اگر ضرورت دارد از کلمات تخصصی انگلیسی استفاده کنید، معادل فارسی آن را در پرانتز ذکر کنید]
+
+${prompt}`;
+
       // ارسال درخواست به Hugging Face
       const response = await this.client.textGeneration({
         model: model,
-        inputs: prompt,
+        inputs: enhancedPrompt,
         parameters: {
           max_new_tokens: maxTokens,
           temperature: temperature,
