@@ -460,10 +460,10 @@ export async function showMatchmakingMenu(
       .setTitle(`🔍 جستجوی رقیب برای ${gameName}`)
       .setDescription('یک روش برای پیدا کردن رقیب انتخاب کنید. می‌توانید به صورت تصادفی با بازیکنان دیگر مچ شوید یا یک بازیکن مشخص را دعوت کنید!')
       .addFields(
-        { name: '💰 ورودی بازی', value: `**\`${getGameEntryFee(gameType)} Ccoin\`**`, inline: true },
-        { name: '🏆 جایزه برنده', value: `**\`${getGameReward(gameType)} Ccoin\`**`, inline: true },
-        { name: '👥 بازیکنان در صف', value: `**\`${matchmaking.getQueueLength(gameType)}\` نفر**`, inline: true },
-        { name: '⏱️ زمان انتظار', value: '**\`30 ثانیه\`**', inline: true }
+        { name: '💰 ورودی بازی', value: `${getGameEntryFee(gameType)} Ccoin`, inline: true },
+        { name: '🏆 جایزه برنده', value: `${getGameReward(gameType)} Ccoin`, inline: true },
+        { name: '👥 بازیکنان در صف', value: `${matchmaking.getQueueLength(gameType)} نفر`, inline: true },
+        { name: '⏱️ زمان انتظار', value: 'حداکثر 30 ثانیه', inline: true }
       )
       .setFooter({ text: 'برای شروع بازی باید Ccoin کافی داشته باشید' })
       .setTimestamp();
@@ -551,20 +551,17 @@ export async function startRandomMatchmaking(
       // اینجا بازی را شروع می‌کنیم - با توجه به نوع بازی تابع مربوطه را صدا می‌زنیم
       await startGame(interaction, gameType, interaction.user.id, opponent.userId);
     } else {
-      // تعریف زمان کل انتظار (30 ثانیه)
-      const TOTAL_WAIT_TIME_SECONDS = 30;
-      
       // رقیب پیدا نشد - منتظر می‌مانیم
-      // ایجاد امبد برای نمایش وضعیت انتظار با تایمر دیسکورد استایل
+      // ایجاد امبد برای نمایش وضعیت انتظار
       const embed = new EmbedBuilder()
         .setColor('#E74C3C')
         .setTitle('🔍 در حال جستجوی رقیب...')
         .setDescription(`در حال یافتن رقیب برای بازی ${getGameDisplayName(gameType)} هستیم. لطفاً صبر کنید...`)
         .addFields(
-          { name: '⏱️ زمان انتظار', value: `**\`${TOTAL_WAIT_TIME_SECONDS} ثانیه\`** باقیمانده`, inline: true },
-          { name: '👥 بازیکنان در صف', value: `**\`${matchmaking.getQueueLength(gameType)}\`** نفر`, inline: true }
+          { name: '⏱️ زمان انتظار', value: 'حداکثر 30 ثانیه', inline: true },
+          { name: '👥 وضعیت', value: 'در صف انتظار', inline: true }
         )
-        .setFooter({ text: 'اگر رقیبی پیدا نشود، از صف خارج خواهید شد' })
+        .setFooter({ text: 'اگر تا 30 ثانیه رقیبی پیدا نشود، از صف خارج خواهید شد' })
         .setTimestamp();
       
       // دکمه لغو جستجو
@@ -576,147 +573,107 @@ export async function startRandomMatchmaking(
             .setStyle(ButtonStyle.Danger)
         );
       
-      // ارسال پاسخ اولیه
-      const reply = await interaction.reply({ 
-        embeds: [embed], 
-        components: [row], 
-        ephemeral: true,
-        fetchReply: true  // برای دریافت پاسخ کامل
-      });
+      // ارسال پاسخ
+      await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
       
-      // ثبت زمان شروع
-      const startTime = Date.now();
-      let timerId: string | null = null;
-      let isGameStarted = false;  // برای جلوگیری از اجرای همزمان چندین تابع
-      
-      // تابع به‌روزرسانی تایمر در هر ثانیه
-      const updateTimer = async (remainingSeconds: number): Promise<void> => {
+      // تنظیم تایمر برای بررسی مجدد صف بعد از 10 ثانیه
+      setTimeout(async () => {
         try {
-          // بررسی برای پیدا کردن رقیب
-          const matchedOpponent = matchmaking.findOpponent(gameType, interaction.user.id);
-          
-          // اگر رقیب پیدا شد، بازی را شروع کن
-          if (matchedOpponent && !isGameStarted) {
-            isGameStarted = true;
-            
-            // پاکسازی تایمر
-            if (timerId) {
-              clearCountdownTimer(timerId);
-              timerId = null;
+          // بررسی مجدد برای پیدا کردن رقیب
+          const newOpponent = matchmaking.findOpponent(gameType, interaction.user.id);
+          if (newOpponent) {
+            // رقیب پیدا شد
+            try {
+              await interaction.editReply({
+                content: `🎮 رقیب پیدا شد! شما با <@${newOpponent.userId}> مچ شدید. بازی در حال شروع...`,
+                embeds: [],
+                components: []
+              });
+              
+              // شروع بازی
+              await startGame(interaction, gameType, interaction.user.id, newOpponent.userId);
+            } catch (e) {
+              console.error("Error updating matchmaking result:", e);
+            }
+          } else {
+            // هنوز رقیبی پیدا نشده
+            try {
+              const updatedEmbed = new EmbedBuilder()
+                .setColor('#E74C3C')
+                .setTitle('🔍 همچنان در حال جستجو...')
+                .setDescription(`هنوز رقیبی برای بازی ${getGameDisplayName(gameType)} پیدا نشده است. باز هم صبر می‌کنیم...`)
+                .addFields(
+                  { name: '⏱️ زمان انتظار باقیمانده', value: 'حداکثر 20 ثانیه', inline: true },
+                  { name: '👥 وضعیت', value: 'در صف انتظار', inline: true }
+                )
+                .setFooter({ text: 'اگر تا 20 ثانیه رقیبی پیدا نشود، از صف خارج خواهید شد' })
+                .setTimestamp();
+              
+              await interaction.editReply({ embeds: [updatedEmbed], components: [row] });
+            } catch (e) {
+              console.error("Error updating matchmaking status:", e);
             }
             
-            // اعلام پیدا شدن رقیب
-            await interaction.editReply({
-              content: `🎮 رقیب پیدا شد! شما با <@${matchedOpponent.userId}> مچ شدید. بازی در حال شروع...`,
-              embeds: [],
-              components: []
-            });
-            
-            // شروع بازی
-            await startGame(interaction, gameType, interaction.user.id, matchedOpponent.userId);
-            return;
-          }
-          
-          // به‌روزرسانی امبد با زمان باقیمانده جدید و تعداد بازیکنان در صف
-          // تعیین رنگ تایمر بر اساس زمان باقیمانده
-          let timerColor = '🟢';
-          if (remainingSeconds <= 10) {
-            timerColor = '🔴';
-          } else if (remainingSeconds <= 20) {
-            timerColor = '🟡';
-          }
-          
-          // فرمت نمایش تایمر با هاله سیاه
-          const timeDisplay = `${timerColor} **\`${remainingSeconds} ثانیه\`** باقیمانده`;
-          
-          // دریافت تعداد واقعی کاربران در صف برای نمایش زنده
-          const currentQueueLength = matchmaking.getQueueLength(gameType);
-          
-          // تغییر رنگ تایمر بر اساس زمان باقیمانده
-          const updatedEmbed = new EmbedBuilder()
-            .setColor('#E74C3C')
-            .setTitle('🔍 در حال جستجوی رقیب...')
-            .setDescription(`در حال یافتن رقیب برای بازی ${getGameDisplayName(gameType)} هستیم. لطفاً صبر کنید...`)
-            .addFields(
-              { name: '⏱️ زمان انتظار', value: timeDisplay, inline: true },
-              { name: '👥 بازیکنان در صف', value: `**\`${currentQueueLength}\`** نفر`, inline: true }
-            )
-            .setFooter({ text: 'اگر رقیبی پیدا نشود، از صف خارج خواهید شد' })
-            .setTimestamp();
-          
-          await interaction.editReply({ embeds: [updatedEmbed], components: [row] });
-        } catch (error) {
-          console.error("Error updating countdown:", error);
-        }
-      };
-      
-      // تابع اجرای پایان زمان
-      const onTimerComplete = async (): Promise<void> => {
-        // اگر بازی قبلاً شروع شده، کاری انجام نده
-        if (isGameStarted) return;
-        
-        try {
-          // بررسی نهایی برای پیدا کردن رقیب
-          const finalOpponent = matchmaking.findOpponent(gameType, interaction.user.id);
-          
-          if (finalOpponent) {
-            // در آخرین لحظه رقیب پیدا شد
-            isGameStarted = true;
-            
-            await interaction.editReply({
-              content: `🎮 رقیب پیدا شد! شما با <@${finalOpponent.userId}> مچ شدید. بازی در حال شروع...`,
-              embeds: [],
-              components: []
-            });
-            
-            // شروع بازی
-            await startGame(interaction, gameType, interaction.user.id, finalOpponent.userId);
-          } else {
-            // رقیبی پیدا نشد - خروج از صف
-            matchmaking.removeFromQueue(interaction.user.id, gameType);
-            
-            const timeoutEmbed = new EmbedBuilder()
-              .setColor('#E74C3C')
-              .setTitle('⏰ زمان جستجو به پایان رسید')
-              .setDescription(`متأسفانه رقیبی برای بازی ${getGameDisplayName(gameType)} پیدا نشد.`)
-              .addFields(
-                { name: '⏱️ زمان انتظار', value: `🔴 **\`0 ثانیه\`** باقیمانده`, inline: true },
-                { name: '👥 بازیکنان در صف', value: `**\`${matchmaking.getQueueLength(gameType)}\`** نفر`, inline: true },
-                { name: '🔄 پیشنهاد', value: 'می‌توانید دوباره تلاش کنید یا یک بازیکن را مستقیماً دعوت کنید', inline: false }
-              )
-              .setFooter({ text: 'شما از صف خارج شدید' })
-              .setTimestamp();
-            
-            const retryRow = new ActionRowBuilder<ButtonBuilder>()
-              .addComponents(
-                new ButtonBuilder()
-                  .setCustomId(`matchmaking:random:${gameType}`)
-                  .setLabel('🔄 تلاش مجدد')
-                  .setStyle(ButtonStyle.Success),
-                new ButtonBuilder()
-                  .setCustomId(`matchmaking:invite:${gameType}`)
-                  .setLabel('📩 دعوت رقیب')
-                  .setStyle(ButtonStyle.Primary),
-                new ButtonBuilder()
-                  .setCustomId('competitive_games')
-                  .setLabel('🔙 بازگشت')
-                  .setStyle(ButtonStyle.Secondary)
-              );
-            
-            await interaction.editReply({ embeds: [timeoutEmbed], components: [retryRow] });
+            // تایمر نهایی برای بررسی بعد از 20 ثانیه دیگر
+            setTimeout(async () => {
+              // آیا کاربر هنوز در صف است؟
+              const finalOpponent = matchmaking.findOpponent(gameType, interaction.user.id);
+              if (finalOpponent) {
+                // در نهایت رقیب پیدا شد
+                try {
+                  await interaction.editReply({
+                    content: `🎮 رقیب پیدا شد! شما با <@${finalOpponent.userId}> مچ شدید. بازی در حال شروع...`,
+                    embeds: [],
+                    components: []
+                  });
+                  
+                  // شروع بازی
+                  await startGame(interaction, gameType, interaction.user.id, finalOpponent.userId);
+                } catch (e) {
+                  console.error("Error updating final matchmaking result:", e);
+                }
+              } else {
+                // رقیبی پیدا نشد - خروج از صف
+                matchmaking.removeFromQueue(interaction.user.id, gameType);
+                
+                try {
+                  const timeoutEmbed = new EmbedBuilder()
+                    .setColor('#E74C3C')
+                    .setTitle('⏰ زمان جستجو به پایان رسید')
+                    .setDescription(`متأسفانه رقیبی برای بازی ${getGameDisplayName(gameType)} پیدا نشد.`)
+                    .addFields(
+                      { name: '🔄 پیشنهاد', value: 'می‌توانید دوباره تلاش کنید یا یک بازیکن را مستقیماً دعوت کنید', inline: false }
+                    )
+                    .setFooter({ text: 'شما از صف خارج شدید' })
+                    .setTimestamp();
+                  
+                  const retryRow = new ActionRowBuilder<ButtonBuilder>()
+                    .addComponents(
+                      new ButtonBuilder()
+                        .setCustomId(`matchmaking:random:${gameType}`)
+                        .setLabel('🔄 تلاش مجدد')
+                        .setStyle(ButtonStyle.Success),
+                      new ButtonBuilder()
+                        .setCustomId(`matchmaking:invite:${gameType}`)
+                        .setLabel('📩 دعوت رقیب')
+                        .setStyle(ButtonStyle.Primary),
+                      new ButtonBuilder()
+                        .setCustomId('competitive_games')
+                        .setLabel('🔙 بازگشت')
+                        .setStyle(ButtonStyle.Secondary)
+                    );
+                  
+                  await interaction.editReply({ embeds: [timeoutEmbed], components: [retryRow] });
+                } catch (e) {
+                  console.error("Error updating matchmaking timeout:", e);
+                }
+              }
+            }, 20000);
           }
         } catch (error) {
-          console.error("Error in timer completion:", error);
+          console.error("Error in matchmaking follow-up:", error);
         }
-      };
-      
-      // راه‌اندازی تایمر شمارنده معکوس
-      timerId = startCountdownTimer(
-        interaction.user.id,
-        TOTAL_WAIT_TIME_SECONDS,
-        updateTimer,
-        onTimerComplete
-      );
+      }, 10000);
     }
   } catch (error) {
     console.error(`Error in random matchmaking for ${gameType}:`, error);
@@ -801,10 +758,6 @@ export async function cancelMatchmaking(
       .setColor('#E74C3C')
       .setTitle('❌ جستجو لغو شد')
       .setDescription(`جستجوی رقیب برای بازی ${getGameDisplayName(gameType)} با موفقیت لغو شد.`)
-      .addFields(
-        { name: '⏱️ وضعیت', value: `**\`جستجو لغو شد\`**`, inline: true },
-        { name: '👥 بازیکنان در صف', value: `**\`${matchmaking.getQueueLength(gameType)}\`** نفر`, inline: true }
-      )
       .setFooter({ text: 'شما از صف خارج شدید' })
       .setTimestamp();
     

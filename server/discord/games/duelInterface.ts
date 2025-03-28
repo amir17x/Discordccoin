@@ -15,7 +15,7 @@ import { matchmaking } from './matchmaking';
 export function getAllActiveDuelGames(): Array<{id: string, game: DuelGame, timestamp: number}> {
   const games: Array<{id: string, game: DuelGame, timestamp: number}> = [];
   
-  activeGames.forEach((game, id) => {
+  activeGames.forEach((game: DuelGame, id: string) => {
     games.push({
       id,
       game,
@@ -88,7 +88,7 @@ export async function createDuelGame(player1Id: string, player2Id: string, chann
         error: 'خطا در ایجاد بازی دوئل. ممکن است موجودی کاربران کافی نباشد یا کاربران در دیتابیس موجود نباشند.'
       };
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in createDuelGame interface:', error);
     return {
       success: false,
@@ -122,7 +122,7 @@ export async function cancelDuelGame(gameId: string, refundCoins: boolean = true
           content: `⚠️ بازی دوئل بین <@${game.player1}> و <@${game.player2}> توسط ادمین لغو شد.`
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending cancellation message:', error);
       // ادامه می‌دهیم حتی اگر پیام ارسال نشد
     }
@@ -133,7 +133,7 @@ export async function cancelDuelGame(gameId: string, refundCoins: boolean = true
     return {
       success: true
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in cancelDuelGame interface:', error);
     return {
       success: false,
@@ -162,7 +162,7 @@ export function cleanupInactiveDuelGames(): {count: number} {
   const currentTime = Date.now();
   const timeLimit = 30 * 60 * 1000; // 30 دقیقه
   
-  activeGames.forEach((game, gameId) => {
+  activeGames.forEach((game: DuelGame, gameId: string) => {
     if (currentTime - game.lastAction > timeLimit) {
       activeGames.delete(gameId);
     }

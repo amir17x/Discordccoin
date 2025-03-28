@@ -88,13 +88,13 @@ function createHealthBar(current: number, max: number = PLAYER_HEALTH): string {
   
   if (percent > 70) {
     // سبز برای سلامتی بالا
-    colorBar = '🟩'.repeat(filledBlocks) + '⬜'.repeat(emptyBlocks);
+    colorBar = '🟩'.repeat(filledBlocks) + '⬛'.repeat(emptyBlocks);
   } else if (percent > 30) {
     // زرد برای سلامتی متوسط
-    colorBar = '🟨'.repeat(filledBlocks) + '⬜'.repeat(emptyBlocks);
+    colorBar = '🟨'.repeat(filledBlocks) + '⬛'.repeat(emptyBlocks);
   } else {
     // قرمز برای سلامتی پایین
-    colorBar = '🟥'.repeat(filledBlocks) + '⬜'.repeat(emptyBlocks);
+    colorBar = '🟥'.repeat(filledBlocks) + '⬛'.repeat(emptyBlocks);
   }
   
   return `${colorBar} ${percent}%`;
@@ -116,7 +116,7 @@ export interface DuelGame {
 }
 
 // ذخیره بازی‌های فعال
-const activeGames = new Collection<string, DuelGame>();
+export const activeGames = new Collection<string, DuelGame>();
 
 /**
  * افزودن بازی جدید به لیست بازی‌های فعال
@@ -125,6 +125,15 @@ const activeGames = new Collection<string, DuelGame>();
  */
 export function addActiveGame(gameId: string, gameData: DuelGame): void {
   activeGames.set(gameId, gameData);
+}
+
+/**
+ * بررسی اینکه آیا بازی با شناسه مشخص فعال است
+ * @param gameId شناسه بازی
+ * @returns true اگر بازی فعال باشد
+ */
+export function isGameActive(gameId: string): boolean {
+  return activeGames.has(gameId);
 }
 
 /**
@@ -709,8 +718,9 @@ export async function createDuelGameDirectly(
       return null;
     }
     
-    // ایجاد شناسه بازی
-    const gameId = createGameId(player1Id, player2Id);
+    // ایجاد شناسه بازی - مرتب‌سازی شناسه‌ها برای اطمینان از عدم تکرار
+    const sortedPlayers = [player1Id, player2Id].sort();
+    const gameId = `duel_${sortedPlayers[0]}_${sortedPlayers[1]}`;
     
     // اضافه کردن بازی به لیست بازی‌های فعال
     activeGames.set(gameId, {
