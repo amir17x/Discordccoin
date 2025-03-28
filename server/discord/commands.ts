@@ -3,6 +3,7 @@ import { storage } from '../storage';
 import { mainMenu } from './components/mainMenu';
 import { adminMenu } from '../discord/components/adminMenu';
 import { setupTipSystem, addTipChannel, removeTipChannel, toggleTipChannel, updateTipChannel, updateTipInterval, sendImmediateTip } from './components/tipSystem';
+import { handleGroupGamesMenu } from './components/groupGames';
 
 // Command to display the main menu
 const menu = {
@@ -738,6 +739,25 @@ const unTipChannel = {
   }
 };
 
+// بازی های گروهی - دستور برای نمایش منوی بازی های گروهی
+const groupGames = {
+  data: new SlashCommandBuilder()
+    .setName('group')
+    .setDescription('🎮 منوی بازی‌های گروهی و سرگرمی دسته‌جمعی'),
+  
+  async execute(interaction: any) {
+    try {
+      await handleGroupGamesMenu(interaction);
+    } catch (error) {
+      console.error('Error in group games command:', error);
+      await interaction.reply({
+        content: '⚠️ خطا در نمایش منوی بازی‌های گروهی! لطفاً دوباره تلاش کنید.',
+        ephemeral: true
+      });
+    }
+  }
+};
+
 // Export function to load commands
 export async function loadCommands(client: Client) {
   // Add commands to the collection
@@ -749,6 +769,7 @@ export async function loadCommands(client: Client) {
   client.commands.set(ping.data.name, ping);
   client.commands.set(tipChannel.data.name, tipChannel);
   client.commands.set(unTipChannel.data.name, unTipChannel);
+  client.commands.set(groupGames.data.name, groupGames);
 }
 
 export const commands = [
@@ -759,5 +780,6 @@ export const commands = [
   admin.data.toJSON(),
   ping.data.toJSON(),
   tipChannel.data.toJSON(),
-  unTipChannel.data.toJSON()
+  unTipChannel.data.toJSON(),
+  groupGames.data.toJSON()
 ];

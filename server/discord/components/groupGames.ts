@@ -196,9 +196,20 @@ export async function handleGroupGamesButton(interaction: ButtonInteraction) {
       case 'quiz_submit_question':
         await showSubmitQuestionModal(interaction);
         break;
+      case 'drawguess_join':
+        await joinDrawGuessGame(interaction);
+        break;
+      case 'drawguess_start':
+        await startDrawGuessGame(interaction);
+        break;
+      case 'drawguess_new':
+        await handleDrawGuessGame(interaction);
+        break;
       default:
         if (buttonId.startsWith('quiz_answer_')) {
           await handleQuizAnswer(interaction);
+        } else if (buttonId.startsWith('drawguess_word_')) {
+          await handleWordSelection(interaction);
         } else {
           await interaction.reply({ content: '❌ دکمه نامعتبر است!', ephemeral: true });
         }
@@ -848,7 +859,7 @@ async function handleQuestionTimeout(gameSession: GameSession, interaction: Butt
 /**
  * مدیریت پاسخ کاربر به سوال
  */
-async function handleQuizAnswer(interaction: ButtonInteraction) {
+export async function handleQuizAnswer(interaction: ButtonInteraction) {
   try {
     // استخراج شناسه بازی و شماره گزینه از شناسه دکمه
     const [_, __, gameId, optionIndex] = interaction.customId.split('_');
@@ -1089,15 +1100,719 @@ async function endQuizGame(gameSession: GameSession, interaction: ButtonInteract
  */
 async function handleDrawGuessGame(interaction: ButtonInteraction) {
   try {
+    // بررسی اینکه آیا بازی در کانال فعلی در حال اجراست
+    const existingGame = await getActiveGameInChannel(interaction.channelId, 'drawguess');
+    if (existingGame) {
+      return await interaction.reply({ 
+        content: '❌ یک بازی نقاشی حدس بزن در حال حاضر در این کانال در حال اجراست!', 
+        ephemeral: true 
+      });
+    }
+    
+    // ایجاد Embed معرفی بازی
     const embed = new EmbedBuilder()
       .setTitle('🎨 نقاشی حدس بزن')
-      .setDescription('این بازی به زودی در دسترس قرار خواهد گرفت. لطفاً صبور باشید!')
-      .setColor(0xFFAA22);
+      .setDescription(
+        'در این بازی، یک نفر نقاشی می‌کشد و بقیه باید حدس بزنند که چه چیزی است!\n\n' +
+        '**قوانین بازی:**\n' +
+        '- هر نفر به نوبت نقاش می‌شود\n' +
+        '- نقاش 30 ثانیه وقت دارد تا چیزی را بکشد\n' +
+        '- سایر بازیکنان 60 ثانیه فرصت دارند تا حدس بزنند\n' +
+        '- نقاش و اولین کسی که درست حدس بزند امتیاز می‌گیرند\n\n' +
+        '**برای شرکت در بازی روی دکمه زیر کلیک کنید:**'
+      )
+      .setColor(0xFFAA22)
+      .setFooter({ text: 'نفرات برتر در پایان بازی جایزه دریافت می‌کنند!' });
     
-    await interaction.reply({ embeds: [embed], ephemeral: true });
+    // ایجاد دکمه‌های پیوستن و شروع بازی
+    const row = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('drawguess_join')
+          .setLabel('شرکت در بازی')
+          .setEmoji('✏️')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('drawguess_start')
+          .setLabel('شروع بازی')
+          .setEmoji('▶️')
+          .setStyle(ButtonStyle.Success)
+      );
+    
+    // ایجاد یک جلسه بازی جدید
+    const gameId = uuidv4();
+    const newGameSession: GameSession = {
+      id: gameId,
+      gameType: 'drawguess',
+      channelId: interaction.channelId,
+      createdBy: interaction.user.id,
+      players: [interaction.user.id],
+      status: 'waiting',
+      createdAt: new Date(),
+      data: {
+        currentRound: 0,
+        totalRounds: 5,
+        currentDrawer: null,
+        currentWord: null,
+        wordOptions: [],
+        playerScores: {
+          [interaction.user.id]: 0
+        },
+        drawingTime: 30, // ثانیه
+        guessTime: 60, // ثانیه
+        words: [
+          'سیب', 'ماشین', 'خانه', 'درخت', 'گربه', 'سگ', 'ماه', 'خورشید', 
+          'ستاره', 'گل', 'توپ', 'دوچرخه', 'کتاب', 'تلفن', 'کامپیوتر',
+          'قایق', 'هواپیما', 'ساعت', 'چتر', 'عینک', 'کفش', 'شلوار',
+          'پیراهن', 'پنجره', 'در', 'میز', 'صندلی', 'قلم', 'مداد', 'فیل'
+        ]
+      }
+    };
+    
+    // ذخیره بازی در سیستم ذخیره‌سازی
+    await storage.createGameSession(newGameSession);
+    
+    // افزودن به لیست بازی‌های فعال
+    activeGames.set(gameId, newGameSession);
+    
+    // ارسال پیام بازی
+    const message = await interaction.reply({ 
+      embeds: [embed], 
+      components: [row],
+      fetchReply: true
+    });
+    
+    // ذخیره شناسه پیام برای استفاده‌های بعدی
+    newGameSession.data.messageId = message.id;
+    activeGames.set(gameId, newGameSession);
+    
   } catch (error) {
     log(`Error handling draw guess game: ${error}`, 'error');
     await interaction.reply({ content: '❌ خطایی در اجرای بازی رخ داد. لطفاً بعداً دوباره تلاش کنید.', ephemeral: true });
+  }
+}
+
+/**
+ * پیوستن به بازی نقاشی حدس بزن
+ */
+async function joinDrawGuessGame(interaction: ButtonInteraction) {
+  try {
+    // یافتن بازی فعال در کانال
+    const game = await getActiveGameInChannel(interaction.channelId, 'drawguess');
+    
+    if (!game || game.status !== 'waiting') {
+      return await interaction.reply({ 
+        content: '❌ بازی نقاشی حدس بزنی برای پیوستن یافت نشد!', 
+        ephemeral: true 
+      });
+    }
+    
+    // بررسی اینکه آیا کاربر قبلاً به بازی پیوسته است
+    if (game.players.includes(interaction.user.id)) {
+      return await interaction.reply({ 
+        content: '✅ شما قبلاً به این بازی پیوسته‌اید!', 
+        ephemeral: true 
+      });
+    }
+    
+    // افزودن کاربر به لیست بازیکنان
+    game.players.push(interaction.user.id);
+    game.data.playerScores[interaction.user.id] = 0;
+    
+    // به‌روزرسانی بازی در سیستم ذخیره‌سازی
+    await storage.updateGameSession(game);
+    
+    // به‌روزرسانی بازی در لیست بازی‌های فعال
+    activeGames.set(game.id, game);
+    
+    // به‌روزرسانی Embed با لیست بازیکنان جدید
+    const client = require('../client').default;
+    const channel = await client.channels.fetch(game.channelId);
+    
+    if (channel && channel.isTextBased()) {
+      const message = await channel.messages.fetch(game.data.messageId);
+      
+      if (message) {
+        const embed = EmbedBuilder.from(message.embeds[0]);
+        
+        // افزودن فیلد بازیکنان یا به‌روزرسانی آن
+        const playerField = embed.data.fields?.find(field => field.name === '👥 بازیکنان');
+        const playersList = game.players.map(playerId => `<@${playerId}>`).join('\n');
+        
+        if (playerField) {
+          playerField.value = playersList;
+        } else {
+          embed.addFields({ name: '👥 بازیکنان', value: playersList });
+        }
+        
+        await message.edit({ embeds: [embed] });
+      }
+    }
+    
+    await interaction.reply({ 
+      content: `✅ شما با موفقیت به بازی نقاشی حدس بزن پیوستید! تعداد بازیکنان: ${game.players.length}`, 
+      ephemeral: true 
+    });
+    
+  } catch (error) {
+    log(`Error joining draw guess game: ${error}`, 'error');
+    await interaction.reply({ 
+      content: '❌ خطایی در پیوستن به بازی رخ داد. لطفاً بعداً دوباره تلاش کنید.', 
+      ephemeral: true 
+    });
+  }
+}
+
+/**
+ * شروع بازی نقاشی حدس بزن
+ */
+async function startDrawGuessGame(interaction: ButtonInteraction) {
+  try {
+    // یافتن بازی فعال در کانال
+    const game = await getActiveGameInChannel(interaction.channelId, 'drawguess');
+    
+    if (!game || game.status !== 'waiting') {
+      return await interaction.reply({ 
+        content: '❌ بازی نقاشی حدس بزنی برای شروع یافت نشد!', 
+        ephemeral: true 
+      });
+    }
+    
+    // بررسی اینکه فقط سازنده بازی می‌تواند آن را شروع کند
+    if (game.createdBy !== interaction.user.id) {
+      return await interaction.reply({ 
+        content: '❌ فقط سازنده بازی می‌تواند بازی را شروع کند!', 
+        ephemeral: true 
+      });
+    }
+    
+    // بررسی تعداد بازیکنان (حداقل 2 نفر)
+    if (game.players.length < 2) {
+      return await interaction.reply({ 
+        content: '❌ برای شروع بازی حداقل به 2 بازیکن نیاز است!', 
+        ephemeral: true 
+      });
+    }
+    
+    // به‌روزرسانی وضعیت بازی
+    game.status = 'active';
+    game.startedAt = new Date();
+    
+    // مخلوط کردن آرایه بازیکنان برای تعیین ترتیب نقاشی
+    game.data.playerOrder = shuffle([...game.players]);
+    
+    // انتخاب اولین نقاش
+    game.data.currentDrawer = game.data.playerOrder[0];
+    
+    // به‌روزرسانی بازی در سیستم ذخیره‌سازی
+    await storage.updateGameSession(game);
+    
+    // به‌روزرسانی بازی در لیست بازی‌های فعال
+    activeGames.set(game.id, game);
+    
+    // ارسال پیام شروع بازی
+    await interaction.reply({ 
+      content: `🎮 بازی نقاشی حدس بزن با ${game.players.length} بازیکن شروع شد!`, 
+      fetchReply: true 
+    });
+    
+    // شروع اولین دور بازی
+    setTimeout(() => startNextRoundDrawGuess(game, interaction), 3000);
+    
+  } catch (error) {
+    log(`Error starting draw guess game: ${error}`, 'error');
+    await interaction.reply({ 
+      content: '❌ خطایی در شروع بازی رخ داد. لطفاً بعداً دوباره تلاش کنید.', 
+      ephemeral: true 
+    });
+  }
+}
+
+/**
+ * شروع دور بعدی بازی نقاشی حدس بزن
+ */
+async function startNextRoundDrawGuess(game: GameSession, interaction?: ButtonInteraction) {
+  try {
+    // افزایش شماره دور
+    game.data.currentRound++;
+    
+    // بررسی پایان بازی
+    if (game.data.currentRound > game.data.totalRounds) {
+      const client = require('../client').default;
+      const tmpInteraction = interaction || { client } as ButtonInteraction;
+      return await endDrawGuessGame(game, tmpInteraction);
+    }
+    
+    // انتخاب نقاش برای این دور
+    const drawerIndex = (game.data.currentRound - 1) % game.players.length;
+    game.data.currentDrawer = game.data.playerOrder[drawerIndex];
+    
+    // انتخاب سه کلمه تصادفی برای نقاش
+    game.data.wordOptions = shuffle([...game.data.words]).slice(0, 3);
+    
+    // به‌روزرسانی بازی در سیستم ذخیره‌سازی
+    await storage.updateGameSession(game);
+    
+    // به‌روزرسانی بازی در لیست بازی‌های فعال
+    activeGames.set(game.id, game);
+    
+    // ارسال پیام انتخاب کلمه
+    const client = require('../client').default;
+    const channel = await client.channels.fetch(game.channelId);
+    
+    if (channel && channel.isTextBased()) {
+      // ارسال پیام عمومی برای اعلام نقاش
+      const publicEmbed = new EmbedBuilder()
+        .setTitle(`🎨 دور ${game.data.currentRound} - نقاشی حدس بزن`)
+        .setDescription(`در این دور <@${game.data.currentDrawer}> نقاشی می‌کشد!\n\nنقاش در حال انتخاب کلمه است...`)
+        .setColor(0xFFAA22)
+        .addFields({ name: '⏱️ زمان آماده‌سازی', value: '15 ثانیه' });
+      
+      await channel.send({ embeds: [publicEmbed] });
+      
+      // ارسال پیام خصوصی به نقاش برای انتخاب کلمه
+      const drawer = await client.users.fetch(game.data.currentDrawer);
+      
+      const wordButtons = new ActionRowBuilder<ButtonBuilder>();
+      
+      // ایجاد دکمه برای هر کلمه
+      game.data.wordOptions.forEach((word, index) => {
+        wordButtons.addComponents(
+          new ButtonBuilder()
+            .setCustomId(`drawguess_word_${game.id}_${index}`)
+            .setLabel(word)
+            .setStyle(ButtonStyle.Primary)
+        );
+      });
+      
+      const drawerEmbed = new EmbedBuilder()
+        .setTitle('🎨 انتخاب کلمه برای نقاشی')
+        .setDescription('یک کلمه را برای نقاشی کشیدن انتخاب کنید:')
+        .setColor(0xFFAA22)
+        .setFooter({ text: 'پس از انتخاب کلمه، 30 ثانیه فرصت دارید تا توصیف خود را بنویسید.' });
+      
+      await drawer.send({ embeds: [drawerEmbed], components: [wordButtons] });
+      
+      // تنظیم تایمر برای انتخاب خودکار کلمه در صورت عدم انتخاب توسط نقاش
+      setTimeout(async () => {
+        if (!game.data.currentWord) {
+          // انتخاب خودکار یک کلمه
+          const randomIndex = Math.floor(Math.random() * game.data.wordOptions.length);
+          game.data.currentWord = game.data.wordOptions[randomIndex];
+          
+          // به‌روزرسانی بازی
+          await storage.updateGameSession(game);
+          activeGames.set(game.id, game);
+          
+          // شروع مرحله نقاشی
+          await startDrawingPhase(game);
+        }
+      }, 15000);
+    }
+    
+  } catch (error) {
+    log(`Error starting next round in draw guess game: ${error}`, 'error');
+    
+    // در صورت خطا، سعی می‌کنیم به دور بعدی برویم یا بازی را تمام کنیم
+    if (game.data.currentRound >= game.data.totalRounds) {
+      const client = require('../client').default;
+      const tmpInteraction = { client } as ButtonInteraction;
+      await endDrawGuessGame(game, tmpInteraction);
+    } else {
+      setTimeout(() => startNextRoundDrawGuess(game), 3000);
+    }
+  }
+}
+
+/**
+ * مدیریت انتخاب کلمه توسط نقاش
+ */
+async function handleWordSelection(interaction: ButtonInteraction) {
+  try {
+    // استخراج اطلاعات از شناسه دکمه
+    const [_, __, gameId, wordIndex] = interaction.customId.split('_');
+    const game = activeGames.get(gameId);
+    
+    if (!game || game.status !== 'active') {
+      return await interaction.reply({ 
+        content: '❌ بازی مورد نظر یافت نشد یا فعال نیست!', 
+        ephemeral: true 
+      });
+    }
+    
+    // بررسی اینکه فقط نقاش می‌تواند کلمه را انتخاب کند
+    if (game.data.currentDrawer !== interaction.user.id) {
+      return await interaction.reply({ 
+        content: '❌ فقط نقاش این دور می‌تواند کلمه را انتخاب کند!', 
+        ephemeral: true 
+      });
+    }
+    
+    // ذخیره کلمه انتخاب شده
+    const selectedWord = game.data.wordOptions[parseInt(wordIndex)];
+    game.data.currentWord = selectedWord;
+    
+    // به‌روزرسانی بازی
+    await storage.updateGameSession(game);
+    activeGames.set(game.id, game);
+    
+    // پاسخ به نقاش
+    await interaction.update({ 
+      content: `✅ شما کلمه "${selectedWord}" را برای نقاشی انتخاب کردید! شما 30 ثانیه فرصت دارید تا توصیف خود را بنویسید.`, 
+      components: [],
+      embeds: []
+    });
+    
+    // شروع مرحله نقاشی
+    await startDrawingPhase(game);
+    
+  } catch (error) {
+    log(`Error handling word selection: ${error}`, 'error');
+    await interaction.reply({ 
+      content: '❌ خطایی در انتخاب کلمه رخ داد. لطفاً بعداً دوباره تلاش کنید.', 
+      ephemeral: true 
+    });
+  }
+}
+
+/**
+ * شروع مرحله نقاشی
+ */
+async function startDrawingPhase(game: GameSession) {
+  try {
+    const client = require('../client').default;
+    const channel = await client.channels.fetch(game.channelId);
+    
+    if (channel && channel.isTextBased()) {
+      // ارسال پیام برای شروع مرحله نقاشی
+      const drawingEmbed = new EmbedBuilder()
+        .setTitle(`🎨 دور ${game.data.currentRound} - نوبت نقاشی`)
+        .setDescription(`<@${game.data.currentDrawer}> در حال نقاشی کلمه مخفی است!\n\nسایر بازیکنان باید حدس بزنند.`)
+        .setColor(0xFFAA22)
+        .addFields({ name: '⏱️ زمان نقاشی', value: `${game.data.drawingTime} ثانیه` })
+        .setFooter({ text: 'در پیام‌های خود حدس خود را بنویسید. اولین نفری که درست حدس بزند برنده است!' });
+      
+      const drawingMessage = await channel.send({ embeds: [drawingEmbed] });
+      game.data.drawingMessageId = drawingMessage.id;
+      
+      // به‌روزرسانی بازی
+      await storage.updateGameSession(game);
+      activeGames.set(game.id, game);
+      
+      // ارسال پیام خصوصی به نقاش با کلمه
+      const drawer = await client.users.fetch(game.data.currentDrawer);
+      await drawer.send(`🎨 لطفاً توصیف یا نقاشی خود را از کلمه "${game.data.currentWord}" در کانال ارسال کنید. شما ${game.data.drawingTime} ثانیه فرصت دارید.`);
+      
+      // شروع تایمر برای پایان مرحله نقاشی
+      setTimeout(async () => {
+        await startGuessingPhase(game);
+      }, game.data.drawingTime * 1000);
+      
+      // تنظیم یک تایمر برای اطلاع‌رسانی نیمه زمان
+      setTimeout(async () => {
+        try {
+          const halfTimeMessage = await channel.messages.fetch(game.data.drawingMessageId);
+          if (halfTimeMessage) {
+            const updatedEmbed = EmbedBuilder.from(halfTimeMessage.embeds[0]);
+            updatedEmbed.setFields({ name: '⏱️ زمان باقی‌مانده', value: `${Math.floor(game.data.drawingTime / 2)} ثانیه` });
+            await halfTimeMessage.edit({ embeds: [updatedEmbed] });
+          }
+        } catch (timeUpdateError) {
+          log(`Error updating half-time message: ${timeUpdateError}`, 'error');
+        }
+      }, Math.floor(game.data.drawingTime / 2) * 1000);
+    }
+    
+  } catch (error) {
+    log(`Error starting drawing phase: ${error}`, 'error');
+    // در صورت خطا، سعی می‌کنیم به دور بعدی برویم
+    setTimeout(() => startNextRoundDrawGuess(game), 3000);
+  }
+}
+
+/**
+ * شروع مرحله حدس زدن
+ */
+async function startGuessingPhase(game: GameSession) {
+  try {
+    const client = require('../client').default;
+    const channel = await client.channels.fetch(game.channelId);
+    
+    if (channel && channel.isTextBased()) {
+      // ارسال پیام برای شروع مرحله حدس زدن
+      const guessingEmbed = new EmbedBuilder()
+        .setTitle(`🎮 دور ${game.data.currentRound} - مرحله حدس زدن`)
+        .setDescription(`زمان نقاشی به پایان رسید! همه باید حدس بزنند که نقاشی <@${game.data.currentDrawer}> چیست!`)
+        .setColor(0x4CAF50)
+        .addFields({ name: '⏱️ زمان حدس زدن', value: `${game.data.guessTime} ثانیه` })
+        .setFooter({ text: 'در پیام‌های خود حدس خود را بنویسید. اولین نفری که درست حدس بزند برنده است!' });
+      
+      const guessingMessage = await channel.send({ embeds: [guessingEmbed] });
+      game.data.guessingMessageId = guessingMessage.id;
+      
+      // فعال کردن وضعیت حدس زدن
+      game.data.guessingPhase = true;
+      game.data.correctGuessers = [];
+      game.data.guessStart = Date.now();
+      
+      // به‌روزرسانی بازی
+      await storage.updateGameSession(game);
+      activeGames.set(game.id, game);
+      
+      // تنظیم یک تایمر برای اطلاع‌رسانی نیمه زمان
+      setTimeout(async () => {
+        try {
+          const halfTimeMessage = await channel.messages.fetch(game.data.guessingMessageId);
+          if (halfTimeMessage) {
+            const updatedEmbed = EmbedBuilder.from(halfTimeMessage.embeds[0]);
+            updatedEmbed.setFields({ name: '⏱️ زمان باقی‌مانده', value: `${Math.floor(game.data.guessTime / 2)} ثانیه` });
+            await halfTimeMessage.edit({ embeds: [updatedEmbed] });
+          }
+        } catch (timeUpdateError) {
+          log(`Error updating half-time message: ${timeUpdateError}`, 'error');
+        }
+      }, Math.floor(game.data.guessTime / 2) * 1000);
+      
+      // شروع تایمر برای پایان مرحله حدس زدن
+      setTimeout(async () => {
+        await endGuessingPhase(game);
+      }, game.data.guessTime * 1000);
+      
+      // اضافه کردن یک ایونت برای پردازش پیام‌های کانال برای حدس‌ها
+      const messageCollector = channel.createMessageCollector({ 
+        filter: msg => game.players.includes(msg.author.id) && msg.author.id !== game.data.currentDrawer,
+        time: game.data.guessTime * 1000
+      });
+      
+      messageCollector.on('collect', async (message) => {
+        // بررسی اینکه آیا بازی هنوز فعال است
+        const currentGame = activeGames.get(game.id);
+        if (!currentGame || currentGame.status !== 'active' || !currentGame.data.guessingPhase) {
+          return;
+        }
+        
+        // بررسی اینکه آیا فرستنده قبلاً حدس درست زده است
+        if (currentGame.data.correctGuessers?.includes(message.author.id)) {
+          return;
+        }
+        
+        // بررسی حدس
+        const guess = message.content.trim().toLowerCase();
+        const targetWord = currentGame.data.currentWord?.toLowerCase();
+        
+        if (guess === targetWord) {
+          // حدس درست - افزودن به لیست حدس کنندگان
+          currentGame.data.correctGuessers.push(message.author.id);
+          
+          // محاسبه امتیاز بر اساس سرعت پاسخ
+          const timeTaken = (Date.now() - currentGame.data.guessStart) / 1000; // تبدیل به ثانیه
+          const maxTime = currentGame.data.guessTime;
+          const timeScore = Math.max(1, Math.ceil((maxTime - timeTaken) / maxTime * 5));
+          
+          // افزودن امتیاز
+          currentGame.data.playerScores[message.author.id] = 
+            (currentGame.data.playerScores[message.author.id] || 0) + timeScore;
+          
+          // پاسخ به کاربر
+          await message.reply(`✅ حدس شما درست است! شما ${timeScore} امتیاز کسب کردید.`);
+          
+          // به‌روزرسانی بازی
+          await storage.updateGameSession(currentGame);
+          activeGames.set(currentGame.id, currentGame);
+          
+          // اگر این اولین حدس درست است
+          if (currentGame.data.correctGuessers.length === 1) {
+            // اضافه کردن امتیاز برای نقاش هم
+            currentGame.data.playerScores[currentGame.data.currentDrawer] = 
+              (currentGame.data.playerScores[currentGame.data.currentDrawer] || 0) + 3;
+            
+            // به‌روزرسانی بازی
+            await storage.updateGameSession(currentGame);
+            activeGames.set(currentGame.id, currentGame);
+            
+            // اگر تعداد حدس صحیح به حد کافی رسید، دور را زودتر تمام کنیم
+            if (currentGame.data.correctGuessers.length >= Math.ceil(currentGame.players.length * 0.6)) {
+              messageCollector.stop();
+              await endGuessingPhase(currentGame);
+            }
+          }
+        }
+      });
+    }
+    
+  } catch (error) {
+    log(`Error starting guessing phase: ${error}`, 'error');
+    // در صورت خطا، سعی می‌کنیم به دور بعدی برویم
+    setTimeout(() => startNextRoundDrawGuess(game), 3000);
+  }
+}
+
+/**
+ * پایان مرحله حدس زدن
+ */
+async function endGuessingPhase(game: GameSession) {
+  try {
+    // غیرفعال کردن وضعیت حدس زدن
+    game.data.guessingPhase = false;
+    
+    // به‌روزرسانی بازی
+    await storage.updateGameSession(game);
+    activeGames.set(game.id, game);
+    
+    const client = require('../client').default;
+    const channel = await client.channels.fetch(game.channelId);
+    
+    if (channel && channel.isTextBased()) {
+      // بررسی اینکه آیا کسی درست حدس زده است
+      const correctGuessCount = game.data.correctGuessers?.length || 0;
+      
+      // ساخت پیام نتیجه
+      const resultEmbed = new EmbedBuilder()
+        .setTitle(`🎯 نتیجه دور ${game.data.currentRound}`)
+        .setDescription(`کلمه صحیح: **${game.data.currentWord}**`)
+        .setColor(0x4CAF50)
+        .addFields(
+          { name: '🎨 نقاش', value: `<@${game.data.currentDrawer}>`, inline: true },
+          { name: '✅ تعداد حدس‌های صحیح', value: `${correctGuessCount} نفر`, inline: true }
+        );
+      
+      // اضافه کردن لیست افرادی که درست حدس زده‌اند
+      if (correctGuessCount > 0) {
+        const guessersList = game.data.correctGuessers.map(
+          (guesserId, index) => `${index + 1}. <@${guesserId}>`
+        ).join('\n');
+        
+        resultEmbed.addFields({ name: '👥 افراد برنده', value: guessersList });
+      } else {
+        resultEmbed.addFields({ name: '😥 نتیجه', value: 'هیچکس نتوانست درست حدس بزند!' });
+      }
+      
+      // نمایش امتیازات فعلی
+      const scoresList = Object.entries(game.data.playerScores)
+        .sort(([, a], [, b]) => (b as number) - (a as number))
+        .map(([playerId, score], index) => `${index + 1}. <@${playerId}>: ${score} امتیاز`)
+        .join('\n');
+      
+      resultEmbed.addFields({ name: '🏆 جدول امتیازات', value: scoresList });
+      
+      // ارسال پیام نتیجه
+      await channel.send({ embeds: [resultEmbed] });
+      
+      // رفتن به دور بعدی پس از مدتی
+      setTimeout(() => startNextRoundDrawGuess(game), 5000);
+    }
+    
+  } catch (error) {
+    log(`Error ending guessing phase: ${error}`, 'error');
+    // در صورت خطا، سعی می‌کنیم به دور بعدی برویم
+    setTimeout(() => startNextRoundDrawGuess(game), 3000);
+  }
+}
+
+/**
+ * پایان بازی نقاشی حدس بزن
+ */
+async function endDrawGuessGame(game: GameSession, interaction: ButtonInteraction) {
+  try {
+    // به‌روزرسانی وضعیت بازی
+    game.status = 'ended';
+    game.endedAt = new Date();
+    
+    // مرتب‌سازی امتیازات
+    const sortedScores = Object.entries(game.data.playerScores)
+      .sort(([, a], [, b]) => (b as number) - (a as number))
+      .map(([playerId, score]) => ({ playerId, score }));
+    
+    // جوایز برای سه نفر اول
+    const prizes = [500, 300, 100];
+    
+    // اعطای جوایز
+    for (let i = 0; i < Math.min(3, sortedScores.length); i++) {
+      const winner = sortedScores[i];
+      if (winner) {
+        try {
+          await storage.addToWallet(Number(winner.playerId), prizes[i], 'drawguess_prize', { gameType: 'drawguess' });
+        } catch (prizeError) {
+          log(`Error giving prize to user ${winner.playerId}: ${prizeError}`, 'error');
+        }
+      }
+    }
+    
+    // ساخت Embed نتایج
+    const embed = new EmbedBuilder()
+      .setTitle('🏆 پایان بازی نقاشی حدس بزن')
+      .setDescription('بازی به پایان رسید! نتایج نهایی:')
+      .setColor(0xFFD700);
+    
+    // اضافه کردن فیلدهای امتیازات
+    for (let i = 0; i < sortedScores.length; i++) {
+      const player = sortedScores[i];
+      let rankEmoji = '';
+      
+      // تعیین ایموجی مقام
+      if (i === 0) rankEmoji = '🥇';
+      else if (i === 1) rankEmoji = '🥈';
+      else if (i === 2) rankEmoji = '🥉';
+      else rankEmoji = `${i + 1}.`;
+      
+      // اضافه کردن فیلد برای هر بازیکن
+      embed.addFields({
+        name: `${rankEmoji} <@${player.playerId}>`,
+        value: `امتیاز: ${player.score} ${i < 3 ? `(جایزه: ${prizes[i]} کوین)` : ''}`,
+        inline: i < 3
+      });
+    }
+    
+    // پیام تشکر
+    embed.setFooter({ 
+      text: 'با تشکر از همه شرکت‌کنندگان! می‌توانید دوباره این بازی را شروع کنید.' 
+    });
+    
+    // ارسال پیام - استفاده از کلاینت اصلی اگر اینتراکشن موجود نباشد
+    const client = require('../client').default;
+    const channel = await (interaction?.client || client).channels.fetch(game.channelId);
+    
+    if (channel && channel.isTextBased()) {
+      await channel.send({ 
+        embeds: [embed],
+        components: [
+          new ActionRowBuilder<ButtonBuilder>()
+            .addComponents(
+              new ButtonBuilder()
+                .setCustomId('drawguess_new')
+                .setLabel('بازی جدید')
+                .setEmoji('🎮')
+                .setStyle(ButtonStyle.Success)
+            )
+        ]
+      });
+    }
+    
+    // به‌روزرسانی بازی در سیستم ذخیره‌سازی
+    await storage.updateGameSession(game);
+    
+    // حذف بازی از لیست بازی‌های فعال
+    activeGames.delete(game.id);
+    
+  } catch (error) {
+    log(`Error ending draw guess game: ${error}`, 'error');
+    
+    // سعی می‌کنیم یک پیام خطا به کانال بفرستیم
+    try {
+      const client = require('../client').default;
+      const channel = await (interaction?.client || client).channels.fetch(game.channelId);
+      
+      if (channel && channel.isTextBased()) {
+        await channel.send({ 
+          content: '❌ خطایی در پایان بازی رخ داد. لطفاً بعداً دوباره تلاش کنید.'
+        });
+      }
+    } catch (sendError) {
+      log(`Error sending error message at the end of draw guess game: ${sendError}`, 'error');
+    }
+    
+    // حذف بازی از لیست بازی‌های فعال
+    activeGames.delete(game.id);
   }
 }
 

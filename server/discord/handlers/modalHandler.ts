@@ -10,6 +10,7 @@ import { LogType, getLogger } from '../utils/logger';
 import { botConfig } from '../utils/config';
 import { adminMenu } from '../components/adminMenu';
 import { clansMenu } from '../components/clansMenu';
+import { handleQuizQuestionModalSubmit } from '../components/groupGames';
 
 /**
  * Handler for modal submissions
@@ -18,6 +19,12 @@ import { clansMenu } from '../components/clansMenu';
 export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
   try {
     const customId = interaction.customId;
+    
+    // Handle quiz question submission
+    if (customId.startsWith('submit_quiz_question')) {
+      await handleQuizQuestionModalSubmit(interaction);
+      return;
+    }
     
     // Handle pet name modal for buying a new pet
     if (customId.startsWith('pet_name_modal_')) {

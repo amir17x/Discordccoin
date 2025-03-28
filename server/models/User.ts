@@ -1,4 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import { IFriend } from './friend/Friend';
+import { IUserInterests } from './friend/UserInterests';
+import { ITransaction } from './economy/Transaction';
 
 /**
  * رابط کاربر برای استفاده در تایپ‌اسکریپت

@@ -13,6 +13,11 @@ import { wheelOfFortuneMenu, spinWheel } from '../components/wheelOfFortuneMenu'
 import { robberyMenu, selectRobberyTarget, handleRobbery } from '../components/robberyMenu';
 import { adminMenu } from '../components/adminMenu';
 import { 
+  handleGroupGamesButton, 
+  handleQuizQuestionModalSubmit, 
+  handleQuizAnswer 
+} from '../components/groupGames';
+import { 
   itemManagementMenu,
   questManagementMenu,
   clanManagementMenu,
@@ -43,6 +48,7 @@ import { showFriendshipDetails } from '../components/friendsMenu/friendshipLevel
 import { blockedUsersList, searchUserToBlock, unblockUser, processUnblockUser, cancelUnblockProcess } from '../components/friendsMenu/blockedUsersMenu';
 import { AnonymousChatMenu } from '../components/anonymousChatMenu/anonymousChatMenu';
 import { personalNotificationsMenu, toggleNotifications, showAdvancedNotificationSettings, toggleNotificationType, sendTestNotification } from '../components/personalNotificationsMenu';
+
 import { handleCoinFlip } from '../games/coinFlip';
 import { handleRockPaperScissors } from '../games/rockPaperScissors';
 import { handleNumberGuess } from '../games/numberGuess';
@@ -152,6 +158,12 @@ async function handleInvestmentHistory(interaction: ButtonInteraction) {
 export async function handleButtonInteraction(interaction: ButtonInteraction) {
   // Get the custom ID of the button
   const customId = interaction.customId;
+    
+  // اجرای منوی بازی‌های گروهی
+  if (customId.startsWith('group_') || customId.startsWith('quiz_') || customId.startsWith('drawguess_')) {
+    await handleGroupGamesButton(interaction);
+    return;
+  }
 
   // Standard format for button IDs: action:param1:param2
   const [action, ...params] = customId.split(':');
@@ -1644,7 +1656,69 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       
       // Settings Main Menu - NEW
       if (action === 'admin_settings') {
-        await botSettingsMenu(interaction);
+        // این منو باید گزینه‌های تنظیمات مختلف را نمایش دهد
+        // ایجاد امبد تنظیمات
+        const embed = new EmbedBuilder()
+          .setColor('#FF5733')
+          .setTitle('⚙️ تنظیمات ربات Ccoin')
+          .setDescription('لطفاً بخش مورد نظر را از تنظیمات انتخاب کنید')
+          .setFooter({ text: `مدیر: ${interaction.user.username} | ${new Date().toLocaleString()}` })
+          .setThumbnail('https://img.icons8.com/fluency/48/settings.png')
+          .setTimestamp();
+
+        // ایجاد دکمه‌های تنظیمات
+        const row1 = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('admin_settings_general')
+              .setLabel('🔧 تنظیمات عمومی')
+              .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
+              .setCustomId('admin_settings_economy')
+              .setLabel('💰 تنظیمات اقتصاد')
+              .setStyle(ButtonStyle.Success),
+            new ButtonBuilder()
+              .setCustomId('admin_settings_games')
+              .setLabel('🎮 تنظیمات بازی‌ها')
+              .setStyle(ButtonStyle.Danger)
+          );
+
+        const row2 = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('admin_settings_clans')
+              .setLabel('🏰 تنظیمات کلن‌ها')
+              .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
+              .setCustomId('admin_settings_levels')
+              .setLabel('📊 تنظیمات سطح')
+              .setStyle(ButtonStyle.Success),
+            new ButtonBuilder()
+              .setCustomId('admin_settings_security')
+              .setLabel('🔒 تنظیمات امنیت')
+              .setStyle(ButtonStyle.Danger)
+          );
+
+        const row3 = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('admin_settings_permissions')
+              .setLabel('🛡️ مجوزها')
+              .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
+              .setCustomId('admin_settings_logging')
+              .setLabel('📝 سیستم لاگ')
+              .setStyle(ButtonStyle.Success),
+            new ButtonBuilder()
+              .setCustomId('admin_menu')
+              .setLabel('🔙 بازگشت')
+              .setStyle(ButtonStyle.Secondary)
+          );
+
+        await interaction.update({
+          embeds: [embed],
+          components: [row1, row2, row3]
+        });
         return;
       }
       

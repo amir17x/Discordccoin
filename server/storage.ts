@@ -17,12 +17,154 @@ import {
   Game,
   InventoryItem,
   Transaction,
+  TransactionType,
   TransferStats,
   InsertStock,
   Pet,
   Investment,
   UserStock,
+  StockData
 } from "@shared/schema";
+
+// تعریف انواع داده‌های مورد نیاز برای دوستی
+export interface Friend {
+  id: string;
+  userId: number;
+  friendId: string;
+  status: 'active' | 'blocked' | 'pending';
+  createdAt: Date;
+  lastInteraction: Date;
+  level: number;
+  xp: number;
+  isBestFriend: boolean;
+}
+
+export interface FriendRequest {
+  id: string;
+  fromUserId: number;
+  toUserId: number;
+  message?: string;
+  createdAt: Date;
+  status: 'pending' | 'accepted' | 'rejected';
+}
+
+export interface BlockedUser {
+  id: string;
+  userId: number;
+  blockedUserId: number;
+  reason?: string;
+  createdAt: Date;
+}
+
+export interface UserInterests {
+  userId: number;
+  gaming: string[];
+  music: string[];
+  movies: string[];
+  sports: string[];
+  books: string[];
+  other: string[];
+  lastUpdated: Date;
+}
+
+export interface PrivateChat {
+  id: string;
+  user1Id: number;
+  user2Id: number;
+  createdAt: Date;
+  lastActivity: Date;
+  messages: PrivateMessage[];
+}
+
+export interface PrivateMessage {
+  id: string;
+  chatId: string;
+  senderId: number;
+  content: string;
+  timestamp: Date;
+  isRead: boolean;
+}
+
+export interface AnonymousChat {
+  id: string;
+  createdAt: Date;
+  lastActivity: Date;
+  participants: string[];
+  messages: AnonymousMessage[];
+}
+
+export interface AnonymousMessage {
+  id: string;
+  chatId: string;
+  senderAlias: string;
+  content: string;
+  timestamp: Date;
+}
+
+export interface Loan {
+  id: string;
+  borrowerId: number;
+  lenderId: number;
+  amount: number;
+  interest: number;
+  dueDate: Date;
+  status: 'active' | 'repaid' | 'overdue';
+  createdAt: Date;
+  repaymentDate?: Date;
+  description?: string;
+}
+
+export interface JobData {
+  id: string;
+  userId: number;
+  jobType: string;
+  income: number;
+  cyclePeriod: number; // ساعت
+  lastCollected: Date;
+  level: number;
+  xp: number;
+  xpRequired: number;
+  hiredAt: Date;
+}
+
+export interface AuctionData {
+  id: number;
+  sellerId: number;
+  itemId: number | null;
+  itemType: string;
+  itemAmount?: number;
+  startingBid: number;
+  currentBid: number;
+  highestBidderId?: number;
+  startTime: Date;
+  endTime: Date;
+  status: 'active' | 'ended' | 'cancelled';
+  bids: AuctionBid[];
+}
+
+export interface AuctionBid {
+  bidderId: number;
+  amount: number;
+  timestamp: Date;
+}
+
+export interface LotteryData {
+  id: number;
+  name: string;
+  ticketPrice: number;
+  jackpot: number;
+  startTime: Date;
+  endTime: Date;
+  winner?: number;
+  participants: LotteryParticipant[];
+  status: 'active' | 'ended';
+}
+
+export interface LotteryParticipant {
+  userId: number;
+  tickets: number;
+  joinedAt: Date;
+}
 
 // اضافه کردن مدل‌های جدید
 import { 
@@ -107,10 +249,10 @@ export interface IStorage {
   getAllItems(): Promise<Item[]>;
   getItem(id: number): Promise<Item | undefined>;
   createItem(item: InsertItem): Promise<Item>;
-  buyItem(userId: number, itemId: number): Promise<boolean>;
-  useItem(userId: number, itemId: number): Promise<boolean>;
-  getInventoryItems(userId: number): Promise<{item: Item, inventoryItem: InventoryItem}[]>;
-  addItemToInventory(userId: number, itemId: number, quantity?: number): Promise<boolean>;
+  buyItem(userId: number, itemId: number): Promise<{success: boolean; item?: Item; inventoryItem?: InventoryItem; message?: string}>;
+  useItem(userId: number, inventoryItemId: string): Promise<{success: boolean; message?: string}>;
+  getInventoryItems(userId: number): Promise<InventoryItem[]>;
+  addItemToInventory(userId: number, itemId: number, quantity?: number): Promise<InventoryItem | undefined>;
   removeItemFromInventory(userId: number, itemId: number, quantity: number): Promise<boolean>;
   
   // Game operations
@@ -3511,17 +3653,512 @@ export class MongoStorage implements IStorage {
     }
   }
 
-  // سایر متدها را می‌توان به تدریج پیاده‌سازی کرد
-  // برای جلوگیری از قطع عملکرد برنامه، ابتدا متدهای مهم را پیاده‌سازی می‌کنیم
+  // پیاده‌سازی متدهای مربوط به آیتم‌های کاربر و انبار
+  async getInventoryItems(userId: number): Promise<InventoryItem[]> {
+    try {
+      // استفاده از کش برای بهبود عملکرد
+      const cachedItems = getCache<InventoryItem[]>('users', `inventory_${userId}`);
+      if (cachedItems) {
+        return cachedItems;
+      }
+      
+      const user = await UserModel.findById(userId);
+      if (!user || !user.inventory || !Array.isArray(user.inventory)) {
+        return [];
+      }
+      
+      const result = user.inventory.map(item => ({
+        id: item.id,
+        itemId: item.itemId,
+        quantity: item.quantity,
+        purchasedAt: item.purchasedAt,
+        expiresAt: item.expiresAt,
+        isActive: item.isActive || false,
+        activatedAt: item.activatedAt,
+        uses: item.uses || 0,
+        maxUses: item.maxUses
+      }));
+      
+      // ذخیره در کش برای 5 دقیقه
+      setCache('users', `inventory_${userId}`, result);
+      
+      return result;
+    } catch (error) {
+      console.error('Error getting inventory items from MongoDB:', error);
+      // در صورت خطا، از نسخه حافظه استفاده می‌کنیم
+      return memStorage.getInventoryItems(userId);
+    }
+  }
+  
+  async addItemToInventory(userId: number, itemId: number, quantity: number = 1): Promise<InventoryItem | undefined> {
+    try {
+      const user = await UserModel.findById(userId);
+      if (!user) return undefined;
+      
+      // یافتن آیتم در دیتابیس
+      const item = await ItemModel.findOne({ id: itemId });
+      if (!item) return undefined;
+      
+      // اگر کاربر انبار ندارد، یک انبار خالی ایجاد کنید
+      if (!user.inventory) {
+        user.inventory = [];
+      }
+      
+      // بررسی آیا آیتم قبلاً در انبار وجود دارد
+      const existingItemIndex = user.inventory.findIndex(invItem => 
+        invItem.itemId === itemId && (!invItem.expiresAt || new Date(invItem.expiresAt) > new Date()));
+      
+      let inventoryItem;
+      
+      if (existingItemIndex >= 0) {
+        // به‌روزرسانی آیتم موجود
+        user.inventory[existingItemIndex].quantity += quantity;
+        inventoryItem = user.inventory[existingItemIndex];
+      } else {
+        // ایجاد آیتم جدید
+        const now = new Date();
+        let expiresAt = undefined;
+        
+        // محاسبه زمان انقضا اگر مدت زمان دارد
+        if (item.duration && item.duration > 0) {
+          expiresAt = new Date(now.getTime() + item.duration * 24 * 60 * 60 * 1000);
+        }
+        
+        // ایجاد آیتم جدید برای انبار
+        inventoryItem = {
+          id: Date.now().toString(), // ایجاد ID منحصر به فرد
+          itemId: itemId,
+          quantity: quantity,
+          purchasedAt: now,
+          expiresAt: expiresAt,
+          isActive: false,
+          maxUses: item.maxUses || null,
+          uses: 0
+        };
+        
+        user.inventory.push(inventoryItem);
+      }
+      
+      // ذخیره تغییرات
+      await user.save();
+      
+      // پاکسازی کش
+      deleteCache('users', `inventory_${userId}`);
+      
+      return inventoryItem;
+    } catch (error) {
+      console.error('Error adding item to inventory in MongoDB:', error);
+      return memStorage.addItemToInventory(userId, itemId, quantity);
+    }
+  }
+  
+  async buyItem(userId: number, itemId: number): Promise<{ success: boolean; item?: Item; inventoryItem?: InventoryItem; message?: string }> {
+    try {
+      const user = await UserModel.findById(userId);
+      if (!user) {
+        return { success: false, message: 'کاربر یافت نشد.' };
+      }
+      
+      const item = await ItemModel.findOne({ id: itemId });
+      if (!item) {
+        return { success: false, message: 'آیتم یافت نشد.' };
+      }
+      
+      // بررسی قیمت و موجودی کاربر
+      if (item.price && user.wallet < item.price) {
+        return { success: false, message: `سکه کافی ندارید. این آیتم ${item.price} سکه قیمت دارد.` };
+      }
+      
+      if (item.crystalPrice && (!user.crystals || user.crystals < item.crystalPrice)) {
+        return { success: false, message: `کریستال کافی ندارید. این آیتم ${item.crystalPrice} کریستال قیمت دارد.` };
+      }
+      
+      // کسر هزینه از کاربر
+      if (item.price) {
+        user.wallet -= item.price;
+      }
+      
+      if (item.crystalPrice) {
+        user.crystals = (user.crystals || 0) - item.crystalPrice;
+      }
+      
+      // اضافه کردن آیتم به انبار
+      const inventoryItem = await this.addItemToInventory(userId, itemId);
+      
+      // ذخیره تغییرات کاربر
+      await user.save();
+      
+      // ثبت تراکنش
+      if (item.price) {
+        await this.createTransaction({
+          userId: userId,
+          amount: -item.price,
+          type: 'purchase',
+          description: `خرید ${item.name}`,
+          timestamp: new Date()
+        });
+      }
+      
+      return { 
+        success: true, 
+        item: {
+          id: item.id,
+          name: item.name,
+          type: item.type,
+          description: item.description,
+          price: item.price,
+          crystalPrice: item.crystalPrice,
+          emoji: item.emoji,
+          duration: item.duration,
+          rarity: item.rarity,
+          effects: item.effects,
+          category: item.category
+        }, 
+        inventoryItem 
+      };
+    } catch (error) {
+      console.error('Error buying item in MongoDB:', error);
+      return memStorage.buyItem(userId, itemId);
+    }
+  }
+  
+  async useItem(userId: number, inventoryItemId: string): Promise<{ success: boolean; message?: string }> {
+    try {
+      const user = await UserModel.findById(userId);
+      if (!user || !user.inventory) {
+        return { success: false, message: 'کاربر یا انبار یافت نشد.' };
+      }
+      
+      // پیدا کردن آیتم در انبار
+      const inventoryItemIndex = user.inventory.findIndex(item => item.id === inventoryItemId);
+      if (inventoryItemIndex === -1) {
+        return { success: false, message: 'آیتم در انبار شما یافت نشد.' };
+      }
+      
+      const inventoryItem = user.inventory[inventoryItemIndex];
+      
+      // بررسی مقدار
+      if (inventoryItem.quantity <= 0) {
+        return { success: false, message: 'تعداد آیتم صفر است.' };
+      }
+      
+      // بررسی انقضا
+      if (inventoryItem.expiresAt && new Date(inventoryItem.expiresAt) < new Date()) {
+        return { success: false, message: 'این آیتم منقضی شده است.' };
+      }
+      
+      // بررسی حداکثر استفاده
+      if (inventoryItem.maxUses && inventoryItem.uses >= inventoryItem.maxUses) {
+        return { success: false, message: 'حداکثر استفاده از این آیتم به پایان رسیده است.' };
+      }
+      
+      // به روزرسانی وضعیت آیتم
+      inventoryItem.isActive = true;
+      inventoryItem.activatedAt = new Date();
+      inventoryItem.uses = (inventoryItem.uses || 0) + 1;
+      
+      // کسر تعداد
+      inventoryItem.quantity -= 1;
+      
+      // اگر تعداد صفر شد، آیتم را حذف کنید
+      if (inventoryItem.quantity <= 0) {
+        user.inventory.splice(inventoryItemIndex, 1);
+      }
+      
+      // ذخیره تغییرات
+      await user.save();
+      
+      // پاکسازی کش
+      deleteCache('users', `inventory_${userId}`);
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error using item in MongoDB:', error);
+      return memStorage.useItem(userId, inventoryItemId);
+    }
+  }
+  
+  // پیاده‌سازی متدهای مربوط به دوستی
+  async getFriends(userId: number): Promise<Friend[]> {
+    try {
+      const cachedFriends = getCache<Friend[]>('users', `friends_${userId}`);
+      if (cachedFriends) {
+        return cachedFriends;
+      }
+      
+      const user = await UserModel.findById(userId);
+      if (!user || !user.friends || !Array.isArray(user.friends)) {
+        return [];
+      }
+      
+      const result = user.friends.map(f => ({
+        id: f.id,
+        userId: f.userId,
+        friendId: f.friendId,
+        status: f.status,
+        createdAt: f.createdAt,
+        lastInteraction: f.lastInteraction,
+        level: f.level,
+        xp: f.xp,
+        isBestFriend: f.isBestFriend || false
+      }));
+      
+      setCache('users', `friends_${userId}`, result);
+      return result;
+    } catch (error) {
+      console.error('Error getting friends from MongoDB:', error);
+      return memStorage.getFriends(userId);
+    }
+  }
+  
+  async recordFriendshipActivity(userId: number, friendId: number, type: string, details: string, xpEarned: number): Promise<boolean> {
+    try {
+      const user = await UserModel.findById(userId);
+      if (!user) return false;
+      
+      if (!user.friendActivities) {
+        user.friendActivities = [];
+      }
+      
+      const activity = {
+        id: Date.now().toString(),
+        userId,
+        friendId,
+        type,
+        details,
+        xpEarned,
+        timestamp: new Date()
+      };
+      
+      user.friendActivities.push(activity);
+      await user.save();
+      
+      // پاکسازی کش
+      deleteCache('users', `friends_${userId}`);
+      deleteCache('users', `friendship_activities_${userId}_${friendId}`);
+      
+      return true;
+    } catch (error) {
+      console.error('Error recording friendship activity in MongoDB:', error);
+      return memStorage.recordFriendshipActivity(userId, friendId, type, details, xpEarned);
+    }
+  }
+  
+  async updateFriendshipXP(userId: number, friendId: string, xp: number): Promise<{ leveledUp: boolean, newLevel?: number }> {
+    try {
+      const user = await UserModel.findById(userId);
+      if (!user || !user.friends) {
+        return { leveledUp: false };
+      }
+      
+      const friendIndex = user.friends.findIndex(f => f.friendId.toString() === friendId);
+      if (friendIndex === -1) {
+        return { leveledUp: false };
+      }
+      
+      // به‌روزرسانی XP
+      const currentLevel = user.friends[friendIndex].level || 1;
+      const currentXP = user.friends[friendIndex].xp || 0;
+      const newXP = currentXP + xp;
+      
+      // محاسبه سطح جدید بر اساس XP
+      // فرمول: هر سطح 100 * سطح فعلی XP نیاز دارد
+      const xpForNextLevel = currentLevel * 100;
+      const leveledUp = newXP >= xpForNextLevel;
+      let newLevel = currentLevel;
+      
+      if (leveledUp) {
+        newLevel = currentLevel + 1;
+      }
+      
+      // به‌روزرسانی اطلاعات دوستی
+      user.friends[friendIndex].xp = newXP;
+      if (leveledUp) {
+        user.friends[friendIndex].level = newLevel;
+      }
+      
+      // ذخیره تغییرات
+      await user.save();
+      
+      // پاکسازی کش
+      deleteCache('users', `friends_${userId}`);
+      
+      return { leveledUp, newLevel: leveledUp ? newLevel : undefined };
+    } catch (error) {
+      console.error('Error updating friendship XP in MongoDB:', error);
+      return memStorage.updateFriendshipXP(userId, friendId, xp);
+    }
+  }
+
+  // متدهای مربوط به ماموریت‌های کاربر
+  async getUserQuests(userId: number): Promise<{quest: Quest, userQuest: UserQuest}[]> {
+    try {
+      const cachedUserQuests = getCache<{quest: Quest, userQuest: UserQuest}[]>('users', `quests_${userId}`);
+      if (cachedUserQuests) {
+        return cachedUserQuests;
+      }
+      
+      const user = await UserModel.findById(userId);
+      if (!user || !user.quests || !Array.isArray(user.quests)) {
+        return [];
+      }
+      
+      // دریافت تمام ماموریت‌ها
+      const allQuests = await QuestModel.find();
+      const questMap = new Map<number, Quest>();
+      allQuests.forEach(q => {
+        questMap.set(q.id, {
+          id: q.id,
+          title: q.title,
+          description: q.description,
+          type: q.type,
+          requirement: q.requirement,
+          targetAmount: q.targetAmount,
+          reward: q.reward,
+          category: q.category,
+          active: q.active,
+          minLevel: q.minLevel
+        });
+      });
+      
+      // ترکیب ماموریت‌ها با پیشرفت کاربر
+      const result = user.quests
+        .filter(uq => questMap.has(uq.questId))
+        .map(uq => ({
+          quest: questMap.get(uq.questId)!,
+          userQuest: {
+            questId: uq.questId,
+            progress: uq.progress,
+            completed: uq.completed,
+            claimed: uq.claimed,
+            updatedAt: uq.updatedAt
+          }
+        }));
+      
+      setCache('users', `quests_${userId}`, result);
+      return result;
+    } catch (error) {
+      console.error('Error getting user quests from MongoDB:', error);
+      return memStorage.getUserQuests(userId);
+    }
+  }
+  
+  async updateQuestProgress(userId: number, questId: number, progress: number): Promise<boolean> {
+    try {
+      const user = await UserModel.findById(userId);
+      if (!user) return false;
+      
+      // دریافت ماموریت برای بررسی هدف
+      const quest = await QuestModel.findOne({ id: questId });
+      if (!quest || !quest.active) return false;
+      
+      // اگر کاربر هنوز این ماموریت را ندارد، آن را اضافه کنید
+      if (!user.quests) {
+        user.quests = [];
+      }
+      
+      const questIndex = user.quests.findIndex(q => q.questId === questId);
+      let userQuest;
+      
+      if (questIndex >= 0) {
+        userQuest = user.quests[questIndex];
+        
+        // اگر قبلاً تکمیل شده، نیازی به به‌روزرسانی نیست
+        if (userQuest.completed && userQuest.claimed) {
+          return true;
+        }
+        
+        // به‌روزرسانی پیشرفت
+        userQuest.progress += progress;
+        userQuest.updatedAt = new Date();
+        
+        // بررسی تکمیل ماموریت
+        if (userQuest.progress >= quest.targetAmount && !userQuest.completed) {
+          userQuest.completed = true;
+        }
+      } else {
+        // ایجاد رکورد جدید برای ماموریت کاربر
+        userQuest = {
+          questId: questId,
+          progress: progress,
+          completed: progress >= quest.targetAmount,
+          claimed: false,
+          updatedAt: new Date()
+        };
+        user.quests.push(userQuest);
+      }
+      
+      // ذخیره تغییرات
+      await user.save();
+      
+      // پاکسازی کش
+      deleteCache('users', `quests_${userId}`);
+      
+      return true;
+    } catch (error) {
+      console.error('Error updating quest progress in MongoDB:', error);
+      return memStorage.updateQuestProgress(userId, questId, progress);
+    }
+  }
 
   // برای سایر متدها، از نسخه MemStorage استفاده می‌کنیم
   // این امکان را می‌دهد که در آینده به تدریج به MongoDB منتقل شوند
   async addCrystals(userId: number, amount: number): Promise<User | undefined> {
-    return memStorage.addCrystals(userId, amount);
+    try {
+      const user = await UserModel.findById(userId);
+      if (!user) return undefined;
+      
+      user.crystals = (user.crystals || 0) + amount;
+      await user.save();
+      
+      return this.convertMongoUserToUser(user);
+    } catch (error) {
+      console.error('Error adding crystals in MongoDB:', error);
+      return memStorage.addCrystals(userId, amount);
+    }
   }
 
   async transferCoin(fromUserId: number, toUserId: number, amount: number): Promise<boolean> {
-    return memStorage.transferCoin(fromUserId, toUserId, amount);
+    try {
+      const fromUser = await UserModel.findById(fromUserId);
+      const toUser = await UserModel.findById(toUserId);
+      
+      if (!fromUser || !toUser) return false;
+      
+      if (fromUser.wallet < amount) return false;
+      
+      // انجام انتقال
+      fromUser.wallet -= amount;
+      toUser.wallet += amount;
+      
+      // ذخیره تغییرات
+      await fromUser.save();
+      await toUser.save();
+      
+      // ثبت تراکنش‌ها
+      await this.createTransaction({
+        userId: fromUserId,
+        amount: -amount,
+        type: 'transfer_out',
+        description: `انتقال به ${toUser.username}`,
+        timestamp: new Date(),
+        targetUserId: toUserId
+      });
+      
+      await this.createTransaction({
+        userId: toUserId,
+        amount: amount,
+        type: 'transfer_in',
+        description: `دریافت از ${fromUser.username}`,
+        timestamp: new Date(),
+        targetUserId: fromUserId
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error transferring coin in MongoDB:', error);
+      return memStorage.transferCoin(fromUserId, toUserId, amount);
+    }
   }
 
   // ... سایر متدهای IStorage که فعلاً از memStorage استفاده می‌کنند
