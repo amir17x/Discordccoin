@@ -17,6 +17,7 @@ import {
   handleQuizQuestionModalSubmit, 
   handleQuizAnswer 
 } from '../components/groupGames';
+import { handleSwitchAIService, handleTestAIService, handleViewAIStatus } from './aiHandlers';
 import { 
   itemManagementMenu,
   questManagementMenu,
@@ -1686,6 +1687,36 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
         return;
       }
       
+      // مدیریت دکمه‌های تنظیمات هوش مصنوعی
+      if (action === 'admin_ai_settings') {
+        await aiSettingsMenu(interaction);
+        return;
+      }
+      
+      // تغییر سرویس هوش مصنوعی به OpenAI
+      if (action === 'admin_switch_to_openai') {
+        await handleSwitchAIService(interaction, 'openai');
+        return;
+      }
+      
+      // تغییر سرویس هوش مصنوعی به Hugging Face
+      if (action === 'admin_switch_to_huggingface') {
+        await handleSwitchAIService(interaction, 'huggingface');
+        return;
+      }
+      
+      // تست سرویس هوش مصنوعی فعلی
+      if (action === 'admin_test_ai') {
+        await handleTestAIService(interaction);
+        return;
+      }
+      
+      // نمایش وضعیت سرویس هوش مصنوعی
+      if (action === 'admin_view_ai_status') {
+        await handleViewAIStatus(interaction);
+        return;
+      }
+      
       // Bot Stats - NEW
       if (action === 'admin_stats') {
         await botStatsMenu(interaction);
@@ -1768,6 +1799,7 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
           action === 'admin_settings_levels' ||
           action === 'admin_settings_security' ||
           action === 'admin_settings_permissions' ||
+          action === 'admin_settings_ai' ||
           action === 'admin_settings_logging') {
         // تشخیص نوع منوی تنظیمات و فراخوانی تابع مربوطه
         const settingType = action.replace('admin_settings_', '');
@@ -1796,6 +1828,9 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
             break;
           case 'logging':
             await loggingSettingsMenu(interaction);
+            break;
+          case 'ai':
+            await aiSettingsMenu(interaction);
             break;
           default:
             await botSettingsMenu(interaction);
@@ -1837,6 +1872,9 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       await handleSetDefaultLogChannel(interaction);
       return;
     }
+    
+    // کد مربوط به تنظیمات AI به صورت دکمه‌های admin_ در بالا اضافه شده است
+    // لذا این بخش حذف می‌شود تا از تکرار جلوگیری شود
     
     // کد تست لاگ‌ها حذف شد - بهینه‌سازی کد
     

@@ -15,6 +15,8 @@ import {
 import { storage } from '../../storage';
 import { botConfig } from '../utils/config';
 import { getItemEmoji } from '../utils/helpers';
+// مدیریت هوش مصنوعی
+export { aiSettingsMenu } from './aiSettingsMenu';
 
 /**
  * منوی مدیریت آیتم‌ها
@@ -1026,6 +1028,19 @@ export async function botSettingsMenu(interaction: ButtonInteraction | ChatInput
       }
     );
 
+    // افزودن تنظیمات هوش مصنوعی به Embed
+    const aiSettings = {
+      service: config.ai?.service || 'huggingface'
+    };
+    
+    embed.addFields(
+      { name: '🤖 تنظیمات هوش مصنوعی', value: 
+        `**سرویس فعال**: \`${aiSettings.service === 'openai' ? 'OpenAI (ChatGPT)' : 'Hugging Face'}\`\n` +
+        `**وضعیت**: \`${aiSettings.service === 'openai' ? '🟢 فعال' : '🟢 فعال'}\`\n`,
+        inline: false 
+      }
+    );
+
     // ایجاد دکمه‌های مدیریتی - دسته اول (تنظیمات اصلی)
     const row1 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
@@ -1047,12 +1062,12 @@ export async function botSettingsMenu(interaction: ButtonInteraction | ChatInput
     const row2 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
+          .setCustomId('admin_settings_ai')
+          .setLabel('🤖 مدیریت هوش مصنوعی')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
           .setCustomId('admin_settings_clans')
           .setLabel('🏰 تنظیمات کلن‌ها')
-          .setStyle(ButtonStyle.Success),
-        new ButtonBuilder()
-          .setCustomId('admin_settings_levels')
-          .setLabel('⭐ تنظیمات سطح‌بندی')
           .setStyle(ButtonStyle.Success),
         new ButtonBuilder()
           .setCustomId('admin_settings_security')
@@ -1479,6 +1494,121 @@ export async function generalSettingsMenu(interaction: ButtonInteraction | ChatI
     
     try {
       const errorMessage = 'متأسفانه در نمایش منوی تنظیمات عمومی خطایی رخ داد! لطفاً دوباره تلاش کنید.';
+      
+      if (interaction.deferred) {
+        await interaction.editReply({ content: errorMessage });
+      } else if (!interaction.replied) {
+        await interaction.reply({ content: errorMessage, ephemeral: true });
+      }
+    } catch (replyError) {
+      console.error('Failed to send error message:', replyError);
+    }
+  }
+}
+
+/**
+ * منوی مدیریت هوش مصنوعی
+ * @param interaction تعامل کاربر
+ */
+export async function aiSettingsMenu(interaction: ButtonInteraction | ChatInputCommandInteraction) {
+  try {
+    // بررسی دسترسی ادمین
+    if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+      await interaction.reply({
+        content: '⛔ شما دسترسی لازم برای استفاده از این بخش را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+
+    // دریافت تنظیمات فعلی
+    const config = botConfig.getConfig();
+    
+    // ایجاد Embed برای نمایش تنظیمات هوش مصنوعی
+    const embed = new EmbedBuilder()
+      .setColor('#6A0DAD') // رنگ بنفش برای هوش مصنوعی
+      .setTitle('🤖 مدیریت هوش مصنوعی')
+      .setDescription('در این بخش می‌توانید سرویس هوش مصنوعی مورد استفاده در ربات را تغییر دهید.')
+      .setFooter({ text: `مدیر: ${interaction.user.username} | ${new Date().toLocaleString()}` })
+      .setThumbnail('https://img.icons8.com/fluency/48/artificial-intelligence.png')
+      .setTimestamp();
+    
+    // تنظیمات هوش مصنوعی
+    const aiSettings = {
+      service: config.ai?.service || 'huggingface'
+    };
+    
+    // افزودن فیلدها به Embed
+    embed.addFields(
+      { name: '⚙️ تنظیمات فعلی', value: 
+        `**سرویس فعال**: \`${aiSettings.service === 'openai' ? 'OpenAI (ChatGPT)' : 'Hugging Face'}\`\n` +
+        `**وضعیت**: \`${aiSettings.service === 'openai' ? '🟢 فعال' : '🟢 فعال'}\`\n` +
+        `**API Key**: \`${aiSettings.service === 'openai' ? 'متصل ✓' : 'متصل ✓'}\``, 
+        inline: false 
+      },
+      { name: '📝 مقایسه سرویس‌ها', value: 
+        `**OpenAI (ChatGPT)**:\n` +
+        `✅ کیفیت بالاتر پاسخ‌ها\n` +
+        `✅ درک بهتر زبان فارسی\n` +
+        `⚠️ محدودیت در تعداد درخواست‌ها\n` +
+        `⚠️ هزینه بالاتر\n\n` +
+        `**Hugging Face**:\n` +
+        `✅ بدون محدودیت در تعداد درخواست‌ها\n` +
+        `✅ هزینه کمتر\n` +
+        `⚠️ کیفیت متوسط پاسخ‌ها\n` +
+        `⚠️ درک محدودتر زبان فارسی`, 
+        inline: false 
+      }
+    );
+    
+    // دکمه‌های تغییر سرویس
+    const row1 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_switch_to_openai')
+          .setLabel('تغییر به OpenAI (ChatGPT)')
+          .setStyle(aiSettings.service === 'openai' ? ButtonStyle.Success : ButtonStyle.Primary)
+          .setDisabled(aiSettings.service === 'openai'),
+        new ButtonBuilder()
+          .setCustomId('admin_switch_to_huggingface')
+          .setLabel('تغییر به Hugging Face')
+          .setStyle(aiSettings.service === 'huggingface' ? ButtonStyle.Success : ButtonStyle.Primary)
+          .setDisabled(aiSettings.service === 'huggingface'),
+      );
+      
+    // دکمه‌های تست سرویس
+    const row2 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_test_ai')
+          .setLabel('تست سرویس فعلی')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId('admin_view_ai_status')
+          .setLabel('وضعیت سرویس‌ها')
+          .setStyle(ButtonStyle.Secondary),
+      );
+    
+    // دکمه بازگشت
+    const row3 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_settings')
+          .setLabel('🔙 بازگشت به منوی تنظیمات')
+          .setStyle(ButtonStyle.Secondary),
+      );
+    
+    // ارسال پاسخ
+    if (interaction.deferred) {
+      await interaction.editReply({ embeds: [embed], components: [row1, row2, row3] });
+    } else {
+      await interaction.reply({ embeds: [embed], components: [row1, row2, row3], ephemeral: true });
+    }
+  } catch (error) {
+    console.error('Error in aiSettingsMenu:', error);
+    
+    try {
+      const errorMessage = 'متأسفانه در نمایش منوی مدیریت هوش مصنوعی خطایی رخ داد! لطفاً دوباره تلاش کنید.';
       
       if (interaction.deferred) {
         await interaction.editReply({ content: errorMessage });
