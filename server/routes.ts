@@ -3,6 +3,10 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
 import { insertUserSchema, insertClanSchema, insertQuestSchema, insertItemSchema } from "@shared/schema";
+import { User, Clan, Transaction } from './models';
+import * as userService from './services/userService';
+import * as transactionService from './services/transactionService';
+import * as clanService from './services/clanService';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes prefix
@@ -247,6 +251,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
+  /**
+   * MongoDB API routes - These routes use the new MongoDB models
+   */
+
+  // Get all users from MongoDB
+  app.get(`${apiPrefix}/mongo/users`, async (req: Request, res: Response) => {
+    try {
+      const users = await User.find().sort({ lastActivity: -1 }).limit(100);
+      res.status(200).json(users);
+    } catch (error) {
+      console.error('Error fetching users from MongoDB:', error);
+      res.status(500).json({ error: 'Failed to fetch users' });
+    }
+  });
+
+  // Get user by Discord ID from MongoDB
+  app.get(`${apiPrefix}/mongo/users/discord/:discordId`, async (req: Request, res: Response) => {
+    try {
+      const discordId = req.params.discordId;
+      const user = await User.findOne({ discordId });
+      
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      res.status(200).json(user);
+    } catch (error) {
+      console.error('Error fetching user from MongoDB:', error);
+      res.status(500).json({ error: 'Failed to fetch user' });
+    }
+  });
+
+  // Add coins to user in MongoDB
+  app.post(`${apiPrefix}/mongo/users/add-coins`, async (req: Request, res: Response) => {
+    try {
+      const { discordId, amount } = req.body;
+      
+      if (!discordId || !amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+        return res.status(400).json({ error: 'Invalid Discord ID or amount' });
+      }
+      
+      const numAmount = Number(amount);
+      const updatedUser = await userService.addCoins(discordId, numAmount);
+      
+      // Create transaction record
+      await transactionService.createTransaction({
+        userId: discordId,
+        amount: numAmount,
+        type: 'admin_add',
+        description: 'Coins added by admin',
+        balance: updatedUser.wallet,
+        currency: 'coins',
+        isSuccess: true
+      });
+      
+      res.status(200).json({
+        success: true,
+        message: `Added ${numAmount} coins to user`,
+        user: updatedUser
+      });
+    } catch (error) {
+      console.error('Error adding coins to user in MongoDB:', error);
+      res.status(500).json({ error: 'Failed to add coins to user' });
+    }
+  });
+
+  // Get user transactions from MongoDB
+  app.get(`${apiPrefix}/mongo/users/:discordId/transactions`, async (req: Request, res: Response) => {
+    try {
+      const discordId = req.params.discordId;
+      const limit = parseInt(req.query.limit as string || '20');
+      const skip = parseInt(req.query.skip as string || '0');
+      
+      const transactions = await transactionService.getUserTransactions(discordId, limit, skip);
+      
+      res.status(200).json(transactions);
+    } catch (error) {
+      console.error('Error fetching user transactions from MongoDB:', error);
+      res.status(500).json({ error: 'Failed to fetch transactions' });
+    }
+  });
+
+  // Get all clans from MongoDB
+  app.get(`${apiPrefix}/mongo/clans`, async (req: Request, res: Response) => {
+    try {
+      const limit = parseInt(req.query.limit as string || '20');
+      const skip = parseInt(req.query.skip as string || '0');
+      
+      const clans = await clanService.getClans(limit, skip);
+      
+      res.status(200).json(clans);
+    } catch (error) {
+      console.error('Error fetching clans from MongoDB:', error);
+      res.status(500).json({ error: 'Failed to fetch clans' });
+    }
+  });
+
+  // Create clan in MongoDB
+  app.post(`${apiPrefix}/mongo/clans`, async (req: Request, res: Response) => {
+    try {
+      const { ownerId, name, description } = req.body;
+      
+      if (!ownerId || !name) {
+        return res.status(400).json({ error: 'Owner ID and clan name are required' });
+      }
+      
+      const clan = await clanService.createClan(ownerId, name, description);
+      
+      res.status(201).json(clan);
+    } catch (error) {
+      console.error('Error creating clan in MongoDB:', error);
+      res.status(500).json({ error: 'Failed to create clan' });
+    }
+  });
+
   // API routes end here
 
   const httpServer = createServer(app);

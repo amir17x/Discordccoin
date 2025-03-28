@@ -488,8 +488,9 @@ export async function initDiscordBot() {
       log('Successfully logged in to Discord', 'discord');
       return client;
     } catch (loginError) {
-      log(`Failed to login: ${loginError}`, 'error');
-      throw loginError;
+      log(`Failed to login to Discord. Bot will continue without Discord integration: ${loginError}`, 'error');
+      console.error('Discord login failed:', loginError);
+      return client; // بازگشت کلاینت حتی اگر ورود به دیسکورد ناموفق باشد
     }
   } catch (error) {
     console.error('Failed to initialize Discord bot:', error);

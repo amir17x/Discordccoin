@@ -5,7 +5,7 @@ import { storage } from './storage';
 import FileStore from 'session-file-store';
 import flash from 'connect-flash';
 import expressLayouts from 'express-ejs-layouts';
-import { Transaction, User, Item, Clan, Friend, BlockedUser, PrivateChat, Quest } from '@shared/schema';
+import { User, Clan, Quest, Transaction } from './models';
 
 // توابع کمکی برای قالب‌
 import formatters from '../admin-panel/helpers/formatter.js';

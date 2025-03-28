@@ -2,8 +2,10 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initDiscordBot } from "./discord/client";
-import { setupAdminPanel } from "./admin";
+import { setupAdminPanel } from "./admin"; // فعال شده
 import { checkAndSendTips } from "./discord/components/tipSystem";
+import { connectToDatabase } from "./database";
+import 'dotenv/config';
 
 const app = express();
 app.use(express.json());
@@ -40,23 +42,37 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // اتصال به دیتابیس MongoDB
+  try {
+    await connectToDatabase();
+    log("Connected to MongoDB database");
+  } catch (error) {
+    log(`Error connecting to MongoDB: ${error}`, "error");
+    log("Continuing without database functionality...", "warn");
+  }
+
   // Initialize Discord bot
   try {
     const client = await initDiscordBot();
     log("Discord bot initialized successfully");
     
     // تنظیم بررسی دوره‌ای برای ارسال نکات
-    setInterval(() => {
-      try {
-        checkAndSendTips(client);
-      } catch (err) {
-        log(`Error checking and sending tips: ${err}`, "error");
-      }
-    }, 5 * 60 * 1000); // هر 5 دقیقه بررسی می‌کند
-    
-    log("Tip system scheduler initialized");
+    if (client && client.user) {
+      setInterval(() => {
+        try {
+          checkAndSendTips(client);
+        } catch (err) {
+          log(`Error checking and sending tips: ${err}`, "error");
+        }
+      }, 5 * 60 * 1000); // هر 5 دقیقه بررسی می‌کند
+      
+      log("Tip system scheduler initialized");
+    } else {
+      log("Discord bot unavailable - tip system scheduler not initialized", "warn");
+    }
   } catch (error) {
     log(`Error initializing Discord bot: ${error}`, "error");
+    log("Continuing without Discord bot functionality", "warn");
   }
 
   // Setup admin panel
