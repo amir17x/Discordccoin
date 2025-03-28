@@ -164,6 +164,12 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     await handleGroupGamesButton(interaction);
     return;
   }
+  
+  // پشتیبانی از دکمه‌های بازی‌های جدید با فرمت game:gametype:action
+  if (customId.startsWith('game:')) {
+    await handleGroupGamesButton(interaction);
+    return;
+  }
 
   // Standard format for button IDs: action:param1:param2
   const [action, ...params] = customId.split(':');

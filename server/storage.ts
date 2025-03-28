@@ -3813,6 +3813,37 @@ export class MongoStorage implements IStorage {
     }
   }
   
+  async getClanByName(name: string): Promise<Clan | undefined> {
+    try {
+      const clan = await ClanModel.findOne({ name: name });
+      if (!clan) return undefined;
+      return {
+        id: clan.id,
+        name: clan.name,
+        description: clan.description,
+        ownerId: clan.ownerId,
+        bank: clan.bank,
+        level: clan.level,
+        experience: clan.experience || 0,
+        memberCount: clan.memberCount,
+        warWins: clan.warWins || 0,
+        warLosses: clan.warLosses || 0,
+        createdAt: clan.createdAt,
+        coLeaderIds: clan.coLeaderIds || [],
+        memberIds: clan.memberIds || [],
+        joinRequests: clan.joinRequests || [],
+        maxMembers: clan.maxMembers || 10,
+        lastActivity: clan.lastActivity,
+        color: clan.color,
+        icon: clan.icon,
+        banner: clan.banner
+      };
+    } catch (error) {
+      console.error(`Error getting clan by name ${name} from MongoDB:`, error);
+      return memStorage.getClanByName(name);
+    }
+  }
+  
   async updateClan(clanId: number, updates: Partial<Clan>): Promise<Clan | undefined> {
     try {
       const clan = await ClanModel.findOneAndUpdate({ id: clanId }, updates, { new: true });
@@ -3841,6 +3872,72 @@ export class MongoStorage implements IStorage {
     } catch (error) {
       console.error(`Error updating clan ${clanId} in MongoDB:`, error);
       return memStorage.updateClan(clanId, updates);
+    }
+  }
+  
+  async createClan(insertClan: InsertClan): Promise<Clan> {
+    try {
+      // ایجاد یک ID جدید برای کلن
+      const lastClan = await ClanModel.findOne().sort('-id');
+      const newId = lastClan ? lastClan.id + 1 : 1;
+      
+      // ساخت کلن جدید
+      const newClan = new ClanModel({
+        id: newId,
+        name: insertClan.name,
+        description: insertClan.description || null,
+        ownerId: insertClan.ownerId,
+        bank: 0,
+        level: 1,
+        experience: 0,
+        memberCount: 1,
+        warWins: 0,
+        warLosses: 0,
+        createdAt: new Date(),
+        coLeaderIds: [],
+        memberIds: [insertClan.ownerId], // مالک کلن به عنوان عضو اول
+        joinRequests: [],
+        maxMembers: 10,
+        lastActivity: new Date(),
+        color: insertClan.color || '#FFD700', // رنگ پیش‌فرض طلایی
+        icon: insertClan.icon || '🏰', // آیکون پیش‌فرض قلعه
+        banner: insertClan.banner || null
+      });
+      
+      // ذخیره کلن در دیتابیس
+      await newClan.save();
+      
+      // یافتن کاربر و بروزرسانی اطلاعات کلن او
+      await UserModel.findOneAndUpdate(
+        { discordId: insertClan.ownerId },
+        { clanId: newId, clanRole: 'owner' }
+      );
+      
+      // برگرداندن اطلاعات کلن
+      return {
+        id: newClan.id,
+        name: newClan.name,
+        description: newClan.description,
+        ownerId: newClan.ownerId,
+        bank: newClan.bank,
+        level: newClan.level,
+        experience: newClan.experience || 0,
+        memberCount: newClan.memberCount,
+        warWins: newClan.warWins || 0,
+        warLosses: newClan.warLosses || 0,
+        createdAt: newClan.createdAt,
+        coLeaderIds: newClan.coLeaderIds || [],
+        memberIds: newClan.memberIds || [],
+        joinRequests: newClan.joinRequests || [],
+        maxMembers: newClan.maxMembers || 10,
+        lastActivity: newClan.lastActivity,
+        color: newClan.color,
+        icon: newClan.icon,
+        banner: newClan.banner
+      };
+    } catch (error) {
+      console.error('Error creating clan in MongoDB:', error);
+      return memStorage.createClan(insertClan);
     }
   }
 

@@ -133,8 +133,8 @@ async function updateBotStatus(client: any) {
   try {
     const statusMessage = await generateFunnyStatusMessage();
     
-    // تنظیم وضعیت جدید
-    client.user.setActivity(statusMessage, { type: 'WATCHING' });
+    // تنظیم وضعیت جدید با استفاده از ActivityType
+    client.user.setActivity(statusMessage, { type: 3 }); // 3 = WATCHING
     
     log(`وضعیت ربات به‌روزرسانی شد: ${statusMessage}`, 'info');
   } catch (error) {

@@ -195,7 +195,48 @@ export async function handleGroupGamesButton(interaction: ButtonInteraction) {
   try {
     const buttonId = interaction.customId;
     
-    // بررسی نوع بازی انتخاب شده
+    // پشتیبانی از فرمت جدید game:type:action
+    if (buttonId.startsWith('game:')) {
+      const [_, gameType, action] = buttonId.split(':');
+      
+      // مسیریابی براساس نوع بازی
+      switch (gameType) {
+        case 'mafia':
+          await handleMafiaGame(interaction);
+          break;
+        case 'werewolf':
+          await handleWerewolfGame(interaction);
+          break;
+        case 'quiz':
+          await handleQuizGame(interaction);
+          break;
+        case 'pictionary':
+        case 'drawguess':
+          await handleDrawGuessGame(interaction);
+          break;
+        case 'truth_or_dare':
+          await handleTruthOrDareGame(interaction);
+          break;
+        case 'bingo':
+          await handleBingoGame(interaction);
+          break;
+        case 'word_chain':
+          await handleWordChainGame(interaction);
+          break;
+        case 'spy':
+        case 'spyfall':
+          await handleSpyGame(interaction);
+          break;
+        default:
+          await interaction.reply({
+            content: '❌ این نوع بازی هنوز پیاده‌سازی نشده است. لطفاً بعداً دوباره امتحان کنید.',
+            ephemeral: true
+          });
+      }
+      return;
+    }
+    
+    // بررسی نوع بازی انتخاب شده (فرمت قدیمی)
     switch (buttonId) {
       case 'group_quiz':
         await handleQuizGame(interaction);
