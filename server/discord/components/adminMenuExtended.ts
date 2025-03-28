@@ -1373,3 +1373,1023 @@ async function getTotalClans(): Promise<number> {
     return 0;
   }
 }
+
+/**
+ * منوی تنظیمات عمومی
+ * @param interaction تعامل کاربر
+ */
+export async function generalSettingsMenu(interaction: ButtonInteraction | ChatInputCommandInteraction) {
+  try {
+    // بررسی دسترسی ادمین
+    if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+      await interaction.reply({
+        content: '⛔ شما دسترسی لازم برای استفاده از این بخش را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+
+    // دریافت تنظیمات فعلی
+    const config = botConfig.getConfig();
+    
+    // ایجاد Embed برای نمایش تنظیمات عمومی
+    const embed = new EmbedBuilder()
+      .setColor('#2196F3')
+      .setTitle('🔧 تنظیمات عمومی ربات')
+      .setDescription('در این بخش می‌توانید تنظیمات عمومی ربات را مشاهده و ویرایش کنید.')
+      .setFooter({ text: `مدیر: ${interaction.user.username} | ${new Date().toLocaleString()}` })
+      .setThumbnail('https://img.icons8.com/fluency/48/settings.png')
+      .setTimestamp();
+    
+    // تنظیمات عمومی
+    const generalSettings = {
+      prefix: config.general?.prefix || '/',
+      defaultColor: config.general?.defaultColor || '#2196F3',
+      language: config.general?.language || 'fa',
+      timezone: config.general?.timezone || 'Asia/Tehran',
+      adminRoleId: config.general?.adminRoleId || 'تنظیم نشده'
+    };
+    
+    // افزودن فیلدها به Embed
+    embed.addFields(
+      { name: '⚙️ تنظیمات فعلی', value: 
+        `**پیشوند دستورات**: \`${generalSettings.prefix}\`\n` +
+        `**رنگ پیش‌فرض**: \`${generalSettings.defaultColor}\`\n` +
+        `**زبان ربات**: \`${generalSettings.language}\`\n` +
+        `**منطقه زمانی**: \`${generalSettings.timezone}\`\n` +
+        `**نقش ادمین**: ${typeof generalSettings.adminRoleId === 'string' && !generalSettings.adminRoleId.includes('تنظیم') ? `<@&${generalSettings.adminRoleId}>` : generalSettings.adminRoleId}`, 
+        inline: false 
+      }
+    );
+    
+    // راهنمای تغییر تنظیمات
+    embed.addFields(
+      { name: '📝 راهنمای تغییر تنظیمات', value: 
+        `برای تغییر هر یک از تنظیمات، از دکمه‌های زیر استفاده کنید. پس از کلیک، یک فرم برای شما نمایش داده خواهد شد.`, 
+        inline: false 
+      }
+    );
+    
+    // دکمه‌های تغییر تنظیمات
+    const row1 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_change_prefix')
+          .setLabel('تغییر پیشوند')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('admin_change_color')
+          .setLabel('تغییر رنگ پیش‌فرض')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('admin_change_language')
+          .setLabel('تغییر زبان')
+          .setStyle(ButtonStyle.Primary),
+      );
+      
+    const row2 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_change_timezone')
+          .setLabel('تغییر منطقه زمانی')
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId('admin_change_admin_role')
+          .setLabel('تغییر نقش ادمین')
+          .setStyle(ButtonStyle.Success),
+      );
+    
+    // دکمه بازگشت
+    const row3 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_settings')
+          .setLabel('🔙 بازگشت به منوی تنظیمات')
+          .setStyle(ButtonStyle.Secondary),
+      );
+    
+    // ارسال پاسخ
+    if (interaction.deferred) {
+      await interaction.editReply({ embeds: [embed], components: [row1, row2, row3] });
+    } else {
+      await interaction.reply({ embeds: [embed], components: [row1, row2, row3], ephemeral: true });
+    }
+  } catch (error) {
+    console.error('Error in generalSettingsMenu:', error);
+    
+    try {
+      const errorMessage = 'متأسفانه در نمایش منوی تنظیمات عمومی خطایی رخ داد! لطفاً دوباره تلاش کنید.';
+      
+      if (interaction.deferred) {
+        await interaction.editReply({ content: errorMessage });
+      } else if (!interaction.replied) {
+        await interaction.reply({ content: errorMessage, ephemeral: true });
+      }
+    } catch (replyError) {
+      console.error('Failed to send error message:', replyError);
+    }
+  }
+}
+
+/**
+ * منوی تنظیمات اقتصادی
+ * @param interaction تعامل کاربر
+ */
+export async function economySettingsMenu(interaction: ButtonInteraction | ChatInputCommandInteraction) {
+  try {
+    // بررسی دسترسی ادمین
+    if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+      await interaction.reply({
+        content: '⛔ شما دسترسی لازم برای استفاده از این بخش را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+
+    // دریافت تنظیمات فعلی
+    const config = botConfig.getConfig();
+    
+    // ایجاد Embed برای نمایش تنظیمات اقتصادی
+    const embed = new EmbedBuilder()
+      .setColor('#4CAF50')
+      .setTitle('💰 تنظیمات اقتصادی ربات')
+      .setDescription('در این بخش می‌توانید تنظیمات اقتصادی ربات را مشاهده و ویرایش کنید.')
+      .setFooter({ text: `مدیر: ${interaction.user.username} | ${new Date().toLocaleString()}` })
+      .setThumbnail('https://img.icons8.com/fluency/48/money-bag.png')
+      .setTimestamp();
+    
+    // تنظیمات اقتصادی
+    const economySettings = {
+      bankInterestRate: config.economy?.bankInterestRate || 2,
+      transferFeeRate: config.economy?.transferFee || 5,
+      initialBalance: config.economy?.initialBalance || 100,
+      dailyReward: config.economy?.dailyReward || 200,
+      dailyStreakBonus: config.economy?.dailyStreakBonus || 10,
+      maxBank: config.economy?.maxBank || 1000000,
+      maxWallet: config.economy?.maxWallet || 100000,
+      robberySuccessRate: config.economy?.robberySuccessRate || 40
+    };
+    
+    // افزودن فیلدها به Embed
+    embed.addFields(
+      { name: '💰 تنظیمات فعلی', value: 
+        `**نرخ سود بانکی**: \`${economySettings.bankInterestRate}%\`\n` +
+        `**کارمزد انتقال**: \`${economySettings.transferFeeRate}%\`\n` +
+        `**موجودی اولیه**: \`${economySettings.initialBalance.toLocaleString()}\` سکه\n` +
+        `**جایزه روزانه**: \`${economySettings.dailyReward.toLocaleString()}\` سکه\n` +
+        `**پاداش حضور متوالی**: \`${economySettings.dailyStreakBonus}%\`\n` +
+        `**حداکثر کیف پول**: \`${economySettings.maxWallet.toLocaleString()}\` سکه\n` +
+        `**حداکثر بانک**: \`${economySettings.maxBank.toLocaleString()}\` سکه\n` +
+        `**نرخ موفقیت دزدی**: \`${economySettings.robberySuccessRate}%\``, 
+        inline: false 
+      }
+    );
+    
+    // راهنمای تغییر تنظیمات
+    embed.addFields(
+      { name: '📝 راهنمای تغییر تنظیمات', value: 
+        `برای تغییر هر یک از تنظیمات، از دکمه‌های زیر استفاده کنید. پس از کلیک، یک فرم برای شما نمایش داده خواهد شد.`, 
+        inline: false 
+      }
+    );
+    
+    // دکمه‌های تغییر تنظیمات
+    const row1 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_change_bank_interest')
+          .setLabel('تغییر نرخ سود بانکی')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('admin_change_transfer_fee')
+          .setLabel('تغییر کارمزد انتقال')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('admin_change_initial_balance')
+          .setLabel('تغییر موجودی اولیه')
+          .setStyle(ButtonStyle.Primary),
+      );
+      
+    const row2 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_change_daily_reward')
+          .setLabel('تغییر جایزه روزانه')
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId('admin_change_daily_streak')
+          .setLabel('تغییر پاداش حضور متوالی')
+          .setStyle(ButtonStyle.Success),
+      );
+    
+    const row3 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_change_max_wallet')
+          .setLabel('تغییر حداکثر کیف پول')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId('admin_change_max_bank')
+          .setLabel('تغییر حداکثر بانک')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId('admin_change_robbery_rate')
+          .setLabel('تغییر نرخ موفقیت دزدی')
+          .setStyle(ButtonStyle.Danger),
+      );
+    
+    // دکمه بازگشت
+    const row4 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_settings')
+          .setLabel('🔙 بازگشت به منوی تنظیمات')
+          .setStyle(ButtonStyle.Secondary),
+      );
+    
+    // ارسال پاسخ
+    if (interaction.deferred) {
+      await interaction.editReply({ embeds: [embed], components: [row1, row2, row3, row4] });
+    } else {
+      await interaction.reply({ embeds: [embed], components: [row1, row2, row3, row4], ephemeral: true });
+    }
+  } catch (error) {
+    console.error('Error in economySettingsMenu:', error);
+    
+    try {
+      const errorMessage = 'متأسفانه در نمایش منوی تنظیمات اقتصادی خطایی رخ داد! لطفاً دوباره تلاش کنید.';
+      
+      if (interaction.deferred) {
+        await interaction.editReply({ content: errorMessage });
+      } else if (!interaction.replied) {
+        await interaction.reply({ content: errorMessage, ephemeral: true });
+      }
+    } catch (replyError) {
+      console.error('Failed to send error message:', replyError);
+    }
+  }
+}
+
+/**
+ * منوی تنظیمات بازی‌ها
+ * @param interaction تعامل کاربر
+ */
+export async function gamesSettingsMenu(interaction: ButtonInteraction | ChatInputCommandInteraction) {
+  try {
+    // بررسی دسترسی ادمین
+    if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+      await interaction.reply({
+        content: '⛔ شما دسترسی لازم برای استفاده از این بخش را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+
+    // دریافت تنظیمات فعلی
+    const config = botConfig.getConfig();
+    
+    // ایجاد Embed برای نمایش تنظیمات بازی‌ها
+    const embed = new EmbedBuilder()
+      .setColor('#FF5722')
+      .setTitle('🎮 تنظیمات بازی‌های ربات')
+      .setDescription('در این بخش می‌توانید تنظیمات مربوط به بازی‌ها را مشاهده و ویرایش کنید.')
+      .setFooter({ text: `مدیر: ${interaction.user.username} | ${new Date().toLocaleString()}` })
+      .setThumbnail('https://img.icons8.com/fluency/48/game-controller.png')
+      .setTimestamp();
+    
+    // تنظیمات بازی‌ها
+    const gameSettings = {
+      minBet: config.games?.minBet || 50,
+      maxBet: config.games?.maxBet || 5000,
+      disabledGames: config.games?.disabledGames || [],
+      duelBetAmount: config.games?.duelBetAmount || 100,
+      wheelSpinCost: config.games?.wheelSpinCost || 250,
+      giveawayDuration: config.games?.giveawayDuration || 3600
+    };
+    
+    // افزودن فیلدها به Embed
+    embed.addFields(
+      { name: '🎮 تنظیمات فعلی', value: 
+        `**حداقل شرط‌بندی**: \`${gameSettings.minBet.toLocaleString()}\` سکه\n` +
+        `**حداکثر شرط‌بندی**: \`${gameSettings.maxBet.toLocaleString()}\` سکه\n` +
+        `**هزینه دوئل**: \`${gameSettings.duelBetAmount.toLocaleString()}\` سکه\n` +
+        `**هزینه چرخ شانس**: \`${gameSettings.wheelSpinCost.toLocaleString()}\` سکه\n` +
+        `**مدت جایزه‌ها**: \`${Math.round(gameSettings.giveawayDuration/60)}\` دقیقه\n` +
+        `**بازی‌های غیرفعال**: \`${gameSettings.disabledGames.length > 0 ? gameSettings.disabledGames.join(', ') : 'تمام بازی‌ها فعال هستند'}\``, 
+        inline: false 
+      }
+    );
+    
+    // راهنمای تغییر تنظیمات
+    embed.addFields(
+      { name: '📝 راهنمای تغییر تنظیمات', value: 
+        `برای تغییر هر یک از تنظیمات، از دکمه‌های زیر استفاده کنید. پس از کلیک، یک فرم برای شما نمایش داده خواهد شد.`, 
+        inline: false 
+      }
+    );
+    
+    // دکمه‌های تغییر تنظیمات
+    const row1 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_change_min_bet')
+          .setLabel('تغییر حداقل شرط‌بندی')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('admin_change_max_bet')
+          .setLabel('تغییر حداکثر شرط‌بندی')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('admin_change_duel_bet')
+          .setLabel('تغییر هزینه دوئل')
+          .setStyle(ButtonStyle.Primary),
+      );
+      
+    const row2 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_change_wheel_cost')
+          .setLabel('تغییر هزینه چرخ شانس')
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId('admin_change_giveaway_duration')
+          .setLabel('تغییر مدت جایزه‌ها')
+          .setStyle(ButtonStyle.Success),
+      );
+    
+    const row3 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_disable_game')
+          .setLabel('غیرفعال‌سازی بازی')
+          .setStyle(ButtonStyle.Danger),
+        new ButtonBuilder()
+          .setCustomId('admin_enable_game')
+          .setLabel('فعال‌سازی بازی')
+          .setStyle(ButtonStyle.Success),
+      );
+    
+    // دکمه بازگشت
+    const row4 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_settings')
+          .setLabel('🔙 بازگشت به منوی تنظیمات')
+          .setStyle(ButtonStyle.Secondary),
+      );
+    
+    // ارسال پاسخ
+    if (interaction.deferred) {
+      await interaction.editReply({ embeds: [embed], components: [row1, row2, row3, row4] });
+    } else {
+      await interaction.reply({ embeds: [embed], components: [row1, row2, row3, row4], ephemeral: true });
+    }
+  } catch (error) {
+    console.error('Error in gamesSettingsMenu:', error);
+    
+    try {
+      const errorMessage = 'متأسفانه در نمایش منوی تنظیمات بازی‌ها خطایی رخ داد! لطفاً دوباره تلاش کنید.';
+      
+      if (interaction.deferred) {
+        await interaction.editReply({ content: errorMessage });
+      } else if (!interaction.replied) {
+        await interaction.reply({ content: errorMessage, ephemeral: true });
+      }
+    } catch (replyError) {
+      console.error('Failed to send error message:', replyError);
+    }
+  }
+}
+
+/**
+ * منوی تنظیمات کلن‌ها
+ * @param interaction تعامل کاربر
+ */
+export async function clansSettingsMenu(interaction: ButtonInteraction | ChatInputCommandInteraction) {
+  try {
+    // بررسی دسترسی ادمین
+    if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+      await interaction.reply({
+        content: '⛔ شما دسترسی لازم برای استفاده از این بخش را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+
+    // دریافت تنظیمات فعلی
+    const config = botConfig.getConfig();
+    
+    // ایجاد Embed برای نمایش تنظیمات کلن‌ها
+    const embed = new EmbedBuilder()
+      .setColor('#9C27B0')
+      .setTitle('🏰 تنظیمات کلن‌های ربات')
+      .setDescription('در این بخش می‌توانید تنظیمات مربوط به کلن‌ها را مشاهده و ویرایش کنید.')
+      .setFooter({ text: `مدیر: ${interaction.user.username} | ${new Date().toLocaleString()}` })
+      .setThumbnail('https://img.icons8.com/fluency/48/castle.png')
+      .setTimestamp();
+    
+    // تنظیمات کلن‌ها
+    const clanSettings = {
+      createCost: config.clans?.createCost || 5000,
+      maxMembers: config.clans?.maxMembers || 30,
+      roleCreationCost: config.clans?.roleCreationCost || 1000,
+      leaveDelay: config.clans?.leaveDelay || 48,
+      dailyLimit: config.clans?.dailyLimit || 5000
+    };
+    
+    // افزودن فیلدها به Embed
+    embed.addFields(
+      { name: '🏰 تنظیمات فعلی', value: 
+        `**هزینه ساخت کلن**: \`${clanSettings.createCost.toLocaleString()}\` سکه\n` +
+        `**حداکثر اعضا**: \`${clanSettings.maxMembers}\` نفر\n` +
+        `**هزینه ساخت رول**: \`${clanSettings.roleCreationCost.toLocaleString()}\` سکه\n` +
+        `**مهلت خروج مجدد**: \`${clanSettings.leaveDelay}\` ساعت\n` +
+        `**سقف برداشت روزانه**: \`${clanSettings.dailyLimit.toLocaleString()}\` سکه`, 
+        inline: false 
+      }
+    );
+    
+    // راهنمای تغییر تنظیمات
+    embed.addFields(
+      { name: '📝 راهنمای تغییر تنظیمات', value: 
+        `برای تغییر هر یک از تنظیمات، از دکمه‌های زیر استفاده کنید. پس از کلیک، یک فرم برای شما نمایش داده خواهد شد.`, 
+        inline: false 
+      }
+    );
+    
+    // دکمه‌های تغییر تنظیمات
+    const row1 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_change_clan_cost')
+          .setLabel('تغییر هزینه ساخت کلن')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('admin_change_max_members')
+          .setLabel('تغییر حداکثر اعضا')
+          .setStyle(ButtonStyle.Primary),
+      );
+      
+    const row2 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_change_role_cost')
+          .setLabel('تغییر هزینه ساخت رول')
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId('admin_change_leave_delay')
+          .setLabel('تغییر مهلت خروج')
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId('admin_change_daily_limit')
+          .setLabel('تغییر سقف برداشت')
+          .setStyle(ButtonStyle.Success),
+      );
+    
+    // دکمه بازگشت
+    const row3 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_settings')
+          .setLabel('🔙 بازگشت به منوی تنظیمات')
+          .setStyle(ButtonStyle.Secondary),
+      );
+    
+    // ارسال پاسخ
+    if (interaction.deferred) {
+      await interaction.editReply({ embeds: [embed], components: [row1, row2, row3] });
+    } else {
+      await interaction.reply({ embeds: [embed], components: [row1, row2, row3], ephemeral: true });
+    }
+  } catch (error) {
+    console.error('Error in clansSettingsMenu:', error);
+    
+    try {
+      const errorMessage = 'متأسفانه در نمایش منوی تنظیمات کلن‌ها خطایی رخ داد! لطفاً دوباره تلاش کنید.';
+      
+      if (interaction.deferred) {
+        await interaction.editReply({ content: errorMessage });
+      } else if (!interaction.replied) {
+        await interaction.reply({ content: errorMessage, ephemeral: true });
+      }
+    } catch (replyError) {
+      console.error('Failed to send error message:', replyError);
+    }
+  }
+}
+
+/**
+ * منوی تنظیمات سطح‌بندی
+ * @param interaction تعامل کاربر
+ */
+export async function levelsSettingsMenu(interaction: ButtonInteraction | ChatInputCommandInteraction) {
+  try {
+    // بررسی دسترسی ادمین
+    if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+      await interaction.reply({
+        content: '⛔ شما دسترسی لازم برای استفاده از این بخش را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+
+    // دریافت تنظیمات فعلی
+    const config = botConfig.getConfig();
+    
+    // ایجاد Embed برای نمایش تنظیمات سطح‌بندی
+    const embed = new EmbedBuilder()
+      .setColor('#FFC107')
+      .setTitle('⭐ تنظیمات سطح‌بندی ربات')
+      .setDescription('در این بخش می‌توانید تنظیمات مربوط به سیستم سطح‌بندی را مشاهده و ویرایش کنید.')
+      .setFooter({ text: `مدیر: ${interaction.user.username} | ${new Date().toLocaleString()}` })
+      .setThumbnail('https://img.icons8.com/fluency/48/star.png')
+      .setTimestamp();
+    
+    // تنظیمات سطح‌بندی
+    const levelSettings = {
+      messageXP: config.levels?.messageXP || 5,
+      voiceXP: config.levels?.voiceXP || 2,
+      activityXP: config.levels?.activityXP || 10,
+      baseXP: config.levels?.baseXP || 100,
+      levelMultiplier: config.levels?.levelMultiplier || 1.5
+    };
+    
+    // افزودن فیلدها به Embed
+    embed.addFields(
+      { name: '⭐ تنظیمات فعلی', value: 
+        `**تجربه هر پیام**: \`${levelSettings.messageXP}\`\n` +
+        `**تجربه صوتی (دقیقه)**: \`${levelSettings.voiceXP}\`\n` +
+        `**تجربه فعالیت**: \`${levelSettings.activityXP}\`\n` +
+        `**تجربه پایه هر سطح**: \`${levelSettings.baseXP}\`\n` +
+        `**ضریب سطح**: \`${levelSettings.levelMultiplier}x\``, 
+        inline: false 
+      }
+    );
+    
+    // راهنمای تغییر تنظیمات
+    embed.addFields(
+      { name: '📝 راهنمای تغییر تنظیمات', value: 
+        `برای تغییر هر یک از تنظیمات، از دکمه‌های زیر استفاده کنید. پس از کلیک، یک فرم برای شما نمایش داده خواهد شد.`, 
+        inline: false 
+      }
+    );
+    
+    // توضیحات محاسبه سطح
+    embed.addFields(
+      { name: '🧮 نحوه محاسبه سطح', value: 
+        `سطح کاربران بر اساس تجربه آنها محاسبه می‌شود. فرمول محاسبه تجربه لازم برای هر سطح به صورت زیر است:\n` +
+        `**XP = baseXP × (سطح فعلی)^levelMultiplier**\n\n` +
+        `مثال: برای سطح 5 با تنظیمات فعلی:\n` +
+        `**XP = ${levelSettings.baseXP} × (5)^${levelSettings.levelMultiplier} = ${Math.round(levelSettings.baseXP * Math.pow(5, levelSettings.levelMultiplier))}\**`,
+        inline: false 
+      }
+    );
+    
+    // دکمه‌های تغییر تنظیمات
+    const row1 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_change_message_xp')
+          .setLabel('تغییر تجربه پیام')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('admin_change_voice_xp')
+          .setLabel('تغییر تجربه صوتی')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('admin_change_activity_xp')
+          .setLabel('تغییر تجربه فعالیت')
+          .setStyle(ButtonStyle.Primary),
+      );
+      
+    const row2 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_change_base_xp')
+          .setLabel('تغییر تجربه پایه')
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId('admin_change_level_multiplier')
+          .setLabel('تغییر ضریب سطح')
+          .setStyle(ButtonStyle.Success),
+      );
+    
+    // دکمه بازگشت
+    const row3 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_settings')
+          .setLabel('🔙 بازگشت به منوی تنظیمات')
+          .setStyle(ButtonStyle.Secondary),
+      );
+    
+    // ارسال پاسخ
+    if (interaction.deferred) {
+      await interaction.editReply({ embeds: [embed], components: [row1, row2, row3] });
+    } else {
+      await interaction.reply({ embeds: [embed], components: [row1, row2, row3], ephemeral: true });
+    }
+  } catch (error) {
+    console.error('Error in levelsSettingsMenu:', error);
+    
+    try {
+      const errorMessage = 'متأسفانه در نمایش منوی تنظیمات سطح‌بندی خطایی رخ داد! لطفاً دوباره تلاش کنید.';
+      
+      if (interaction.deferred) {
+        await interaction.editReply({ content: errorMessage });
+      } else if (!interaction.replied) {
+        await interaction.reply({ content: errorMessage, ephemeral: true });
+      }
+    } catch (replyError) {
+      console.error('Failed to send error message:', replyError);
+    }
+  }
+}
+
+/**
+ * منوی تنظیمات امنیتی
+ * @param interaction تعامل کاربر
+ */
+export async function securitySettingsMenu(interaction: ButtonInteraction | ChatInputCommandInteraction) {
+  try {
+    // بررسی دسترسی ادمین
+    if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+      await interaction.reply({
+        content: '⛔ شما دسترسی لازم برای استفاده از این بخش را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+
+    // دریافت تنظیمات فعلی
+    const config = botConfig.getConfig();
+    
+    // ایجاد Embed برای نمایش تنظیمات امنیتی
+    const embed = new EmbedBuilder()
+      .setColor('#F44336')
+      .setTitle('🛡️ تنظیمات امنیتی ربات')
+      .setDescription('در این بخش می‌توانید تنظیمات امنیتی ربات را مشاهده و ویرایش کنید.')
+      .setFooter({ text: `مدیر: ${interaction.user.username} | ${new Date().toLocaleString()}` })
+      .setThumbnail('https://img.icons8.com/fluency/48/shield-check.png')
+      .setTimestamp();
+    
+    // تنظیمات امنیتی
+    const securitySettings = {
+      antiSpam: config.security?.antiSpam === true,
+      antiRaid: config.security?.antiRaid === true,
+      captcha: config.security?.captcha === true,
+      maxWarnings: config.security?.maxWarnings || 3,
+      muteDuration: config.security?.muteDuration || 60,
+      banDuration: config.security?.banDuration || 24 * 7
+    };
+    
+    // افزودن فیلدها به Embed
+    embed.addFields(
+      { name: '🛡️ تنظیمات فعلی', value: 
+        `**ضد اسپم**: \`${securitySettings.antiSpam ? '✅ فعال' : '❌ غیرفعال'}\`\n` +
+        `**ضد حمله**: \`${securitySettings.antiRaid ? '✅ فعال' : '❌ غیرفعال'}\`\n` +
+        `**کپچا (تایید انسان)**: \`${securitySettings.captcha ? '✅ فعال' : '❌ غیرفعال'}\`\n` +
+        `**حداکثر اخطارها**: \`${securitySettings.maxWarnings}\`\n` +
+        `**مدت سکوت (دقیقه)**: \`${securitySettings.muteDuration}\`\n` +
+        `**مدت مسدودسازی (ساعت)**: \`${securitySettings.banDuration}\``, 
+        inline: false 
+      }
+    );
+    
+    // راهنمای تغییر تنظیمات
+    embed.addFields(
+      { name: '📝 راهنمای تغییر تنظیمات', value: 
+        `برای تغییر هر یک از تنظیمات، از دکمه‌های زیر استفاده کنید. پس از کلیک، یک فرم برای شما نمایش داده خواهد شد.`, 
+        inline: false 
+      }
+    );
+    
+    // دکمه‌های تغییر تنظیمات
+    const row1 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_toggle_antispam')
+          .setLabel(`${securitySettings.antiSpam ? 'غیرفعال‌سازی' : 'فعال‌سازی'} ضد اسپم`)
+          .setStyle(securitySettings.antiSpam ? ButtonStyle.Danger : ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId('admin_toggle_antiraid')
+          .setLabel(`${securitySettings.antiRaid ? 'غیرفعال‌سازی' : 'فعال‌سازی'} ضد حمله`)
+          .setStyle(securitySettings.antiRaid ? ButtonStyle.Danger : ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId('admin_toggle_captcha')
+          .setLabel(`${securitySettings.captcha ? 'غیرفعال‌سازی' : 'فعال‌سازی'} کپچا`)
+          .setStyle(securitySettings.captcha ? ButtonStyle.Danger : ButtonStyle.Success),
+      );
+      
+    const row2 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_change_max_warnings')
+          .setLabel('تغییر حداکثر اخطارها')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('admin_change_mute_duration')
+          .setLabel('تغییر مدت سکوت')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('admin_change_ban_duration')
+          .setLabel('تغییر مدت مسدودسازی')
+          .setStyle(ButtonStyle.Primary),
+      );
+    
+    // دکمه بازگشت
+    const row3 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_settings')
+          .setLabel('🔙 بازگشت به منوی تنظیمات')
+          .setStyle(ButtonStyle.Secondary),
+      );
+    
+    // ارسال پاسخ
+    if (interaction.deferred) {
+      await interaction.editReply({ embeds: [embed], components: [row1, row2, row3] });
+    } else {
+      await interaction.reply({ embeds: [embed], components: [row1, row2, row3], ephemeral: true });
+    }
+  } catch (error) {
+    console.error('Error in securitySettingsMenu:', error);
+    
+    try {
+      const errorMessage = 'متأسفانه در نمایش منوی تنظیمات امنیتی خطایی رخ داد! لطفاً دوباره تلاش کنید.';
+      
+      if (interaction.deferred) {
+        await interaction.editReply({ content: errorMessage });
+      } else if (!interaction.replied) {
+        await interaction.reply({ content: errorMessage, ephemeral: true });
+      }
+    } catch (replyError) {
+      console.error('Failed to send error message:', replyError);
+    }
+  }
+}
+
+/**
+ * منوی تنظیمات دسترسی‌ها
+ * @param interaction تعامل کاربر
+ */
+export async function permissionsSettingsMenu(interaction: ButtonInteraction | ChatInputCommandInteraction) {
+  try {
+    // بررسی دسترسی ادمین
+    if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+      await interaction.reply({
+        content: '⛔ شما دسترسی لازم برای استفاده از این بخش را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+
+    // دریافت تنظیمات فعلی
+    const config = botConfig.getConfig();
+    
+    // ایجاد Embed برای نمایش تنظیمات دسترسی‌ها
+    const embed = new EmbedBuilder()
+      .setColor('#607D8B')
+      .setTitle('🔒 تنظیمات دسترسی‌های ربات')
+      .setDescription('در این بخش می‌توانید تنظیمات دسترسی‌های ربات را مشاهده و ویرایش کنید.')
+      .setFooter({ text: `مدیر: ${interaction.user.username} | ${new Date().toLocaleString()}` })
+      .setThumbnail('https://img.icons8.com/fluency/48/key.png')
+      .setTimestamp();
+    
+    // تنظیمات دسترسی‌ها
+    const permissionSettings = {
+      adminRoleId: config.permissions?.adminRoleId || 'تنظیم نشده',
+      modRoleId: config.permissions?.modRoleId || 'تنظیم نشده',
+      trustedRoleId: config.permissions?.trustedRoleId || 'تنظیم نشده',
+      customPermissions: config.permissions?.custom || {}
+    };
+    
+    // افزودن فیلدها به Embed
+    embed.addFields(
+      { name: '🔑 نقش‌های دسترسی', value: 
+        `**نقش ادمین**: ${typeof permissionSettings.adminRoleId === 'string' && !permissionSettings.adminRoleId.includes('تنظیم') ? `<@&${permissionSettings.adminRoleId}>` : permissionSettings.adminRoleId}\n` +
+        `**نقش مدیر**: ${typeof permissionSettings.modRoleId === 'string' && !permissionSettings.modRoleId.includes('تنظیم') ? `<@&${permissionSettings.modRoleId}>` : permissionSettings.modRoleId}\n` +
+        `**نقش مورد اعتماد**: ${typeof permissionSettings.trustedRoleId === 'string' && !permissionSettings.trustedRoleId.includes('تنظیم') ? `<@&${permissionSettings.trustedRoleId}>` : permissionSettings.trustedRoleId}`, 
+        inline: false 
+      }
+    );
+    
+    // افزودن دسترسی‌های سفارشی
+    const customPermCount = Object.keys(permissionSettings.customPermissions).length;
+    embed.addFields(
+      { name: '🔐 دسترسی‌های سفارشی', value: 
+        customPermCount > 0 ? 
+        Object.entries(permissionSettings.customPermissions)
+          .slice(0, 5)
+          .map(([cmd, roleId]) => `**/${cmd}**: <@&${roleId}>`)
+          .join('\n') + (customPermCount > 5 ? `\n... و ${customPermCount - 5} مورد دیگر` : '')
+        : 'هیچ دسترسی سفارشی تعریف نشده است.', 
+        inline: false 
+      }
+    );
+    
+    // راهنمای تغییر تنظیمات
+    embed.addFields(
+      { name: '📝 راهنمای تغییر تنظیمات', value: 
+        `برای تغییر هر یک از تنظیمات، از دکمه‌های زیر استفاده کنید. پس از کلیک، یک فرم برای شما نمایش داده خواهد شد.`, 
+        inline: false 
+      }
+    );
+    
+    // دکمه‌های تغییر تنظیمات
+    const row1 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_change_admin_role_perm')
+          .setLabel('تغییر نقش ادمین')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('admin_change_mod_role')
+          .setLabel('تغییر نقش مدیر')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('admin_change_trusted_role')
+          .setLabel('تغییر نقش مورد اعتماد')
+          .setStyle(ButtonStyle.Primary),
+      );
+      
+    const row2 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_add_custom_perm')
+          .setLabel('افزودن دسترسی سفارشی')
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId('admin_remove_custom_perm')
+          .setLabel('حذف دسترسی سفارشی')
+          .setStyle(ButtonStyle.Danger),
+        new ButtonBuilder()
+          .setCustomId('admin_list_custom_perms')
+          .setLabel('لیست کامل دسترسی‌ها')
+          .setStyle(ButtonStyle.Secondary),
+      );
+    
+    // دکمه بازگشت
+    const row3 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_settings')
+          .setLabel('🔙 بازگشت به منوی تنظیمات')
+          .setStyle(ButtonStyle.Secondary),
+      );
+    
+    // ارسال پاسخ
+    if (interaction.deferred) {
+      await interaction.editReply({ embeds: [embed], components: [row1, row2, row3] });
+    } else {
+      await interaction.reply({ embeds: [embed], components: [row1, row2, row3], ephemeral: true });
+    }
+  } catch (error) {
+    console.error('Error in permissionsSettingsMenu:', error);
+    
+    try {
+      const errorMessage = 'متأسفانه در نمایش منوی تنظیمات دسترسی‌ها خطایی رخ داد! لطفاً دوباره تلاش کنید.';
+      
+      if (interaction.deferred) {
+        await interaction.editReply({ content: errorMessage });
+      } else if (!interaction.replied) {
+        await interaction.reply({ content: errorMessage, ephemeral: true });
+      }
+    } catch (replyError) {
+      console.error('Failed to send error message:', replyError);
+    }
+  }
+}
+
+/**
+ * منوی تنظیمات لاگ‌ها
+ * @param interaction تعامل کاربر
+ */
+export async function loggingSettingsMenu(interaction: ButtonInteraction | ChatInputCommandInteraction) {
+  try {
+    // بررسی دسترسی ادمین
+    if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+      await interaction.reply({
+        content: '⛔ شما دسترسی لازم برای استفاده از این بخش را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+
+    // دریافت تنظیمات فعلی
+    const config = botConfig.getConfig();
+    
+    // ایجاد Embed برای نمایش تنظیمات لاگ‌ها
+    const embed = new EmbedBuilder()
+      .setColor('#795548')
+      .setTitle('📝 تنظیمات لاگ‌های ربات')
+      .setDescription('در این بخش می‌توانید تنظیمات لاگ‌های ربات را مشاهده و ویرایش کنید.')
+      .setFooter({ text: `مدیر: ${interaction.user.username} | ${new Date().toLocaleString()}` })
+      .setThumbnail('https://img.icons8.com/fluency/48/edit-file.png')
+      .setTimestamp();
+    
+    // تنظیمات لاگ‌ها
+    const loggingSettings = {
+      enabled: config.logging?.enabled === true,
+      commands: config.logging?.commands === true,
+      transactions: config.logging?.transactions === true,
+      errors: config.logging?.errors === true,
+      modActions: config.logging?.modActions === true,
+      joinLeave: config.logging?.joinLeave === true,
+      channelId: config.logging?.channelId || 'تنظیم نشده'
+    };
+    
+    // افزودن فیلدها به Embed
+    embed.addFields(
+      { name: '📝 تنظیمات فعلی', value: 
+        `**وضعیت کلی لاگ‌ها**: \`${loggingSettings.enabled ? '✅ فعال' : '❌ غیرفعال'}\`\n` +
+        `**ثبت دستورات**: \`${loggingSettings.commands ? '✅ فعال' : '❌ غیرفعال'}\`\n` +
+        `**ثبت تراکنش‌ها**: \`${loggingSettings.transactions ? '✅ فعال' : '❌ غیرفعال'}\`\n` +
+        `**ثبت خطاها**: \`${loggingSettings.errors ? '✅ فعال' : '❌ غیرفعال'}\`\n` +
+        `**ثبت اقدامات مدیریتی**: \`${loggingSettings.modActions ? '✅ فعال' : '❌ غیرفعال'}\`\n` +
+        `**ثبت ورود و خروج**: \`${loggingSettings.joinLeave ? '✅ فعال' : '❌ غیرفعال'}\`\n` +
+        `**کانال لاگ**: ${typeof loggingSettings.channelId === 'string' && !loggingSettings.channelId.includes('تنظیم') ? `<#${loggingSettings.channelId}>` : loggingSettings.channelId}`, 
+        inline: false 
+      }
+    );
+    
+    // راهنمای تغییر تنظیمات
+    embed.addFields(
+      { name: '📝 راهنمای تغییر تنظیمات', value: 
+        `برای تغییر هر یک از تنظیمات، از دکمه‌های زیر استفاده کنید. پس از کلیک، یک فرم برای شما نمایش داده خواهد شد.`, 
+        inline: false 
+      }
+    );
+    
+    // دکمه‌های تغییر تنظیمات
+    const row1 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_toggle_logging')
+          .setLabel(`${loggingSettings.enabled ? 'غیرفعال‌سازی' : 'فعال‌سازی'} لاگ‌ها`)
+          .setStyle(loggingSettings.enabled ? ButtonStyle.Danger : ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId('admin_set_log_channel')
+          .setLabel('تنظیم کانال لاگ')
+          .setStyle(ButtonStyle.Primary),
+      );
+      
+    const row2 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_toggle_commands_log')
+          .setLabel(`${loggingSettings.commands ? 'غیرفعال‌سازی' : 'فعال‌سازی'} لاگ دستورات`)
+          .setStyle(loggingSettings.commands ? ButtonStyle.Danger : ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId('admin_toggle_transactions_log')
+          .setLabel(`${loggingSettings.transactions ? 'غیرفعال‌سازی' : 'فعال‌سازی'} لاگ تراکنش‌ها`)
+          .setStyle(loggingSettings.transactions ? ButtonStyle.Danger : ButtonStyle.Success),
+      );
+      
+    const row3 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_toggle_errors_log')
+          .setLabel(`${loggingSettings.errors ? 'غیرفعال‌سازی' : 'فعال‌سازی'} لاگ خطاها`)
+          .setStyle(loggingSettings.errors ? ButtonStyle.Danger : ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId('admin_toggle_modactions_log')
+          .setLabel(`${loggingSettings.modActions ? 'غیرفعال‌سازی' : 'فعال‌سازی'} لاگ اقدامات مدیریتی`)
+          .setStyle(loggingSettings.modActions ? ButtonStyle.Danger : ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId('admin_toggle_joinleave_log')
+          .setLabel(`${loggingSettings.joinLeave ? 'غیرفعال‌سازی' : 'فعال‌سازی'} لاگ ورود و خروج`)
+          .setStyle(loggingSettings.joinLeave ? ButtonStyle.Danger : ButtonStyle.Success),
+      );
+    
+    // دکمه بازگشت
+    const row4 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('admin_settings')
+          .setLabel('🔙 بازگشت به منوی تنظیمات')
+          .setStyle(ButtonStyle.Secondary),
+      );
+    
+    // ارسال پاسخ
+    if (interaction.deferred) {
+      await interaction.editReply({ embeds: [embed], components: [row1, row2, row3, row4] });
+    } else {
+      await interaction.reply({ embeds: [embed], components: [row1, row2, row3, row4], ephemeral: true });
+    }
+  } catch (error) {
+    console.error('Error in loggingSettingsMenu:', error);
+    
+    try {
+      const errorMessage = 'متأسفانه در نمایش منوی تنظیمات لاگ‌ها خطایی رخ داد! لطفاً دوباره تلاش کنید.';
+      
+      if (interaction.deferred) {
+        await interaction.editReply({ content: errorMessage });
+      } else if (!interaction.replied) {
+        await interaction.reply({ content: errorMessage, ephemeral: true });
+      }
+    } catch (replyError) {
+      console.error('Failed to send error message:', replyError);
+    }
+  }
+}

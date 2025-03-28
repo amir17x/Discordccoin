@@ -105,6 +105,39 @@ export class DiscordLogger {
   constructor(client: Client) {
     this.client = client;
   }
+  
+  /**
+   * ارسال لاگ اطلاعاتی
+   * @param message پیام لاگ
+   */
+  public info(message: string): void {
+    console.log(`[INFO] ${message}`);
+    this.log(LogType.SYSTEM, 'اطلاعات سیستم', message).catch(err => {
+      console.error(`Error logging info: ${err}`);
+    });
+  }
+
+  /**
+   * ارسال لاگ هشدار
+   * @param message پیام لاگ
+   */
+  public warn(message: string): void {
+    console.warn(`[WARN] ${message}`);
+    this.log(LogType.SYSTEM, 'هشدار سیستم', message).catch(err => {
+      console.error(`Error logging warning: ${err}`);
+    });
+  }
+
+  /**
+   * ارسال لاگ خطا
+   * @param message پیام لاگ
+   */
+  public error(message: string): void {
+    console.error(`[ERROR] ${message}`);
+    this.log(LogType.ERROR, 'خطای سیستم', message).catch(err => {
+      console.error(`Error logging error: ${err}`);
+    });
+  }
 
   /**
    * تنظیم کانال‌های لاگ

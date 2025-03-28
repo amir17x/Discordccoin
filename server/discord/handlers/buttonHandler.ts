@@ -19,7 +19,15 @@ import {
   broadcastMenu,
   backupMenu,
   botSettingsMenu,
-  botStatsMenu
+  botStatsMenu,
+  generalSettingsMenu,
+  economySettingsMenu,
+  gamesSettingsMenu,
+  clansSettingsMenu,
+  levelsSettingsMenu,
+  securitySettingsMenu,
+  permissionsSettingsMenu,
+  loggingSettingsMenu
 } from '../components/adminMenuExtended';
 import { investmentMenu, processInvestment } from '../components/investmentMenu';
 import { stocksMenu, processBuyStock, processSellStock } from '../components/stocksMenu';
@@ -1649,9 +1657,37 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
           action === 'admin_settings_security' ||
           action === 'admin_settings_permissions' ||
           action === 'admin_settings_logging') {
-        // همه این دکمه‌ها فعلاً به همان منوی تنظیمات اصلی منتقل می‌شوند
-        // در نسخه‌های بعدی، می‌توان برای هر کدام بخش مجزا ایجاد کرد
-        await botSettingsMenu(interaction);
+        // تشخیص نوع منوی تنظیمات و فراخوانی تابع مربوطه
+        const settingType = action.replace('admin_settings_', '');
+        
+        switch (settingType) {
+          case 'general':
+            await generalSettingsMenu(interaction);
+            break;
+          case 'economy':
+            await economySettingsMenu(interaction);
+            break;
+          case 'games':
+            await gamesSettingsMenu(interaction);
+            break;
+          case 'clans':
+            await clansSettingsMenu(interaction);
+            break;
+          case 'levels':
+            await levelsSettingsMenu(interaction);
+            break;
+          case 'security':
+            await securitySettingsMenu(interaction);
+            break;
+          case 'permissions':
+            await permissionsSettingsMenu(interaction);
+            break;
+          case 'logging':
+            await loggingSettingsMenu(interaction);
+            break;
+          default:
+            await botSettingsMenu(interaction);
+        }
         return;
       }
       
