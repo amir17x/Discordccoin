@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initDiscordBot } from "./discord/client";
 import { setupAdminPanel } from "./admin";
+import { checkAndSendTips } from "./discord/components/tipSystem";
 
 const app = express();
 app.use(express.json());
@@ -41,8 +42,19 @@ app.use((req, res, next) => {
 (async () => {
   // Initialize Discord bot
   try {
-    await initDiscordBot();
+    const client = await initDiscordBot();
     log("Discord bot initialized successfully");
+    
+    // تنظیم بررسی دوره‌ای برای ارسال نکات
+    setInterval(() => {
+      try {
+        checkAndSendTips(client);
+      } catch (err) {
+        log(`Error checking and sending tips: ${err}`, "error");
+      }
+    }, 5 * 60 * 1000); // هر 5 دقیقه بررسی می‌کند
+    
+    log("Tip system scheduler initialized");
   } catch (error) {
     log(`Error initializing Discord bot: ${error}`, "error");
   }

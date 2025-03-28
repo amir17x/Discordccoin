@@ -2,6 +2,7 @@ import { SlashCommandBuilder, Collection, Client, PermissionFlagsBits, EmbedBuil
 import { storage } from '../storage';
 import { mainMenu } from './components/mainMenu';
 import { adminMenu } from '../discord/components/adminMenu';
+import { setTipChannel, disableTipChannel } from './components/tipSystem';
 
 // Command to display the main menu
 const menu = {
@@ -529,6 +530,116 @@ const ping = {
   }
 };
 
+// Command to set up a tip channel
+const tipChannel = {
+  data: new SlashCommandBuilder()
+    .setName('tipchannel')
+    .setDescription('راه‌اندازی کانال برای ارسال خودکار نکات و راهنمایی‌ها')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator) // نیاز به دسترسی ادمین
+    .addChannelOption(option => 
+      option.setName('channel')
+            .setDescription('کانال مورد نظر برای ارسال نکات')
+            .setRequired(true))
+    .addIntegerOption(option => 
+      option.setName('interval')
+            .setDescription('فاصله زمانی ارسال نکات (ساعت)')
+            .setRequired(true)
+            .setMinValue(1)
+            .setMaxValue(24)),
+  
+  async execute(interaction: any) {
+    try {
+      // فقط ادمین‌ها می‌توانند از این دستور استفاده کنند
+      if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+        await interaction.reply({
+          content: '⛔ شما دسترسی لازم برای استفاده از این دستور را ندارید!',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      const channel = interaction.options.getChannel('channel');
+      const interval = interaction.options.getInteger('interval');
+      
+      // بررسی معتبر بودن کانال
+      if (!channel || channel.type !== 0) { // 0 = GUILD_TEXT
+        await interaction.reply({
+          content: '❌ لطفاً یک کانال متنی معتبر انتخاب کنید.',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      // تنظیم کانال
+      const result = await setTipChannel(interaction.guildId, channel.id, interval);
+      
+      // ایجاد Embed برای نمایش نتیجه
+      const resultEmbed = new EmbedBuilder()
+        .setColor('#00FF00')
+        .setTitle('💡 سیستم نکات راه‌اندازی شد')
+        .setDescription(result)
+        .addFields(
+          { name: '📋 کانال', value: `<#${channel.id}>`, inline: true },
+          { name: '⏰ فاصله زمانی', value: `هر ${interval} ساعت`, inline: true }
+        )
+        .setFooter({ text: 'نکات آموزشی و راهنمایی‌های کاربردی به صورت خودکار در این کانال ارسال خواهند شد.' })
+        .setTimestamp();
+      
+      await interaction.reply({
+        embeds: [resultEmbed]
+      });
+    } catch (error) {
+      console.error('Error in tipchannel command:', error);
+      await interaction.reply({
+        content: '⚠️ خطا در تنظیم کانال نکات! لطفاً دوباره تلاش کنید.',
+        ephemeral: true
+      });
+    }
+  }
+};
+
+// Command to disable tip channel
+const unTipChannel = {
+  data: new SlashCommandBuilder()
+    .setName('untipchannel')
+    .setDescription('غیرفعال کردن ارسال خودکار نکات')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator), // نیاز به دسترسی ادمین
+  
+  async execute(interaction: any) {
+    try {
+      // فقط ادمین‌ها می‌توانند از این دستور استفاده کنند
+      if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+        await interaction.reply({
+          content: '⛔ شما دسترسی لازم برای استفاده از این دستور را ندارید!',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      // غیرفعال کردن کانال نکات
+      const result = await disableTipChannel(interaction.guildId);
+      
+      // ایجاد Embed برای نمایش نتیجه
+      const resultEmbed = new EmbedBuilder()
+        .setColor('#FF9900')
+        .setTitle('🔕 سیستم نکات غیرفعال شد')
+        .setDescription(result)
+        .setFooter({ text: 'برای فعال‌سازی مجدد از دستور /tipchannel استفاده کنید.' })
+        .setTimestamp();
+      
+      await interaction.reply({
+        embeds: [resultEmbed]
+      });
+    } catch (error) {
+      console.error('Error in untipchannel command:', error);
+      await interaction.reply({
+        content: '⚠️ خطا در غیرفعال کردن کانال نکات! لطفاً دوباره تلاش کنید.',
+        ephemeral: true
+      });
+    }
+  }
+};
+
 // Export function to load commands
 export async function loadCommands(client: Client) {
   // Add commands to the collection
@@ -538,6 +649,8 @@ export async function loadCommands(client: Client) {
   client.commands.set(help.data.name, help);
   client.commands.set(admin.data.name, admin);
   client.commands.set(ping.data.name, ping);
+  client.commands.set(tipChannel.data.name, tipChannel);
+  client.commands.set(unTipChannel.data.name, unTipChannel);
 }
 
 export const commands = [
@@ -546,5 +659,7 @@ export const commands = [
   daily.data.toJSON(),
   help.data.toJSON(),
   admin.data.toJSON(),
-  ping.data.toJSON()
+  ping.data.toJSON(),
+  tipChannel.data.toJSON(),
+  unTipChannel.data.toJSON()
 ];

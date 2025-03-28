@@ -24,6 +24,15 @@ import {
   UserStock,
 } from "@shared/schema";
 
+// تعریف تایپ تنظیمات کانال نکات
+export interface TipChannelSettings {
+  guildId: string;       // آیدی سرور
+  channelId: string;     // آیدی کانال تنظیم شده
+  interval: number;      // فاصله زمانی ارسال نکات (به ساعت)
+  lastTipTime?: number;  // زمان آخرین نکته ارسال شده
+  isActive: boolean;     // وضعیت فعال بودن سیستم نکات
+}
+
 // کلاس‌های موقت برای استاک که بعدا باید با اسکیما جایگزین شوند
 type StockData = {
   id: number;
@@ -182,6 +191,11 @@ export interface IStorage {
   createAuction(sellerId: number, itemId: number | null, startingBid: number, duration: number, itemType: string, itemAmount?: number): Promise<AuctionData>;
   placeBid(auctionId: number, bidderId: number, amount: number): Promise<boolean>;
   endAuction(auctionId: number): Promise<{sellerId: number, highestBidderId?: number, amount?: number, itemId?: number, itemType: string, itemAmount?: number}>;
+  
+  // Tip Channel operations
+  getTipChannelSettings(guildId: string): Promise<TipChannelSettings | undefined>;
+  setTipChannelSettings(settings: TipChannelSettings): Promise<boolean>;
+  getAllActiveTipChannelSettings(): Promise<TipChannelSettings[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -206,6 +220,9 @@ export class MemStorage implements IStorage {
   private notificationSettings: Map<number, NotificationSettings> = new Map();
   private notifications: Map<number, Notification[]> = new Map();
   private userInteractions: Map<string, UserInteraction> = new Map(); // کلید: `${userId}_${targetId}`
+  
+  // تنظیمات کانال نکات
+  private tipChannelSettings: Map<string, TipChannelSettings> = new Map(); // کلید: guildId
   
   private currentLoanId = 1;
   private currentJobId = 1;
@@ -2757,6 +2774,33 @@ export class MemStorage implements IStorage {
     );
     
     return recentTransactions.length;
+  }
+
+  // Tip Channel operations
+  async getTipChannelSettings(guildId: string): Promise<TipChannelSettings | undefined> {
+    return this.tipChannelSettings.get(guildId);
+  }
+  
+  async setTipChannelSettings(settings: TipChannelSettings): Promise<boolean> {
+    try {
+      this.tipChannelSettings.set(settings.guildId, settings);
+      return true;
+    } catch (error) {
+      console.error("Error setting tip channel settings:", error);
+      return false;
+    }
+  }
+  
+  async getAllActiveTipChannelSettings(): Promise<TipChannelSettings[]> {
+    const activeSettings: TipChannelSettings[] = [];
+    
+    for (const settings of this.tipChannelSettings.values()) {
+      if (settings.isActive) {
+        activeSettings.push(settings);
+      }
+    }
+    
+    return activeSettings;
   }
 }
 
