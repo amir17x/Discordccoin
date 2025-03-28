@@ -463,40 +463,95 @@ const admin = {
   }
 };
 
-// Command for ping with simplified approach for better performance
+// Command for ping with comprehensive monitoring approach
 const ping = {
   data: new SlashCommandBuilder()
     .setName('ping')
-    .setDescription('🏓 سرعت اتصال ربات را نشان می‌دهد'),
+    .setDescription('🏓 نمایش وضعیت سیستم و اتصالات ربات'),
   
   async execute(interaction: any) {
     try {
-      // بجای دیفر و ادیت، مستقیماً پاسخ می‌دهیم تا از خطاهای همزمانی جلوگیری شود
-      const apiPing = interaction.client.ws.ping;
+      // برای بررسی دقیق‌تر استفاده می‌کنیم
+      await interaction.deferReply({ ephemeral: true });
+      
+      // بررسی سرعت اتصال دیسکورد
+      const discordPing = interaction.client.ws.ping;
       
       // زمان آنلاین ربات به ساعت و دقیقه
       const uptime = interaction.client.uptime;
-      const hours = Math.floor(uptime / 3600000);
+      const days = Math.floor(uptime / 86400000);
+      const hours = Math.floor((uptime % 86400000) / 3600000);
       const minutes = Math.floor((uptime % 3600000) / 60000);
       
-      // وضعیت پینگ
-      const pingStatus = apiPing < 200 ? '🟢 عالی' : apiPing < 500 ? '🟡 متوسط' : '🔴 ضعیف';
+      // وضعیت پینگ دیسکورد
+      const discordStatus = discordPing < 100 ? '🟢 عالی' : discordPing < 300 ? '🟡 متوسط' : '🔴 ضعیف';
       
-      // بررسی وضعیت interaction قبل از پاسخ
-      if (interaction.replied || interaction.deferred) {
-        console.log('Ping command: interaction already handled');
-        return;
+      // بررسی اتصال به مونگو دی‌بی با تایمینگ
+      let mongoStatus = '⚫ نامشخص';
+      let mongoPing = -1;
+      
+      try {
+        const startTime = Date.now();
+        // بررسی اتصال به دیتابیس با واکشی یک مورد ساده
+        await storage.getAllUsers(1); // فقط یک کاربر برای تست سرعت
+        const endTime = Date.now();
+        mongoPing = endTime - startTime;
+        
+        // وضعیت پینگ مونگو
+        mongoStatus = mongoPing < 100 ? '🟢 عالی' : mongoPing < 300 ? '🟡 متوسط' : '🔴 ضعیف';
+      } catch (dbError) {
+        console.error('MongoDB ping test failed:', dbError);
+        mongoStatus = '🔴 قطع';
+        mongoPing = -1;
       }
       
-      // ایجاد امبد ساده‌تر با اطلاعات ضروری
+      // زمان پاسخگویی کلی سیستم
+      const apiPing = Date.now() - interaction.createdTimestamp;
+      const apiStatus = apiPing < 200 ? '🟢 عالی' : apiPing < 500 ? '🟡 متوسط' : '🔴 ضعیف';
+      
+      // وضعیت کلی سیستم
+      const overallStatus = 
+        discordPing < 300 && mongoPing < 300 && apiPing < 500 ? 
+          '✅ همه سیستم‌ها آنلاین و پایدار هستند' : 
+        (mongoPing === -1) ? 
+          '❌ اتصال به دیتابیس با مشکل مواجه است' :
+        (discordPing > 500 || mongoPing > 500 || apiPing > 800) ?
+          '⚠️ تاخیر بیش از حد در بعضی سرویس‌ها' :
+          '✓ سیستم کار می‌کند اما تاخیر وجود دارد';
+      
+      // ایجاد یک امبد زیبا و کامل
       const pingEmbed = new EmbedBuilder()
-        .setColor('#00FFFF')
-        .setTitle('🏓 پونگ!')
-        .setDescription(`🚀 **پینگ شبکه:** \`${apiPing}ms\`\n⏱️ **زمان آنلاین ربات:** ${hours} ساعت و ${minutes} دقیقه\n🔄 **وضعیت:** ${pingStatus}`)
+        .setColor('#4B0082') // رنگ بنفش تیره برای جلوه بصری بهتر
+        .setTitle('🏓 وضعیت سیستم Ccoin')
+        .setDescription(`${overallStatus}\n\n**◼️ اطلاعات اتصال و پینگ:**`)
+        .addFields([
+          { 
+            name: '🚀 پینگ دیسکورد', 
+            value: `\`${discordPing}ms\` ${discordStatus}`, 
+            inline: true 
+          },
+          { 
+            name: '🗄️ پینگ دیتابیس', 
+            value: mongoPing !== -1 ? `\`${mongoPing}ms\` ${mongoStatus}` : '`خطا در اتصال` 🔴', 
+            inline: true 
+          },
+          { 
+            name: '⚡ پینگ API', 
+            value: `\`${apiPing}ms\` ${apiStatus}`, 
+            inline: true 
+          },
+          { 
+            name: '⏱️ زمان آنلاین ربات', 
+            value: `\`${days}\` روز \`${hours}\` ساعت \`${minutes}\` دقیقه`,
+            inline: false 
+          }
+        ])
+        .setThumbnail('https://img.icons8.com/fluency/96/radar.png')
         .setFooter({ 
-          text: '🎮 ربات Ccoin',
+          text: `🎮 ربات Ccoin | درخواست شده توسط ${interaction.user.username}`,
           iconURL: interaction.client.user.displayAvatarURL() 
-        });
+        })
+        .setTimestamp();
       
       // دکمه منوی اصلی
       const row = new ActionRowBuilder<ButtonBuilder>()
@@ -504,27 +559,30 @@ const ping = {
           new ButtonBuilder()
             .setCustomId('menu')
             .setLabel('🏠 منوی اصلی')
-            .setStyle(ButtonStyle.Success)
+            .setStyle(ButtonStyle.Primary)
         );
       
-      try {
-        // پاسخ مستقیم با امبد ساده‌تر - استفاده از try/catch برای مدیریت خطاهای احتمالی
-        await interaction.reply({ 
-          embeds: [pingEmbed],
-          components: [row],
-          ephemeral: true
-        });
-      } catch (e) {
-        console.log('Failed to reply in ping command:', e);
-      }
+      // پاسخ به کاربر
+      await interaction.editReply({ 
+        embeds: [pingEmbed],
+        components: [row]
+      });
     } catch (error) {
       console.error('Error in ping command:', error);
       // در صورت خطا، پاسخ ساده می‌دهیم
-      if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply({
-          content: '⚠️ خطا در اجرای دستور پینگ!',
-          ephemeral: true
-        });
+      try {
+        if (interaction.deferred) {
+          await interaction.editReply({
+            content: '⚠️ خطا در بررسی وضعیت سیستم!',
+          });
+        } else if (!interaction.replied) {
+          await interaction.reply({
+            content: '⚠️ خطا در اجرای دستور پینگ!',
+            ephemeral: true
+          });
+        }
+      } catch (replyError) {
+        console.error('Error while sending ping error response:', replyError);
       }
     }
   }

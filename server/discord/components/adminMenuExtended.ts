@@ -883,29 +883,150 @@ export async function botSettingsMenu(interaction: ButtonInteraction | ChatInput
 
     // دریافت تنظیمات فعلی ربات
     const config = botConfig.getConfig();
+    const client = interaction.client;
+    
+    // جمع‌آوری اطلاعات کلی ربات
+    const serverCount = client.guilds.cache.size;
+    const users = await storage.getAllUsers();
+    const userCount = users ? users.length : 0;
+    const uptime = formatUptime(client.uptime || 0);
+    const latency = Math.round(client.ws.ping);
+    const version = process.env.npm_package_version || '1.0.0';
+    
+    const memoryUsage = process.memoryUsage();
+    const memoryUsedMB = Math.round(memoryUsage.heapUsed / 1024 / 1024 * 100) / 100;
+    const memoryTotalMB = Math.round(memoryUsage.heapTotal / 1024 / 1024 * 100) / 100;
+    const cpuUsage = process.cpuUsage();
+    const cpuUsedPercent = Math.round((cpuUsage.user + cpuUsage.system) / 1000000);
 
     // ایجاد Embed اصلی
     const embed = new EmbedBuilder()
       .setColor('#2196F3')
-      .setTitle('⚙️ تنظیمات ربات Ccoin')
-      .setDescription('به بخش تنظیمات ربات خوش آمدید. در این بخش می‌توانید تنظیمات مختلف ربات را تغییر دهید.')
+      .setTitle('⚙️ پنل مدیریت تنظیمات ربات Ccoin')
+      .setDescription('به پنل جامع تنظیمات ربات خوش آمدید. در این بخش می‌توانید تمامی تنظیمات ربات را مشاهده و مدیریت کنید.')
       .setFooter({ text: `مدیر: ${interaction.user.username} | ${new Date().toLocaleString()}` })
       .setThumbnail('https://img.icons8.com/fluency/48/settings.png')
       .setTimestamp();
 
-    // افزودن تنظیمات فعلی به Embed
+    // افزودن وضعیت سیستم به Embed
     embed.addFields(
-      { name: '📝 پیشوند دستورات', value: `\`${config.prefix || '/'}\``, inline: true },
-      { name: '🎨 رنگ پیش‌فرض', value: `\`${config.defaultColor || '#FFFFFF'}\``, inline: true },
-      { name: '👑 نقش ادمین', value: config.general?.adminRoleId ? `<@&${config.general.adminRoleId}>` : 'تنظیم نشده', inline: true },
-      { name: '💰 نرخ سود بانکی', value: `${config.economy?.bankInterestRate || 2}% روزانه`, inline: true },
-      { name: '💸 کارمزد انتقال', value: `${config.economy?.transferFee || 5}%`, inline: true },
-      { name: '⚔️ هزینه دوئل', value: `${config.games?.duelBetAmount || 50} سکه`, inline: true },
-      { name: '👥 حداکثر اعضای کلن', value: `${config.clans?.maxMembers || 30} نفر`, inline: true },
-      { name: '📊 وضعیت لاگ‌ها', value: config.logging?.enabled ? '✅ فعال' : '❌ غیرفعال', inline: true }
+      { name: '🤖 اطلاعات سیستم', value: 
+        `**نسخه ربات**: \`${version}\`\n` +
+        `**زمان فعالیت**: \`${uptime}\`\n` +
+        `**تاخیر**: \`${latency}ms\`\n` +
+        `**حافظه**: \`${memoryUsedMB}MB از ${memoryTotalMB}MB (${Math.round(memoryUsedMB/memoryTotalMB*100)}%)\`\n` +
+        `**سرورها**: \`${serverCount}\`\n` +
+        `**کاربران**: \`${userCount}\``, 
+        inline: false 
+      }
+    );
+    
+    // افزودن تنظیمات عمومی به Embed
+    const botSettings = {
+      prefix: config.prefix || '/',
+      defaultColor: config.defaultColor || '#0099FF',
+      language: config.language || 'fa',
+      timezone: config.timezone || 'Asia/Tehran',
+      adminRoleId: config.general?.adminRoleId || 'تنظیم نشده'
+    };
+    
+    embed.addFields(
+      { name: '⚙️ تنظیمات عمومی', value: 
+        `**پیشوند دستورات**: \`${botSettings.prefix}\`\n` +
+        `**رنگ پیش‌فرض**: \`${botSettings.defaultColor}\`\n` +
+        `**زبان ربات**: \`${botSettings.language}\`\n` +
+        `**منطقه زمانی**: \`${botSettings.timezone}\`\n` +
+        `**نقش ادمین**: ${typeof botSettings.adminRoleId === 'string' ? botSettings.adminRoleId : `<@&${botSettings.adminRoleId}>`}`, 
+        inline: false 
+      }
+    );
+    
+    // افزودن تنظیمات اقتصادی به Embed
+    const economySettings = {
+      bankInterestRate: config.economy?.bankInterestRate || 2,
+      transferFeeRate: config.economy?.transferFee || 5,
+      initialBalance: config.economy?.initialBalance || 100,
+      dailyReward: config.economy?.dailyReward || 200,
+      dailyStreakBonus: config.economy?.dailyStreakBonus || 10,
+      maxBank: config.economy?.maxBank || 1000000,
+      maxWallet: config.economy?.maxWallet || 100000,
+      robberySuccessRate: config.economy?.robberySuccessRate || 40
+    };
+    
+    embed.addFields(
+      { name: '💰 تنظیمات اقتصادی', value: 
+        `**نرخ سود بانکی**: \`${economySettings.bankInterestRate}%\`\n` +
+        `**کارمزد انتقال**: \`${economySettings.transferFeeRate}%\`\n` +
+        `**موجودی اولیه**: \`${economySettings.initialBalance.toLocaleString()}\` سکه\n` +
+        `**جایزه روزانه**: \`${economySettings.dailyReward.toLocaleString()}\` سکه\n` +
+        `**پاداش حضور متوالی**: \`${economySettings.dailyStreakBonus}%\`\n` +
+        `**حداکثر کیف پول**: \`${economySettings.maxWallet.toLocaleString()}\` سکه\n` +
+        `**حداکثر بانک**: \`${economySettings.maxBank.toLocaleString()}\` سکه`, 
+        inline: false 
+      }
+    );
+    
+    // افزودن تنظیمات بازی‌ها به Embed
+    const gameSettings = {
+      minBet: config.games?.minBet || 50,
+      maxBet: config.games?.maxBet || 5000,
+      disabledGames: config.games?.disabledGames || [],
+      duelBetAmount: config.games?.duelBetAmount || 100,
+      wheelSpinCost: config.games?.wheelSpinCost || 250,
+      giveawayDuration: config.games?.giveawayDuration || 3600
+    };
+    
+    embed.addFields(
+      { name: '🎮 تنظیمات بازی‌ها', value: 
+        `**حداقل شرط‌بندی**: \`${gameSettings.minBet.toLocaleString()}\` سکه\n` +
+        `**حداکثر شرط‌بندی**: \`${gameSettings.maxBet.toLocaleString()}\` سکه\n` +
+        `**هزینه دوئل**: \`${gameSettings.duelBetAmount.toLocaleString()}\` سکه\n` +
+        `**هزینه چرخ شانس**: \`${gameSettings.wheelSpinCost.toLocaleString()}\` سکه\n` +
+        `**مدت جایزه‌ها**: \`${Math.round(gameSettings.giveawayDuration/60)}\` دقیقه\n` +
+        `**بازی‌های غیرفعال**: \`${gameSettings.disabledGames.length > 0 ? gameSettings.disabledGames.join(', ') : 'تمام بازی‌ها فعال هستند'}\``, 
+        inline: false 
+      }
+    );
+    
+    // افزودن تنظیمات کلن‌ها به Embed
+    const clanSettings = {
+      createCost: config.clans?.createCost || 5000,
+      maxMembers: config.clans?.maxMembers || 30,
+      roleCreationCost: config.clans?.roleCreationCost || 1000,
+      leaveDelay: config.clans?.leaveDelay || 48,
+      dailyLimit: config.clans?.dailyLimit || 5000
+    };
+    
+    embed.addFields(
+      { name: '🏰 تنظیمات کلن‌ها', value: 
+        `**هزینه ساخت کلن**: \`${clanSettings.createCost.toLocaleString()}\` سکه\n` +
+        `**حداکثر اعضا**: \`${clanSettings.maxMembers}\` نفر\n` +
+        `**هزینه ساخت رول**: \`${clanSettings.roleCreationCost.toLocaleString()}\` سکه\n` +
+        `**مهلت خروج مجدد**: \`${clanSettings.leaveDelay}\` ساعت\n` +
+        `**سقف برداشت روزانه**: \`${clanSettings.dailyLimit.toLocaleString()}\` سکه`, 
+        inline: false 
+      }
+    );
+    
+    // افزودن تنظیمات لاگ به Embed
+    const loggingSettings = {
+      commandLogging: config.logging?.commands === true,
+      transactionLogging: config.logging?.transactions === true,
+      errorLogging: config.logging?.errors === true,
+      enabled: config.logging?.enabled === true
+    };
+    
+    embed.addFields(
+      { name: '📝 تنظیمات لاگ', value: 
+        `**وضعیت کلی لاگ‌ها**: \`${loggingSettings.enabled ? '✅ فعال' : '❌ غیرفعال'}\`\n` +
+        `**ثبت دستورات**: \`${loggingSettings.commandLogging ? '✅ فعال' : '❌ غیرفعال'}\`\n` +
+        `**ثبت تراکنش‌ها**: \`${loggingSettings.transactionLogging ? '✅ فعال' : '❌ غیرفعال'}\`\n` +
+        `**ثبت خطاها**: \`${loggingSettings.errorLogging ? '✅ فعال' : '❌ غیرفعال'}\``, 
+        inline: false 
+      }
     );
 
-    // ایجاد دکمه‌های مدیریتی
+    // ایجاد دکمه‌های مدیریتی - دسته اول (تنظیمات اصلی)
     const row1 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
@@ -922,16 +1043,34 @@ export async function botSettingsMenu(interaction: ButtonInteraction | ChatInput
           .setStyle(ButtonStyle.Primary),
       );
       
+    // دکمه‌های مدیریتی - دسته دوم (تنظیمات پیشرفته)
     const row2 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
+          .setCustomId('admin_settings_clans')
+          .setLabel('🏰 تنظیمات کلن‌ها')
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
           .setCustomId('admin_settings_levels')
           .setLabel('⭐ تنظیمات سطح‌بندی')
-          .setStyle(ButtonStyle.Primary),
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId('admin_settings_security')
+          .setLabel('🛡️ تنظیمات امنیتی')
+          .setStyle(ButtonStyle.Danger),
+      );
+      
+    // دکمه‌های مدیریتی - دسته سوم (تنظیمات متفرقه)
+    const row3 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
         new ButtonBuilder()
           .setCustomId('admin_settings_permissions')
           .setLabel('🔒 دسترسی‌های ربات')
-          .setStyle(ButtonStyle.Primary),
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId('admin_settings_logging')
+          .setLabel('📝 تنظیمات لاگ')
+          .setStyle(ButtonStyle.Secondary),
         new ButtonBuilder()
           .setCustomId('admin_menu')
           .setLabel('🔙 بازگشت')
@@ -940,9 +1079,9 @@ export async function botSettingsMenu(interaction: ButtonInteraction | ChatInput
     
     // ارسال یا بروزرسانی پیام
     if (interaction.deferred) {
-      await interaction.editReply({ embeds: [embed], components: [row1, row2] });
+      await interaction.editReply({ embeds: [embed], components: [row1, row2, row3] });
     } else {
-      await interaction.reply({ embeds: [embed], components: [row1, row2], ephemeral: true });
+      await interaction.reply({ embeds: [embed], components: [row1, row2, row3], ephemeral: true });
     }
   } catch (error) {
     console.error('Error in botSettingsMenu:', error);
@@ -959,6 +1098,20 @@ export async function botSettingsMenu(interaction: ButtonInteraction | ChatInput
       console.error('Failed to send error message:', replyError);
     }
   }
+}
+
+/**
+ * فرمت کردن زمان فعالیت ربات
+ * @param ms میلی‌ثانیه
+ * @returns زمان فرمت شده
+ */
+function formatUptime(ms: number): string {
+  const seconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  
+  return `${days}d:${hours % 24}h:${minutes % 60}m:${seconds % 60}s`;
 }
 
 /**

@@ -1634,6 +1634,31 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
         return;
       }
       
+      // Settings menus - NEW
+      if (action === 'admin_settings_general' || 
+          action === 'admin_settings_economy' ||
+          action === 'admin_settings_games' ||
+          action === 'admin_settings_clans' ||
+          action === 'admin_settings_levels' ||
+          action === 'admin_settings_security' ||
+          action === 'admin_settings_permissions' ||
+          action === 'admin_settings_logging') {
+        // همه این دکمه‌ها فعلاً به همان منوی تنظیمات اصلی منتقل می‌شوند
+        // در نسخه‌های بعدی، می‌توان برای هر کدام بخش مجزا ایجاد کرد
+        await botSettingsMenu(interaction);
+        return;
+      }
+      
+      // Stats buttons - NEW
+      if (action === 'admin_economy_stats' || 
+          action === 'admin_game_stats' ||
+          action === 'admin_export_stats') {
+        // همه این دکمه‌ها فعلاً به همان منوی آمار اصلی منتقل می‌شوند
+        // در نسخه‌های بعدی، می‌توان برای هر کدام بخش مجزا ایجاد کرد
+        await botStatsMenu(interaction);
+        return;
+      }
+      
       // If it's a regular category navigation
       if (category === 'menu') {
         // Return to main admin menu
