@@ -399,6 +399,13 @@ export interface IStorage {
   appointQuizReviewer(userId: string, username: string, appointedBy: string): Promise<QuizReviewer>;
   getQuizReviewerByUserId(userId: string): Promise<QuizReviewer | undefined>;
   
+  // AI Assistant operations
+  getUserAIAssistantDetails(userId: number): Promise<{subscription: boolean, subscriptionTier: string, subscriptionExpires: Date | null, questionsRemaining: number, totalQuestions: number} | undefined>;
+  useAIAssistantQuestion(userId: number): Promise<boolean>;
+  subscribeToAIAssistant(userId: number, tier: 'weekly' | 'monthly', amountPaid: number): Promise<boolean>;
+  resetAIAssistantQuestions(userId: number): Promise<boolean>;
+  getUserAIAssistantUsage(userId: number): Promise<number>;
+  
   // Game Session operations
   createGameSession(gameSession: GameSession): Promise<GameSession>;
   updateGameSession(sessionId: string, updates: Partial<GameSession>): Promise<GameSession | undefined>;
@@ -3186,6 +3193,155 @@ export class MemStorage implements IStorage {
     return this.quizReviewers.get(userId);
   }
   
+  // AI Assistant operations
+  async getUserAIAssistantDetails(userId: number): Promise<{subscription: boolean, subscriptionTier: string, subscriptionExpires: Date | null, questionsRemaining: number, totalQuestions: number} | undefined> {
+    const user = this.users.get(userId);
+    if (!user) return undefined;
+    
+    // اگر فیلد aiAssistant وجود نداشت، مقدار پیش‌فرض برگردان
+    if (!user.aiAssistant) {
+      user.aiAssistant = {
+        subscription: false,
+        subscriptionTier: 'free',
+        subscriptionExpires: null,
+        questionsRemaining: 5,
+        totalQuestions: 5
+      };
+      
+      // به‌روزرسانی کاربر
+      this.users.set(userId, user);
+    }
+    
+    return user.aiAssistant;
+  }
+  
+  async useAIAssistantQuestion(userId: number): Promise<boolean> {
+    const user = this.users.get(userId);
+    if (!user) return false;
+    
+    // مطمئن شویم که فیلد aiAssistant وجود دارد
+    if (!user.aiAssistant) {
+      user.aiAssistant = {
+        subscription: false,
+        subscriptionTier: 'free',
+        subscriptionExpires: null,
+        questionsRemaining: 5,
+        totalQuestions: 5
+      };
+    }
+    
+    // بررسی اشتراک کاربر
+    if (user.aiAssistant.subscription) {
+      // بررسی تاریخ انقضای اشتراک
+      if (user.aiAssistant.subscriptionExpires && new Date() > user.aiAssistant.subscriptionExpires) {
+        // اشتراک منقضی شده
+        user.aiAssistant.subscription = false;
+        user.aiAssistant.subscriptionTier = 'free';
+        user.aiAssistant.questionsRemaining = 5;
+        user.aiAssistant.totalQuestions = 5;
+      } else {
+        // اشتراک معتبر است، کاربر می‌تواند بدون محدودیت سوال بپرسد
+        return true;
+      }
+    }
+    
+    // کاربر اشتراک ندارد، بررسی تعداد سوالات باقی‌مانده
+    if (user.aiAssistant.questionsRemaining <= 0) {
+      return false; // سوالات تمام شده‌اند
+    }
+    
+    // کم کردن یک سوال از تعداد سوالات باقی‌مانده
+    user.aiAssistant.questionsRemaining--;
+    
+    // به‌روزرسانی کاربر
+    this.users.set(userId, user);
+    
+    return true;
+  }
+  
+  async subscribeToAIAssistant(userId: number, tier: 'weekly' | 'monthly', amountPaid: number): Promise<boolean> {
+    const user = this.users.get(userId);
+    if (!user) return false;
+    
+    // مطمئن شویم که فیلد aiAssistant وجود دارد
+    if (!user.aiAssistant) {
+      user.aiAssistant = {
+        subscription: false,
+        subscriptionTier: 'free',
+        subscriptionExpires: null,
+        questionsRemaining: 5,
+        totalQuestions: 5
+      };
+    }
+    
+    // تنظیم تاریخ انقضا بر اساس نوع اشتراک
+    const now = new Date();
+    let expiresAt = new Date(now);
+    
+    if (tier === 'weekly') {
+      // یک هفته اضافه می‌کنیم
+      expiresAt.setDate(now.getDate() + 7);
+    } else if (tier === 'monthly') {
+      // یک ماه اضافه می‌کنیم
+      expiresAt.setDate(now.getDate() + 30);
+    }
+    
+    // به‌روزرسانی اطلاعات اشتراک
+    user.aiAssistant.subscription = true;
+    user.aiAssistant.subscriptionTier = tier;
+    user.aiAssistant.subscriptionExpires = expiresAt;
+    
+    // ثبت تراکنش خرید اشتراک
+    if (!user.transactions) user.transactions = [];
+    user.transactions.push({
+      type: 'ai_subscription',
+      amount: amountPaid,
+      fee: 0,
+      timestamp: now,
+      details: {
+        tier: tier,
+        expiresAt: expiresAt
+      }
+    });
+    
+    // به‌روزرسانی کاربر
+    this.users.set(userId, user);
+    
+    return true;
+  }
+  
+  async resetAIAssistantQuestions(userId: number): Promise<boolean> {
+    const user = this.users.get(userId);
+    if (!user) return false;
+    
+    // مطمئن شویم که فیلد aiAssistant وجود دارد
+    if (!user.aiAssistant) {
+      user.aiAssistant = {
+        subscription: false,
+        subscriptionTier: 'free',
+        subscriptionExpires: null,
+        questionsRemaining: 5,
+        totalQuestions: 5
+      };
+    } else {
+      // ریست کردن تعداد سوالات رایگان
+      user.aiAssistant.questionsRemaining = 5;
+    }
+    
+    // به‌روزرسانی کاربر
+    this.users.set(userId, user);
+    
+    return true;
+  }
+  
+  async getUserAIAssistantUsage(userId: number): Promise<number> {
+    const user = this.users.get(userId);
+    if (!user || !user.aiAssistant) return 0;
+    
+    // محاسبه تعداد سوالات استفاده شده
+    return user.aiAssistant.totalQuestions - user.aiAssistant.questionsRemaining;
+  }
+  
   // Job operations
   async getUserJob(userId: number): Promise<JobData | undefined> {
     return Array.from(this.jobs.values()).find(job => job.userId === userId);
@@ -5511,6 +5667,181 @@ export class MongoStorage implements IStorage {
     } catch (error) {
       console.error('Error getting quiz reviewer by user ID from MongoDB:', error);
       return memStorage.getQuizReviewerByUserId(userId);
+    }
+  }
+
+  // AI Assistant operations - پیاده‌سازی متدهای مربوط به دستیار هوش مصنوعی
+  async getUserAIAssistantDetails(userId: number): Promise<{subscription: boolean, subscriptionTier: string, subscriptionExpires: Date | null, questionsRemaining: number, totalQuestions: number} | undefined> {
+    try {
+      const user = await UserModel.findOne({ id: userId });
+      if (!user) return undefined;
+      
+      // اگر فیلد aiAssistant وجود نداشت، مقدار پیش‌فرض برگردان
+      if (!user.aiAssistant) {
+        user.aiAssistant = {
+          subscription: false,
+          subscriptionTier: 'free',
+          subscriptionExpires: null,
+          questionsRemaining: 5,
+          totalQuestions: 5
+        };
+        
+        // ذخیره تغییرات
+        await user.save();
+      }
+      
+      return user.aiAssistant;
+    } catch (error) {
+      console.error('Error getting AI assistant details from MongoDB:', error);
+      return memStorage.getUserAIAssistantDetails(userId);
+    }
+  }
+  
+  async useAIAssistantQuestion(userId: number): Promise<boolean> {
+    try {
+      const user = await UserModel.findOne({ id: userId });
+      if (!user) return false;
+      
+      // مطمئن شویم که فیلد aiAssistant وجود دارد
+      if (!user.aiAssistant) {
+        user.aiAssistant = {
+          subscription: false,
+          subscriptionTier: 'free',
+          subscriptionExpires: null,
+          questionsRemaining: 5,
+          totalQuestions: 5
+        };
+      }
+      
+      // بررسی اشتراک کاربر
+      if (user.aiAssistant.subscription) {
+        // بررسی تاریخ انقضای اشتراک
+        if (user.aiAssistant.subscriptionExpires && new Date() > user.aiAssistant.subscriptionExpires) {
+          // اشتراک منقضی شده
+          user.aiAssistant.subscription = false;
+          user.aiAssistant.subscriptionTier = 'free';
+          user.aiAssistant.questionsRemaining = 5;
+          user.aiAssistant.totalQuestions = 5;
+        } else {
+          // اشتراک معتبر است، کاربر می‌تواند بدون محدودیت سوال بپرسد
+          await user.save();
+          return true;
+        }
+      }
+      
+      // کاربر اشتراک ندارد، بررسی تعداد سوالات باقی‌مانده
+      if (user.aiAssistant.questionsRemaining <= 0) {
+        return false; // سوالات تمام شده‌اند
+      }
+      
+      // کم کردن یک سوال از تعداد سوالات باقی‌مانده
+      user.aiAssistant.questionsRemaining--;
+      
+      // ذخیره تغییرات
+      await user.save();
+      
+      return true;
+    } catch (error) {
+      console.error('Error using AI assistant question in MongoDB:', error);
+      return memStorage.useAIAssistantQuestion(userId);
+    }
+  }
+  
+  async subscribeToAIAssistant(userId: number, tier: 'weekly' | 'monthly', amountPaid: number): Promise<boolean> {
+    try {
+      const user = await UserModel.findOne({ id: userId });
+      if (!user) return false;
+      
+      // مطمئن شویم که فیلد aiAssistant وجود دارد
+      if (!user.aiAssistant) {
+        user.aiAssistant = {
+          subscription: false,
+          subscriptionTier: 'free',
+          subscriptionExpires: null,
+          questionsRemaining: 5,
+          totalQuestions: 5
+        };
+      }
+      
+      // تنظیم تاریخ انقضا بر اساس نوع اشتراک
+      const now = new Date();
+      let expiresAt = new Date(now);
+      
+      if (tier === 'weekly') {
+        // یک هفته اضافه می‌کنیم
+        expiresAt.setDate(now.getDate() + 7);
+      } else if (tier === 'monthly') {
+        // یک ماه اضافه می‌کنیم
+        expiresAt.setDate(now.getDate() + 30);
+      }
+      
+      // به‌روزرسانی اطلاعات اشتراک
+      user.aiAssistant.subscription = true;
+      user.aiAssistant.subscriptionTier = tier;
+      user.aiAssistant.subscriptionExpires = expiresAt;
+      
+      // ثبت تراکنش خرید اشتراک
+      user.transactions = user.transactions || [];
+      user.transactions.push({
+        type: 'ai_subscription',
+        amount: amountPaid,
+        fee: 0,
+        timestamp: now,
+        details: {
+          tier: tier,
+          expiresAt: expiresAt
+        }
+      });
+      
+      // ذخیره تغییرات
+      await user.save();
+      
+      return true;
+    } catch (error) {
+      console.error('Error subscribing to AI assistant in MongoDB:', error);
+      return memStorage.subscribeToAIAssistant(userId, tier, amountPaid);
+    }
+  }
+  
+  async resetAIAssistantQuestions(userId: number): Promise<boolean> {
+    try {
+      const user = await UserModel.findOne({ id: userId });
+      if (!user) return false;
+      
+      // مطمئن شویم که فیلد aiAssistant وجود دارد
+      if (!user.aiAssistant) {
+        user.aiAssistant = {
+          subscription: false,
+          subscriptionTier: 'free',
+          subscriptionExpires: null,
+          questionsRemaining: 5,
+          totalQuestions: 5
+        };
+      } else {
+        // ریست کردن تعداد سوالات رایگان
+        user.aiAssistant.questionsRemaining = 5;
+      }
+      
+      // ذخیره تغییرات
+      await user.save();
+      
+      return true;
+    } catch (error) {
+      console.error('Error resetting AI assistant questions in MongoDB:', error);
+      return memStorage.resetAIAssistantQuestions(userId);
+    }
+  }
+  
+  async getUserAIAssistantUsage(userId: number): Promise<number> {
+    try {
+      const user = await UserModel.findOne({ id: userId });
+      if (!user || !user.aiAssistant) return 0;
+      
+      // محاسبه تعداد سوالات استفاده شده
+      return user.aiAssistant.totalQuestions - user.aiAssistant.questionsRemaining;
+    } catch (error) {
+      console.error('Error getting AI assistant usage from MongoDB:', error);
+      return memStorage.getUserAIAssistantUsage(userId);
     }
   }
 

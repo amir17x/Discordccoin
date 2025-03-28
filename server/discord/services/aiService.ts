@@ -1,17 +1,13 @@
 import path from 'path';
 import fs from 'fs';
 import { botConfig } from '../utils/config';
-import { generateOpenAIResponse, openAIService } from './chatgpt';
-import { generateHuggingFaceResponse, huggingFaceService } from './huggingface';
 import { generateGoogleAIResponse, googleAIService } from './googleai';
-import { generateGrokResponse, grokService } from './grok';
-import { generateOpenRouterResponse, openRouterService } from './openrouter';
 
 // مسیر فایل آمار هوش مصنوعی
 const AI_STATS_FILE = path.resolve(process.cwd(), 'ai_stats.json');
 
 // تعریف انواع سرویس‌های هوش مصنوعی
-export type AIService = 'openai' | 'huggingface' | 'googleai' | 'grok' | 'openrouter';
+export type AIService = 'googleai';
 
 // ساختار داده آمار هوش مصنوعی
 interface AIStats {
@@ -19,11 +15,7 @@ interface AIStats {
   lastUsed: string | null;
   requestCount: number;
   providerStats: {
-    openai: number;
-    huggingface: number;
     googleai: number;
-    grok: number;
-    openrouter: number;
   };
   usageCounts: {
     statusMessages: number;
@@ -38,15 +30,11 @@ interface AIStats {
 
 // مقدار پیش‌فرض برای آمار
 const defaultStats: AIStats = {
-  service: botConfig.getActiveAIService() as AIService,
+  service: 'googleai',
   lastUsed: null,
   requestCount: 0,
   providerStats: {
-    openai: 0,
-    huggingface: 0,
-    googleai: 0,
-    grok: 0,
-    openrouter: 0
+    googleai: 0
   },
   usageCounts: {
     statusMessages: 0,
@@ -129,25 +117,8 @@ function updateAIStats(
     stats.requestCount++;
     stats.lastUsed = new Date().toISOString();
     
-    // بروزرسانی آمار سرویس
-    const service = botConfig.getActiveAIService() as AIService;
-    switch(service) {
-      case 'openai':
-        stats.providerStats.openai++;
-        break;
-      case 'huggingface':
-        stats.providerStats.huggingface++;
-        break;
-      case 'googleai':
-        stats.providerStats.googleai++;
-        break;
-      case 'grok':
-        stats.providerStats.grok++;
-        break;
-      case 'openrouter':
-        stats.providerStats.openrouter++;
-        break;
-    }
+    // فقط آمار سرویس گوگل را به‌روز می‌کنیم
+    stats.providerStats.googleai++;
     
     // بروزرسانی نوع استفاده
     stats.usageCounts[usageType]++;
@@ -182,34 +153,18 @@ export async function generateAIResponse(
 ): Promise<string> {
   try {
     const startTime = Date.now();
-    let response: string;
     
-    // انتخاب سرویس مناسب
-    const aiSettings = botConfig.getAISettings();
-    switch (aiSettings.service) {
-      case 'openai':
-        response = await generateOpenAIResponse(prompt);
-        break;
-      case 'googleai':
-        response = await generateGoogleAIResponse(prompt);
-        break;
-      case 'grok':
-        response = await generateGrokResponse(prompt);
-        break;
-      case 'openrouter':
-        response = await generateOpenRouterResponse(prompt);
-        break;
-      default:
-        // Hugging Face as default
-        response = await generateHuggingFaceResponse(prompt);
-        break;
-    }
+    // استفاده از سیستم کش‌شده گوگل AI
+    const response = await generateGoogleAIResponse(prompt);
     
     // محاسبه زمان پاسخگویی
     const latency = Date.now() - startTime;
     
-    // بروزرسانی آمار
-    updateAIStats(usageType, latency);
+    // بروزرسانی آمار - فقط برای درخواست‌های جدید (غیرکش شده)
+    // زمان پاسخگویی کمتر از 50ms احتمالاً نشان‌دهنده استفاده از کش است
+    if (latency > 50) {
+      updateAIStats(usageType, latency);
+    }
     
     return response;
   } catch (error) {
@@ -231,28 +186,9 @@ export async function testAIService(prompt: string = 'سلام. حالت چطو�
 }> {
   try {
     const startTime = Date.now();
-    let response: string;
     
-    // انتخاب سرویس مناسب
-    const aiSettings = botConfig.getAISettings();
-    switch (aiSettings.service) {
-      case 'openai':
-        response = await generateOpenAIResponse(prompt);
-        break;
-      case 'googleai':
-        response = await generateGoogleAIResponse(prompt);
-        break;
-      case 'grok':
-        response = await generateGrokResponse(prompt);
-        break;
-      case 'openrouter':
-        response = await generateOpenRouterResponse(prompt);
-        break;
-      default:
-        // Hugging Face as default
-        response = await generateHuggingFaceResponse(prompt);
-        break;
-    }
+    // فقط از سرویس گوگل استفاده می‌کنیم
+    const response = await generateGoogleAIResponse(prompt);
     
     // محاسبه زمان پاسخگویی
     const latency = Date.now() - startTime;
@@ -280,26 +216,32 @@ export async function testAIService(prompt: string = 'سلام. حالت چطو�
  */
 export async function pingCurrentAIService(): Promise<number> {
   try {
-    // انتخاب سرویس مناسب بر اساس تنظیمات فعلی
-    const service = botConfig.getActiveAIService() as AIService;
+    // همیشه از سرویس گوگل استفاده می‌کنیم
+    const service = 'googleai';
     
-    switch (service) {
-      case 'openai':
-        return await openAIService.pingOpenAI();
-      
-      case 'googleai':
-        return await googleAIService.pingGoogleAI();
-      
-      case 'grok':
-        return await grokService.pingGrok();
-      
-      case 'openrouter':
-        return await openRouterService.pingOpenRouter();
-      
-      case 'huggingface':
-      default:
-        return await huggingFaceService.pingHuggingFace();
-    }
+    // تابع کمکی برای اعمال تایم‌اوت روی پینگ
+    const pingWithTimeout = async (pingFunc: () => Promise<number>, timeout: number = 5000): Promise<number> => {
+      return new Promise<number>((resolve) => {
+        // تنظیم تایمر برای تایم‌اوت
+        const timer = setTimeout(() => {
+          console.log(`Ping timeout after ${timeout}ms for service ${service}`);
+          resolve(-2); // کد -2 برای تایم‌اوت
+        }, timeout);
+        
+        // اجرای تابع پینگ
+        pingFunc().then(result => {
+          clearTimeout(timer); // لغو تایمر
+          resolve(result);
+        }).catch(error => {
+          clearTimeout(timer); // لغو تایمر
+          console.error(`Error in ping function for ${service}:`, error);
+          resolve(-1); // خطای نامشخص
+        });
+      });
+    };
+    
+    // فقط از سرویس گوگل استفاده می‌کنیم
+    return await pingWithTimeout(() => googleAIService.pingGoogleAI());
   } catch (error) {
     console.error('Error pinging AI service:', error);
     return -1; // خطای نامشخص

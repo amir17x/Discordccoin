@@ -60,6 +60,13 @@ export interface IUser extends Document {
   isVIP: boolean;
   premiumUntil: Date | null;
   vipTier: number;
+  aiAssistant: {
+    subscription: boolean;
+    subscriptionTier: string;
+    subscriptionExpires: Date | null;
+    questionsRemaining: number;
+    totalQuestions: number;
+  };
   stockPortfolio: any[];
   clanId: number | null;
   clanRole: string | null;
@@ -143,6 +150,16 @@ const userSchema = new Schema<IUser>({
   isVIP: { type: Boolean, default: false },
   premiumUntil: { type: Date, default: null },
   vipTier: { type: Number, default: 0 },
+  aiAssistant: {
+    type: Object,
+    default: {
+      subscription: false,
+      subscriptionTier: 'none',
+      subscriptionExpires: null,
+      questionsRemaining: 5,
+      totalQuestions: 5
+    }
+  },
   stockPortfolio: { type: Array, default: [] },
   clanId: { type: Number, default: null },
   clanRole: { type: String, default: null },

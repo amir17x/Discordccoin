@@ -3,13 +3,70 @@ import { botConfig } from '../utils/config';
 // کلید Google AI API
 const GOOGLE_AI_API_KEY = process.env.GOOGLE_AI_API_KEY || '';
 
+// کش برای ذخیره تعاملات API و کاهش تعداد درخواست‌ها
+interface CacheItem {
+  prompt: string;
+  response: string;
+  timestamp: number;
+}
+
+// اندازه کش و زمان نگهداری
+const CACHE_SIZE = 100; // حداکثر تعداد آیتم‌های کش شده
+const CACHE_TTL = 30 * 60 * 1000; // 30 دقیقه به میلی‌ثانیه
+
+// آرایه کش
+const responseCache: CacheItem[] = [];
+
 /**
- * تولید پاسخ با استفاده از مدل Google AI (Gemini)
+ * بررسی کش برای یافتن پاسخ قبلی به یک پرامپت مشابه
+ * @param prompt متن پرامپت
+ * @returns پاسخ کش شده یا null
+ */
+function getCachedResponse(prompt: string): string | null {
+  const now = Date.now();
+  // حذف آیتم‌های منقضی شده
+  while (responseCache.length > 0 && (now - responseCache[0].timestamp) > CACHE_TTL) {
+    responseCache.shift();
+  }
+  
+  // یافتن پرامپت مشابه در کش
+  const cachedItem = responseCache.find(item => item.prompt === prompt);
+  return cachedItem ? cachedItem.response : null;
+}
+
+/**
+ * افزودن پاسخ به کش
+ * @param prompt متن پرامپت
+ * @param response پاسخ تولید شده
+ */
+function addToCache(prompt: string, response: string): void {
+  // اگر کش پر است، قدیمی‌ترین آیتم را حذف می‌کنیم
+  if (responseCache.length >= CACHE_SIZE) {
+    responseCache.shift();
+  }
+  
+  // افزودن آیتم جدید به کش
+  responseCache.push({
+    prompt,
+    response,
+    timestamp: Date.now()
+  });
+}
+
+/**
+ * تولید پاسخ با استفاده از مدل Google AI (Gemini) با کش و بهینه‌سازی
  * @param prompt متن پرامپت
  * @returns پاسخ تولید شده
  */
 export async function generateGoogleAIResponse(prompt: string): Promise<string> {
   try {
+    // ابتدا کش را بررسی می‌کنیم
+    const cachedResponse = getCachedResponse(prompt);
+    if (cachedResponse) {
+      console.log('Using cached Google AI response');
+      return cachedResponse;
+    }
+    
     // اگر کلید API موجود نیست، خطا ایجاد می‌کنیم
     if (!GOOGLE_AI_API_KEY) {
       throw new Error('کلید API برای Google AI تنظیم نشده است.');
@@ -17,12 +74,12 @@ export async function generateGoogleAIResponse(prompt: string): Promise<string> 
 
     // مدل پیش‌فرض یا مدل تنظیم شده در تنظیمات
     const aiSettings = botConfig.getAISettings();
-    const model = aiSettings.googleModel || 'gemini-pro';
+    const model = aiSettings.googleModel || 'gemini-1.5-pro';
     
-    // URL API
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GOOGLE_AI_API_KEY}`;
+    // URL API - استفاده از نسخه v1 به جای v1beta
+    const apiUrl = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${GOOGLE_AI_API_KEY}`;
     
-    // تنظیمات درخواست
+    // تنظیمات درخواست با بهینه‌سازی
     const requestBody = {
       contents: [
         {
@@ -37,32 +94,68 @@ export async function generateGoogleAIResponse(prompt: string): Promise<string> 
         temperature: 0.7,
         maxOutputTokens: 500,
         topP: 0.9
-      }
+      },
+      // تنظیمات کارایی - بهینه سازی سرعت
+      safetySettings: [
+        {
+          category: "HARM_CATEGORY_HARASSMENT",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE"
+        },
+        {
+          category: "HARM_CATEGORY_HATE_SPEECH",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE"
+        },
+        {
+          category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE"
+        },
+        {
+          category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE"
+        }
+      ]
     };
 
     console.log(`Sending request to Google AI (model: ${model})`);
     
-    // ارسال درخواست به API
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(requestBody)
-    });
+    // ارسال درخواست به API با تایم‌اوت
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 7000); // تایم‌اوت 7 ثانیه
+    
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId); // پاک کردن تایمر تایم‌اوت
+      
+      // بررسی موفقیت‌آمیز بودن درخواست
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`خطای API (${response.status}): ${errorText}`);
+      }
 
-    // بررسی موفقیت‌آمیز بودن درخواست
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`خطای API (${response.status}): ${errorText}`);
+      // استخراج پاسخ
+      const responseData = await response.json();
+      const generatedText = responseData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const result = generatedText.trim() || 'پاسخی دریافت نشد.';
+      
+      // افزودن پاسخ به کش
+      addToCache(prompt, result);
+      
+      return result;
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId);
+      if (fetchError && fetchError.name === 'AbortError') {
+        throw new Error('درخواست به Google AI به دلیل تایم‌اوت لغو شد.');
+      }
+      throw fetchError;
     }
-
-    // استخراج پاسخ
-    const responseData = await response.json();
-    const generatedText = responseData.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
-    return generatedText.trim() || 'پاسخی دریافت نشد.';
-
   } catch (error) {
     console.error('Error in Google AI API call:', error);
     
@@ -90,7 +183,7 @@ export class GoogleAIService {
   }
   
   /**
-   * تست سرعت پاسخگویی سرویس Google AI
+   * تست سرعت پاسخگویی سرویس Google AI با تایم‌اوت و بهینه‌سازی سرعت
    * @returns زمان پاسخگویی به میلی‌ثانیه یا کد خطا (مقدار منفی)
    */
   async pingGoogleAI(): Promise<number> {
@@ -100,53 +193,50 @@ export class GoogleAIService {
       }
       
       const aiSettings = botConfig.getAISettings();
-      const model = aiSettings.googleModel || 'gemini-pro';
+      const model = aiSettings.googleModel || 'gemini-1.5-pro';
       const startTime = Date.now();
       
-      // URL API
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GOOGLE_AI_API_KEY}`;
+      // URL API - استفاده از API بررسی وضعیت مدل به جای تولید محتوا برای سرعت بیشتر
+      const apiUrl = `https://generativelanguage.googleapis.com/v1/models/${model}?key=${GOOGLE_AI_API_KEY}`;
       
-      // تنظیمات درخواست - خیلی ساده برای تست سرعت
-      const requestBody = {
-        contents: [
-          {
-            parts: [
-              {
-                text: "سلام"
-              }
-            ]
+      // ایجاد تایم‌اوت برای جلوگیری از انتظار طولانی
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // تایم‌اوت 5 ثانیه
+      
+      try {
+        // ارسال درخواست به API - فقط بررسی وضعیت مدل
+        const response = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId); // پاک کردن تایمر تایم‌اوت
+        
+        if (!response.ok) {
+          const statusCode = response.status;
+          
+          if (statusCode === 429) {
+            return -429; // محدودیت تعداد درخواست
+          } else if (statusCode === 401) {
+            return -401; // خطای احراز هویت
+          } else if (statusCode >= 500 && statusCode < 600) {
+            return -500; // خطای سرور
           }
-        ],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 5
-        }
-      };
-      
-      // ارسال درخواست به API
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestBody)
-      });
-      
-      if (!response.ok) {
-        const statusCode = response.status;
-        
-        if (statusCode === 429) {
-          return -429; // محدودیت تعداد درخواست
-        } else if (statusCode === 401) {
-          return -401; // خطای احراز هویت
-        } else if (statusCode >= 500 && statusCode < 600) {
-          return -500; // خطای سرور
+          
+          return -1; // سایر خطاها
         }
         
-        return -1; // سایر خطاها
+        return Date.now() - startTime;
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+        if (fetchError && fetchError.name === 'AbortError') {
+          return -2; // کد برای تایم‌اوت
+        }
+        throw fetchError;
       }
-      
-      return Date.now() - startTime;
     } catch (error) {
       console.error('Error in Google AI ping test:', error);
       

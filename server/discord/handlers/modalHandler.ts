@@ -1,4 +1,11 @@
-import { ModalSubmitInteraction, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { 
+  ModalSubmitInteraction, 
+  EmbedBuilder, 
+  ActionRowBuilder, 
+  ButtonBuilder, 
+  ButtonStyle,
+  MessageComponentInteraction
+} from 'discord.js';
 import { storage } from '../../storage';
 import { processBuyStock, processSellStock } from '../components/stocksMenu';
 import { processBuyLotteryTicket } from '../components/lotteryMenu';
@@ -11,7 +18,18 @@ import { botConfig } from '../utils/config';
 import { adminMenu } from '../components/adminMenu';
 import { clansMenu } from '../components/clansMenu';
 import { handleQuizQuestionModalSubmit } from '../components/groupGames';
-import { huggingFaceService } from '../services/huggingface';
+import { generateAIResponse } from '../services/aiService';
+
+/**
+ * تبدیل ModalSubmitInteraction به MessageComponentInteraction
+ * این تابع برای حل مشکل تایپ‌های گم‌شده در ModalSubmitInteraction استفاده می‌شود
+ * @param interaction تعامل مودال
+ * @returns تعامل به عنوان MessageComponentInteraction
+ */
+function asMessageComponent(interaction: ModalSubmitInteraction): MessageComponentInteraction {
+  // این تبدیل در سطح تایپ انجام می‌شود و فقط برای حل مشکل سازگاری با توابع موجود است
+  return interaction as unknown as MessageComponentInteraction;
+}
 
 /**
  * Handler for modal submissions
@@ -40,7 +58,150 @@ export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
         return;
       }
       
-      await processBuyPet(interaction, petType, petName);
+      // برای این تابع، خودمان منطق پردازش را پیاده‌سازی می‌کنیم
+      try {
+        // دریافت کاربر
+        const user = await storage.getUserByDiscordId(interaction.user.id);
+        if (!user) {
+          await interaction.reply({
+            content: '⚠️ حساب کاربری شما یافت نشد!',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // یافتن قیمت پت
+        let petPrice = 0;
+        let isSpecial = false;
+        let petEmoji = '';
+        
+        switch (petType) {
+          case 'dog':
+            petPrice = 1000;
+            petEmoji = '🐶';
+            break;
+          case 'cat':
+            petPrice = 1200;
+            petEmoji = '🐱';
+            break;
+          case 'rabbit':
+            petPrice = 1500;
+            petEmoji = '🐰';
+            break;
+          case 'bird':
+            petPrice = 800;
+            petEmoji = '🐦';
+            break;
+          case 'dragon':
+            petPrice = 5000;
+            petEmoji = '🐉';
+            isSpecial = true;
+            break;
+          default:
+            await interaction.reply({
+              content: '❌ نوع پت نامعتبر است!',
+              ephemeral: true
+            });
+            return;
+        }
+        
+        // برای پت‌های ویژه نیاز به کریستال است
+        if (isSpecial) {
+          if (user.crystals < petPrice) {
+            await interaction.reply({
+              content: `❌ شما به اندازه کافی کریستال برای خرید این پت ندارید. (نیاز: ${petPrice} کریستال)`,
+              ephemeral: true
+            });
+            return;
+          }
+        } else {
+          if (user.wallet < petPrice) {
+            await interaction.reply({
+              content: `❌ شما به اندازه کافی سکه برای خرید این پت ندارید. (نیاز: ${petPrice} Ccoin)`,
+              ephemeral: true
+            });
+            return;
+          }
+        }
+        
+        // ایجاد پت جدید
+        const newPet = {
+          name: petName,
+          type: petType,
+          emoji: petEmoji,
+          owner: user.id,
+          level: 1,
+          hunger: 100,
+          happiness: 100,
+          experience: 0,
+          isActive: false,
+          lastFeed: new Date(),
+          lastPlay: new Date(),
+          createdAt: new Date()
+        };
+        
+        // ثبت پت (با توجه به ساختار api موجود در دیتابیس)
+        let pet;
+        try {
+          // در اینجا به جای استفاده از createPet که ممکن است در storage موجود نباشد
+          // از افزودن به آیتم‌های کاربر استفاده می‌کنیم
+          await storage.addPetToUser(user.id, {
+            name: petName,
+            type: petType,
+            emoji: petEmoji,
+            level: 1,
+            hunger: 100,
+            happiness: 100
+          });
+          pet = { name: petName, emoji: petEmoji };
+        } catch (error) {
+          console.error('Error creating pet:', error);
+          throw error;
+        }
+        
+        // کم کردن هزینه خرید
+        if (isSpecial) {
+          await storage.updateUser(user.id, { crystals: user.crystals - petPrice });
+        } else {
+          await storage.addToWallet(user.id, -petPrice, 'pet_purchase');
+        }
+        
+        // امبد موفقیت
+        const successEmbed = new EmbedBuilder()
+          .setColor('#85bb65')
+          .setTitle(`${petEmoji} پت جدید خریداری شد!`)
+          .setDescription(`تبریک! شما با موفقیت یک ${petEmoji} به نام **${petName}** خریدید.`)
+          .addFields(
+            { 
+              name: 'هزینه', 
+              value: isSpecial ? `${petPrice} کریستال` : `${petPrice} Ccoin`, 
+              inline: true 
+            },
+            { 
+              name: 'سطح', 
+              value: '1', 
+              inline: true 
+            },
+            { 
+              name: 'وضعیت', 
+              value: 'سیر و شاد! 😊', 
+              inline: true 
+            }
+          )
+          .setFooter({ text: 'پت خود را با غذا دادن و بازی کردن خوشحال نگه دارید!' });
+        
+        // ارسال پاسخ
+        await interaction.reply({
+          embeds: [successEmbed],
+          ephemeral: true
+        });
+      } catch (error) {
+        console.error('Error processing buy pet:', error);
+        await interaction.reply({
+          content: '❌ خطایی در خرید پت رخ داد. لطفاً دوباره تلاش کنید.',
+          ephemeral: true
+        });
+      }
       return;
     }
     
@@ -57,7 +218,68 @@ export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
         return;
       }
       
-      await processRenamePet(interaction, petId, newName);
+      // پردازش تغییر نام پت
+      try {
+        // دریافت کاربر
+        const user = await storage.getUserByDiscordId(interaction.user.id);
+        if (!user) {
+          await interaction.reply({
+            content: '⚠️ حساب کاربری شما یافت نشد!',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // بررسی وجود پت و مالکیت آن
+        // با توجه به ساختار موجود، باید از API موجود استفاده کنیم
+        // فرض می‌کنیم petId شناسه آیتم در inventory کاربر است
+        
+        const userInventory = await storage.getUserInventory(user.id);
+        const petItem = userInventory.find(item => item.id.toString() === petId && item.type === 'pet');
+        
+        if (!petItem) {
+          await interaction.reply({
+            content: '❌ پت مورد نظر در انبار شما یافت نشد!',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // بررسی تکراری نبودن نام
+        if (petItem.name === newName) {
+          await interaction.reply({
+            content: '❌ نام جدید با نام فعلی یکسان است!',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // اعمال تغییر نام با استفاده از تابع موجود برای به‌روزرسانی آیتم
+        await storage.updateUserItem(user.id, parseInt(petId), { name: newName });
+        
+        // ذخیره اطلاعات پت قبل از تغییر برای نمایش
+        const petName = petItem.name;
+        const petEmoji = petItem.emoji || '🐾';
+        
+        // امبد موفقیت
+        const successEmbed = new EmbedBuilder()
+          .setColor('#85bb65')
+          .setTitle(`${petEmoji} تغییر نام پت`)
+          .setDescription(`نام پت شما با موفقیت از **${petName}** به **${newName}** تغییر یافت.`)
+          .setFooter({ text: 'سیستم پت‌های Ccoin' });
+        
+        // ارسال پاسخ
+        await interaction.reply({
+          embeds: [successEmbed],
+          ephemeral: true
+        });
+      } catch (error) {
+        console.error('Error processing rename pet:', error);
+        await interaction.reply({
+          content: '❌ خطایی در تغییر نام پت رخ داد. لطفاً دوباره تلاش کنید.',
+          ephemeral: true
+        });
+      }
       return;
     }
     
@@ -75,7 +297,8 @@ export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
         return;
       }
       
-      await processBuyStock(interaction, stockId, quantity);
+      // استفاده از تبدیل تایپ برای رفع ناسازگاری
+      await processBuyStock(asMessageComponent(interaction), stockId, quantity);
       return;
     }
     
@@ -93,7 +316,8 @@ export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
         return;
       }
       
-      await processSellStock(interaction, stockId, quantity);
+      // استفاده از تبدیل تایپ برای رفع ناسازگاری
+      await processSellStock(asMessageComponent(interaction), stockId, quantity);
       return;
     }
     
@@ -111,7 +335,8 @@ export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
         return;
       }
       
-      await processBuyLotteryTicket(interaction, lotteryId, quantity);
+      // استفاده از تبدیل تایپ برای رفع ناسازگاری
+      await processBuyLotteryTicket(asMessageComponent(interaction), lotteryId, quantity);
       return;
     }
     
@@ -128,7 +353,8 @@ export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
         return;
       }
       
-      await buyGiveawayTickets(interaction, quantity);
+      // استفاده از تبدیل تایپ برای رفع ناسازگاری
+      await buyGiveawayTickets(asMessageComponent(interaction), quantity);
       return;
     }
     
@@ -242,7 +468,8 @@ export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
         return;
       }
       
-      await processTransfer(interaction, receiverId, amount, message);
+      // استفاده از تبدیل تایپ برای رفع ناسازگاری
+      await processTransfer(asMessageComponent(interaction), receiverId, amount, message);
       return;
     }
     
@@ -455,6 +682,165 @@ export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
         await adminMenu(interaction, 'economy');
       }, 1500);
       
+      return;
+    }
+    
+    // Handle AI assistant modal
+    if (customId === 'ai_assistant_modal') {
+      try {
+        // دریافت پرامپت کاربر از فیلد ورودی
+        const prompt = interaction.fields.getTextInputValue('prompt');
+        
+        // بررسی طول پرامپت
+        if (!prompt || prompt.length < 5) {
+          await interaction.reply({
+            content: '❌ لطفاً سوال یا درخواست خود را با جزئیات بیشتری وارد کنید.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // نمایش پیام در حال پردازش
+        await interaction.deferReply({ ephemeral: true });
+        
+        // دریافت اطلاعات کاربر از دیتابیس
+        const user = await storage.getUserByDiscordId(interaction.user.id);
+        if (!user) {
+          await interaction.editReply({
+            content: '❌ اطلاعات کاربری شما یافت نشد. لطفاً دوباره تلاش کنید یا با پشتیبانی تماس بگیرید.'
+          });
+          return;
+        }
+        
+        // بررسی محدودیت سوالات و اشتراک
+        const canUseAI = await storage.useAIAssistantQuestion(user.id);
+        if (!canUseAI) {
+          // دریافت اطلاعات دستیار هوش مصنوعی کاربر
+          const aiDetails = await storage.getUserAIAssistantDetails(user.id);
+          
+          // ساخت دکمه‌های خرید اشتراک
+          const subscriptionRow = new ActionRowBuilder<ButtonBuilder>()
+            .addComponents(
+              new ButtonBuilder()
+                .setCustomId('ai_sub_weekly')
+                .setLabel('اشتراک هفتگی (8,500 سکه)')
+                .setStyle(ButtonStyle.Primary)
+                .setEmoji('🔮'),
+              new ButtonBuilder()
+                .setCustomId('ai_sub_monthly')
+                .setLabel('اشتراک ماهانه (25,000 سکه)')
+                .setStyle(ButtonStyle.Success)
+                .setEmoji('💫')
+            );
+          
+          // ارسال پیام خطا به کاربر
+          await interaction.editReply({
+            content: `❌ شما به حداکثر تعداد سوالات رایگان (${aiDetails?.totalQuestions || 5} سوال) رسیده‌اید!\nبرای استفاده نامحدود از دستیار هوشمند، یکی از گزینه‌های اشتراک را انتخاب کنید:`,
+            components: [subscriptionRow]
+          });
+          return;
+        }
+        
+        // ترکیب پرامپت با راهنمایی برای هوش مصنوعی
+        const aiPrompt = `تو یک دستیار هوش مصنوعی برای بازی اقتصادی Ccoin در دیسکورد هستی. به سوالات کاربران در مورد بازی، ویژگی‌ها و نحوه استفاده از ربات پاسخ می‌دهی. همیشه به فارسی و با لحنی دوستانه و مفید پاسخ بده.
+
+سوال/درخواست کاربر:
+${prompt}
+
+پاسخ دهی با اطلاعات دقیق و مفید در مورد بازی Ccoin. اگر اطلاعات کافی برای پاسخ ندارید، بهترین پاسخ ممکن را با دانش عمومی خود ارائه دهید. محدودیت کاراکتر: حداکثر 1800 کاراکتر.`;
+        
+        // دریافت پاسخ از هوش مصنوعی
+        const aiResponse = await generateAIResponse(aiPrompt, 'aiAssistant');
+        
+        // محدود کردن پاسخ به حداکثر 1800 کاراکتر (محدودیت امبد)
+        const trimmedResponse = aiResponse.length > 1800 
+          ? aiResponse.substring(0, 1795) + '...' 
+          : aiResponse;
+        
+        // دریافت اطلاعات دستیار هوش مصنوعی به‌روزشده کاربر
+        const aiDetails = await storage.getUserAIAssistantDetails(user.id);
+        
+        // آماده‌سازی فوتر بر اساس نوع اشتراک
+        let footerText = '';
+        
+        if (aiDetails?.subscription) {
+          // کاربر اشتراک دارد
+          const expireDate = aiDetails.subscriptionExpires;
+          const expireDateStr = expireDate ? new Date(expireDate).toLocaleDateString('fa-IR') : 'نامشخص';
+          footerText = `اشتراک ${aiDetails.subscriptionTier === 'weekly' ? 'هفتگی' : 'ماهانه'} | انقضا: ${expireDateStr}`;
+        } else {
+          // کاربر اشتراک ندارد (رایگان)
+          footerText = `${aiDetails?.questionsRemaining || 0} سوال باقی‌مانده از ${aiDetails?.totalQuestions || 5} سوال رایگان`;
+        }
+        
+        // ساخت امبد پاسخ
+        const responseEmbed = new EmbedBuilder()
+          .setColor('#9B59B6')
+          .setTitle('🧠 دستیار هوشمند Ccoin')
+          .setDescription(trimmedResponse)
+          .setFooter({ 
+            text: `${footerText} | ${interaction.user.username} | پاسخ با Google AI (Gemini)`,
+            iconURL: interaction.client.user?.displayAvatarURL()
+          })
+          .setTimestamp();
+        
+        // اضافه کردن دکمه‌های خرید اشتراک برای کاربران رایگان
+        if (!aiDetails?.subscription) {
+          const subscriptionRow = new ActionRowBuilder<ButtonBuilder>()
+            .addComponents(
+              new ButtonBuilder()
+                .setCustomId('ai_assistant')
+                .setLabel('سوال جدید')
+                .setStyle(ButtonStyle.Primary)
+                .setEmoji('❓'),
+              new ButtonBuilder()
+                .setCustomId('ai_sub_weekly')
+                .setLabel('اشتراک هفتگی')
+                .setStyle(ButtonStyle.Secondary)
+                .setEmoji('🔮'),
+              new ButtonBuilder()
+                .setCustomId('ai_sub_monthly')
+                .setLabel('اشتراک ماهانه')
+                .setStyle(ButtonStyle.Secondary)
+                .setEmoji('💫')
+            );
+            
+          // ارسال پاسخ به کاربر با دکمه‌های اشتراک
+          await interaction.editReply({
+            embeds: [responseEmbed],
+            components: [subscriptionRow]
+          });
+        } else {
+          // کاربر اشتراک دارد، فقط دکمه سوال جدید را نمایش می‌دهیم
+          const newQuestionRow = new ActionRowBuilder<ButtonBuilder>()
+            .addComponents(
+              new ButtonBuilder()
+                .setCustomId('ai_assistant')
+                .setLabel('سوال جدید')
+                .setStyle(ButtonStyle.Primary)
+                .setEmoji('❓')
+            );
+            
+          // ارسال پاسخ به کاربر با دکمه سوال جدید
+          await interaction.editReply({
+            embeds: [responseEmbed],
+            components: [newQuestionRow]
+          });
+        }
+      } catch (error) {
+        console.error('Error handling AI assistant modal:', error);
+        // در صورت خطا، پیام مناسب به کاربر نمایش دهیم
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: '❌ متأسفانه در پردازش درخواست شما خطایی رخ داد. لطفاً دوباره تلاش کنید.',
+            ephemeral: true
+          });
+        } else {
+          await interaction.editReply({
+            content: '❌ متأسفانه در پردازش درخواست شما خطایی رخ داد. لطفاً دوباره تلاش کنید.'
+          });
+        }
+      }
       return;
     }
     

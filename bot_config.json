@@ -30,13 +30,7 @@
     "maxStealPerDay": 5
   },
   "ai": {
-    "service": "huggingface",
-    "openaiModel": "gpt-3.5-turbo",
-    "huggingfaceModel": "bigscience/bloom-560m",
-    "googleModel": "gemini-pro",
-    "grokModel": "grok-1",
-    "openrouter": {
-      "model": "anthropic/claude-3-opus"
-    }
+    "service": "googleai",
+    "googleModel": "gemini-1.5-pro"
   }
 }

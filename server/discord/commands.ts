@@ -499,8 +499,11 @@ const ping = {
       const hours = Math.floor((uptime % 86400000) / 3600000);
       const minutes = Math.floor((uptime % 3600000) / 60000);
       
-      // وضعیت پینگ دیسکورد - پینگ پایین‌تر بهتر است
-      const discordStatus = discordPing < 50 ? '🟢 عالی' : discordPing < 200 ? '🟡 متوسط' : '🔴 ضعیف';
+      // وضعیت پینگ دیسکورد با آستانه‌های بهینه‌سازی شده
+      const discordStatus = discordPing < 120 ? '🟢 عالی' : 
+                        discordPing < 250 ? '🟡 متوسط' : 
+                        discordPing < 750 ? '🟠 ضعیف' : 
+                        '⚫ ناپایدار';
       
       // بررسی اتصال به مونگو دی‌بی با تایمینگ
       let mongoStatus = '⚫ نامشخص';
@@ -513,8 +516,11 @@ const ping = {
         const endTime = Date.now();
         mongoPing = endTime - startTime;
         
-        // وضعیت پینگ مونگو - پینگ پایین‌تر بهتر است
-        mongoStatus = mongoPing < 50 ? '🟢 عالی' : mongoPing < 200 ? '🟡 متوسط' : '🔴 ضعیف';
+        // وضعیت پینگ مونگو با آستانه‌های بهینه‌سازی شده
+        mongoStatus = mongoPing < 120 ? '🟢 عالی' : 
+                     mongoPing < 250 ? '🟡 متوسط' : 
+                     mongoPing < 750 ? '🟠 ضعیف' : 
+                     '⚫ ناپایدار';
       } catch (dbError) {
         console.error('MongoDB ping test failed:', dbError);
         mongoStatus = '🔴 قطع';
@@ -526,38 +532,23 @@ const ping = {
       let aiPing = -1;
       let aiErrorMessage = '';
       
-      // دریافت نام سرویس فعلی
-      const aiService = botConfig.getActiveAIService();
-      
-      // انجام تست پینگ سرویس فعال هوش مصنوعی
-      // استفاده از import شده در بالای فایل
+      // انجام تست پینگ سرویس فعال هوش مصنوعی (فقط Google AI)
       aiPing = await pingCurrentAIService();
       
       // نام نمایشی سرویس هوش مصنوعی
-      let aiServiceDisplayName = '';
-      switch(aiService) {
-        case 'openai':
-          aiServiceDisplayName = 'OpenAI';
-          break;
-        case 'googleai':
-          aiServiceDisplayName = 'Google AI';
-          break;
-        case 'grok':
-          aiServiceDisplayName = 'Grok';
-          break;
-        case 'openrouter':
-          aiServiceDisplayName = 'OpenRouter';
-          break;
-        case 'huggingface':
-        default:
-          aiServiceDisplayName = 'Hugging Face';
-          break;
-      }
+      const aiServiceDisplayName = 'Google AI';
       
-      // بررسی وضعیت پینگ هوش مصنوعی با توجه به کدهای خطای جدید
+      // بررسی وضعیت پینگ هوش مصنوعی با آستانه‌های جدید
       if (aiPing > 0) {
-        // پینگ موفق - پینگ پایین‌تر بهتر است
-        aiStatus = aiPing < 250 ? '🟢 عالی' : aiPing < 1000 ? '🟡 متوسط' : '🔴 ضعیف';
+        // پینگ موفق با آستانه‌های بهینه‌سازی شده
+        aiStatus = aiPing < 120 ? '🟢 عالی' : 
+                 aiPing < 250 ? '🟡 متوسط' : 
+                 aiPing < 750 ? '🟠 ضعیف' : 
+                 '⚫ ناپایدار';
+      } else if (aiPing === -2) {
+        // خطای تایم‌اوت در درخواست
+        aiStatus = '⚫ تایم‌اوت';
+        aiErrorMessage = `درخواست به سرویس ${aiServiceDisplayName} با تایم‌اوت مواجه شد`;
       } else if (aiPing === -429) {
         // خطای محدودیت تعداد درخواست‌ها یا اتمام اعتبار
         aiStatus = '🔴 خطا در اتصال';
@@ -576,29 +567,36 @@ const ping = {
         aiErrorMessage = `مشکل نامشخص در ارتباط با سرویس هوش مصنوعی ${aiServiceDisplayName}`;
       }
       
-      // زمان پاسخگویی کلی سیستم - پینگ پایین‌تر بهتر است
+      // زمان پاسخگویی کلی سیستم با آستانه‌های بهینه‌سازی شده
       const apiPing = Date.now() - interaction.createdTimestamp;
-      const apiStatus = apiPing < 100 ? '🟢 عالی' : apiPing < 300 ? '🟡 متوسط' : '🔴 ضعیف';
+      const apiStatus = apiPing < 120 ? '🟢 عالی' : 
+                      apiPing < 250 ? '🟡 متوسط' : 
+                      apiPing < 750 ? '🟠 ضعیف' : 
+                      '⚫ ناپایدار';
       
-      // وضعیت کلی سیستم - اکنون شامل Hugging Face هم می‌شود
+      // وضعیت کلی سیستم
       let overallStatus = '';
       
-      if (discordPing < 150 && mongoPing < 100 && apiPing < 200 && aiPing > 0 && aiPing < 500) {
+      if (discordPing < 120 && mongoPing < 120 && apiPing < 120 && aiPing > 0 && aiPing < 250) {
         overallStatus = '✅ همه سیستم‌ها آنلاین و پایدار هستند';
       } else if (mongoPing === -1) {
         overallStatus = '❌ اتصال به دیتابیس با مشکل مواجه است';
+      } else if (aiPing === -2) {
+        overallStatus = '❌ درخواست به سرویس هوش مصنوعی با تایم‌اوت مواجه شده است';
       } else if (aiPing === -429) {
         overallStatus = '❌ محدودیت استفاده از API هوش مصنوعی به پایان رسیده است';
       } else if (aiPing === -401) {
         overallStatus = '❌ خطای احراز هویت در سرویس هوش مصنوعی';
       } else if (aiPing === -500) {
-        overallStatus = '❌ سرورهای Hugging Face با مشکل مواجه هستند';
+        overallStatus = '❌ سرورهای Google AI با مشکل مواجه هستند';
       } else if (aiPing < 0) {
         overallStatus = '❌ اتصال به سرویس هوش مصنوعی با مشکل مواجه است';
-      } else if (discordPing > 250 || mongoPing > 200 || apiPing > 300 || aiPing > 1000) {
+      } else if (discordPing > 750 || mongoPing > 750 || apiPing > 750 || aiPing > 750) {
+        overallStatus = '⚫ ناپایداری در سیستم‌ها - نیاز به رفع مشکل';
+      } else if (discordPing > 250 || mongoPing > 250 || apiPing > 250 || aiPing > 250) {
         overallStatus = '⚠️ تاخیر بیش از حد در بعضی سرویس‌ها';
       } else {
-        overallStatus = '✓ سیستم کار می‌کند اما تاخیر وجود دارد';
+        overallStatus = '✓ سیستم‌ها در حال کار هستند';
       }
       
       // ایجاد یک امبد زیبا و کامل
@@ -871,16 +869,8 @@ const hf = {
       const activeService = botConfig.getActiveAIService();
       const aiPing = await pingCurrentAIService();
       
-      // تعیین نام نمایشی سرویس هوش مصنوعی فعال
-      let aiServiceDisplayName = '';
-      switch(activeService) {
-        case 'openai': aiServiceDisplayName = 'OpenAI'; break;
-        case 'googleai': aiServiceDisplayName = 'Google AI'; break;
-        case 'grok': aiServiceDisplayName = 'Grok'; break;
-        case 'openrouter': aiServiceDisplayName = 'OpenRouter'; break;
-        case 'huggingface':
-        default: aiServiceDisplayName = 'Hugging Face'; break;
-      }
+      // تعیین نام نمایشی سرویس هوش مصنوعی - فقط Google AI
+      const aiServiceDisplayName = 'Google AI';
       
       // بررسی وضعیت اتصال بر اساس پینگ
       if (aiPing < 0) {
@@ -888,7 +878,10 @@ const hf = {
         let errorMessage = '';
         let statusCode = 0;
         
-        if (aiPing === -429) {
+        if (aiPing === -2) {
+          errorMessage = `درخواست به سرویس ${aiServiceDisplayName} با تایم‌اوت مواجه شد`;
+          statusCode = 408; // Request Timeout
+        } else if (aiPing === -429) {
           errorMessage = `محدودیت استفاده از API ${aiServiceDisplayName} به پایان رسیده است`;
           statusCode = 429;
         } else if (aiPing === -401) {

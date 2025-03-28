@@ -190,21 +190,232 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     }
     
     // مدیریت دکمه دستیار هوشمند
+    // پردازش دکمه‌های مربوط به دستیار هوش مصنوعی
+    // (این قسمت در پایین فایل دوباره تعریف شده و کامل‌تر است)
+    
+    // پردازش خرید اشتراک هفتگی دستیار هوش مصنوعی
+    if (action === 'ai_sub_weekly') {
+      try {
+        // دریافت اطلاعات کاربر
+        const user = await storage.getUserByDiscordId(interaction.user.id);
+        if (!user) {
+          await interaction.reply({
+            content: '❌ اطلاعات کاربری شما یافت نشد. لطفاً دوباره تلاش کنید یا با پشتیبانی تماس بگیرید.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // بررسی موجودی کاربر
+        const WEEKLY_SUBSCRIPTION_PRICE = 8500;
+        if (user.wallet < WEEKLY_SUBSCRIPTION_PRICE) {
+          await interaction.reply({
+            content: `❌ موجودی کیف پول شما کافی نیست. برای اشتراک هفتگی به ${WEEKLY_SUBSCRIPTION_PRICE} سکه نیاز دارید.`,
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // نمایش پیام در حال پردازش
+        await interaction.deferReply({ ephemeral: true });
+        
+        // کسر هزینه اشتراک از کیف پول
+        await storage.addToWallet(user.id, -WEEKLY_SUBSCRIPTION_PRICE, 'subscription_purchase', {
+          subscriptionType: 'ai_weekly'
+        });
+        
+        // فعال‌سازی اشتراک
+        await storage.subscribeToAIAssistant(user.id, 'weekly', WEEKLY_SUBSCRIPTION_PRICE);
+        
+        // دریافت اطلاعات به‌روز اشتراک
+        const aiDetails = await storage.getUserAIAssistantDetails(user.id);
+        const expireDate = aiDetails?.subscriptionExpires;
+        const expireDateStr = expireDate ? new Date(expireDate).toLocaleDateString('fa-IR') : 'نامشخص';
+        
+        // ساخت امبد تایید خرید
+        const successEmbed = new EmbedBuilder()
+          .setColor('#9B59B6')
+          .setTitle('🎉 اشتراک دستیار هوشمند فعال شد!')
+          .setDescription(`اشتراک هفتگی شما با موفقیت فعال شد. اکنون می‌توانید بدون محدودیت از دستیار هوشمند استفاده کنید.`)
+          .addFields(
+            { name: '💰 هزینه پرداخت شده', value: `${WEEKLY_SUBSCRIPTION_PRICE} سکه`, inline: true },
+            { name: '⏳ تاریخ انقضا', value: expireDateStr, inline: true }
+          )
+          .setFooter({ 
+            text: `می‌توانید با کلیک بر روی دکمه زیر، سؤال خود را بپرسید.`,
+            iconURL: interaction.client.user?.displayAvatarURL()
+          })
+          .setTimestamp();
+        
+        // ساخت دکمه پرسش سوال
+        const askButton = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('ai_assistant')
+              .setLabel('پرسیدن سوال جدید')
+              .setStyle(ButtonStyle.Primary)
+              .setEmoji('🧠')
+          );
+        
+        // ارسال پاسخ به کاربر
+        await interaction.editReply({
+          embeds: [successEmbed],
+          components: [askButton]
+        });
+      } catch (error) {
+        console.error('Error handling AI weekly subscription purchase:', error);
+        if (interaction.deferred) {
+          await interaction.editReply({
+            content: '❌ خطایی در فعال‌سازی اشتراک رخ داد. لطفاً دوباره تلاش کنید یا با پشتیبانی تماس بگیرید.'
+          });
+        } else {
+          await interaction.reply({
+            content: '❌ خطایی در فعال‌سازی اشتراک رخ داد. لطفاً دوباره تلاش کنید یا با پشتیبانی تماس بگیرید.',
+            ephemeral: true
+          });
+        }
+      }
+      return;
+    }
+    
+    // پردازش خرید اشتراک ماهانه دستیار هوش مصنوعی
+    if (action === 'ai_sub_monthly') {
+      try {
+        // دریافت اطلاعات کاربر
+        const user = await storage.getUserByDiscordId(interaction.user.id);
+        if (!user) {
+          await interaction.reply({
+            content: '❌ اطلاعات کاربری شما یافت نشد. لطفاً دوباره تلاش کنید یا با پشتیبانی تماس بگیرید.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // بررسی موجودی کاربر
+        const MONTHLY_SUBSCRIPTION_PRICE = 25000;
+        if (user.wallet < MONTHLY_SUBSCRIPTION_PRICE) {
+          await interaction.reply({
+            content: `❌ موجودی کیف پول شما کافی نیست. برای اشتراک ماهانه به ${MONTHLY_SUBSCRIPTION_PRICE} سکه نیاز دارید.`,
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // نمایش پیام در حال پردازش
+        await interaction.deferReply({ ephemeral: true });
+        
+        // کسر هزینه اشتراک از کیف پول
+        await storage.addToWallet(user.id, -MONTHLY_SUBSCRIPTION_PRICE, 'subscription_purchase', {
+          subscriptionType: 'ai_monthly'
+        });
+        
+        // فعال‌سازی اشتراک
+        await storage.subscribeToAIAssistant(user.id, 'monthly', MONTHLY_SUBSCRIPTION_PRICE);
+        
+        // دریافت اطلاعات به‌روز اشتراک
+        const aiDetails = await storage.getUserAIAssistantDetails(user.id);
+        const expireDate = aiDetails?.subscriptionExpires;
+        const expireDateStr = expireDate ? new Date(expireDate).toLocaleDateString('fa-IR') : 'نامشخص';
+        
+        // ساخت امبد تایید خرید
+        const successEmbed = new EmbedBuilder()
+          .setColor('#9B59B6')
+          .setTitle('🎉 اشتراک دستیار هوشمند فعال شد!')
+          .setDescription(`اشتراک ماهانه شما با موفقیت فعال شد. اکنون می‌توانید بدون محدودیت از دستیار هوشمند استفاده کنید.`)
+          .addFields(
+            { name: '💰 هزینه پرداخت شده', value: `${MONTHLY_SUBSCRIPTION_PRICE} سکه`, inline: true },
+            { name: '⏳ تاریخ انقضا', value: expireDateStr, inline: true }
+          )
+          .setFooter({ 
+            text: `می‌توانید با کلیک بر روی دکمه زیر، سؤال خود را بپرسید.`,
+            iconURL: interaction.client.user?.displayAvatarURL()
+          })
+          .setTimestamp();
+        
+        // ساخت دکمه پرسش سوال
+        const askButton = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('ai_assistant')
+              .setLabel('پرسیدن سوال جدید')
+              .setStyle(ButtonStyle.Primary)
+              .setEmoji('🧠')
+          );
+        
+        // ارسال پاسخ به کاربر
+        await interaction.editReply({
+          embeds: [successEmbed],
+          components: [askButton]
+        });
+      } catch (error) {
+        console.error('Error handling AI monthly subscription purchase:', error);
+        if (interaction.deferred) {
+          await interaction.editReply({
+            content: '❌ خطایی در فعال‌سازی اشتراک رخ داد. لطفاً دوباره تلاش کنید یا با پشتیبانی تماس بگیرید.'
+          });
+        } else {
+          await interaction.reply({
+            content: '❌ خطایی در فعال‌سازی اشتراک رخ داد. لطفاً دوباره تلاش کنید یا با پشتیبانی تماس بگیرید.',
+            ephemeral: true
+          });
+        }
+      }
+      return;
+    }
+    
     if (action === 'ai_assistant') {
-      // ایجاد مودال برای دریافت سوال کاربر
-      const modal = new ModalBuilder()
-        .setCustomId('ai_assistant_modal')
-        .setTitle('🧠 دستیار هوشمند Ccoin');
+      try {
+        // بررسی حساب کاربری
+        const user = await storage.getUserByDiscordId(interaction.user.id);
+        if (!user) {
+          await interaction.reply({
+            content: '❌ برای استفاده از دستیار هوشمند، ابتدا باید یک حساب کاربری در ربات داشته باشید. از دستور /menu استفاده کنید.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // بررسی وضعیت استفاده از دستیار هوشمند
+        const aiDetails = await storage.getUserAIAssistantDetails(user.id);
+        
+        // اگر کاربر اشتراک ندارد و سوالات رایگان تمام شده، پیام خطا
+        if (!aiDetails?.subscription && aiDetails?.questionsRemaining <= 0) {
+          const subscriptionRow = new ActionRowBuilder<ButtonBuilder>()
+            .addComponents(
+              new ButtonBuilder()
+                .setCustomId('ai_sub_weekly')
+                .setLabel('اشتراک هفتگی (8,500 سکه)')
+                .setStyle(ButtonStyle.Primary)
+                .setEmoji('🔮'),
+              new ButtonBuilder()
+                .setCustomId('ai_sub_monthly')
+                .setLabel('اشتراک ماهانه (25,000 سکه)')
+                .setStyle(ButtonStyle.Success)
+                .setEmoji('💫')
+            );
+          
+          await interaction.reply({
+            content: `❌ شما به حداکثر تعداد سوالات رایگان (${aiDetails?.totalQuestions || 5} سوال) رسیده‌اید!\nبرای استفاده نامحدود از دستیار هوشمند، یکی از گزینه‌های اشتراک را انتخاب کنید:`,
+            components: [subscriptionRow],
+            ephemeral: true
+          });
+          return;
+        }
       
-      // افزودن فیلدهای ورودی به مودال
-      const promptInput = new TextInputBuilder()
-        .setCustomId('prompt')
-        .setLabel('سوال یا درخواست خود را بنویسید')
-        .setPlaceholder('مثال: چطور می‌توانم سکه‌های بیشتری در بازی Ccoin به دست بیاورم؟')
-        .setStyle(TextInputStyle.Paragraph)
-        .setRequired(true)
-        .setMinLength(5)
-        .setMaxLength(1000);
+        // ایجاد مودال برای دریافت سوال کاربر
+        const modal = new ModalBuilder()
+          .setCustomId('ai_assistant_modal')
+          .setTitle('🧠 دستیار هوشمند Ccoin');
+        
+        // افزودن فیلدهای ورودی به مودال
+        const promptInput = new TextInputBuilder()
+          .setCustomId('prompt')
+          .setLabel('سوال یا درخواست خود را بنویسید')
+          .setPlaceholder('مثال: چطور می‌توانم سکه‌های بیشتری در بازی Ccoin به دست بیاورم؟')
+          .setStyle(TextInputStyle.Paragraph)
+          .setRequired(true)
+          .setMinLength(5)
+          .setMaxLength(1000);
       
       // افزودن فیلدها به مودال
       const firstActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(promptInput);
@@ -214,6 +425,16 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       await interaction.showModal(modal);
       return;
     }
+  } catch (error) {
+    console.error('Error handling AI assistant modal:', error);
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.reply({
+        content: '❌ خطایی در پردازش درخواست شما رخ داد. لطفاً دوباره تلاش کنید.',
+        ephemeral: true
+      });
+    }
+    return;
+  }
 
     if (action === 'economy') {
       await economyMenu(interaction);
