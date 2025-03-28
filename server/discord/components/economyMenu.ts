@@ -241,6 +241,10 @@ export async function economyMenu(
     // Check if user exists
     const user = await storage.getUserByDiscordId(interaction.user.id);
     
+    // گرفتن اطلاعات کاربر در مورد شغل 
+    // این خط به اینجا منتقل شد تا قبل از استفاده تعریف شود
+    const userJob = await storage.getUserJob(user?.id || 0);
+    
     if (!user) {
       if ('update' in interaction && typeof interaction.update === 'function') {
         try {
@@ -619,8 +623,7 @@ export async function economyMenu(
           .setStyle(ButtonStyle.Secondary)
       );
 
-    // گرفتن اطلاعات کاربر در مورد شغل
-    const userJob = await storage.getUserJob(user.id);
+    // رفع شد - تعریف این متغیر به بالا منتقل شده است
 
     // Check if this is a specific button interaction
     if (interaction.isButton()) {
