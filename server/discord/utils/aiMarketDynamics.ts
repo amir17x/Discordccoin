@@ -5,7 +5,7 @@
  * طراحی شده است. هدف ایجاد یک بازار پویا با نوسانات منطقی و واقعی‌تر است.
  */
 
-import { huggingFaceService } from '../services/huggingface';
+import { aiService } from '../services/aiService';
 import { log } from '../../vite';
 import { storage } from '../../storage';
 import { Stock } from '../../../shared/schema';
@@ -306,7 +306,7 @@ async function generateRandomStockNews() {
     فقط متن خبر را بنویس، بدون هیچ توضیح دیگری.`;
     
     // دریافت پاسخ از هوش مصنوعی
-    const newsContent = await huggingFaceService.getAIResponse(prompt, {
+    const newsContent = await aiService.getAIResponse(prompt, {
       maxTokens: 200,
       temperature: 0.7
     });
@@ -378,7 +378,7 @@ export async function generateMarketManipulationNews(
     فقط متن خبر را بنویس، بدون هیچ توضیح دیگری.`;
     
     // دریافت پاسخ از هوش مصنوعی
-    const newsContent = await huggingFaceService.getAIResponse(prompt, {
+    const newsContent = await aiService.getAIResponse(prompt, {
       maxTokens: 200,
       temperature: 0.8
     });
@@ -499,7 +499,7 @@ export async function getAIStockAnalysis(stockId: number): Promise<string | null
     لحن تحلیل حرفه‌ای، تخصصی و مختصر باشد.`;
     
     // دریافت پاسخ از هوش مصنوعی
-    const analysis = await huggingFaceService.getAIResponse(prompt, {
+    const analysis = await aiService.getAIResponse(prompt, {
       maxTokens: 300,
       temperature: 0.6
     });

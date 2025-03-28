@@ -28,5 +28,8 @@
     "maxTransferPerUser": 2000,
     "stealCooldown": 240,
     "maxStealPerDay": 5
+  },
+  "ai": {
+    "service": "huggingface"
   }
 }
