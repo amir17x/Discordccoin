@@ -190,6 +190,19 @@ export interface TipChannelSettings {
 }
 
 // کلاس‌های موقت برای استاک که بعدا باید با اسکیما جایگزین شوند
+type JobData = {
+  id: string;
+  userId: number;
+  jobType: string;
+  income: number;
+  cyclePeriod: number; // به ساعت
+  lastCollected: Date;
+  level: number;
+  xp: number;
+  xpRequired: number;
+  hiredAt: Date;
+};
+
 type StockData = {
   id: number;
   symbol: string;
@@ -263,6 +276,13 @@ export interface IStorage {
   getAllQuests(): Promise<Quest[]>;
   getQuest(id: number): Promise<Quest | undefined>;
   createQuest(quest: InsertQuest): Promise<Quest>;
+  
+  // Job operations
+  getUserJob(userId: number): Promise<JobData | undefined>;
+  getAvailableJobs(): Promise<{id: string, name: string, income: number, cyclePeriod: number, requirements: any}[]>;
+  assignJob(userId: number, jobType: string): Promise<JobData>;
+  collectJobIncome(userId: number): Promise<{amount: number, xpEarned: number, leveledUp: boolean}>;
+  updateJobXP(userId: number, xpAmount: number): Promise<{leveledUp: boolean, newLevel?: number}>;
   updateQuest(id: number, updates: Partial<Quest>): Promise<Quest | undefined>;
   getUserQuests(userId: number): Promise<{quest: Quest, userQuest: UserQuest}[]>;
   updateQuestProgress(userId: number, questId: number, progress: number): Promise<boolean>;
@@ -3078,6 +3098,253 @@ export class MemStorage implements IStorage {
     return this.quizReviewers.get(userId);
   }
   
+  // Job operations
+  async getUserJob(userId: number): Promise<JobData | undefined> {
+    return Array.from(this.jobs.values()).find(job => job.userId === userId);
+  }
+  
+  async getAvailableJobs(): Promise<{id: string, name: string, income: number, cyclePeriod: number, requirements: any}[]> {
+    return [
+      { 
+        id: 'miner', 
+        name: '⛏️ کارگر معدن', 
+        income: 200, 
+        cyclePeriod: 12, 
+        requirements: { ccoin: 0 } 
+      },
+      { 
+        id: 'trader', 
+        name: '💹 تاجر', 
+        income: 500, 
+        cyclePeriod: 12, 
+        requirements: { ccoin: 10000 } 
+      },
+      { 
+        id: 'supporter', 
+        name: '🛠️ ساپورت ربات', 
+        income: 300, 
+        cyclePeriod: 24, 
+        requirements: { ccoin: 5000 } 
+      },
+      { 
+        id: 'hunter', 
+        name: '🔍 شکارچی گنج', 
+        income: 250, 
+        cyclePeriod: 24, 
+        requirements: { ccoin: 5000 } 
+      },
+      { 
+        id: 'soldier', 
+        name: '⚔️ سرباز کلن', 
+        income: 400, 
+        cyclePeriod: 24, 
+        requirements: { clan: true } 
+      },
+      { 
+        id: 'reporter', 
+        name: '📰 خبرنگار سرور', 
+        income: 350, 
+        cyclePeriod: 24, 
+        requirements: { ccoin: 7000 } 
+      },
+      { 
+        id: 'organizer', 
+        name: '🎪 برگزارکننده رویداد', 
+        income: 450, 
+        cyclePeriod: 24, 
+        requirements: { ccoin: 12000 } 
+      },
+      { 
+        id: 'designer', 
+        name: '🎨 طراح چالش', 
+        income: 320, 
+        cyclePeriod: 24, 
+        requirements: { ccoin: 6000 } 
+      },
+      { 
+        id: 'guardian', 
+        name: '🛡️ نگهبان سرور', 
+        income: 280, 
+        cyclePeriod: 24, 
+        requirements: { ccoin: 4000 } 
+      },
+      { 
+        id: 'streamer', 
+        name: '🎙️ استریمر سرور', 
+        income: 380, 
+        cyclePeriod: 24, 
+        requirements: { ccoin: 8000 } 
+      }
+    ];
+  }
+  
+  async assignJob(userId: number, jobType: string): Promise<JobData> {
+    // بررسی وجود کاربر
+    const user = this.users.get(userId);
+    if (!user) {
+      throw new Error('کاربر یافت نشد');
+    }
+    
+    // بررسی آیا شغل درخواستی معتبر است
+    const availableJobs = await this.getAvailableJobs();
+    const jobInfo = availableJobs.find(job => job.id === jobType);
+    
+    if (!jobInfo) {
+      throw new Error('شغل مورد نظر یافت نشد');
+    }
+    
+    // بررسی پیش‌نیازهای شغل
+    if (jobInfo.requirements.ccoin > 0 && user.wallet + user.bank < jobInfo.requirements.ccoin) {
+      throw new Error(`برای این شغل نیاز به حداقل ${jobInfo.requirements.ccoin} سکه دارید`);
+    }
+    
+    if (jobInfo.requirements.clan && (!user.clanId || user.clanId <= 0)) {
+      throw new Error('برای این شغل نیاز به عضویت در یک کلن دارید');
+    }
+    
+    // حذف شغل فعلی اگر وجود دارد
+    const existingJob = await this.getUserJob(userId);
+    if (existingJob) {
+      this.jobs.delete(existingJob.id);
+    }
+    
+    // ایجاد شغل جدید
+    const now = new Date();
+    const newJob: JobData = {
+      id: `job_${this.currentJobId++}`,
+      userId,
+      jobType,
+      income: jobInfo.income,
+      cyclePeriod: jobInfo.cyclePeriod,
+      lastCollected: now,
+      level: 1,
+      xp: 0,
+      xpRequired: 50,
+      hiredAt: now
+    };
+    
+    this.jobs.set(newJob.id, newJob);
+    
+    // ذخیره تراکنش در تاریخچه
+    user.transactions = user.transactions || [];
+    user.transactions.push({
+      type: 'job_assigned',
+      amount: 0,
+      fee: 0,
+      timestamp: now,
+      gameType: jobInfo.name
+    });
+    
+    return newJob;
+  }
+  
+  async collectJobIncome(userId: number): Promise<{amount: number, xpEarned: number, leveledUp: boolean}> {
+    // بررسی وجود کاربر
+    const user = this.users.get(userId);
+    if (!user) {
+      throw new Error('کاربر یافت نشد');
+    }
+    
+    // بررسی آیا کاربر شغلی دارد
+    const job = await this.getUserJob(userId);
+    if (!job) {
+      throw new Error('شما شغلی ندارید');
+    }
+    
+    const now = new Date();
+    const lastCollected = new Date(job.lastCollected);
+    const cooldownHours = job.cyclePeriod;
+    const cooldownMs = cooldownHours * 60 * 60 * 1000;
+    
+    // بررسی آیا زمان کافی از آخرین دریافت حقوق گذشته است
+    if (now.getTime() - lastCollected.getTime() < cooldownMs) {
+      const remainingMs = cooldownMs - (now.getTime() - lastCollected.getTime());
+      const remainingHours = Math.ceil(remainingMs / (60 * 60 * 1000));
+      throw new Error(`شما باید ${remainingHours} ساعت دیگر صبر کنید`);
+    }
+    
+    // محاسبه درآمد بر اساس سطح شغل
+    let income = job.income;
+    for (let i = 1; i < job.level; i++) {
+      income += Math.floor(job.income * 0.1); // 10% افزایش برای هر سطح
+    }
+    
+    // محاسبه مالیات (5%)
+    const tax = Math.ceil(income * 0.05);
+    const netIncome = income - tax;
+    
+    // بروزرسانی موجودی کاربر
+    user.wallet += netIncome;
+    
+    // بروزرسانی زمان آخرین دریافت حقوق
+    job.lastCollected = now;
+    this.jobs.set(job.id, job);
+    
+    // اضافه کردن XP شغلی
+    const xpEarned = 10;
+    const levelUpResult = await this.updateJobXP(userId, xpEarned);
+    
+    // ذخیره تراکنش در تاریخچه
+    user.transactions = user.transactions || [];
+    user.transactions.push({
+      type: 'work',
+      amount: netIncome,
+      fee: tax,
+      timestamp: now,
+      gameType: job.jobType
+    });
+    
+    return {
+      amount: netIncome,
+      xpEarned,
+      leveledUp: levelUpResult.leveledUp
+    };
+  }
+  
+  async updateJobXP(userId: number, xpAmount: number): Promise<{leveledUp: boolean, newLevel?: number}> {
+    // بررسی وجود کاربر
+    const user = this.users.get(userId);
+    if (!user) {
+      throw new Error('کاربر یافت نشد');
+    }
+    
+    // بررسی آیا کاربر شغلی دارد
+    const job = await this.getUserJob(userId);
+    if (!job) {
+      throw new Error('شما شغلی ندارید');
+    }
+    
+    // اضافه کردن XP
+    job.xp += xpAmount;
+    
+    // بررسی آیا ارتقای سطح اتفاق افتاده است
+    let leveledUp = false;
+    let newLevel = job.level;
+    
+    if (job.xp >= job.xpRequired && job.level < 5) { // حداکثر سطح 5
+      job.level += 1;
+      job.xp = 0; // ریست XP
+      job.xpRequired = 50; // ریست مقدار XP مورد نیاز
+      leveledUp = true;
+      newLevel = job.level;
+      
+      // ذخیره تراکنش در تاریخچه
+      user.transactions = user.transactions || [];
+      user.transactions.push({
+        type: 'job_level_up',
+        amount: 0,
+        fee: 0,
+        timestamp: new Date(),
+        gameType: job.jobType
+      });
+    }
+    
+    // بروزرسانی اطلاعات شغل در مپ
+    this.jobs.set(job.id, job);
+    
+    return { leveledUp, newLevel: leveledUp ? newLevel : undefined };
+  }
+  
   async appointQuizReviewer(userId: string, username: string, appointedBy: string): Promise<QuizReviewer> {
     const now = new Date();
     
@@ -4569,6 +4836,296 @@ export class MongoStorage implements IStorage {
     } catch (error) {
       console.error('Error getting quiz reviewer by user ID from MongoDB:', error);
       return memStorage.getQuizReviewerByUserId(userId);
+    }
+  }
+
+  // Job operations - پیاده‌سازی متدهای مربوط به سیستم شغل
+
+  async getUserJob(userId: number): Promise<JobData | undefined> {
+    try {
+      const job = await JobModel.findOne({ userId });
+      return job || undefined;
+    } catch (error) {
+      console.error('Error getting user job from MongoDB:', error);
+      return memStorage.getUserJob(userId);
+    }
+  }
+  
+  async getAvailableJobs(): Promise<{id: string, name: string, income: number, cyclePeriod: number, requirements: any}[]> {
+    try {
+      // لیست شغل‌های موجود در سیستم
+      return [
+        { 
+          id: 'miner', 
+          name: '⛏️ کارگر معدن', 
+          income: 200, 
+          cyclePeriod: 12, 
+          requirements: { ccoin: 0 } 
+        },
+        { 
+          id: 'trader', 
+          name: '💹 تاجر', 
+          income: 500, 
+          cyclePeriod: 12, 
+          requirements: { ccoin: 10000 } 
+        },
+        { 
+          id: 'supporter', 
+          name: '🛠️ ساپورت ربات', 
+          income: 300, 
+          cyclePeriod: 24, 
+          requirements: { ccoin: 5000 } 
+        },
+        { 
+          id: 'hunter', 
+          name: '🔍 شکارچی گنج', 
+          income: 250, 
+          cyclePeriod: 24, 
+          requirements: { ccoin: 5000 } 
+        },
+        { 
+          id: 'soldier', 
+          name: '⚔️ سرباز کلن', 
+          income: 400, 
+          cyclePeriod: 24, 
+          requirements: { clan: true } 
+        },
+        { 
+          id: 'reporter', 
+          name: '📰 خبرنگار سرور', 
+          income: 350, 
+          cyclePeriod: 24, 
+          requirements: { ccoin: 7000 } 
+        },
+        { 
+          id: 'organizer', 
+          name: '🎪 برگزارکننده رویداد', 
+          income: 450, 
+          cyclePeriod: 24, 
+          requirements: { ccoin: 12000 } 
+        },
+        { 
+          id: 'designer', 
+          name: '🎨 طراح چالش', 
+          income: 320, 
+          cyclePeriod: 24, 
+          requirements: { ccoin: 6000 } 
+        },
+        { 
+          id: 'guardian', 
+          name: '🛡️ نگهبان سرور', 
+          income: 280, 
+          cyclePeriod: 24, 
+          requirements: { ccoin: 4000 } 
+        },
+        { 
+          id: 'streamer', 
+          name: '🎙️ استریمر سرور', 
+          income: 380, 
+          cyclePeriod: 24, 
+          requirements: { ccoin: 8000 } 
+        }
+      ];
+    } catch (error) {
+      console.error('Error getting available jobs from MongoDB:', error);
+      return memStorage.getAvailableJobs();
+    }
+  }
+  
+  async assignJob(userId: number, jobType: string): Promise<JobData> {
+    try {
+      // بررسی وجود کاربر
+      const user = await UserModel.findOne({ userId });
+      if (!user) {
+        throw new Error('کاربر یافت نشد');
+      }
+      
+      // بررسی آیا شغل درخواستی معتبر است
+      const availableJobs = await this.getAvailableJobs();
+      const jobInfo = availableJobs.find(job => job.id === jobType);
+      
+      if (!jobInfo) {
+        throw new Error('شغل مورد نظر یافت نشد');
+      }
+      
+      // بررسی پیش‌نیازهای شغل
+      if (jobInfo.requirements.ccoin > 0 && user.wallet + user.bank < jobInfo.requirements.ccoin) {
+        throw new Error(`برای این شغل نیاز به حداقل ${jobInfo.requirements.ccoin} سکه دارید`);
+      }
+      
+      if (jobInfo.requirements.clan && (!user.clanId || user.clanId <= 0)) {
+        throw new Error('برای این شغل نیاز به عضویت در یک کلن دارید');
+      }
+      
+      // حذف شغل فعلی اگر وجود دارد
+      await JobModel.deleteOne({ userId });
+      
+      // ایجاد شغل جدید
+      const now = new Date();
+      const newJob: JobData = {
+        id: `job_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+        userId,
+        jobType,
+        income: jobInfo.income,
+        cyclePeriod: jobInfo.cyclePeriod,
+        lastCollected: now,
+        level: 1,
+        xp: 0,
+        xpRequired: 50,
+        hiredAt: now
+      };
+      
+      await JobModel.create(newJob);
+      
+      // ذخیره تراکنش در تاریخچه
+      await this.saveTransaction({
+        id: `tr_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+        userId,
+        type: 'job_assigned',
+        amount: 0,
+        description: `استخدام در شغل ${jobInfo.name}`,
+        timestamp: now.toISOString()
+      });
+      
+      return newJob;
+    } catch (error) {
+      console.error('Error assigning job in MongoDB:', error);
+      return memStorage.assignJob(userId, jobType);
+    }
+  }
+  
+  async collectJobIncome(userId: number): Promise<{amount: number, xpEarned: number, leveledUp: boolean}> {
+    try {
+      // بررسی وجود کاربر
+      const user = await UserModel.findOne({ userId });
+      if (!user) {
+        throw new Error('کاربر یافت نشد');
+      }
+      
+      // بررسی آیا کاربر شغلی دارد
+      const job = await JobModel.findOne({ userId });
+      if (!job) {
+        throw new Error('شما شغلی ندارید');
+      }
+      
+      const now = new Date();
+      const lastCollected = new Date(job.lastCollected);
+      const cooldownHours = job.cyclePeriod;
+      const cooldownMs = cooldownHours * 60 * 60 * 1000;
+      
+      // بررسی آیا زمان کافی از آخرین دریافت حقوق گذشته است
+      if (now.getTime() - lastCollected.getTime() < cooldownMs) {
+        const remainingMs = cooldownMs - (now.getTime() - lastCollected.getTime());
+        const remainingHours = Math.ceil(remainingMs / (60 * 60 * 1000));
+        throw new Error(`شما باید ${remainingHours} ساعت دیگر صبر کنید`);
+      }
+      
+      // محاسبه درآمد بر اساس سطح شغل
+      let income = job.income;
+      for (let i = 1; i < job.level; i++) {
+        income += Math.floor(job.income * 0.1); // 10% افزایش برای هر سطح
+      }
+      
+      // محاسبه مالیات (5%)
+      const tax = Math.ceil(income * 0.05);
+      const netIncome = income - tax;
+      
+      // بروزرسانی موجودی کاربر
+      await UserModel.updateOne(
+        { userId },
+        { $inc: { wallet: netIncome } }
+      );
+      
+      // بروزرسانی زمان آخرین دریافت حقوق
+      await JobModel.updateOne(
+        { userId },
+        { $set: { lastCollected: now } }
+      );
+      
+      // اضافه کردن XP شغلی
+      const xpEarned = 10;
+      const levelUpResult = await this.updateJobXP(userId, xpEarned);
+      
+      // ذخیره تراکنش در تاریخچه
+      await this.saveTransaction({
+        id: `tr_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+        userId,
+        type: 'work',
+        amount: netIncome,
+        description: `دریافت حقوق شغل ${job.jobType} (سطح ${job.level})`,
+        timestamp: now.toISOString()
+      });
+      
+      return {
+        amount: netIncome,
+        xpEarned,
+        leveledUp: levelUpResult.leveledUp
+      };
+    } catch (error) {
+      console.error('Error collecting job income in MongoDB:', error);
+      return memStorage.collectJobIncome(userId);
+    }
+  }
+  
+  async updateJobXP(userId: number, xpAmount: number): Promise<{leveledUp: boolean, newLevel?: number}> {
+    try {
+      // بررسی وجود کاربر
+      const user = await UserModel.findOne({ userId });
+      if (!user) {
+        throw new Error('کاربر یافت نشد');
+      }
+      
+      // بررسی آیا کاربر شغلی دارد
+      const job = await JobModel.findOne({ userId });
+      if (!job) {
+        throw new Error('شما شغلی ندارید');
+      }
+      
+      // اضافه کردن XP
+      let newXP = job.xp + xpAmount;
+      
+      // بررسی آیا ارتقای سطح اتفاق افتاده است
+      let leveledUp = false;
+      let newLevel = job.level;
+      
+      if (newXP >= job.xpRequired && job.level < 5) { // حداکثر سطح 5
+        newLevel += 1;
+        newXP = 0; // ریست XP
+        leveledUp = true;
+        
+        // بروزرسانی اطلاعات شغل
+        await JobModel.updateOne(
+          { userId },
+          { 
+            $set: { 
+              level: newLevel,
+              xp: newXP,
+              xpRequired: 50 // همیشه 50 برای ساده نگه داشتن سیستم
+            } 
+          }
+        );
+        
+        // ذخیره تراکنش در تاریخچه
+        await this.saveTransaction({
+          id: `tr_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+          userId,
+          type: 'job_level_up',
+          amount: 0,
+          description: `ارتقای شغل ${job.jobType} به سطح ${newLevel}`,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        // فقط بروزرسانی XP
+        await JobModel.updateOne(
+          { userId },
+          { $set: { xp: newXP } }
+        );
+      }
+      
+      return { leveledUp, newLevel: leveledUp ? newLevel : undefined };
+    } catch (error) {
+      console.error('Error updating job XP in MongoDB:', error);
+      return memStorage.updateJobXP(userId, xpAmount);
     }
   }
 }
