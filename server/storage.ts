@@ -3940,6 +3940,134 @@ export class MongoStorage implements IStorage {
       return memStorage.createClan(insertClan);
     }
   }
+  
+  async addUserToClan(userId: number, clanId: number): Promise<boolean> {
+    try {
+      // بررسی وجود کاربر
+      const user = await UserModel.findById(userId);
+      if (!user) {
+        console.log(`User not found with id ${userId}`);
+        return memStorage.addUserToClan(userId, clanId);
+      }
+      
+      // بررسی وجود کلن
+      const clan = await ClanModel.findOne({ id: clanId });
+      if (!clan) {
+        console.log(`Clan not found with id ${clanId}`);
+        return memStorage.addUserToClan(userId, clanId);
+      }
+      
+      // خارج کردن کاربر از کلن فعلی اگر عضو کلنی باشد
+      if (user.clanId) {
+        const currentClan = await ClanModel.findOne({ id: user.clanId });
+        if (currentClan) {
+          // کاهش تعداد اعضای کلن قبلی
+          currentClan.memberCount -= 1;
+          
+          // حذف کاربر از memberIds
+          if (currentClan.memberIds && Array.isArray(currentClan.memberIds)) {
+            currentClan.memberIds = currentClan.memberIds.filter(id => id !== user.discordId);
+          }
+          
+          await currentClan.save();
+        }
+      }
+      
+      // افزودن کاربر به کلن جدید
+      user.clanId = clanId;
+      user.clanRole = 'member';
+      
+      // افزایش تعداد اعضای کلن جدید
+      clan.memberCount += 1;
+      
+      // افزودن شناسه کاربر به memberIds
+      if (!clan.memberIds) clan.memberIds = [];
+      if (!clan.memberIds.includes(user.discordId)) {
+        clan.memberIds.push(user.discordId);
+      }
+      
+      // بروزرسانی زمان آخرین فعالیت کلن
+      clan.lastActivity = new Date();
+      
+      // ذخیره تغییرات
+      await user.save();
+      await clan.save();
+      
+      console.log(`User ${user.username} (${user.discordId}) added to clan ${clan.name} (${clan.id})`);
+      return true;
+    } catch (error) {
+      console.error('Error adding user to clan in MongoDB:', error);
+      return memStorage.addUserToClan(userId, clanId);
+    }
+  }
+  
+  async removeUserFromClan(userId: number): Promise<boolean> {
+    try {
+      // بررسی وجود کاربر
+      const user = await UserModel.findById(userId);
+      if (!user || !user.clanId) {
+        return memStorage.removeUserFromClan(userId);
+      }
+      
+      // بررسی وجود کلن
+      const clan = await ClanModel.findOne({ id: user.clanId });
+      if (clan) {
+        // کاهش تعداد اعضای کلن
+        clan.memberCount = Math.max(0, clan.memberCount - 1);
+        
+        // حذف کاربر از memberIds
+        if (clan.memberIds && Array.isArray(clan.memberIds)) {
+          clan.memberIds = clan.memberIds.filter(id => id !== user.discordId);
+        }
+        
+        // بررسی اگر مالک کلن است
+        if (clan.ownerId === user.discordId) {
+          // اگر هنوز اعضای دیگری در کلن هستند
+          if (clan.memberIds && clan.memberIds.length > 0) {
+            // انتخاب اولین معاون به عنوان مالک جدید یا اولین عضو اگر معاونی وجود ندارد
+            if (clan.coLeaderIds && clan.coLeaderIds.length > 0) {
+              clan.ownerId = clan.coLeaderIds[0];
+              // حذف از لیست معاونان
+              clan.coLeaderIds = clan.coLeaderIds.filter(id => id !== clan.ownerId);
+            } else {
+              clan.ownerId = clan.memberIds[0];
+            }
+            
+            // بروزرسانی نقش کاربر جدید
+            await UserModel.findOneAndUpdate(
+              { discordId: clan.ownerId },
+              { clanRole: 'owner' }
+            );
+          } else {
+            // اگر کلن خالی است، آن را حذف کنید
+            await ClanModel.deleteOne({ id: user.clanId });
+            console.log(`Clan ${clan.name} (${clan.id}) has been deleted as it has no members left`);
+            
+            // clanId را از کاربر حذف کنید
+            user.clanId = null;
+            user.clanRole = null;
+            await user.save();
+            
+            return true;
+          }
+        }
+        
+        // ذخیره تغییرات کلن
+        await clan.save();
+      }
+      
+      // بروزرسانی کاربر
+      user.clanId = null;
+      user.clanRole = null;
+      await user.save();
+      
+      console.log(`User ${user.username} (${user.discordId}) removed from clan`);
+      return true;
+    } catch (error) {
+      console.error('Error removing user from clan in MongoDB:', error);
+      return memStorage.removeUserFromClan(userId);
+    }
+  }
 
   async getUserTransactions(userId: number): Promise<Transaction[]> {
     return memStorage.getUserTransactions(userId);
