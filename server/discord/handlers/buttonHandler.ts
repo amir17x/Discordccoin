@@ -263,7 +263,8 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       return;
     }
 
-    if (action === 'clans') {
+    // پردازش دکمه‌های بخش کلن‌ها
+    if (action === 'clans' || action.startsWith('clan_')) {
       await clansMenu(interaction);
       return;
     }
