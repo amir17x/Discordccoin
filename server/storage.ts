@@ -68,7 +68,8 @@ export interface IStorage {
   getUserByDiscordId(discordId: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, updates: Partial<User>): Promise<User | undefined>;
-  getAllUsers(): Promise<User[]>;
+  getAllUsers(limit?: number): Promise<User[]>;
+  getUserCount(): Promise<number>;
   getUserTransactions(userId: number): Promise<Transaction[]>;
   
   // Notification operations
@@ -446,6 +447,10 @@ export class MemStorage implements IStorage {
 
   async getAllUsers(): Promise<User[]> {
     return Array.from(this.users.values());
+  }
+  
+  async getUserCount(): Promise<number> {
+    return this.users.size;
   }
   
   async getUserTransactions(userId: number): Promise<Transaction[]> {

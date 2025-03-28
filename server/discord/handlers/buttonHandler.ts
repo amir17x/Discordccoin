@@ -1634,6 +1634,12 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
         return;
       }
       
+      // Settings Main Menu - NEW
+      if (action === 'admin_settings') {
+        await botSettingsMenu(interaction);
+        return;
+      }
+      
       // Settings menus - NEW
       if (action === 'admin_settings_general' || 
           action === 'admin_settings_economy' ||

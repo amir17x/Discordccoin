@@ -1141,10 +1141,16 @@ export async function botStatsMenu(interaction: ButtonInteraction | ChatInputCom
     // محاسبه زمان فعالیت ربات
     const uptime = getBotUptime();
 
-    // محاسبه تعداد سرورهای فعال
+    // محاسبه تعداد سرورهای فعال و اعضای واقعی (بدون ربات‌ها)
     const client = interaction.client;
     const totalGuilds = client.guilds.cache.size;
-    const totalMembers = client.guilds.cache.reduce((acc, guild) => acc + guild.memberCount, 0);
+    
+    // محاسبه تعداد اعضای انسان (بدون ربات‌ها)
+    let totalMembers = 0;
+    client.guilds.cache.forEach(guild => {
+      const humanMembers = guild.members.cache.filter(member => !member.user.bot).size;
+      totalMembers += humanMembers;
+    });
 
     // ایجاد Embed اصلی
     const embed = new EmbedBuilder()
@@ -1165,7 +1171,7 @@ export async function botStatsMenu(interaction: ButtonInteraction | ChatInputCom
       // اطلاعات اقتصادی
       { name: '👤 تعداد کاربران', value: `${totalUsers}`, inline: true },
       { name: '💰 مجموع سکه‌ها', value: `${totalCoins.toLocaleString()} Ccoin`, inline: true },
-      { name: '🎮 کاربران فعال (7 روز)', value: `${activePlayers}`, inline: true },
+      { name: '🎮 کاربران فعال', value: `${activePlayers.last24h} (24h) / ${activePlayers.last7d} (7d)`, inline: true },
       
       // اطلاعات بازی
       { name: '🎯 محبوب‌ترین بازی‌ها', value: topGames || 'اطلاعات موجود نیست', inline: false },
@@ -1225,8 +1231,7 @@ export async function botStatsMenu(interaction: ButtonInteraction | ChatInputCom
  */
 async function getTotalUsers(): Promise<number> {
   try {
-    const users = await storage.getAllUsers();
-    return users.length;
+    return await storage.getUserCount();
   } catch (error) {
     console.error('Error getting total users:', error);
     return 0;
@@ -1267,27 +1272,43 @@ async function getTotalItems(): Promise<number> {
 }
 
 /**
- * دریافت کاربران فعال در 7 روز اخیر
+ * دریافت کاربران فعال در 7 روز اخیر و کاربران آنلاین فعلی
  */
-async function getActivePlayers(): Promise<number> {
+async function getActivePlayers(): Promise<{last24h: number, last7d: number}> {
   try {
     const users = await storage.getAllUsers();
     const now = Date.now();
     const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
+    const oneDayAgo = now - (24 * 60 * 60 * 1000);
     
     let activeCount = 0;
+    let onlineLast24Hours = 0;
     
     for (const user of users) {
       // اگر تاریخ آخرین فعالیت کاربر وجود داشته باشد و در 7 روز اخیر باشد
       if (user.lastActive && new Date(user.lastActive).getTime() > sevenDaysAgo) {
         activeCount++;
+
+        // کاربرانی که در 24 ساعت اخیر فعال بوده‌اند
+        if (new Date(user.lastActive).getTime() > oneDayAgo) {
+          onlineLast24Hours++;
+        }
       }
     }
     
-    return activeCount;
+    // نمایش ترکیبی از کاربران فعال در 24 ساعت اخیر و 7 روز اخیر
+    console.log(`Active Players - Last 24h: ${onlineLast24Hours}, Last 7d: ${activeCount}`);
+    
+    return {
+      last24h: onlineLast24Hours,
+      last7d: activeCount
+    };
   } catch (error) {
     console.error('Error getting active players:', error);
-    return 0;
+    return {
+      last24h: 0,
+      last7d: 0
+    };
   }
 }
 
