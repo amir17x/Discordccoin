@@ -17,7 +17,20 @@ import { storage } from '../../storage';
 export function getJobNameById(jobId: string): string {
   switch(jobId) {
     case 'miner': return '⛏️ کارگر معدن';
-    case 'trader': return '💹 تاجر';
+    case 'trader': return '🏪 تاجر';
+    case 'supporter': return '🤖 ساپورت ربات';
+    case 'hunter': return '🗺️ شکارچی گنج';
+    case 'reporter': return '📰 خبرنگار سرور';
+    case 'organizer': return '🎉 برگزارکننده رویداد';
+    case 'designer': return '🎲 طراح چالش';
+    case 'guardian': return '🛡️ نگهبان سرور';
+    case 'streamer': return '🎥 استریمر سرور';
+    case 'guide': return '👋 راهنمای تازه‌وارد';
+    case 'keeper': return '📊 متصدی حضور';
+    case 'auditor': return '🔍 ممیز پیام';
+    case 'coach': return '🎮 مربی مینی‌گیم';
+    case 'coordinator': return '💬 هماهنگ‌کننده چت';
+    // شغل قدیمی برای پشتیبانی از موارد قبلی
     case 'wizard': return '🧙‍♂️ جادوگر اقتصادی';
     default: return jobId;
   }

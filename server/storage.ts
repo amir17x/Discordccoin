@@ -3114,31 +3114,24 @@ export class MemStorage implements IStorage {
       },
       { 
         id: 'trader', 
-        name: '💹 تاجر', 
+        name: '🏪 تاجر', 
         income: 500, 
         cyclePeriod: 12, 
         requirements: { ccoin: 10000 } 
       },
       { 
         id: 'supporter', 
-        name: '🛠️ ساپورت ربات', 
+        name: '🤖 ساپورت ربات', 
         income: 300, 
         cyclePeriod: 24, 
         requirements: { ccoin: 5000 } 
       },
       { 
         id: 'hunter', 
-        name: '🔍 شکارچی گنج', 
+        name: '🗺️ شکارچی گنج', 
         income: 250, 
         cyclePeriod: 24, 
         requirements: { ccoin: 5000 } 
-      },
-      { 
-        id: 'soldier', 
-        name: '⚔️ سرباز کلن', 
-        income: 400, 
-        cyclePeriod: 24, 
-        requirements: { clan: true } 
       },
       { 
         id: 'reporter', 
@@ -3149,14 +3142,14 @@ export class MemStorage implements IStorage {
       },
       { 
         id: 'organizer', 
-        name: '🎪 برگزارکننده رویداد', 
+        name: '🎉 برگزارکننده رویداد', 
         income: 450, 
         cyclePeriod: 24, 
         requirements: { ccoin: 12000 } 
       },
       { 
         id: 'designer', 
-        name: '🎨 طراح چالش', 
+        name: '🎲 طراح چالش', 
         income: 320, 
         cyclePeriod: 24, 
         requirements: { ccoin: 6000 } 
@@ -3170,10 +3163,45 @@ export class MemStorage implements IStorage {
       },
       { 
         id: 'streamer', 
-        name: '🎙️ استریمر سرور', 
+        name: '🎥 استریمر سرور', 
         income: 380, 
         cyclePeriod: 24, 
         requirements: { ccoin: 8000 } 
+      },
+      { 
+        id: 'guide', 
+        name: '👋 راهنمای تازه‌وارد', 
+        income: 270, 
+        cyclePeriod: 24, 
+        requirements: { ccoin: 3000 } 
+      },
+      { 
+        id: 'keeper', 
+        name: '📊 متصدی حضور', 
+        income: 310, 
+        cyclePeriod: 24, 
+        requirements: { ccoin: 5500 } 
+      },
+      { 
+        id: 'auditor', 
+        name: '🔍 ممیز پیام', 
+        income: 290, 
+        cyclePeriod: 24, 
+        requirements: { ccoin: 4500 } 
+      },
+      { 
+        id: 'coach', 
+        name: '🎮 مربی مینی‌گیم', 
+        income: 340, 
+        cyclePeriod: 24, 
+        requirements: { ccoin: 6500 } 
+      },
+      { 
+        id: 'coordinator', 
+        name: '💬 هماهنگ‌کننده چت', 
+        income: 360, 
+        cyclePeriod: 24, 
+        requirements: { ccoin: 7500 } 
       }
     ];
   }
