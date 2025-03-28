@@ -445,13 +445,18 @@ const admin = {
       // ارسال یک پاسخ تاخیری برای جلوگیری از تایم‌اوت
       await interaction.deferReply({ ephemeral: true });
       
-      // Check if user has permission
+      // بررسی دسترسی کاربر - اطمینان از اینکه کاربر ادمین است
       if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+        console.log(`User ${interaction.user.username} (${interaction.user.id}) attempted to access admin panel without permission`);
         await interaction.editReply({
-          content: '⛔ شما دسترسی لازم برای استفاده از پنل ادمین را ندارید!'
+          content: '⛔ شما دسترسی لازم برای استفاده از پنل ادمین را ندارید! این دستور فقط برای ادمین‌های سرور قابل استفاده است.'
         });
         return;
       }
+      
+      // لاگ کردن استفاده از پنل ادمین برای امنیت بیشتر
+      console.log(`Admin panel accessed by ${interaction.user.username} (${interaction.user.id})`);
+      
       
       // فراخوانی منوی ادمین
       await adminMenu(interaction);
@@ -660,12 +665,16 @@ const tipChannel = {
     try {
       // فقط ادمین‌ها می‌توانند از این دستور استفاده کنند
       if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+        console.log(`User ${interaction.user.username} (${interaction.user.id}) attempted to use tipchannel command without permission`);
         await interaction.reply({
-          content: '⛔ شما دسترسی لازم برای استفاده از این دستور را ندارید!',
+          content: '⛔ شما دسترسی لازم برای استفاده از این دستور را ندارید! این دستور فقط برای ادمین‌های سرور قابل استفاده است.',
           ephemeral: true
         });
         return;
       }
+      
+      // لاگ کردن استفاده از دستور برای امنیت بیشتر
+      console.log(`Tip channel setup attempted by ${interaction.user.username} (${interaction.user.id})`);
       
       const channel = interaction.options.getChannel('channel');
       const interval = interaction.options.getInteger('interval');
@@ -740,12 +749,16 @@ const unTipChannel = {
     try {
       // فقط ادمین‌ها می‌توانند از این دستور استفاده کنند
       if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+        console.log(`User ${interaction.user.username} (${interaction.user.id}) attempted to use untipchannel command without permission`);
         await interaction.reply({
-          content: '⛔ شما دسترسی لازم برای استفاده از این دستور را ندارید!',
+          content: '⛔ شما دسترسی لازم برای استفاده از این دستور را ندارید! این دستور فقط برای ادمین‌های سرور قابل استفاده است.',
           ephemeral: true
         });
         return;
       }
+      
+      // لاگ کردن استفاده از دستور برای امنیت بیشتر
+      console.log(`Tip channel removal attempted by ${interaction.user.username} (${interaction.user.id})`);
       
       // غیرفعال کردن کانال نکات
       try {
