@@ -12,6 +12,15 @@ import { profileMenu } from '../components/profileMenu';
 import { wheelOfFortuneMenu, spinWheel } from '../components/wheelOfFortuneMenu';
 import { robberyMenu, selectRobberyTarget, handleRobbery } from '../components/robberyMenu';
 import { adminMenu } from '../components/adminMenu';
+import { 
+  itemManagementMenu,
+  questManagementMenu,
+  clanManagementMenu,
+  broadcastMenu,
+  backupMenu,
+  botSettingsMenu,
+  botStatsMenu
+} from '../components/adminMenuExtended';
 import { investmentMenu, processInvestment } from '../components/investmentMenu';
 import { stocksMenu, processBuyStock, processSellStock } from '../components/stocksMenu';
 import { lotteryMenu, processBuyLotteryTicket } from '../components/lotteryMenu';
@@ -1580,6 +1589,48 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       
       if (action === 'admin_user_logs') {
         await handleAdminUserLogs(interaction);
+        return;
+      }
+      
+      // Item management buttons - NEW
+      if (action === 'admin_items') {
+        await itemManagementMenu(interaction);
+        return;
+      }
+      
+      // Quest management buttons - NEW
+      if (action === 'admin_quests') {
+        await questManagementMenu(interaction);
+        return;
+      }
+      
+      // Clan management buttons - NEW
+      if (action === 'admin_clans') {
+        await clanManagementMenu(interaction);
+        return;
+      }
+      
+      // Broadcast announcements - NEW
+      if (action === 'admin_broadcast') {
+        await broadcastMenu(interaction);
+        return;
+      }
+      
+      // Backup system - NEW
+      if (action === 'admin_backup') {
+        await backupMenu(interaction);
+        return;
+      }
+      
+      // Bot settings - NEW
+      if (action === 'admin_bot_settings') {
+        await botSettingsMenu(interaction);
+        return;
+      }
+      
+      // Bot Stats - NEW
+      if (action === 'admin_stats') {
+        await botStatsMenu(interaction);
         return;
       }
       

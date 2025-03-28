@@ -17,6 +17,15 @@ import {
 } from 'discord.js';
 import { storage } from '../../storage';
 import { botConfig } from '../utils/config';
+import { 
+  itemManagementMenu,
+  questManagementMenu,
+  clanManagementMenu,
+  broadcastMenu,
+  backupMenu,
+  botSettingsMenu,
+  botStatsMenu
+} from './adminMenuExtended';
 
 // Admin Panel Menu
 export async function adminMenu(
@@ -202,131 +211,15 @@ export async function adminMenu(
       components = [row1, row2, row3];
       
     } else if (category === 'items') {
-      // Item management
-      embed.setTitle('🛒 مدیریت آیتم‌ها')
-        .setDescription('در این بخش می‌توانید آیتم‌های فروشگاه را مدیریت کنید');
-      
-      const row1 = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId('admin_add_item')
-            .setLabel('➕ افزودن آیتم')
-            .setStyle(ButtonStyle.Success),
-          new ButtonBuilder()
-            .setCustomId('admin_edit_item')
-            .setLabel('✏️ ویرایش آیتم')
-            .setStyle(ButtonStyle.Primary),
-          new ButtonBuilder()
-            .setCustomId('admin_remove_item')
-            .setLabel('🗑️ حذف آیتم')
-            .setStyle(ButtonStyle.Danger),
-        );
-        
-      const row2 = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId('admin_list_items')
-            .setLabel('📋 لیست آیتم‌ها')
-            .setStyle(ButtonStyle.Secondary),
-          new ButtonBuilder()
-            .setCustomId('admin_item_stats')
-            .setLabel('📊 آمار فروش')
-            .setStyle(ButtonStyle.Primary),
-        );
-        
-      const row3 = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId('admin_menu')
-            .setLabel('🔙 بازگشت')
-            .setStyle(ButtonStyle.Secondary),
-        );
-        
-      components = [row1, row2, row3];
+      // استفاده از منوی بهبود یافته آیتم‌ها
+      return itemManagementMenu(interaction);
       
     } else if (category === 'stats') {
-      // Bot statistics
-      // Calculate statistics
-      const totalUsers = await getTotalUsers();
-      const totalCoins = await getTotalCoins();
-      const totalItems = await getTotalItems();
-      const activePlayers = await getActivePlayers(); // Users active in last 7 days
-      const topGames = await getTopGames(); // Most played games
-      
-      embed.setTitle('📊 آمار ربات')
-        .setDescription('آمار و اطلاعات ربات')
-        .addFields(
-          { name: '👥 تعداد کاربران', value: `${totalUsers}`, inline: true },
-          { name: '💰 مجموع سکه‌ها', value: `${totalCoins} Ccoin`, inline: true },
-          { name: '🛒 تعداد آیتم‌ها', value: `${totalItems}`, inline: true },
-          { name: '🎮 کاربران فعال (7 روز اخیر)', value: `${activePlayers}`, inline: true },
-          { name: '🎯 محبوب‌ترین بازی‌ها', value: topGames, inline: true },
-          { name: '⏱️ آپتایم ربات', value: getBotUptime(), inline: true }
-        );
-      
-      const row1 = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId('admin_economy_stats')
-            .setLabel('💰 آمار اقتصادی')
-            .setStyle(ButtonStyle.Primary),
-          new ButtonBuilder()
-            .setCustomId('admin_game_stats')
-            .setLabel('🎮 آمار بازی‌ها')
-            .setStyle(ButtonStyle.Success),
-          new ButtonBuilder()
-            .setCustomId('admin_user_stats')
-            .setLabel('👥 آمار کاربران')
-            .setStyle(ButtonStyle.Danger),
-        );
-        
-      const row2 = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId('admin_export_stats')
-            .setLabel('📤 خروجی آمار')
-            .setStyle(ButtonStyle.Secondary),
-          new ButtonBuilder()
-            .setCustomId('admin_menu')
-            .setLabel('🔙 بازگشت')
-            .setStyle(ButtonStyle.Secondary),
-        );
-        
-      components = [row1, row2];
+      // استفاده از منوی بهبود یافته آمار
+      return botStatsMenu(interaction);
     } else if (category === 'settings') {
-      // Settings menu
-      embed.setTitle('⚙️ تنظیمات')
-        .setDescription('در این بخش می‌توانید تنظیمات ربات را مدیریت کنید');
-      
-      const row1 = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId('admin_logs_settings')
-            .setLabel('📝 تنظیمات لاگ‌ها')
-            .setStyle(ButtonStyle.Primary),
-          new ButtonBuilder()
-            .setCustomId('admin_bot_settings')
-            .setLabel('🤖 تنظیمات ربات')
-            .setStyle(ButtonStyle.Success),
-          new ButtonBuilder()
-            .setCustomId('admin_economy_settings')
-            .setLabel('💰 تنظیمات اقتصادی')
-            .setStyle(ButtonStyle.Danger),
-        );
-        
-      const row2 = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId('admin_permissions')
-            .setLabel('🔒 دسترسی‌ها')
-            .setStyle(ButtonStyle.Primary),
-          new ButtonBuilder()
-            .setCustomId('admin_menu')
-            .setLabel('🔙 بازگشت')
-            .setStyle(ButtonStyle.Secondary),
-        );
-        
-      components = [row1, row2];
+      // استفاده از منوی بهبود یافته تنظیمات
+      return botSettingsMenu(interaction);
     } else if (category === 'logs_settings') {
       // Logs settings menu
       embed.setTitle('📝 تنظیمات لاگ‌ها')
