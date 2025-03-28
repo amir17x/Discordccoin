@@ -80,8 +80,7 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
       maxPoolSize: 100, // افزایش تعداد اتصال‌ها برای عملکرد بهتر
       minPoolSize: 5, // حداقل اتصال‌های فعال
       socketTimeoutMS: 45000, // زمان انتظار طولانی‌تر برای عملیات‌های سنگین
-      keepAlive: true, // حفظ اتصال
-      keepAliveInitialDelay: 300000, // تأخیر اولیه برای حفظ اتصال (5 دقیقه)
+      // keepAlive و keepAliveInitialDelay دیگر پشتیبانی نمی‌شوند
       autoIndex: false, // غیرفعال کردن ایندکس خودکار در محیط تولید
       maxIdleTimeMS: 60000 // حداکثر زمان بیکار بودن یک اتصال (1 دقیقه)
     };

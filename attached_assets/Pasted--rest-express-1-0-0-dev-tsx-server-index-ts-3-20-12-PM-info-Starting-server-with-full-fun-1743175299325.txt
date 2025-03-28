@@ -1,0 +1,42 @@
+
+> rest-express@1.0.0 dev
+> tsx server/index.ts
+
+3:20:12 PM [info] Starting server with full functionality...
+❌ خطا در اتصال به MongoDB: MongoParseError: options keepalive, keepaliveinitialdelay are not supported
+    at parseOptions (/home/runner/workspace/node_modules/mongodb/src/connection_string.ts:374:11)
+    at new MongoClient (/home/runner/workspace/node_modules/mongodb/src/mongo_client.ts:387:32)
+    at NativeConnection.createClient (/home/runner/workspace/node_modules/mongoose/lib/drivers/node-mongodb-native/connection.js:328:14)
+    at NativeConnection.openUri (/home/runner/workspace/node_modules/mongoose/lib/connection.js:1071:34)
+    at Mongoose.connect (/home/runner/workspace/node_modules/mongoose/lib/mongoose.js:450:15)
+    at connectToDatabase (/home/runner/workspace/server/database.ts:90:39)
+    at <anonymous> (/home/runner/workspace/server/index.ts:49:11)
+    at <anonymous> (/home/runner/workspace/server/index.ts:170:1) {
+  errorLabelSet: Set(0) {}
+}
+3:20:12 PM [error] Error connecting to MongoDB: MongoParseError: options keepalive, keepaliveinitialdelay are not supported
+3:20:12 PM [warn] Continuing without database functionality...
+3:20:12 PM [discord] Started refreshing application (/) commands.
+3:20:13 PM [discord] Successfully reloaded application (/) commands.
+3:20:13 PM [discord] Attempting to login with Discord token...
+3:20:14 PM [discord] Successfully logged in to Discord
+3:20:14 PM [success] Discord bot initialized successfully
+3:20:14 PM [success] Group games client initialized successfully
+3:20:14 PM [success] Tip system will be initialized when Discord bot is ready
+[express] Admin panel routes registered
+3:20:14 PM [success] Admin panel initialized successfully
+3:20:14 PM [express] Server is running on port 5000
+3:20:14 PM [discord] Logged in as Ccoin#1873!
+🔍 در حال راه‌اندازی سیستم نکات...
+🔄 در حال بارگذاری کانال‌های نکات فعال...
+✅ سیستم نکات با موفقیت راه‌اندازی شد.
+3:20:14 PM [discord] سیستم نکات با موفقیت راه‌اندازی شد
+Error getting active tip channel settings from MongoDB: MongooseError: Operation `tipchannels.find()` buffering timed out after 10000ms
+    at Timeout.<anonymous> (/home/runner/workspace/node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+    at listOnTimeout (node:internal/timers:581:17)
+    at process.processTimers (node:internal/timers:519:7)
+📊 0 کانال نکات فعال یافت شد.
+Error getting user by Discord ID from MongoDB: MongooseError: Operation `users.findOne()` buffering timed out after 10000ms
+    at Timeout.<anonymous> (/home/runner/workspace/node_modules/mongoose/lib/drivers/node-mongodb-native/collection.js:187:23)
+    at listOnTimeout (node:internal/timers:581:17)
+    at process.processTimers (node:internal/timers:519:7)
