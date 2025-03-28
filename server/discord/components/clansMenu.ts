@@ -339,14 +339,36 @@ export async function clansMenu(
         const success = await storage.addUserToClan(user.id, clanId);
         
         if (success) {
-          await interaction.reply({
-            content: `شما به کلن **${clan.name}** پیوستید!`,
-            ephemeral: true
-          });
+          // ابتدا پاسخ اولیه را با استفاده از deferReply ارسال می‌کنیم
+          await interaction.deferReply({ ephemeral: true });
           
-          // Refresh clans menu after a delay
+          // لاگ موفقیت
+          console.log(`User ${user.username} (${user.discordId}) joined clan ${clan.name} (${clan.id})`);
+
+          // کمی صبر می‌کنیم و سپس پاسخ را با اطلاعات به‌روز شده کلن بروزرسانی می‌کنیم
           setTimeout(async () => {
-            await clansMenu(interaction, true);
+            try {
+              // ابتدا پاسخ را بروزرسانی می‌کنیم
+              await interaction.editReply({
+                content: `✅ شما با موفقیت به کلن **${clan.name}** پیوستید!`
+              });
+              
+              // سپس منوی جدید کلن را نمایش می‌دهیم
+              setTimeout(async () => {
+                try {
+                  // ایجاد یک پیام جدید برای نمایش منوی کلن (به جای ویرایش پیام قبلی)
+                  await interaction.followUp({ 
+                    content: 'در حال نمایش اطلاعات کلن...',
+                    ephemeral: true 
+                  });
+                  await clansMenu(interaction, true);
+                } catch (error) {
+                  console.error('Error showing clans menu after join:', error);
+                }
+              }, 1000);
+            } catch (error) {
+              console.error('Error updating join clan reply:', error);
+            }
           }, 1500);
         } else {
           await interaction.reply({
@@ -378,22 +400,44 @@ export async function clansMenu(
         }
         
         // Leave clan
+        // ابتدا پاسخ اولیه را با استفاده از deferReply ارسال می‌کنیم
+        await interaction.deferReply({ ephemeral: true });
+        
+        // تلاش برای ترک کلن
         const success = await storage.removeUserFromClan(user.id);
         
         if (success) {
-          await interaction.reply({
-            content: `شما کلن **${userClan.name}** را ترک کردید.`,
-            ephemeral: true
-          });
-          
-          // Refresh clans menu after a delay
+          // لاگ موفقیت
+          console.log(`User ${user.username} (${user.discordId}) left clan ${userClan.name} (${userClan.id})`);
+
+          // کمی صبر می‌کنیم و سپس پاسخ را با اطلاعات به‌روز شده بروزرسانی می‌کنیم
           setTimeout(async () => {
-            await clansMenu(interaction, true);
+            try {
+              // ابتدا پاسخ را بروزرسانی می‌کنیم
+              await interaction.editReply({
+                content: `✅ شما با موفقیت کلن **${userClan.name}** را ترک کردید.`
+              });
+              
+              // سپس منوی جدید کلن را نمایش می‌دهیم
+              setTimeout(async () => {
+                try {
+                  // ایجاد یک پیام جدید برای نمایش منوی کلن (به جای ویرایش پیام قبلی)
+                  await interaction.followUp({ 
+                    content: 'در حال نمایش منوی اصلی کلن‌ها...',
+                    ephemeral: true 
+                  });
+                  await clansMenu(interaction, true);
+                } catch (error) {
+                  console.error('Error showing clans menu after leave:', error);
+                }
+              }, 1000);
+            } catch (error) {
+              console.error('Error updating leave clan reply:', error);
+            }
           }, 1500);
         } else {
-          await interaction.reply({
-            content: 'خطا در ترک کلن. لطفاً دوباره تلاش کنید.',
-            ephemeral: true
+          await interaction.editReply({
+            content: '❌ خطا در ترک کلن. لطفاً دوباره تلاش کنید.'
           });
         }
         
