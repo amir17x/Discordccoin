@@ -58,6 +58,15 @@ app.use((req, res, next) => {
     const client = await initDiscordBot();
     log("Discord bot initialized successfully", "success");
     
+    // تنظیم client برای ماژول بازی‌های گروهی
+    try {
+      const { setClient } = await import("./discord/components/groupGames");
+      setClient(client);
+      log("Group games client initialized successfully", "success");
+    } catch (groupGamesError) {
+      log(`Error initializing group games client: ${groupGamesError}`, "error");
+    }
+    
     // سیستم نکات در رویداد ready بات دیسکورد راه‌اندازی می‌شود
     log("Tip system will be initialized when Discord bot is ready", "success");
   } catch (error) {
