@@ -416,25 +416,25 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
           .setRequired(true)
           .setMinLength(5)
           .setMaxLength(1000);
-      
-      // افزودن فیلدها به مودال
-      const firstActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(promptInput);
-      modal.addComponents(firstActionRow);
-      
-      // نمایش مودال به کاربر
-      await interaction.showModal(modal);
-      return;
+        
+        // افزودن فیلدها به مودال
+        const firstActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(promptInput);
+        modal.addComponents(firstActionRow);
+        
+        // نمایش مودال به کاربر
+        await interaction.showModal(modal);
+        return;
+      } catch (error) {
+        console.error('Error handling AI assistant modal:', error);
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: '❌ خطایی در پردازش درخواست شما رخ داد. لطفاً دوباره تلاش کنید.',
+            ephemeral: true
+          });
+        }
+        return;
+      }
     }
-  } catch (error) {
-    console.error('Error handling AI assistant modal:', error);
-    if (!interaction.replied && !interaction.deferred) {
-      await interaction.reply({
-        content: '❌ خطایی در پردازش درخواست شما رخ داد. لطفاً دوباره تلاش کنید.',
-        ephemeral: true
-      });
-    }
-    return;
-  }
 
     if (action === 'economy') {
       await economyMenu(interaction);
