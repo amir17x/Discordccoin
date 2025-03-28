@@ -5,7 +5,7 @@
  * طراحی شده است. هدف ایجاد یک بازار پویا با نوسانات منطقی و واقعی‌تر است.
  */
 
-import { aiService } from '../services/aiService';
+import { generateAIResponse } from '../services/aiService';
 import { log } from '../../vite';
 import { storage } from '../../storage';
 import { Stock } from '../../../shared/schema';
@@ -306,10 +306,7 @@ async function generateRandomStockNews() {
     فقط متن خبر را بنویس، بدون هیچ توضیح دیگری.`;
     
     // دریافت پاسخ از هوش مصنوعی
-    const newsContent = await aiService.getAIResponse(prompt, {
-      maxTokens: 200,
-      temperature: 0.7
-    });
+    const newsContent = await generateAIResponse(prompt, "marketAnalysis");
     
     // تعیین میزان تأثیر خبر
     const impactValue = (isPositive ? 1 : -1) * (0.03 + Math.random() * 0.07); // بین 3% تا 10%
@@ -378,10 +375,7 @@ export async function generateMarketManipulationNews(
     فقط متن خبر را بنویس، بدون هیچ توضیح دیگری.`;
     
     // دریافت پاسخ از هوش مصنوعی
-    const newsContent = await aiService.getAIResponse(prompt, {
-      maxTokens: 200,
-      temperature: 0.8
-    });
+    const newsContent = await generateAIResponse(prompt, "marketAnalysis");
     
     // تعیین میزان تأثیر خبر (تأثیر بیشتر برای دستکاری بازار)
     const impactValue = (isPositive ? 1 : -1) * (0.05 + Math.random() * 0.1); // بین 5% تا 15%
@@ -499,10 +493,7 @@ export async function getAIStockAnalysis(stockId: number): Promise<string | null
     لحن تحلیل حرفه‌ای، تخصصی و مختصر باشد.`;
     
     // دریافت پاسخ از هوش مصنوعی
-    const analysis = await aiService.getAIResponse(prompt, {
-      maxTokens: 300,
-      temperature: 0.6
-    });
+    const analysis = await generateAIResponse(prompt, "marketAnalysis");
     
     return analysis;
   } catch (error) {

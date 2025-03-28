@@ -1,5 +1,5 @@
-import {
-  ButtonInteraction,
+import { 
+  ButtonInteraction, 
   ChatInputCommandInteraction,
   EmbedBuilder,
   ActionRowBuilder,
@@ -7,7 +7,6 @@ import {
   ButtonStyle,
   PermissionFlagsBits
 } from 'discord.js';
-import { switchAIProvider, getAIServiceStatus, testAIService } from '../services/aiService';
 import { botConfig } from '../utils/config';
 
 /**
@@ -19,116 +18,167 @@ export async function aiSettingsMenu(interaction: ButtonInteraction | ChatInputC
     // بررسی دسترسی ادمین
     if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
       await interaction.reply({
-        content: '⛔ شما دسترسی لازم برای استفاده از این بخش را ندارید.',
+        content: '⛔ شما دسترسی لازم برای استفاده از این بخش را ندارید!',
         ephemeral: true
       });
       return;
     }
 
-    // دریافت وضعیت فعلی سرویس هوش مصنوعی
-    const aiStatus = getAIServiceStatus();
-    const currentService = aiStatus.service;
-
-    // ساخت امبد با اطلاعات سرویس‌های هوش مصنوعی
+    // دریافت تنظیمات فعلی
+    const config = botConfig.getConfig();
+    
+    // ایجاد Embed برای نمایش تنظیمات هوش مصنوعی
     const embed = new EmbedBuilder()
-      .setTitle('🤖 مدیریت سرویس‌های هوش مصنوعی')
-      .setColor('#9B59B6')
-      .setDescription(
-        'در این بخش می‌توانید سرویس هوش مصنوعی مورد استفاده در ربات را مدیریت کنید.'
-      )
-      .addFields(
-        {
-          name: 'سرویس فعلی:',
-          value: `${currentService === 'openai' ? '✅ OpenAI (ChatGPT)' : '⭕ OpenAI (ChatGPT)'}\n` + 
-                 `${currentService === 'huggingface' ? '✅ Hugging Face' : '⭕ Hugging Face'}`
-        },
-        {
-          name: 'آمار استفاده:',
-          value: 
-            `تعداد کل درخواست‌ها: \`${aiStatus.requestCount.toLocaleString()}\`\n` +
-            `OpenAI: \`${aiStatus.providerStats.openai.toLocaleString()}\`\n` +
-            `Hugging Face: \`${aiStatus.providerStats.huggingface.toLocaleString()}\`\n` +
-            `میانگین زمان پاسخگویی: \`${aiStatus.averageLatency}ms\``
-        },
-        {
-          name: 'نوع استفاده:',
-          value:
-            `پیام‌های وضعیت: \`${aiStatus.usageCounts.statusMessages.toLocaleString()}\`\n` +
-            `تحلیل بازار: \`${aiStatus.usageCounts.marketAnalysis.toLocaleString()}\`\n` +
-            `داستان‌های ماموریت: \`${aiStatus.usageCounts.questStories.toLocaleString()}\`\n` +
-            `دستیار هوشمند: \`${aiStatus.usageCounts.aiAssistant.toLocaleString()}\`\n` +
-            `سایر: \`${aiStatus.usageCounts.other.toLocaleString()}\``
-        },
-        {
-          name: 'آخرین استفاده:',
-          value: aiStatus.lastUsed ? new Date(aiStatus.lastUsed).toLocaleString('fa-IR') : 'هیچ'
-        }
-      )
-      .setFooter({ text: 'هر سرویس نقاط قوت و ضعف مخصوص به خود را دارد.' });
-
-    // ساخت دکمه‌ها برای انتخاب سرویس‌ها
+      .setColor('#9C27B0')
+      .setTitle('🤖 مدیریت هوش مصنوعی')
+      .setDescription('در این بخش می‌توانید تنظیمات هوش مصنوعی ربات را مشاهده و ویرایش کنید.')
+      .setFooter({ text: `مدیر: ${interaction.user.username} | ${new Date().toLocaleString()}` })
+      .setThumbnail('https://img.icons8.com/fluency/48/artificial-intelligence.png')
+      .setTimestamp();
+    
+    // تنظیمات هوش مصنوعی فعلی
+    const aiService = config.ai?.service || 'huggingface';
+    
+    // افزودن فیلدها به Embed با اطلاعات همه سرویس‌های موجود
+    embed.addFields(
+      { 
+        name: '🤖 سرویس فعلی هوش مصنوعی', 
+        value: getServiceDisplayName(aiService), 
+        inline: false 
+      },
+      { 
+        name: '📊 مقایسه سرویس‌های هوش مصنوعی', 
+        value: 
+        `**OpenAI (ChatGPT)**:\n` +
+        `✅ کیفیت بالای پاسخ‌ها\n` +
+        `✅ درک بهتر زبان فارسی\n` +
+        `⚠️ محدودیت در تعداد درخواست‌ها\n` +
+        `⚠️ هزینه بالاتر\n\n` +
+        `**Hugging Face**:\n` +
+        `✅ بدون محدودیت در تعداد درخواست‌ها\n` +
+        `✅ هزینه کمتر\n` +
+        `⚠️ کیفیت متوسط پاسخ‌ها\n` +
+        `⚠️ درک محدودتر زبان فارسی\n\n` +
+        `**Google AI (Gemini)**:\n` +
+        `✅ کیفیت بالای پاسخ‌ها\n` +
+        `✅ سرعت پاسخگویی بالا\n` +
+        `⚠️ محدودیت مصرف ماهانه\n` +
+        `⚠️ هزینه متوسط\n\n` +
+        `**OpenRouter**:\n` +
+        `✅ دسترسی به مدل‌های مختلف\n` +
+        `✅ قابلیت انعطاف بالا\n` +
+        `⚠️ محدودیت در تعداد توکن‌ها\n` +
+        `⚠️ هزینه نسبتاً بالا\n\n` +
+        `**Grok**:\n` +
+        `✅ پاسخ‌های خلاقانه‌تر\n` +
+        `✅ ویژگی‌های منحصر به فرد\n` +
+        `⚠️ در حال توسعه\n` +
+        `⚠️ محدودیت‌های دسترسی`, 
+        inline: false 
+      }
+    );
+    
+    // دکمه‌های تغییر سرویس - ردیف اول
     const row1 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
-          .setCustomId('ai_switch_openai')
-          .setLabel('تغییر به OpenAI')
-          .setStyle(currentService === 'openai' ? ButtonStyle.Success : ButtonStyle.Secondary)
-          .setDisabled(currentService === 'openai'),
+          .setCustomId('admin_switch_to_openai')
+          .setLabel('OpenAI')
+          .setEmoji('🤖')
+          .setStyle(aiService === 'openai' ? ButtonStyle.Success : ButtonStyle.Primary)
+          .setDisabled(aiService === 'openai'),
         new ButtonBuilder()
-          .setCustomId('ai_switch_huggingface')
-          .setLabel('تغییر به Hugging Face')
-          .setStyle(currentService === 'huggingface' ? ButtonStyle.Success : ButtonStyle.Secondary)
-          .setDisabled(currentService === 'huggingface')
+          .setCustomId('admin_switch_to_huggingface')
+          .setLabel('Hugging Face')
+          .setEmoji('🧠')
+          .setStyle(aiService === 'huggingface' ? ButtonStyle.Success : ButtonStyle.Primary)
+          .setDisabled(aiService === 'huggingface'),
+        new ButtonBuilder()
+          .setCustomId('admin_switch_to_googleai')
+          .setLabel('Google AI')
+          .setEmoji('🌐')
+          .setStyle(aiService === 'googleai' ? ButtonStyle.Success : ButtonStyle.Primary)
+          .setDisabled(aiService === 'googleai'),
       );
-
-    // دکمه‌های آزمایش و نمایش وضعیت
+    
+    // دکمه‌های تغییر سرویس - ردیف دوم
     const row2 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
-          .setCustomId('ai_test_service')
-          .setLabel('آزمایش سرویس')
-          .setStyle(ButtonStyle.Primary),
+          .setCustomId('admin_switch_to_openrouter')
+          .setLabel('OpenRouter')
+          .setEmoji('🔄')
+          .setStyle(aiService === 'openrouter' ? ButtonStyle.Success : ButtonStyle.Primary)
+          .setDisabled(aiService === 'openrouter'),
         new ButtonBuilder()
-          .setCustomId('ai_view_status')
-          .setLabel('نمایش وضعیت')
-          .setStyle(ButtonStyle.Primary)
+          .setCustomId('admin_switch_to_grok')
+          .setLabel('Grok')
+          .setEmoji('🧩')
+          .setStyle(aiService === 'grok' ? ButtonStyle.Success : ButtonStyle.Primary)
+          .setDisabled(aiService === 'grok'),
+        new ButtonBuilder()
+          .setCustomId('admin_test_ai')
+          .setLabel('تست سرویس')
+          .setEmoji('🧪')
+          .setStyle(ButtonStyle.Secondary),
       );
-
-    // دکمه بازگشت
+    
+    // دکمه‌های مدیریتی
     const row3 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
-          .setCustomId('admin_menu_settings')
-          .setLabel('بازگشت به منوی تنظیمات')
-          .setStyle(ButtonStyle.Danger)
+          .setCustomId('admin_view_ai_status')
+          .setLabel('آمار هوش مصنوعی')
+          .setEmoji('📊')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId('admin_settings')
+          .setLabel('🔙 بازگشت')
+          .setStyle(ButtonStyle.Secondary),
       );
-
+    
     // ارسال پاسخ
-    if (interaction.replied || interaction.deferred) {
-      await interaction.editReply({
-        embeds: [embed],
-        components: [row1, row2, row3]
-      });
+    if (interaction.deferred) {
+      await interaction.editReply({ embeds: [embed], components: [row1, row2, row3] });
     } else {
-      await interaction.reply({
-        embeds: [embed],
-        components: [row1, row2, row3],
-        ephemeral: true
-      });
+      await interaction.reply({ embeds: [embed], components: [row1, row2, row3], ephemeral: true });
     }
+    
   } catch (error) {
     console.error('Error in AI settings menu:', error);
-    
-    // در صورت خطا
-    if (interaction.replied || interaction.deferred) {
-      await interaction.editReply({ 
-        content: 'خطایی در نمایش منوی تنظیمات هوش مصنوعی رخ داد.' 
-      });
-    } else {
-      await interaction.reply({ 
-        content: 'خطایی در نمایش منوی تنظیمات هوش مصنوعی رخ داد.',
-        ephemeral: true
-      });
+    try {
+      const errorMessage = '❌ خطایی در نمایش منوی مدیریت هوش مصنوعی رخ داد!';
+      if (interaction.deferred) {
+        await interaction.editReply({ content: errorMessage });
+      } else if (interaction.replied) {
+        await interaction.followUp({ content: errorMessage, ephemeral: true });
+      } else {
+        await interaction.reply({ content: errorMessage, ephemeral: true });
+      }
+    } catch (replyError) {
+      console.error('Failed to send error message:', replyError);
     }
+  }
+}
+
+/**
+ * دریافت نام نمایشی سرویس هوش مصنوعی
+ * @param service نام سرویس
+ * @returns نام نمایشی سرویس
+ */
+function getServiceDisplayName(service: string): string {
+  switch (service) {
+    case 'openai':
+      return '**OpenAI (ChatGPT)** - کیفیت بالاتر با محدودیت بیشتر';
+    case 'huggingface':
+      return '**Hugging Face** - کیفیت متوسط بدون محدودیت';
+    case 'googleai':
+      return '**Google AI (Gemini)** - سرعت و کیفیت بالا';
+    case 'openrouter':
+      return '**OpenRouter** - دسترسی به مدل‌های مختلف';
+    case 'grok':
+      return '**Grok** - پاسخ‌های خلاقانه و متفاوت';
+    default:
+      return `**${service}** - سرویس نامشخص`;
   }
 }

@@ -1510,7 +1510,7 @@ export async function generalSettingsMenu(interaction: ButtonInteraction | ChatI
  * منوی مدیریت هوش مصنوعی
  * @param interaction تعامل کاربر
  */
-export async function aiSettingsMenu(interaction: ButtonInteraction | ChatInputCommandInteraction) {
+export async function aiSettingsMenuLegacy(interaction: ButtonInteraction | ChatInputCommandInteraction) {
   try {
     // بررسی دسترسی ادمین
     if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {

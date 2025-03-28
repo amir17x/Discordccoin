@@ -5,6 +5,7 @@ import { adminMenu } from '../discord/components/adminMenu';
 import { setupTipSystem, addTipChannel, removeTipChannel, toggleTipChannel, updateTipChannel, updateTipInterval, sendImmediateTip } from './components/tipSystem';
 import { handleGroupGamesMenu } from './components/groupGames';
 import { huggingFaceService } from './services/huggingface';
+import { botConfig } from './utils/config';
 
 // Command to display the main menu
 const menu = {
@@ -520,8 +521,33 @@ const ping = {
       let aiPing = -1;
       let aiErrorMessage = '';
       
-      // انجام تست پینگ Hugging Face
-      aiPing = await huggingFaceService.pingHuggingFace();
+      // دریافت نام سرویس فعلی
+      const aiService = botConfig.getActiveAIService();
+      
+      // انجام تست پینگ سرویس فعال هوش مصنوعی
+      const pingAIService = require('./services/aiService').pingCurrentAIService;
+      aiPing = await pingAIService();
+      
+      // نام نمایشی سرویس هوش مصنوعی
+      let aiServiceDisplayName = '';
+      switch(aiService) {
+        case 'openai':
+          aiServiceDisplayName = 'OpenAI';
+          break;
+        case 'googleai':
+          aiServiceDisplayName = 'Google AI';
+          break;
+        case 'grok':
+          aiServiceDisplayName = 'Grok';
+          break;
+        case 'openrouter':
+          aiServiceDisplayName = 'OpenRouter';
+          break;
+        case 'huggingface':
+        default:
+          aiServiceDisplayName = 'Hugging Face';
+          break;
+      }
       
       // بررسی وضعیت پینگ هوش مصنوعی با توجه به کدهای خطای جدید
       if (aiPing > 0) {
@@ -530,19 +556,19 @@ const ping = {
       } else if (aiPing === -429) {
         // خطای محدودیت تعداد درخواست‌ها یا اتمام اعتبار
         aiStatus = '🔴 خطا در اتصال';
-        aiErrorMessage = 'محدودیت استفاده از API به پایان رسیده است';
+        aiErrorMessage = `محدودیت استفاده از API ${aiServiceDisplayName} به پایان رسیده است`;
       } else if (aiPing === -401) {
         // خطای احراز هویت
         aiStatus = '🔴 خطا در اتصال';
-        aiErrorMessage = 'مشکل در احراز هویت API';
+        aiErrorMessage = `مشکل در احراز هویت API ${aiServiceDisplayName}`;
       } else if (aiPing === -500) {
         // خطای سرور
         aiStatus = '🔴 خطا در اتصال';
-        aiErrorMessage = 'سرورهای Hugging Face با مشکل مواجه هستند';
+        aiErrorMessage = `سرورهای ${aiServiceDisplayName} با مشکل مواجه هستند`;
       } else {
         // سایر خطاها
         aiStatus = '🔴 خطا در اتصال';
-        aiErrorMessage = 'مشکل نامشخص در ارتباط با سرویس هوش مصنوعی';
+        aiErrorMessage = `مشکل نامشخص در ارتباط با سرویس هوش مصنوعی ${aiServiceDisplayName}`;
       }
       
       // زمان پاسخگویی کلی سیستم - پینگ پایین‌تر بهتر است

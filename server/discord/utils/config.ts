@@ -69,6 +69,18 @@ export interface BotConfig {
     achievements: boolean; // دستاوردها
     giveaways: boolean; // گیواوی
   };
+  
+  // تنظیمات هوش مصنوعی
+  ai?: {
+    service?: 'openai' | 'huggingface' | 'googleai' | 'grok' | 'openrouter'; // سرویس فعال هوش مصنوعی
+    openaiModel?: string; // مدل OpenAI
+    huggingfaceModel?: string; // مدل Hugging Face
+    googleModel?: string; // مدل Google AI
+    grokModel?: string; // مدل Grok
+    openrouter?: {
+      model?: string; // مدل OpenRouter
+    };
+  };
 }
 
 // تنظیمات پیش‌فرض
@@ -120,6 +132,16 @@ const defaultConfig: BotConfig = {
     investments: true,
     achievements: true,
     giveaways: true
+  },
+  ai: {
+    service: 'huggingface',
+    openaiModel: 'gpt-3.5-turbo',
+    huggingfaceModel: 'MBZUAI/LaMini-Flan-T5-783M',
+    googleModel: 'gemini-pro',
+    grokModel: 'grok-1',
+    openrouter: {
+      model: 'anthropic/claude-3-opus'
+    }
   }
 };
 
@@ -169,6 +191,17 @@ export class BotConfigManager {
    * ادغام تنظیمات بارگذاری شده با مقادیر پیش‌فرض
    */
   private mergeWithDefaults(loadedConfig: Partial<BotConfig>): BotConfig {
+    // تنظیمات هوش مصنوعی، با حفظ ساختار تودرتو
+    const aiConfig = loadedConfig.ai 
+      ? {
+          ...loadedConfig.ai,
+          openrouter: {
+            ...(defaultConfig.ai?.openrouter || {}),
+            ...(loadedConfig.ai.openrouter || {})
+          }
+        } 
+      : defaultConfig.ai;
+    
     return {
       logChannels: { ...defaultConfig.logChannels, ...loadedConfig.logChannels },
       economy: { ...defaultConfig.economy, ...loadedConfig.economy },
@@ -176,6 +209,7 @@ export class BotConfigManager {
       games: { ...defaultConfig.games, ...loadedConfig.games },
       security: { ...defaultConfig.security, ...loadedConfig.security },
       features: { ...defaultConfig.features, ...loadedConfig.features },
+      ai: aiConfig
     };
   }
 
@@ -195,6 +229,24 @@ export class BotConfigManager {
    */
   public getConfig(): BotConfig {
     return { ...this.config };
+  }
+  
+  /**
+   * دریافت تنظیمات هوش مصنوعی
+   */
+  public getAISettings(): NonNullable<BotConfig['ai']> {
+    const defaultAISettings: NonNullable<BotConfig['ai']> = {
+      service: 'huggingface',
+      openaiModel: 'gpt-3.5-turbo',
+      huggingfaceModel: 'mistralai/Mistral-7B-Instruct-v0.2',
+      googleModel: 'gemini-pro',
+      grokModel: 'grok-1',
+      openrouter: {
+        model: 'anthropic/claude-3-opus'
+      }
+    };
+    
+    return this.config.ai ? { ...defaultAISettings, ...this.config.ai } : defaultAISettings;
   }
 
   /**
@@ -288,6 +340,51 @@ export class BotConfigManager {
     }
     this.config.features[featureName] = enabled;
     this.saveConfig(this.config);
+  }
+  
+  /**
+   * بروزرسانی تنظیمات هوش مصنوعی
+   * @param settings تنظیمات جدید
+   */
+  public updateAISettings(settings: Partial<NonNullable<BotConfig['ai']>>): void {
+    if (!this.config.ai) {
+      this.config.ai = {};
+    }
+    
+    // در صورت نیاز به بروزرسانی اطلاعات openrouter که ساختار تودرتو دارد
+    if (settings.openrouter) {
+      this.config.ai.openrouter = { 
+        ...(this.config.ai.openrouter || {}), 
+        ...settings.openrouter 
+      };
+      // حذف openrouter از settings برای جلوگیری از overwrite شدن در خط بعدی
+      const { openrouter, ...restSettings } = settings;
+      this.config.ai = { ...this.config.ai, ...restSettings };
+    } else {
+      this.config.ai = { ...this.config.ai, ...settings };
+    }
+    
+    this.saveConfig(this.config);
+  }
+  
+  /**
+   * تغییر سرویس هوش مصنوعی فعال
+   * @param service نام سرویس
+   */
+  public switchAIService(service: NonNullable<BotConfig['ai']>['service']): void {
+    if (!this.config.ai) {
+      this.config.ai = {};
+    }
+    this.config.ai.service = service;
+    this.saveConfig(this.config);
+  }
+  
+  /**
+   * دریافت سرویس هوش مصنوعی فعال
+   * @returns نام سرویس فعال یا مقدار پیش‌فرض
+   */
+  public getActiveAIService(): string {
+    return this.config.ai?.service || 'huggingface';
   }
 }
 

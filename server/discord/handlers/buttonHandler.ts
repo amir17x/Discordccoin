@@ -33,6 +33,7 @@ import {
   levelsSettingsMenu,
   securitySettingsMenu,
   permissionsSettingsMenu,
+  aiSettingsMenuLegacy,
   loggingSettingsMenu
 } from '../components/adminMenuExtended';
 import { investmentMenu, processInvestment } from '../components/investmentMenu';
@@ -1689,7 +1690,7 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       
       // مدیریت دکمه‌های تنظیمات هوش مصنوعی
       if (action === 'admin_ai_settings') {
-        await aiSettingsMenu(interaction);
+        await aiSettingsMenuLegacy(interaction);
         return;
       }
       
@@ -1702,6 +1703,24 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       // تغییر سرویس هوش مصنوعی به Hugging Face
       if (action === 'admin_switch_to_huggingface') {
         await handleSwitchAIService(interaction, 'huggingface');
+        return;
+      }
+      
+      // تغییر سرویس هوش مصنوعی به Google AI
+      if (action === 'admin_switch_to_googleai') {
+        await handleSwitchAIService(interaction, 'googleai');
+        return;
+      }
+      
+      // تغییر سرویس هوش مصنوعی به OpenRouter
+      if (action === 'admin_switch_to_openrouter') {
+        await handleSwitchAIService(interaction, 'openrouter');
+        return;
+      }
+      
+      // تغییر سرویس هوش مصنوعی به Grok
+      if (action === 'admin_switch_to_grok') {
+        await handleSwitchAIService(interaction, 'grok');
         return;
       }
       
@@ -1797,9 +1816,9 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
           action === 'admin_settings_games' ||
           action === 'admin_settings_clans' ||
           action === 'admin_settings_levels' ||
+          action === 'admin_settings_ai' ||
           action === 'admin_settings_security' ||
           action === 'admin_settings_permissions' ||
-          action === 'admin_settings_ai' ||
           action === 'admin_settings_logging') {
         // تشخیص نوع منوی تنظیمات و فراخوانی تابع مربوطه
         const settingType = action.replace('admin_settings_', '');
@@ -1830,7 +1849,9 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
             await loggingSettingsMenu(interaction);
             break;
           case 'ai':
-            await aiSettingsMenu(interaction);
+            // ارجاع به منوی جدید تنظیمات هوش مصنوعی
+            const aiSettings = require('../components/aiSettingsMenu');
+            await aiSettings.aiSettingsMenu(interaction);
             break;
           default:
             await botSettingsMenu(interaction);

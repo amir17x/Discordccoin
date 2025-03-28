@@ -30,6 +30,13 @@
     "maxStealPerDay": 5
   },
   "ai": {
-    "service": "huggingface"
+    "service": "huggingface",
+    "openaiModel": "gpt-3.5-turbo",
+    "huggingfaceModel": "MBZUAI/LaMini-Flan-T5-783M",
+    "googleModel": "gemini-pro",
+    "grokModel": "grok-1",
+    "openrouter": {
+      "model": "anthropic/claude-3-opus"
+    }
   }
 }

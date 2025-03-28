@@ -10,6 +10,69 @@ const openai = new OpenAI({
 });
 
 /**
+ * کلاس سرویس OpenAI
+ */
+export class OpenAIService {
+  /**
+   * تولید پاسخ با استفاده از مدل OpenAI
+   * @param prompt متن پرامپت
+   * @returns پاسخ تولید شده
+   */
+  async generateResponse(prompt: string): Promise<string> {
+    return generateOpenAIResponse(prompt);
+  }
+  
+  /**
+   * تست سرعت پاسخگویی سرویس OpenAI
+   * @returns زمان پاسخگویی به میلی‌ثانیه یا کد خطا (مقدار منفی)
+   */
+  async pingOpenAI(): Promise<number> {
+    try {
+      if (!OPENAI_API_KEY) {
+        return -401; // خطای احراز هویت
+      }
+      
+      const aiSettings = botConfig.getAISettings();
+      const model = aiSettings.openaiModel || 'gpt-3.5-turbo';
+      const startTime = Date.now();
+      
+      // ارسال یک درخواست کوتاه برای تست سرعت
+      await openai.chat.completions.create({
+        model: model,
+        messages: [
+          {
+            role: "user",
+            content: "سلام"
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 5,
+      });
+      
+      return Date.now() - startTime;
+    } catch (error) {
+      console.error('Error in OpenAI ping test:', error);
+      
+      // تشخیص نوع خطا و برگرداندن کد خطای مناسب
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      if (errorMessage.includes('429') || errorMessage.includes('rate limit')) {
+        return -429; // محدودیت تعداد درخواست
+      } else if (errorMessage.includes('401') || errorMessage.includes('authentication')) {
+        return -401; // خطای احراز هویت
+      } else if (errorMessage.includes('500') || errorMessage.includes('server error')) {
+        return -500; // خطای سرور
+      }
+      
+      return -1; // خطای نامشخص
+    }
+  }
+}
+
+// ایجاد نمونه از سرویس OpenAI برای استفاده در سراسر برنامه
+export const openAIService = new OpenAIService();
+
+/**
  * تولید پاسخ با استفاده از مدل OpenAI
  * @param prompt متن پرامپت
  * @returns پاسخ تولید شده
@@ -22,7 +85,8 @@ export async function generateOpenAIResponse(prompt: string): Promise<string> {
     }
 
     // مدل پیش‌فرض یا مدل تنظیم شده در تنظیمات
-    const model = botConfig.ai?.openaiModel || 'gpt-3.5-turbo';
+    const aiSettings = botConfig.getAISettings();
+    const model = aiSettings.openaiModel || 'gpt-3.5-turbo';
     
     // ارسال درخواست به API
     const response = await openai.chat.completions.create({

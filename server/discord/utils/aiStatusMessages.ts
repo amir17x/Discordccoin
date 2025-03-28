@@ -3,7 +3,7 @@
  * این ماژول برای تولید جملات طنز و سرگرم‌کننده برای نمایش در بخش Watching ربات استفاده می‌شود
  */
 
-import { aiService } from '../services/aiService';
+import { generateAIResponse } from '../services/aiService';
 import { log } from '../../vite';
 
 /**
@@ -73,10 +73,7 @@ export async function generateFunnyStatusMessage(): Promise<string> {
     مهم: فقط جمله نهایی رو بنویس بدون هیچ توضیح اضافه‌ای، و حتماً کوتاه باشد (کمتر از ۵۰ کاراکتر).`;
 
     // دریافت پاسخ از هوش مصنوعی
-    const generatedMessage = await aiService.getAIResponse(prompt, {
-      maxTokens: 100,
-      temperature: 0.9 // خلاقیت بالاتر
-    });
+    const generatedMessage = await generateAIResponse(prompt, "statusMessage");
     
     // پاکسازی پاسخ از کاراکترهای اضافی
     let cleanedMessage = generatedMessage.trim();

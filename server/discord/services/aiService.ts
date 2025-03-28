@@ -1,26 +1,29 @@
-import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import { BotConfigManager, BotConfig } from '../utils/config';
+import fs from 'fs';
 import { botConfig } from '../utils/config';
-import { generateHuggingFaceResponse } from './huggingface';
-import { generateOpenAIResponse } from './chatgpt';
+import { generateOpenAIResponse, openAIService } from './chatgpt';
+import { generateHuggingFaceResponse, huggingFaceService } from './huggingface';
+import { generateGoogleAIResponse, googleAIService } from './googleai';
+import { generateGrokResponse, grokService } from './grok';
+import { generateOpenRouterResponse, openRouterService } from './openrouter';
 
-// دریافت مسیر کنونی فایل
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// مسیر فایل آمار هوش مصنوعی
+const AI_STATS_FILE = path.resolve(process.cwd(), 'ai_stats.json');
 
-// مسیر فایل آمار استفاده از سرویس‌های هوش مصنوعی
-const AI_STATS_FILE = path.join(__dirname, '../../../ai_stats.json');
+// تعریف انواع سرویس‌های هوش مصنوعی
+export type AIService = 'openai' | 'huggingface' | 'googleai' | 'grok' | 'openrouter';
 
-// فرمت داده‌های آماری
+// ساختار داده آمار هوش مصنوعی
 interface AIStats {
-  service: 'openai' | 'huggingface';
+  service: AIService;
   lastUsed: string | null;
   requestCount: number;
   providerStats: {
     openai: number;
     huggingface: number;
+    googleai: number;
+    grok: number;
+    openrouter: number;
   };
   usageCounts: {
     statusMessages: number;
@@ -35,12 +38,15 @@ interface AIStats {
 
 // مقدار پیش‌فرض برای آمار
 const defaultStats: AIStats = {
-  service: botConfig.ai?.service || 'huggingface',
+  service: botConfig.getActiveAIService() as AIService,
   lastUsed: null,
   requestCount: 0,
   providerStats: {
     openai: 0,
-    huggingface: 0
+    huggingface: 0,
+    googleai: 0,
+    grok: 0,
+    openrouter: 0
   },
   usageCounts: {
     statusMessages: 0,
@@ -58,29 +64,18 @@ const defaultStats: AIStats = {
  * @param service نام سرویس جدید
  * @returns موفقیت‌آمیز بودن تغییر سرویس
  */
-export function switchAIProvider(service: 'openai' | 'huggingface'): boolean {
+export function switchAIProvider(service: AIService): boolean {
   try {
-    // بروزرسانی تنظیمات ربات
-    const configManager = new BotConfigManager();
-    
-    if (!botConfig.ai) {
-      botConfig.ai = {
-        service: service,
-        openaiModel: 'gpt-3.5-turbo',
-        huggingfaceModel: 'MBZUAI/LaMini-Flan-T5-783M'
-      };
-    } else {
-      botConfig.ai.service = service;
-    }
-    
-    // ذخیره تنظیمات در فایل
-    configManager.saveConfig();
+    // بروزرسانی تنظیمات ربات با استفاده از متد جدید
+    botConfig.switchAIService(service);
     
     // بروزرسانی آمار
     const stats = loadAIStats();
     stats.service = service;
+    stats.lastUsed = new Date().toISOString();
     saveAIStats(stats);
     
+    console.log(`سرویس هوش مصنوعی به ${service} تغییر یافت.`);
     return true;
   } catch (error) {
     console.error('Error switching AI provider:', error);
@@ -135,10 +130,23 @@ function updateAIStats(
     stats.lastUsed = new Date().toISOString();
     
     // بروزرسانی آمار سرویس
-    if (botConfig.ai?.service === 'openai') {
-      stats.providerStats.openai++;
-    } else {
-      stats.providerStats.huggingface++;
+    const service = botConfig.getActiveAIService() as AIService;
+    switch(service) {
+      case 'openai':
+        stats.providerStats.openai++;
+        break;
+      case 'huggingface':
+        stats.providerStats.huggingface++;
+        break;
+      case 'googleai':
+        stats.providerStats.googleai++;
+        break;
+      case 'grok':
+        stats.providerStats.grok++;
+        break;
+      case 'openrouter':
+        stats.providerStats.openrouter++;
+        break;
     }
     
     // بروزرسانی نوع استفاده
@@ -177,10 +185,24 @@ export async function generateAIResponse(
     let response: string;
     
     // انتخاب سرویس مناسب
-    if (botConfig.ai?.service === 'openai') {
-      response = await generateOpenAIResponse(prompt);
-    } else {
-      response = await generateHuggingFaceResponse(prompt);
+    const aiSettings = botConfig.getAISettings();
+    switch (aiSettings.service) {
+      case 'openai':
+        response = await generateOpenAIResponse(prompt);
+        break;
+      case 'googleai':
+        response = await generateGoogleAIResponse(prompt);
+        break;
+      case 'grok':
+        response = await generateGrokResponse(prompt);
+        break;
+      case 'openrouter':
+        response = await generateOpenRouterResponse(prompt);
+        break;
+      default:
+        // Hugging Face as default
+        response = await generateHuggingFaceResponse(prompt);
+        break;
     }
     
     // محاسبه زمان پاسخگویی
@@ -212,10 +234,24 @@ export async function testAIService(prompt: string = 'سلام. حالت چطو�
     let response: string;
     
     // انتخاب سرویس مناسب
-    if (botConfig.ai?.service === 'openai') {
-      response = await generateOpenAIResponse(prompt);
-    } else {
-      response = await generateHuggingFaceResponse(prompt);
+    const aiSettings = botConfig.getAISettings();
+    switch (aiSettings.service) {
+      case 'openai':
+        response = await generateOpenAIResponse(prompt);
+        break;
+      case 'googleai':
+        response = await generateGoogleAIResponse(prompt);
+        break;
+      case 'grok':
+        response = await generateGrokResponse(prompt);
+        break;
+      case 'openrouter':
+        response = await generateOpenRouterResponse(prompt);
+        break;
+      default:
+        // Hugging Face as default
+        response = await generateHuggingFaceResponse(prompt);
+        break;
     }
     
     // محاسبه زمان پاسخگویی
@@ -235,5 +271,37 @@ export async function testAIService(prompt: string = 'سلام. حالت چطو�
       error: error instanceof Error ? error.message : 'خطای نامشخص',
       latency
     };
+  }
+}
+
+/**
+ * تست سرعت سرویس هوش مصنوعی فعال
+ * @returns زمان پاسخگویی به میلی‌ثانیه یا کد خطا (مقدار منفی)
+ */
+export async function pingCurrentAIService(): Promise<number> {
+  try {
+    // انتخاب سرویس مناسب بر اساس تنظیمات فعلی
+    const service = botConfig.getActiveAIService() as AIService;
+    
+    switch (service) {
+      case 'openai':
+        return await openAIService.pingOpenAI();
+      
+      case 'googleai':
+        return await googleAIService.pingGoogleAI();
+      
+      case 'grok':
+        return await grokService.pingGrok();
+      
+      case 'openrouter':
+        return await openRouterService.pingOpenRouter();
+      
+      case 'huggingface':
+      default:
+        return await huggingFaceService.pingHuggingFace();
+    }
+  } catch (error) {
+    console.error('Error pinging AI service:', error);
+    return -1; // خطای نامشخص
   }
 }
