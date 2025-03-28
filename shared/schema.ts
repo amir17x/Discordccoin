@@ -227,6 +227,19 @@ export const games = pgTable("games", {
   playedAt: timestamp("played_at").defaultNow(),
 });
 
+// Stock News type
+export interface StockNews {
+  content: string;
+  effect: 'positive' | 'negative' | 'neutral';
+  timestamp: Date;
+}
+
+// Stock Price History type
+export interface StockPriceHistory {
+  price: number;
+  timestamp: Date;
+}
+
 // Stocks table
 export const stocks = pgTable("stocks", {
   id: serial("id").primaryKey(),
@@ -244,7 +257,10 @@ export const stocks = pgTable("stocks", {
   sector: text("sector").notNull(),
   totalShares: integer("total_shares").notNull(),
   availableShares: integer("available_shares").notNull(),
+  minPrice: integer("min_price"),
+  maxPrice: integer("max_price"),
   updatedAt: timestamp("updated_at").defaultNow(),
+  news: jsonb("news").$type<StockNews[]>().default([]),
 });
 
 // User Stocks table

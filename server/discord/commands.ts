@@ -5,7 +5,12 @@ import { adminMenu } from '../discord/components/adminMenu';
 import { setupTipSystem, addTipChannel, removeTipChannel, toggleTipChannel, updateTipChannel, updateTipInterval, sendImmediateTip } from './components/tipSystem';
 import { handleGroupGamesMenu } from './components/groupGames';
 import { huggingFaceService } from './services/huggingface';
+import { openAIService } from './services/chatgpt';
+import { googleAIService } from './services/googleai';
+import { grokService } from './services/grok';
+import { openRouterService } from './services/openrouter';
 import { botConfig } from './utils/config';
+import { pingCurrentAIService, generateAIResponse } from './services/aiService';
 
 // Command to display the main menu
 const menu = {
@@ -525,8 +530,8 @@ const ping = {
       const aiService = botConfig.getActiveAIService();
       
       // انجام تست پینگ سرویس فعال هوش مصنوعی
-      const pingAIService = require('./services/aiService').pingCurrentAIService;
-      aiPing = await pingAIService();
+      // استفاده از import شده در بالای فایل
+      aiPing = await pingCurrentAIService();
       
       // نام نمایشی سرویس هوش مصنوعی
       let aiServiceDisplayName = '';
@@ -862,19 +867,50 @@ const hf = {
       // نمایش "در حال تایپ" برای تعامل طولانی مدت
       await interaction.deferReply();
       
-      // بررسی وضعیت اتصال به سرویس Hugging Face قبل از ارسال درخواست
-      const connectionStatus = await huggingFaceService.checkConnectionStatus();
+      // دریافت سرویس فعال هوش مصنوعی و پینگ برای بررسی وضعیت اتصال
+      const activeService = botConfig.getActiveAIService();
+      const aiPing = await pingCurrentAIService();
       
-      // اگر سرویس در دسترس نیست، پیام خطای مناسب را نمایش دهیم
-      if (!connectionStatus.isAvailable) {
+      // تعیین نام نمایشی سرویس هوش مصنوعی فعال
+      let aiServiceDisplayName = '';
+      switch(activeService) {
+        case 'openai': aiServiceDisplayName = 'OpenAI'; break;
+        case 'googleai': aiServiceDisplayName = 'Google AI'; break;
+        case 'grok': aiServiceDisplayName = 'Grok'; break;
+        case 'openrouter': aiServiceDisplayName = 'OpenRouter'; break;
+        case 'huggingface':
+        default: aiServiceDisplayName = 'Hugging Face'; break;
+      }
+      
+      // بررسی وضعیت اتصال بر اساس پینگ
+      if (aiPing < 0) {
+        // تنظیم پیام خطا بر اساس کد پینگ
+        let errorMessage = '';
+        let statusCode = 0;
+        
+        if (aiPing === -429) {
+          errorMessage = `محدودیت استفاده از API ${aiServiceDisplayName} به پایان رسیده است`;
+          statusCode = 429;
+        } else if (aiPing === -401) {
+          errorMessage = `مشکل در احراز هویت API ${aiServiceDisplayName}`;
+          statusCode = 401;
+        } else if (aiPing === -500) {
+          errorMessage = `سرورهای ${aiServiceDisplayName} با مشکل مواجه هستند`;
+          statusCode = 500;
+        } else {
+          errorMessage = `مشکل نامشخص در ارتباط با سرویس هوش مصنوعی ${aiServiceDisplayName}`;
+          statusCode = 400;
+        }
+        
+        // نمایش خطا به کاربر
         const errorEmbed = new EmbedBuilder()
           .setColor('#FF0000') // رنگ قرمز برای خطا
           .setTitle('⚠️ سرویس هوش مصنوعی در دسترس نیست')
-          .setDescription(connectionStatus.message)
+          .setDescription(errorMessage)
           .addFields([
             {
               name: '📝 راه حل پیشنهادی',
-              value: connectionStatus.statusCode === 429 
+              value: statusCode === 429 
                 ? 'سهمیه API به پایان رسیده است. لطفاً با مدیر سیستم تماس بگیرید تا نسبت به شارژ یا تمدید حساب کاربری اقدام نماید.'
                 : 'لطفاً بعداً دوباره تلاش کنید یا با مدیر سیستم تماس بگیرید.'
             }
@@ -885,20 +921,15 @@ const hf = {
           })
           .setTimestamp();
         
-        await interaction.editReply({
-          embeds: [errorEmbed]
-        });
+        await interaction.editReply({ embeds: [errorEmbed] });
         return;
       }
       
       // دریافت پرسش کاربر
       const prompt = interaction.options.getString('prompt');
       
-      // ارسال درخواست به Hugging Face
-      const response = await huggingFaceService.getAIResponse(prompt, {
-        maxTokens: 300, // افزایش طول پاسخ قابل دریافت
-        temperature: 0.7 // تنظیم خلاقیت پاسخ
-      });
+      // ارسال درخواست به سرویس هوش مصنوعی فعال
+      const response = await generateAIResponse(prompt, "aiAssistant");
       
       // بررسی اینکه آیا پاسخ حاوی پیام خطا است
       if (response.startsWith('⚠️')) {
@@ -913,21 +944,17 @@ const hf = {
           })
           .setTimestamp();
         
-        await interaction.editReply({
-          embeds: [errorEmbed]
-        });
+        await interaction.editReply({ embeds: [errorEmbed] });
       } else {
         // ایجاد Embed برای پاسخ با ظاهر جذاب‌تر
         const chatEmbed = new EmbedBuilder()
           .setColor('#8A2BE2') // رنگ بنفش تیره
-          .setTitle('🧠 هوش مصنوعی Ccoin')
+          .setTitle(`🧠 هوش مصنوعی Ccoin (${aiServiceDisplayName})`)
           .setDescription(response)
-          .addFields([
-            {
-              name: '💬 پرسش شما',
-              value: `\`\`\`${prompt.length > 100 ? prompt.substring(0, 100) + '...' : prompt}\`\`\``
-            }
-          ])
+          .addFields([{
+            name: '💬 پرسش شما',
+            value: `\`\`\`${prompt.length > 100 ? prompt.substring(0, 100) + '...' : prompt}\`\`\``
+          }])
           .setFooter({ 
             text: `درخواست توسط: ${interaction.user.username} | با قدرت هوش مصنوعی پیشرفته`,
             iconURL: interaction.user.displayAvatarURL() 
@@ -935,11 +962,9 @@ const hf = {
           .setTimestamp();
         
         // پاسخ به کاربر
-        await interaction.editReply({
-          embeds: [chatEmbed]
-        });
+        await interaction.editReply({ embeds: [chatEmbed] });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in hf command:', error);
       
       // پیام خطای مناسب بر اساس نوع خطا
@@ -949,16 +974,17 @@ const hf = {
       // بررسی نوع خطا
       if (error instanceof Error) {
         const errorStr = error.toString().toLowerCase();
+        const activeService = botConfig.getActiveAIService();
         
         if (errorStr.includes('429') || errorStr.includes('exceeded your current quota')) {
-          errorMessage = '⚠️ محدودیت استفاده از سرویس Hugging Face به پایان رسیده است. لطفاً این موضوع را به مدیر سیستم اطلاع دهید.';
+          errorMessage = `⚠️ محدودیت استفاده از سرویس ${activeService} به پایان رسیده است. لطفاً این موضوع را به مدیر سیستم اطلاع دهید.`;
           errorTitle = '⚠️ محدودیت API به پایان رسیده است';
         } else if (errorStr.includes('401') || errorStr.includes('403') || errorStr.includes('auth')) {
-          errorMessage = '⚠️ خطا در دسترسی به سرویس Hugging Face. کلید API نامعتبر است یا دسترسی ندارد.';
-          errorTitle = '⚠️ خطای احراز هویت در سرویس Hugging Face';
+          errorMessage = `⚠️ خطا در دسترسی به سرویس ${activeService}. کلید API نامعتبر است یا دسترسی ندارد.`;
+          errorTitle = `⚠️ خطای احراز هویت در سرویس ${activeService}`;
         } else if (errorStr.includes('500')) {
-          errorMessage = '⚠️ سرورهای Hugging Face در حال حاضر با مشکل مواجه هستند. لطفاً بعداً دوباره تلاش کنید.';
-          errorTitle = '⚠️ خطای سرور Hugging Face';
+          errorMessage = `⚠️ سرورهای ${activeService} در حال حاضر با مشکل مواجه هستند. لطفاً بعداً دوباره تلاش کنید.`;
+          errorTitle = `⚠️ خطای سرور ${activeService}`;
         }
       }
       
@@ -975,9 +1001,7 @@ const hf = {
       
       try {
         if (interaction.deferred) {
-          await interaction.editReply({
-            embeds: [errorEmbed]
-          });
+          await interaction.editReply({ embeds: [errorEmbed] });
         } else if (!interaction.replied) {
           await interaction.reply({
             embeds: [errorEmbed],

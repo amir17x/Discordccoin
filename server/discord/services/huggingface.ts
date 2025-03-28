@@ -111,14 +111,37 @@ export class HuggingFaceService {
       const startTime = Date.now();
       
       // ارسال یک درخواست کوتاه برای تست سرعت
-      await hf.textGeneration({
-        model: model,
-        inputs: '<s>[INST] سلام [/INST]',
-        parameters: {
-          max_new_tokens: 5,
-          temperature: 0.7,
-        }
-      });
+      // فرمت متفاوت برای مدل‌های مختلف
+      if (model.includes('mpt')) {
+        await hf.textGeneration({
+          model: model,
+          inputs: `<|im_start|>user\nسلام\n<|im_end|>\n<|im_start|>assistant\n`,
+          parameters: {
+            max_new_tokens: 5,
+            temperature: 0.7,
+            return_full_text: false
+          }
+        });
+      } else if (model.includes('bloom')) {
+        await hf.textGeneration({
+          model: model,
+          inputs: "سلام، حالت چطور است؟",
+          parameters: {
+            max_new_tokens: 5,
+            temperature: 0.7,
+            return_full_text: false
+          }
+        });
+      } else {
+        await hf.textGeneration({
+          model: model,
+          inputs: '<s>[INST] سلام [/INST]',
+          parameters: {
+            max_new_tokens: 5,
+            temperature: 0.7,
+          }
+        });
+      }
       
       return Date.now() - startTime;
     } catch (error) {
@@ -159,16 +182,43 @@ export async function generateHuggingFaceResponse(prompt: string): Promise<strin
     const aiSettings = botConfig.getAISettings();
     const model = aiSettings.huggingfaceModel || 'mistralai/Mistral-7B-Instruct-v0.2';
     
-    // تنظیمات درخواست
-    const payload = {
-      inputs: `<s>[INST] ${prompt} [/INST]`,
-      parameters: {
-        max_new_tokens: 500,
-        temperature: 0.7,
-        top_p: 0.9,
-        do_sample: true
-      }
-    };
+    // تنظیمات درخواست با توجه به مدل انتخاب شده
+    let payload;
+    
+    // برخی مدل‌ها به فرمت خاصی نیاز دارند
+    if (model.includes('mpt')) {
+      payload = {
+        inputs: `<|im_start|>user\n${prompt}\n<|im_end|>\n<|im_start|>assistant\n`,
+        parameters: {
+          max_new_tokens: 250,
+          temperature: 0.7,
+          top_p: 0.9,
+          do_sample: true,
+          return_full_text: false
+        }
+      };
+    } else if (model.includes('bloom')) {
+      payload = {
+        inputs: prompt,
+        parameters: {
+          max_new_tokens: 50,
+          temperature: 0.9,
+          top_p: 0.9,
+          do_sample: true,
+          return_full_text: false
+        }
+      };
+    } else {
+      payload = {
+        inputs: `<s>[INST] ${prompt} [/INST]`,
+        parameters: {
+          max_new_tokens: 250, // مقدار کمتر از 250 برای جلوگیری از خطا
+          temperature: 0.7,
+          top_p: 0.9,
+          do_sample: true
+        }
+      };
+    }
     
     console.log(`Sending request to Hugging Face (model: ${model})`);
     

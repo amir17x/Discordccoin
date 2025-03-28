@@ -32,7 +32,7 @@
   "ai": {
     "service": "huggingface",
     "openaiModel": "gpt-3.5-turbo",
-    "huggingfaceModel": "MBZUAI/LaMini-Flan-T5-783M",
+    "huggingfaceModel": "bigscience/bloom-560m",
     "googleModel": "gemini-pro",
     "grokModel": "grok-1",
     "openrouter": {

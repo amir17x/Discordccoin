@@ -11,7 +11,7 @@ import {
 } from 'discord.js';
 import { storage } from '../../storage';
 import { StockData, UserStockData } from '@shared/schema';
-import { getAIStockAnalysis, getAIStockPricePrediction, generateMarketManipulationNews } from '../utils/aiMarketDynamics';
+import { getAIStockAnalysis, generateMarketManipulationNews } from '../utils/aiMarketDynamics';
 
 /**
  * سیستم معاملات سهام
@@ -526,7 +526,8 @@ export async function processStockAnalysis(
 
     // دریافت تحلیل هوشمند از هوش مصنوعی
     const analysis = await getAIStockAnalysis(stockId);
-    const prediction = await getAIStockPricePrediction(stockId);
+    // قابلیت پیش‌بینی قیمت فعلا غیرفعال شده
+    const prediction = "پیش‌بینی قیمت برای نسخه بعدی در دسترس خواهد بود";
 
     const embed = new EmbedBuilder()
       .setColor('#5865F2')

@@ -10,6 +10,7 @@ import { getLogger, LogType } from './utils/logger';
 import { botConfig } from './utils/config';
 import { setupTipSystem } from './components/tipSystem';
 import { setupAutoStatusUpdater } from './utils/aiStatusMessages';
+import { setupAIMarketDynamics } from './utils/aiMarketDynamics';
 
 // کش برای برهم‌کنش‌های پرتکرار
 type InteractionCache = {
@@ -170,6 +171,15 @@ export async function initDiscordBot() {
       } catch (aiError) {
         console.error('Error setting up AI status messages:', aiError);
         log('خطا در راه‌اندازی سیستم جملات طنز هوش مصنوعی: ' + aiError, 'error');
+      }
+      
+      // راه‌اندازی سیستم هوش مصنوعی بازار سهام
+      try {
+        setupAIMarketDynamics(60); // هر 60 دقیقه به‌روزرسانی می‌شود
+        log('سیستم هوش مصنوعی بازار سهام با موفقیت راه‌اندازی شد', 'discord');
+      } catch (marketError) {
+        console.error('Error setting up AI market dynamics:', marketError);
+        log('خطا در راه‌اندازی سیستم هوش مصنوعی بازار سهام: ' + marketError, 'error');
       }
     });
 

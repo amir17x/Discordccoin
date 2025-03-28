@@ -306,6 +306,11 @@ export interface IStorage {
   // Stock operations
   getAllStocks(): Promise<StockData[]>;
   getUserStocks(userId: number): Promise<UserStockData[]>;
+  getStockById(stockId: number): Promise<StockData | null>;
+  updateStockPrice(stockId: number, newPrice: number): Promise<boolean>;
+  addStockNews(stockId: number, news: StockNews): Promise<boolean>;
+  getStockNews(stockId: number, limit?: number): Promise<StockNews[]>;
+  getStockPriceHistory(stockId: number, limit?: number): Promise<StockPriceHistory[]>;
   
   // Pet operations
   getUserPets(userId: number): Promise<Pet[]>;
@@ -1290,6 +1295,87 @@ export class MemStorage implements IStorage {
   
   async getUserStocks(userId: number): Promise<UserStockData[]> {
     return this.userStocks.get(userId) || [];
+  }
+  
+  async getStockById(stockId: number): Promise<StockData | null> {
+    const stock = this.stocks.get(stockId);
+    return stock || null;
+  }
+  
+  async updateStockPrice(stockId: number, newPrice: number): Promise<boolean> {
+    const stock = this.stocks.get(stockId);
+    if (!stock) return false;
+    
+    // نگهداری قیمت قبلی قبل از به‌روزرسانی
+    const oldPrice = stock.currentPrice;
+    stock.previousPrice = oldPrice;
+    stock.currentPrice = newPrice;
+    stock.updatedAt = new Date();
+    
+    // به‌روزرسانی تاریخچه قیمت (اگر موجود باشد)
+    if (!stock.priceHistory) {
+      stock.priceHistory = [];
+    }
+    
+    // افزودن قیمت جدید به تاریخچه
+    const priceHistoryEntry = {
+      timestamp: new Date().toISOString(),
+      price: newPrice
+    };
+    
+    // افزودن به ابتدای آرایه برای دسترسی سریع‌تر به موارد جدید
+    stock.priceHistory.unshift(priceHistoryEntry);
+    
+    // محدود کردن تعداد رکوردهای تاریخچه به 30 مورد
+    if (stock.priceHistory.length > 30) {
+      stock.priceHistory = stock.priceHistory.slice(0, 30);
+    }
+    
+    this.stocks.set(stockId, stock);
+    return true;
+  }
+  
+  async addStockNews(stockId: number, news: StockNews): Promise<boolean> {
+    const stock = this.stocks.get(stockId);
+    if (!stock) return false;
+    
+    // ساخت آرایه اخبار اگر وجود نداشت
+    if (!stock.news) {
+      stock.news = [];
+    }
+    
+    // افزودن خبر جدید به آرایه اخبار
+    stock.news.unshift(news);
+    
+    // محدود کردن تعداد اخبار به 10 مورد
+    if (stock.news.length > 10) {
+      stock.news = stock.news.slice(0, 10);
+    }
+    
+    this.stocks.set(stockId, stock);
+    return true;
+  }
+  
+  async getStockNews(stockId: number, limit: number = 5): Promise<StockNews[]> {
+    const stock = this.stocks.get(stockId);
+    if (!stock || !stock.news) return [];
+    
+    // برگرداندن آخرین اخبار با محدودیت تعداد
+    return stock.news.slice(0, limit);
+  }
+  
+  async getStockPriceHistory(stockId: number, limit: number = 30): Promise<StockPriceHistory[]> {
+    const stock = this.stocks.get(stockId);
+    if (!stock || !stock.priceHistory) return [];
+    
+    // تبدیل تاریخچه قیمت به فرمت مورد نظر
+    const priceHistory: StockPriceHistory[] = stock.priceHistory.map(item => ({
+      price: item.price,
+      timestamp: new Date(item.timestamp)
+    }));
+    
+    // برگرداندن تاریخچه قیمت با محدودیت تعداد
+    return priceHistory.slice(0, limit);
   }
 
   async getUserAchievements(userId: number): Promise<{achievement: Achievement, userAchievement: UserAchievement}[]> {

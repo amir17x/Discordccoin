@@ -8,7 +8,7 @@
 import { generateAIResponse } from '../services/aiService';
 import { log } from '../../vite';
 import { storage } from '../../storage';
-import { Stock } from '../../../shared/schema';
+import { StockData } from '../../../shared/schema';
 
 // وضعیت‌های مختلف بازار
 const marketConditions = [
@@ -71,7 +71,7 @@ export async function setupAIMarketDynamics(updateIntervalMinutes: number = 60) 
       try {
         await updateStockPrices();
       } catch (e) {
-        log(`خطا در به‌روزرسانی قیمت سهام: ${e}`, 'error');
+        log(`خطا در به‌روزرسانی قیمت‌های سهام: ${e}`, 'error');
       }
     }, updateIntervalMinutes * 60 * 1000);
     
@@ -106,7 +106,12 @@ export async function setupAIMarketDynamics(updateIntervalMinutes: number = 60) 
  */
 async function initializeStockParams() {
   try {
+    // استفاده از متد موجود در storage
     const stocks = await storage.getAllStocks();
+    if (!stocks || stocks.length === 0) {
+      log('هیچ سهمی در سیستم یافت نشد.', 'error');
+      return;
+    }
     
     stocks.forEach(stock => {
       // تنظیم پارامترهای اختصاصی هر سهم
@@ -146,6 +151,10 @@ async function updateStockPrices() {
     
     // دریافت اطلاعات سهام موجود
     const stocks = await storage.getAllStocks();
+    if (!stocks || stocks.length === 0) {
+      log('هیچ سهمی برای به‌روزرسانی یافت نشد.', 'error');
+      return;
+    }
     
     // به‌روزرسانی قیمت هر سهم
     for (const stock of stocks) {
@@ -167,21 +176,42 @@ async function updateStockPrices() {
       let priceChange = calculatePriceChange(stock, params);
       
       // محاسبه قیمت جدید
-      let newPrice = stock.price * (1 + priceChange);
+      let newPrice = stock.currentPrice * (1 + priceChange);
       
       // بررسی محدودیت‌ها و اعمال قیمت جدید
-      newPrice = Math.max(newPrice, stock.minPrice || 50); // حداقل قیمت ۵۰
-      newPrice = Math.min(newPrice, stock.maxPrice || 100000); // حداکثر قیمت ۱۰۰،۰۰۰
+      const minPrice = stock.minPrice || 50; // حداقل قیمت ۵۰
+      const maxPrice = stock.maxPrice || 100000; // حداکثر قیمت ۱۰۰،۰۰۰
+      
+      newPrice = Math.max(newPrice, minPrice);
+      newPrice = Math.min(newPrice, maxPrice);
       
       // گرد کردن قیمت به عدد صحیح
       newPrice = Math.round(newPrice);
       
-      // ذخیره قیمت جدید
-      await storage.updateStockPrice(stock.id, newPrice);
-      
-      // ثبت تغییر قیمت در لاگ
-      const changePercent = ((newPrice - stock.price) / stock.price) * 100;
-      log(`قیمت سهام ${stock.name} از ${stock.price} به ${newPrice} تغییر کرد (${changePercent.toFixed(2)}%)`, 'info');
+      try {
+        // استفاده از روش updateStock موجود در storage
+        if (storage.updateStock) {
+          await storage.updateStock(stock.id, {
+            previousPrice: stock.currentPrice, 
+            currentPrice: newPrice
+          });
+        } 
+        // جایگزین: استفاده از updateStockPrice اگر موجود باشد
+        else if (storage.updateStockPrice) {
+          await storage.updateStockPrice(stock.id, newPrice);
+        }
+        else {
+          log(`متد به‌روزرسانی قیمت سهام یافت نشد.`, 'error');
+          continue;
+        }
+        
+        // ثبت تغییر قیمت در لاگ
+        const changePercent = ((newPrice - stock.currentPrice) / stock.currentPrice) * 100;
+        log(`قیمت سهام ${stock.name} از ${stock.currentPrice} به ${newPrice} تغییر کرد (${changePercent.toFixed(2)}%)`, 'info');
+      } 
+      catch (updateError) {
+        log(`خطا در به‌روزرسانی قیمت سهام ${stock.name}: ${updateError}`, 'error');
+      }
     }
     
     log(`قیمت ${stocks.length} سهام به‌روزرسانی شد. وضعیت بازار: ${globalMarketCondition}`, 'info');
@@ -230,7 +260,7 @@ function updateGlobalMarketCondition() {
  * @param params پارامترهای بازار برای این سهم
  * @returns درصد تغییر قیمت (مثال 0.05 برای 5 درصد افزایش)
  */
-function calculatePriceChange(stock: Stock, params: StockMarketParams): number {
+function calculatePriceChange(stock: StockData, params: StockMarketParams): number {
   // 1. تأثیر وضعیت کلی بازار
   const marketEffect = getMarketEffect(globalMarketCondition) * params.marketSensitivity;
   
@@ -286,6 +316,10 @@ async function generateRandomStockNews() {
   try {
     // دریافت لیست سهام
     const stocks = await storage.getAllStocks();
+    if (!stocks || stocks.length === 0) {
+      log('هیچ سهمی برای تولید خبر یافت نشد.', 'error');
+      return;
+    }
     
     // انتخاب یک سهم تصادفی
     const randomStock = stocks[Math.floor(Math.random() * stocks.length)];
@@ -329,15 +363,42 @@ async function generateRandomStockNews() {
         params.relatedNews.shift();
       }
       
-      // ذخیره اخبار در دیتابیس
-      await storage.addStockNews(randomStock.id, {
-        content: newsContent,
-        effect: impactValue > 0 ? 'positive' : 'negative',
-        timestamp: new Date()
-      });
-      
-      log(`خبر جدید برای ${randomStock.name}: ${newsContent}`, 'info');
-      log(`تأثیر خبر: ${(impactValue * 100).toFixed(2)}%`, 'info');
+      try {
+        // سازگاری با سیستم فعلی: تلاش برای استفاده از addStockNews اگر موجود باشد
+        if (storage.addStockNews) {
+          await storage.addStockNews(randomStock.id, {
+            content: newsContent,
+            effect: impactValue > 0 ? 'positive' : 'negative',
+            timestamp: new Date()
+          });
+        } else {
+          // جایگزین: به‌روزرسانی خود entity در صورتی که addStockNews موجود نباشد
+          if (storage.updateStock) {
+            await storage.updateStock(randomStock.id, {
+              // اگر خبر قبلی وجود داشته باشد، آن را حفظ کرده و خبر جدید را اضافه کن
+              news: randomStock.news 
+                ? [...randomStock.news, {
+                    content: newsContent,
+                    effect: impactValue > 0 ? 'positive' : 'negative',
+                    timestamp: new Date()
+                  }]
+                : [{
+                    content: newsContent,
+                    effect: impactValue > 0 ? 'positive' : 'negative',
+                    timestamp: new Date()
+                  }]
+            });
+          } else {
+            log(`متد افزودن خبر سهام یافت نشد.`, 'warning');
+          }
+        }
+        
+        log(`خبر جدید برای ${randomStock.name}: ${newsContent}`, 'info');
+        log(`تأثیر خبر: ${(impactValue * 100).toFixed(2)}%`, 'info');
+      }
+      catch (newsError) {
+        log(`خطا در ذخیره خبر برای سهام ${randomStock.name}: ${newsError}`, 'error');
+      }
     }
     
   } catch (error) {
@@ -356,8 +417,8 @@ export async function generateMarketManipulationNews(
   requestType: 'buy' | 'sell'
 ): Promise<string | null> {
   try {
-    // دریافت اطلاعات سهام
-    const stock = await storage.getStockById(stockId);
+    // دریافت اطلاعات سهام با استفاده از متد موجود
+    const stock = storage.getStock ? await storage.getStock(stockId) : null;
     if (!stock) return null;
     
     // تنظیم پارامترهای درخواست
@@ -398,20 +459,45 @@ export async function generateMarketManipulationNews(
         params.relatedNews.shift();
       }
       
-      // ذخیره اخبار در دیتابیس
-      await storage.addStockNews(stock.id, {
-        content: newsContent,
-        effect: impactValue > 0 ? 'positive' : 'negative',
-        timestamp: new Date()
-      });
-      
-      log(`خبر دستکاری بازار برای ${stock.name}: ${newsContent}`, 'info');
-      log(`تأثیر خبر: ${(impactValue * 100).toFixed(2)}%`, 'info');
-      
-      return newsContent;
+      try {
+        // سازگاری با سیستم فعلی: تلاش برای استفاده از addStockNews اگر موجود باشد
+        if (storage.addStockNews) {
+          await storage.addStockNews(stock.id, {
+            content: newsContent,
+            effect: impactValue > 0 ? 'positive' : 'negative',
+            timestamp: new Date()
+          });
+        } else {
+          // جایگزین: به‌روزرسانی خود entity در صورتی که addStockNews موجود نباشد
+          if (storage.updateStock) {
+            await storage.updateStock(stock.id, {
+              // اگر خبر قبلی وجود داشته باشد، آن را حفظ کرده و خبر جدید را اضافه کن
+              news: stock.news 
+                ? [...stock.news, {
+                    content: newsContent,
+                    effect: impactValue > 0 ? 'positive' : 'negative',
+                    timestamp: new Date()
+                  }]
+                : [{
+                    content: newsContent,
+                    effect: impactValue > 0 ? 'positive' : 'negative',
+                    timestamp: new Date()
+                  }]
+            });
+          }
+        }
+        
+        log(`خبر دستکاری بازار برای ${stock.name}: ${newsContent}`, 'info');
+        log(`تأثیر خبر: ${(impactValue * 100).toFixed(2)}%`, 'info');
+        
+        return newsContent;
+      }
+      catch (newsError) {
+        log(`خطا در ذخیره خبر دستکاری بازار برای سهام ${stock.name}: ${newsError}`, 'error');
+      }
     }
     
-    return null;
+    return newsContent; // حتی اگر ذخیره نشد، خبر را برگردان
   } catch (error) {
     log(`خطا در تولید خبر دستکاری بازار: ${error}`, 'error');
     return null;
@@ -425,21 +511,19 @@ export async function generateMarketManipulationNews(
  */
 export async function getAIStockAnalysis(stockId: number): Promise<string | null> {
   try {
-    // دریافت اطلاعات سهام
-    const stock = await storage.getStockById(stockId);
+    // دریافت اطلاعات سهام با استفاده از متد موجود
+    const stock = storage.getStock ? await storage.getStock(stockId) : null;
     if (!stock) return null;
-    
-    // دریافت تاریخچه قیمت
-    const priceHistory = await storage.getStockPriceHistory(stockId);
     
     // بررسی روند قیمت
     let trend = 'نامشخص';
     let performance = 'نامشخص';
     
-    if (priceHistory && priceHistory.length >= 2) {
+    // استفاده از تاریخچه قیمت داخلی به جای فراخوانی API جداگانه
+    if (stock.priceHistory && stock.priceHistory.length >= 2) {
       // محاسبه تغییرات قیمت در دوره
-      const latestPrice = priceHistory[priceHistory.length - 1].price;
-      const oldestPrice = priceHistory[0].price;
+      const latestPrice = stock.priceHistory[0].price;  // آخرین قیمت
+      const oldestPrice = stock.priceHistory[stock.priceHistory.length - 1].price;  // قدیمی‌ترین قیمت
       const changePercent = ((latestPrice - oldestPrice) / oldestPrice) * 100;
       
       // تعیین روند
@@ -457,14 +541,11 @@ export async function getAIStockAnalysis(stockId: number): Promise<string | null
       else performance = 'بسیار ضعیف';
     }
     
-    // دریافت اخبار اخیر
-    const recentNews = await storage.getStockNews(stockId, 3);
-    
     // تهیه متن اخبار برای پرامپت
     let newsText = '';
-    if (recentNews && recentNews.length > 0) {
+    if (stock.news && stock.news.length > 0) {
       newsText = 'اخبار اخیر:\n';
-      recentNews.forEach((news, index) => {
+      stock.news.slice(0, 3).forEach((news, index) => {
         newsText += `${index + 1}. ${news.content} (تأثیر: ${news.effect === 'positive' ? 'مثبت' : 'منفی'})\n`;
       });
     } else {
@@ -479,7 +560,7 @@ export async function getAIStockAnalysis(stockId: number): Promise<string | null
     const prompt = `یک تحلیل کوتاه و تخصصی سهام به فارسی (حداکثر ۲۵۰ کاراکتر) برای شرکت "${stock.name}" که در زمینه "${stock.description}" فعالیت می‌کند ارائه بده.
     
     اطلاعات مهم:
-    - قیمت فعلی: ${stock.price} Ccoin
+    - قیمت فعلی: ${stock.currentPrice} Ccoin
     - روند قیمت: ${trend}
     - عملکرد: ${performance}
     - ${marketConditionText}
@@ -497,86 +578,7 @@ export async function getAIStockAnalysis(stockId: number): Promise<string | null
     
     return analysis;
   } catch (error) {
-    log(`خطا در تحلیل هوشمند سهام: ${error}`, 'error');
-    return null;
-  }
-}
-
-/**
- * دریافت پیش‌بینی قیمت آینده یک سهام
- * @param stockId شناسه سهام
- * @returns پیش‌بینی قیمت آینده
- */
-export async function getAIStockPricePrediction(stockId: number): Promise<string | null> {
-  try {
-    // دریافت اطلاعات سهام
-    const stock = await storage.getStockById(stockId);
-    if (!stock) return null;
-    
-    // دریافت پارامترهای بازار
-    const params = stockMarketParams.get(stockId);
-    if (!params) return null;
-    
-    // پیش‌بینی درصد تغییر قیمت در دوره آینده
-    let predictionFactor = 0;
-    
-    // 1. اثر وضعیت کلی بازار در آینده
-    const marketEffect = getMarketEffect(globalMarketCondition) * params.marketSensitivity * 3;
-    
-    // 2. اثر نرخ رشد پایه سهم (با ضریب تقویت‌شده)
-    const baseEffect = params.baseGrowthRate * 2;
-    
-    // 3. اثر آخرین خبر (اگر وجود داشته باشد)
-    let newsEffect = 0;
-    if (params.lastNewsImpact) {
-      const hoursElapsed = (Date.now() - params.lastNewsImpact.timestamp) / (1000 * 60 * 60);
-      if (hoursElapsed < 12) {
-        newsEffect = params.lastNewsImpact.impact * 2;
-      }
-    }
-    
-    // محاسبه ضریب نهایی پیش‌بینی
-    predictionFactor = marketEffect + baseEffect + newsEffect;
-    
-    // محاسبه قیمت پیش‌بینی شده
-    const predictedPrice = Math.round(stock.price * (1 + predictionFactor));
-    
-    // تعیین جهت تغییر قیمت
-    let directionText = 'ثابت بماند';
-    let confidenceLevel = 'کم';
-    
-    if (predictionFactor > 0.15) {
-      directionText = 'افزایش قابل توجهی داشته باشد';
-      confidenceLevel = 'بالا';
-    } else if (predictionFactor > 0.05) {
-      directionText = 'افزایش یابد';
-      confidenceLevel = 'متوسط';
-    } else if (predictionFactor > -0.05) {
-      directionText = 'تقریباً ثابت بماند';
-      confidenceLevel = 'متوسط';
-    } else if (predictionFactor > -0.15) {
-      directionText = 'کاهش یابد';
-      confidenceLevel = 'متوسط';
-    } else {
-      directionText = 'کاهش قابل توجهی داشته باشد';
-      confidenceLevel = 'بالا';
-    }
-    
-    // ساخت متن پیش‌بینی
-    const prediction = `
-پیش‌بینی قیمت سهام ${stock.name}:
-
-با توجه به تحلیل‌های انجام شده، انتظار می‌رود قیمت این سهم در روزهای آینده ${directionText}.
-قیمت فعلی: ${stock.price} Ccoin
-قیمت پیش‌بینی شده: حدود ${predictedPrice} Ccoin
-تغییر پیش‌بینی شده: ${(predictionFactor * 100).toFixed(1)}%
-سطح اطمینان پیش‌بینی: ${confidenceLevel}
-
-توجه: این پیش‌بینی صرفاً بر اساس تحلیل هوشمند بوده و قطعیت ندارد.`;
-    
-    return prediction;
-  } catch (error) {
-    log(`خطا در پیش‌بینی قیمت سهام: ${error}`, 'error');
+    log(`خطا در تولید تحلیل هوشمند سهام: ${error}`, 'error');
     return null;
   }
 }
