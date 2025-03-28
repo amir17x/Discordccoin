@@ -13,6 +13,41 @@ import {
 } from 'discord.js';
 import { storage } from '../../storage';
 
+// تابع کمکی برای تبدیل ID شغل به نام نمایشی
+export function getJobNameById(jobId: string): string {
+  switch(jobId) {
+    case 'miner': return '⛏️ کارگر معدن';
+    case 'trader': return '💹 تاجر';
+    case 'wizard': return '🧙‍♂️ جادوگر اقتصادی';
+    default: return jobId;
+  }
+}
+
+// تابع کمکی برای تشخیص زمان دریافت بعدی
+export function getTimeUntilNextCollection(job: any): string {
+  const now = new Date();
+  const lastCollected = new Date(job.lastCollected);
+  const nextCollectionTime = new Date(lastCollected.getTime() + (job.cyclePeriod * 60 * 60 * 1000));
+  
+  if (now >= nextCollectionTime) {
+    return '✅ آماده دریافت!';
+  }
+  
+  const timeLeft = nextCollectionTime.getTime() - now.getTime();
+  const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
+  const minutesLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+  
+  return `${hoursLeft} ساعت و ${minutesLeft} دقیقه`;
+}
+
+// تابع کمکی برای تشخیص امکان دریافت درآمد
+export function canCollectIncome(job: any): boolean {
+  const now = new Date();
+  const lastCollected = new Date(job.lastCollected);
+  const nextCollectionTime = new Date(lastCollected.getTime() + (job.cyclePeriod * 60 * 60 * 1000));
+  return now >= nextCollectionTime;
+}
+
 // Function to create and send the economy menu
 // تابع نمایش مودال انتقال سکه به کاربران دیگر
 export async function transferUser(interaction: ButtonInteraction) {
@@ -573,91 +608,6 @@ export async function economyMenu(
 
     // گرفتن اطلاعات کاربر در مورد شغل
     const userJob = await storage.getUserJob(user.id);
-    
-    // تابع کمکی برای تبدیل ID شغل به نام نمایشی
-    function getJobNameById(jobId: string): string {
-      switch(jobId) {
-        case 'miner': return '⛏️ کارگر معدن';
-        case 'trader': return '💹 تاجر';
-        case 'wizard': return '🧙‍♂️ جادوگر اقتصادی';
-        default: return jobId;
-      }
-    }
-
-    // تابع کمکی برای تشخیص زمان دریافت بعدی
-    function getTimeUntilNextCollection(job: any): string {
-      const now = new Date();
-      const lastCollected = new Date(job.lastCollected);
-      const nextCollectionTime = new Date(lastCollected.getTime() + (job.cyclePeriod * 60 * 60 * 1000));
-      
-      if (now >= nextCollectionTime) {
-        return '✅ آماده دریافت!';
-      }
-      
-      const timeLeft = nextCollectionTime.getTime() - now.getTime();
-      const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
-      const minutesLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-      
-      return `${hoursLeft} ساعت و ${minutesLeft} دقیقه`;
-    }
-
-    // تابع کمکی برای تشخیص امکان دریافت درآمد
-    function canCollectIncome(job: any): boolean {
-      const now = new Date();
-      const lastCollected = new Date(job.lastCollected);
-      const nextCollectionTime = new Date(lastCollected.getTime() + (job.cyclePeriod * 60 * 60 * 1000));
-      return now >= nextCollectionTime;
-    }
-    
-    // منوی مدیریت شغل
-    const jobEmbed = new EmbedBuilder()
-      .setColor('#FF6B21')
-      .setTitle('💼 سیستم شغل Ccoin')
-      .setDescription('با انتخاب شغل مناسب، درآمد منظم کسب کنید و در شغل خود پیشرفت کنید')
-      .setThumbnail('https://img.icons8.com/fluency/48/briefcase.png') // آیکون برای بخش شغل
-      .addFields(
-        { name: '👔 وضعیت فعلی', value: '```' + (userJob ? 
-          `شغل: ${getJobNameById(userJob.jobType)}\n` +
-          `سطح: ${userJob.level}\n` + 
-          `تجربه: ${userJob.xp}/${userJob.xpRequired}\n` +
-          `درآمد: ${userJob.income} Ccoin هر ${userJob.cyclePeriod} ساعت\n` +
-          `آخرین دریافت: ${new Date(userJob.lastCollected).toLocaleDateString('fa-IR')}`
-          : 'شما هنوز شغلی انتخاب نکرده‌اید!') + '```', inline: false },
-        { name: '⏱️ زمان تا دریافت بعدی', value: userJob ? 
-          getTimeUntilNextCollection(userJob) : 'ابتدا یک شغل انتخاب کنید', inline: true },
-        { name: '📊 پیشرفت سطح', value: userJob ? 
-          `${userJob.xp}/${userJob.xpRequired} XP (${Math.floor((userJob.xp/userJob.xpRequired)*100)}%)` : '-', inline: true },
-        { name: '💡 نکته ویژه', value: 'با هر بار دریافت درآمد، 10 XP کسب می‌کنید. هر 50 XP به یک سطح ارتقا می‌یابید و درآمد شما 10% افزایش می‌یابد.' }
-      )
-      .setFooter({ text: `${interaction.user.username} | تاریخ استخدام: ${userJob ? new Date(userJob.hiredAt).toLocaleDateString('fa-IR') : 'بدون شغل'}` })
-      .setTimestamp();
-
-    // دکمه‌های منوی شغل
-    const jobRow1 = new ActionRowBuilder<ButtonBuilder>()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId('job_select')
-          .setLabel('🔍 انتخاب شغل')
-          .setStyle(ButtonStyle.Primary),
-        new ButtonBuilder()
-          .setCustomId('job_collect')
-          .setLabel('💰 دریافت درآمد')
-          .setStyle(ButtonStyle.Success)
-          .setDisabled(!userJob || !canCollectIncome(userJob)),
-        new ButtonBuilder()
-          .setCustomId('job_status')
-          .setLabel('📊 وضعیت شغلی')
-          .setStyle(ButtonStyle.Secondary)
-          .setDisabled(!userJob)
-      );
-
-    const jobRow2 = new ActionRowBuilder<ButtonBuilder>()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId('economy')
-          .setLabel('🔙 بازگشت')
-          .setStyle(ButtonStyle.Secondary)
-      );
 
     // Check if this is a specific button interaction
     if (interaction.isButton()) {
