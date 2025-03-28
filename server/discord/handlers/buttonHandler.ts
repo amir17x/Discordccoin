@@ -1,4 +1,4 @@
-import { ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuInteraction } from 'discord.js';
 import { storage } from '../../storage';
 import { Transaction } from '@shared/schema';
 import { mainMenu } from '../components/mainMenu';
@@ -18,6 +18,7 @@ import {
   handleQuizAnswer 
 } from '../components/groupGames';
 import { handleSwitchAIService, handleTestAIService, handleViewAIStatus } from './aiHandlers';
+import { showAISettingsMenu, handleModelSelect, handleStyleSelect, handleTestAI, handleResetAI, handleAIHelp } from '../components/aiSettingsMenu';
 import { 
   itemManagementMenu,
   questManagementMenu,
@@ -1911,7 +1912,7 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       
       // مدیریت دکمه‌های تنظیمات هوش مصنوعی
       if (action === 'admin_ai_settings') {
-        await aiSettingsMenuLegacy(interaction);
+        await showAISettingsMenu(interaction);
         return;
       }
       
@@ -2071,8 +2072,7 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
             break;
           case 'ai':
             // ارجاع به منوی جدید تنظیمات هوش مصنوعی
-            const aiSettings = require('../components/aiSettingsMenu');
-            await aiSettings.aiSettingsMenu(interaction);
+            await showAISettingsMenu(interaction);
             break;
           default:
             await botSettingsMenu(interaction);
@@ -2112,6 +2112,36 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     // Handle default log channel setting
     if (action === 'admin_set_default_log') {
       await handleSetDefaultLogChannel(interaction);
+      return;
+    }
+    
+    // رسیدگی به انتخاب مدل هوش مصنوعی
+    if (action === 'ai_model_select') {
+      await handleModelSelect(interaction as StringSelectMenuInteraction);
+      return;
+    }
+    
+    // رسیدگی به انتخاب سبک پاسخگویی هوش مصنوعی
+    if (action === 'ai_style_select') {
+      await handleStyleSelect(interaction as StringSelectMenuInteraction);
+      return;
+    }
+    
+    // رسیدگی به دکمه تست هوش مصنوعی
+    if (action === 'ai_test') {
+      await handleTestAI(interaction);
+      return;
+    }
+    
+    // رسیدگی به دکمه بازنشانی تنظیمات هوش مصنوعی
+    if (action === 'ai_reset') {
+      await handleResetAI(interaction);
+      return;
+    }
+    
+    // رسیدگی به دکمه راهنمای هوش مصنوعی
+    if (action === 'ai_help') {
+      await handleAIHelp(interaction);
       return;
     }
     

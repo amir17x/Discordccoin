@@ -1,4 +1,5 @@
 import { botConfig } from '../utils/config';
+import { createGeminiPrompt, createShortGeminiPrompt } from '../utils/botGeminiPrompt';
 
 // کلید Google AI API
 const GOOGLE_AI_API_KEY = process.env.GOOGLE_AI_API_KEY || '';
@@ -79,13 +80,13 @@ export async function generateGoogleAIResponse(prompt: string): Promise<string> 
     // URL API - استفاده از نسخه v1 به جای v1beta
     const apiUrl = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${GOOGLE_AI_API_KEY}`;
     
-    // تنظیمات درخواست با بهینه‌سازی
+    // تنظیمات درخواست با بهینه‌سازی و راهنمای Gemini
     const requestBody = {
       contents: [
         {
           parts: [
             {
-              text: `شما یک دستیار هوشمند فارسی‌زبان هستید. پاسخ‌های شما باید خلاصه و مفید باشند و از زبان فارسی استفاده کنید. سعی کنید پاسخ‌های طنزآمیز و سرگرم‌کننده بدهید.\n\n${prompt}`
+              text: createGeminiPrompt(prompt)
             }
           ]
         }

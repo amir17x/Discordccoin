@@ -16,7 +16,7 @@ import { storage } from '../../storage';
 import { botConfig } from '../utils/config';
 import { getItemEmoji } from '../utils/helpers';
 // مدیریت هوش مصنوعی
-export { aiSettingsMenu } from './aiSettingsMenu';
+import { showAISettingsMenu } from './aiSettingsMenu';
 
 /**
  * منوی مدیریت آیتم‌ها
@@ -1511,15 +1511,9 @@ export async function generalSettingsMenu(interaction: ButtonInteraction | ChatI
  * @param interaction تعامل کاربر
  */
 export async function aiSettingsMenuLegacy(interaction: ButtonInteraction | ChatInputCommandInteraction) {
-  try {
-    // بررسی دسترسی ادمین
-    if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
-      await interaction.reply({
-        content: '⛔ شما دسترسی لازم برای استفاده از این بخش را ندارید!',
-        ephemeral: true
-      });
-      return;
-    }
+  // این تابع صرفا برای حفظ سازگاری با عقب است و به تابع جدید منتقل می‌شود
+  await showAISettingsMenu(interaction);
+}
 
     // دریافت تنظیمات فعلی
     const config = botConfig.getConfig();
