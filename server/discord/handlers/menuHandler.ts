@@ -7,6 +7,7 @@ import { handleRobbery } from '../components/robberyMenu';
 import { processInvestment } from '../components/investmentMenu';
 import { processBuyStock, processSellStock } from '../components/stocksMenu';
 import { processBuyLotteryTicket } from '../components/lotteryMenu';
+import { economyMenu } from '../components/economyMenu';
 
 // Select menu handler function
 export async function handleSelectMenuInteraction(interaction: StringSelectMenuInteraction) {
@@ -32,10 +33,23 @@ export async function handleSelectMenuInteraction(interaction: StringSelectMenuI
             await handleNumberGuess(interaction, 'start');
             break;
           default:
-            await interaction.reply({
-              content: 'This game is coming soon!',
-              ephemeral: true
+            await interaction.update({
+              content: '⚠️ این بازی به زودی در دسترس قرار خواهد گرفت!',
+              components: []
             });
+            
+            // Auto-disappear after 5 seconds
+            setTimeout(async () => {
+              try {
+                // Show the games menu again
+                await interaction.editReply({
+                  content: null,
+                  components: interaction.message.components
+                });
+              } catch (error) {
+                console.error('Error refreshing menu after error message:', error);
+              }
+            }, 5000);
         }
         return;
       }
@@ -161,25 +175,49 @@ export async function handleSelectMenuInteraction(interaction: StringSelectMenuI
       return;
     }
 
-    // If no handler matched, reply with an error
-    await interaction.reply({
-      content: 'Sorry, I could not process that selection. Please try again.',
-      ephemeral: true
+    // If no handler matched, update with an error
+    await interaction.update({
+      content: '⚠️ متأسفانه قادر به پردازش انتخاب شما نیستم. لطفاً مجدداً تلاش کنید.',
+      components: []
     });
+    
+    // Auto-disappear after 5 seconds and show the original menu
+    setTimeout(async () => {
+      try {
+        await interaction.editReply({
+          content: null,
+          components: interaction.message.components
+        });
+      } catch (error) {
+        console.error('Error refreshing menu after error message:', error);
+      }
+    }, 5000);
 
   } catch (error) {
     console.error('Error handling select menu interaction:', error);
     try {
       if (interaction.replied || interaction.deferred) {
         await interaction.followUp({
-          content: 'There was an error while processing your request!',
+          content: '❌ خطایی در پردازش درخواست شما رخ داد. لطفاً مجدداً تلاش کنید.',
           ephemeral: true
         });
       } else {
-        await interaction.reply({
-          content: 'There was an error while processing your request!',
-          ephemeral: true
+        await interaction.update({
+          content: '❌ خطایی در پردازش درخواست شما رخ داد. لطفاً مجدداً تلاش کنید.',
+          components: []
         });
+        
+        // Auto-disappear after 5 seconds and show the original menu
+        setTimeout(async () => {
+          try {
+            await interaction.editReply({
+              content: null,
+              components: interaction.message.components
+            });
+          } catch (error) {
+            console.error('Error refreshing menu after error message:', error);
+          }
+        }, 5000);
       }
     } catch (replyError) {
       console.error('Error replying to select menu interaction:', replyError);
@@ -193,18 +231,39 @@ async function handleDeposit(interaction: StringSelectMenuInteraction, amount: n
     const user = await storage.getUserByDiscordId(interaction.user.id);
     
     if (!user) {
-      await interaction.reply({
-        content: 'You need to create an account first. Use the /menu command.',
-        ephemeral: true
+      await interaction.update({
+        content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.',
+        components: []
       });
+      
+      // Auto-disappear after 5 seconds and show economy menu
+      setTimeout(async () => {
+        try {
+          const updatedUser = await storage.getUserByDiscordId(interaction.user.id);
+          if (updatedUser) {
+            await economyMenu(interaction, true);
+          }
+        } catch (error) {
+          console.error('Error refreshing menu after error message:', error);
+        }
+      }, 5000);
       return;
     }
     
     if (user.wallet < amount) {
-      await interaction.reply({
-        content: `You don't have enough Ccoin in your wallet. You have ${user.wallet} Ccoin.`,
-        ephemeral: true
+      await interaction.update({
+        content: `⚠️ موجودی کیف پول شما کافی نیست. موجودی فعلی: ${user.wallet} سکه`,
+        components: []
       });
+      
+      // Auto-disappear after 5 seconds and show economy menu
+      setTimeout(async () => {
+        try {
+          await economyMenu(interaction, true);
+        } catch (error) {
+          console.error('Error refreshing menu after error message:', error);
+        }
+      }, 5000);
       return;
     }
     
@@ -214,16 +273,35 @@ async function handleDeposit(interaction: StringSelectMenuInteraction, amount: n
     
     await storage.transferToBank(user.id, amount);
     
-    await interaction.reply({
+    // Show success message with auto-disappear functionality
+    await interaction.update({
       content: `✅ مبلغ ${depositAmount} سکه با موفقیت به حساب بانکی شما واریز شد. (کارمزد: ${fee} سکه)`,
-      ephemeral: true
+      components: []
     });
+    
+    // Auto-disappear after 5 seconds and refresh economy menu
+    setTimeout(async () => {
+      try {
+        await economyMenu(interaction, true);
+      } catch (error) {
+        console.error('Error refreshing economy menu after deposit:', error);
+      }
+    }, 5000);
   } catch (error) {
     console.error('Error in deposit handler:', error);
-    await interaction.reply({
-      content: 'Sorry, there was an error processing your deposit!',
-      ephemeral: true
+    await interaction.update({
+      content: '❌ متأسفانه در پردازش واریز شما خطایی رخ داد!',
+      components: []
     });
+    
+    // Auto-disappear after 5 seconds and show economy menu
+    setTimeout(async () => {
+      try {
+        await economyMenu(interaction, true);
+      } catch (error) {
+        console.error('Error refreshing menu after error message:', error);
+      }
+    }, 5000);
   }
 }
 
@@ -233,32 +311,72 @@ async function handleWithdraw(interaction: StringSelectMenuInteraction, amount: 
     const user = await storage.getUserByDiscordId(interaction.user.id);
     
     if (!user) {
-      await interaction.reply({
-        content: 'You need to create an account first. Use the /menu command.',
-        ephemeral: true
+      await interaction.update({
+        content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.',
+        components: []
       });
+      
+      // Auto-disappear after 5 seconds and show economy menu
+      setTimeout(async () => {
+        try {
+          const updatedUser = await storage.getUserByDiscordId(interaction.user.id);
+          if (updatedUser) {
+            await economyMenu(interaction, true);
+          }
+        } catch (error) {
+          console.error('Error refreshing menu after error message:', error);
+        }
+      }, 5000);
       return;
     }
     
     if (user.bank < amount) {
-      await interaction.reply({
-        content: `You don't have enough Ccoin in your bank. You have ${user.bank} Ccoin.`,
-        ephemeral: true
+      await interaction.update({
+        content: `⚠️ موجودی بانکی شما کافی نیست. موجودی فعلی: ${user.bank} سکه`,
+        components: []
       });
+      
+      // Auto-disappear after 5 seconds and show economy menu
+      setTimeout(async () => {
+        try {
+          await economyMenu(interaction, true);
+        } catch (error) {
+          console.error('Error refreshing menu after error message:', error);
+        }
+      }, 5000);
       return;
     }
     
     await storage.transferToWallet(user.id, amount);
     
-    await interaction.reply({
+    // Show success message with auto-disappear functionality
+    await interaction.update({
       content: `✅ مبلغ ${amount} سکه با موفقیت از حساب بانکی شما برداشت شد.`,
-      ephemeral: true
+      components: []
     });
+    
+    // Auto-disappear after 5 seconds and refresh economy menu
+    setTimeout(async () => {
+      try {
+        await economyMenu(interaction, true);
+      } catch (error) {
+        console.error('Error refreshing economy menu after withdraw:', error);
+      }
+    }, 5000);
   } catch (error) {
     console.error('Error in withdraw handler:', error);
-    await interaction.reply({
-      content: 'Sorry, there was an error processing your withdrawal!',
-      ephemeral: true
+    await interaction.update({
+      content: '❌ متأسفانه در پردازش برداشت شما خطایی رخ داد!',
+      components: []
     });
+    
+    // Auto-disappear after 5 seconds and show economy menu
+    setTimeout(async () => {
+      try {
+        await economyMenu(interaction, true);
+      } catch (error) {
+        console.error('Error refreshing menu after error message:', error);
+      }
+    }, 5000);
   }
 }
