@@ -24,6 +24,20 @@ import {
   UserStock,
 } from "@shared/schema";
 
+// اضافه کردن مدل‌های جدید
+import { 
+  QuizQuestion, 
+  QuizQuestionModel 
+} from './models/QuizQuestion';
+import { 
+  GameSession, 
+  GameSessionModel 
+} from './models/GameSession';
+import { 
+  QuizReviewer, 
+  QuizReviewerModel 
+} from './models/QuizReviewer';
+
 // تعریف تایپ تنظیمات کانال نکات
 export interface TipChannelSettings {
   guildId: string;       // آیدی سرور
@@ -197,6 +211,36 @@ export interface IStorage {
   getTipChannelSettings(guildId: string): Promise<TipChannelSettings | undefined>;
   setTipChannelSettings(settings: TipChannelSettings): Promise<boolean>;
   getAllActiveTipChannelSettings(): Promise<TipChannelSettings[]>;
+  
+  // Quiz Question operations
+  saveQuizQuestion(question: QuizQuestion): Promise<QuizQuestion>;
+  getQuizQuestion(questionId: string): Promise<QuizQuestion | undefined>;
+  getApprovedQuizQuestions(category?: string, difficulty?: 'easy' | 'medium' | 'hard', limit?: number): Promise<QuizQuestion[]>;
+  getPendingQuizQuestions(limit?: number): Promise<QuizQuestion[]>;
+  approveQuizQuestion(questionId: string, reviewerId: string): Promise<QuizQuestion | undefined>;
+  rejectQuizQuestion(questionId: string, reviewerId: string, reason?: string): Promise<boolean>;
+  getUserSubmittedQuestions(userId: string): Promise<QuizQuestion[]>;
+  
+  // Quiz Reviewer operations
+  addQuizReviewer(reviewer: QuizReviewer): Promise<QuizReviewer>;
+  removeQuizReviewer(userId: string): Promise<boolean>;
+  getAllQuizReviewers(): Promise<QuizReviewer[]>;
+  getActiveQuizReviewers(): Promise<QuizReviewer[]>;
+  isQuizReviewer(userId: string): Promise<boolean>;
+  appointQuizReviewer(userId: string, username: string, appointedBy: string): Promise<QuizReviewer>;
+  getQuizReviewerByUserId(userId: string): Promise<QuizReviewer | undefined>;
+  
+  // Game Session operations
+  createGameSession(gameSession: GameSession): Promise<GameSession>;
+  updateGameSession(sessionId: string, updates: Partial<GameSession>): Promise<GameSession | undefined>;
+  getGameSession(sessionId: string): Promise<GameSession | undefined>;
+  getActiveGameSessionInChannel(channelId: string): Promise<GameSession | undefined>;
+  getAllActiveGameSessions(): Promise<GameSession[]>;
+  getActiveGameSessions(channelId?: string): Promise<GameSession[]>;
+  deleteGameSession(sessionId: string): Promise<boolean>;
+  addPlayerToGameSession(sessionId: string, playerId: string): Promise<GameSession | undefined>;
+  removePlayerFromGameSession(sessionId: string, playerId: string): Promise<GameSession | undefined>;
+  endGameSession(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -224,6 +268,11 @@ export class MemStorage implements IStorage {
   
   // تنظیمات کانال نکات
   private tipChannelSettings: Map<string, TipChannelSettings> = new Map(); // کلید: guildId
+  
+  // ذخیره سازی داده‌های بازی گروهی
+  private quizQuestions: Map<string, QuizQuestion> = new Map(); // کلید: id
+  private quizReviewers: Map<string, QuizReviewer> = new Map(); // کلید: userId
+  private gameSessions: Map<string, GameSession> = new Map(); // کلید: id
   
   private currentLoanId = 1;
   private currentJobId = 1;
@@ -2807,6 +2856,1089 @@ export class MemStorage implements IStorage {
     
     return activeSettings;
   }
+  
+  // Quiz Question operations
+  async saveQuizQuestion(question: QuizQuestion): Promise<QuizQuestion> {
+    if (!question.id) {
+      question.id = `q_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    }
+    
+    if (!question.createdAt) {
+      question.createdAt = new Date();
+    }
+    
+    this.quizQuestions.set(question.id, question);
+    return question;
+  }
+  
+  async getQuizQuestionById(id: string): Promise<QuizQuestion | undefined> {
+    return this.quizQuestions.get(id);
+  }
+  
+  async getApprovedQuizQuestions(limit: number = 100): Promise<QuizQuestion[]> {
+    const approvedQuestions = Array.from(this.quizQuestions.values())
+      .filter(q => q.approved)
+      .sort(() => Math.random() - 0.5); // Randomize questions
+    
+    return approvedQuestions.slice(0, limit);
+  }
+  
+  async getPendingQuizQuestions(limit: number = 100): Promise<QuizQuestion[]> {
+    const pendingQuestions = Array.from(this.quizQuestions.values())
+      .filter(q => !q.approved)
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()); // Oldest first
+    
+    return pendingQuestions.slice(0, limit);
+  }
+  
+  async approveQuizQuestion(id: string, reviewerId: string): Promise<boolean> {
+    const question = this.quizQuestions.get(id);
+    if (!question) return false;
+    
+    question.approved = true;
+    question.approvedBy = reviewerId;
+    
+    // Update reviewer stats
+    const reviewer = this.quizReviewers.get(reviewerId);
+    if (reviewer) {
+      reviewer.totalReviewed += 1;
+      reviewer.totalApproved += 1;
+      reviewer.lastActivity = new Date();
+    }
+    
+    return true;
+  }
+  
+  async rejectQuizQuestion(id: string, reviewerId: string, reason?: string): Promise<boolean> {
+    const question = this.quizQuestions.get(id);
+    if (!question) return false;
+    
+    // Instead of deleting, we could mark as rejected and keep for records
+    this.quizQuestions.delete(id);
+    
+    // Update reviewer stats
+    const reviewer = this.quizReviewers.get(reviewerId);
+    if (reviewer) {
+      reviewer.totalReviewed += 1;
+      reviewer.totalRejected += 1;
+      reviewer.lastActivity = new Date();
+    }
+    
+    return true;
+  }
+  
+  // Quiz Reviewer operations
+  async getQuizReviewers(): Promise<QuizReviewer[]> {
+    return Array.from(this.quizReviewers.values());
+  }
+  
+  async getQuizReviewerByUserId(userId: string): Promise<QuizReviewer | undefined> {
+    return this.quizReviewers.get(userId);
+  }
+  
+  async appointQuizReviewer(userId: string, username: string, appointedBy: string): Promise<QuizReviewer> {
+    const now = new Date();
+    
+    const reviewer: QuizReviewer = {
+      userId,
+      username,
+      appointedAt: now,
+      appointedBy,
+      totalReviewed: 0,
+      totalApproved: 0,
+      totalRejected: 0,
+      isActive: true,
+      lastActivity: now
+    };
+    
+    this.quizReviewers.set(userId, reviewer);
+    return reviewer;
+  }
+  
+  async removeQuizReviewer(userId: string): Promise<boolean> {
+    return this.quizReviewers.delete(userId);
+  }
+  
+  // Game Session operations
+  async createGameSession(session: GameSession): Promise<GameSession> {
+    if (!session.id) {
+      session.id = `gs_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    }
+    
+    if (!session.createdAt) {
+      session.createdAt = new Date();
+    }
+    
+    this.gameSessions.set(session.id, session);
+    return session;
+  }
+  
+  async getGameSessionById(id: string): Promise<GameSession | undefined> {
+    return this.gameSessions.get(id);
+  }
+  
+  async getActiveGameSessions(channelId?: string): Promise<GameSession[]> {
+    let activeSessions = Array.from(this.gameSessions.values())
+      .filter(s => s.status === 'active' || s.status === 'waiting');
+    
+    if (channelId) {
+      activeSessions = activeSessions.filter(s => s.channelId === channelId);
+    }
+    
+    return activeSessions;
+  }
+  
+  async updateGameSession(id: string, updates: Partial<GameSession>): Promise<GameSession | undefined> {
+    const session = this.gameSessions.get(id);
+    if (!session) return undefined;
+    
+    const updatedSession = { ...session, ...updates };
+    this.gameSessions.set(id, updatedSession);
+    
+    return updatedSession;
+  }
+  
+  async endGameSession(id: string): Promise<boolean> {
+    const session = this.gameSessions.get(id);
+    if (!session) return false;
+    
+    session.status = 'ended';
+    session.endedAt = new Date();
+    
+    return true;
+  }
 }
 
-export const storage = new MemStorage();
+// مدل‌های MongoDB
+import UserModel from './models/User';
+import ClanModel from './models/Clan';
+import TipChannelModel from './models/TipChannel';
+import QuizQuestionModel from './models/QuizQuestion';
+import QuizReviewerModel from './models/QuizReviewer';
+import GameSessionModel from './models/GameSession';
+
+export class MongoStorage implements IStorage {
+  // User operations
+  async getUser(id: number): Promise<User | undefined> {
+    try {
+      // ابتدا با استفاده از فیلد id جستجو می‌کنیم
+      let user = await UserModel.findOne({ _id: id });
+      
+      // اگر پیدا نشد، سعی می‌کنیم با id عددی جستجو کنیم
+      if (!user) {
+        user = await UserModel.findOne({ id });
+      }
+      
+      if (!user) return undefined;
+      
+      // تبدیل سند به ساختاری که با تایپ User مطابقت دارد
+      return this.convertMongoUserToUser(user);
+    } catch (error) {
+      console.error('Error getting user from MongoDB:', error);
+      return undefined;
+    }
+  }
+
+  async getUserByDiscordId(discordId: string): Promise<User | undefined> {
+    try {
+      const user = await UserModel.findOne({ discordId });
+      if (!user) return undefined;
+      return this.convertMongoUserToUser(user);
+    } catch (error) {
+      console.error('Error getting user by Discord ID from MongoDB:', error);
+      return undefined;
+    }
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    try {
+      // تنظیم داده‌های پیش‌فرض کاربر
+      const now = new Date();
+      const newUser = new UserModel({
+        discordId: insertUser.discordId,
+        username: insertUser.username,
+        wallet: 500, // مقدار اولیه در کیف پول
+        bank: 0,
+        crystals: 0,
+        economyLevel: 1,
+        // سایر فیلدها با مقادیر پیش‌فرض تنظیم می‌شوند
+      });
+      
+      const savedUser = await newUser.save();
+      return this.convertMongoUserToUser(savedUser);
+    } catch (error) {
+      console.error('Error creating user in MongoDB:', error);
+      // در صورت خطا، به MemStorage برمی‌گردیم
+      return memStorage.createUser(insertUser);
+    }
+  }
+
+  // متد کمکی برای تبدیل سند مانگو به ساختار User
+  private convertMongoUserToUser(mongoUser: any): User {
+    // تمام فیلدهای موجود در User را به شکل پیش‌فرض تنظیم می‌کنیم
+    const user: Partial<User> = {
+      id: mongoUser._id,
+      discordId: mongoUser.discordId,
+      username: mongoUser.username,
+      displayName: mongoUser.displayName || null,
+      wallet: mongoUser.wallet || 0,
+      bank: mongoUser.bank || 0,
+      crystals: mongoUser.crystals || 0,
+      economyLevel: mongoUser.economyLevel || 1,
+      points: mongoUser.points || 0,
+      level: mongoUser.level || 1,
+      experience: mongoUser.experience || 0,
+      lastDaily: mongoUser.lastDaily || null,
+      lastWeekly: mongoUser.lastWeekly || null,
+      lastMonthly: mongoUser.lastMonthly || null,
+      lastRob: mongoUser.lastRob || null,
+      lastWork: mongoUser.lastWork || null,
+      lastWheelSpin: mongoUser.lastWheelSpin || null,
+      inventory: mongoUser.inventory || {},
+      dailyStreak: mongoUser.dailyStreak || 0,
+      achievements: mongoUser.achievements || [],
+      itemsEquipped: mongoUser.itemsEquipped || [],
+      isBot: mongoUser.isBot || false,
+      isBanned: mongoUser.isBanned || false,
+      isMuted: mongoUser.isMuted || false,
+      joinedAt: mongoUser.joinedAt || new Date(),
+      lastActivity: mongoUser.lastActivity || new Date(),
+      reputation: mongoUser.reputation || 0,
+      energyPoints: mongoUser.energyPoints || 100,
+      lastEnergyRefill: mongoUser.lastEnergyRefill || null,
+      xpBooster: mongoUser.xpBooster || {
+        active: false,
+        multiplier: 1,
+        expiresAt: null
+      },
+      coinBooster: mongoUser.coinBooster || {
+        active: false,
+        multiplier: 1,
+        expiresAt: null
+      },
+      nickname: mongoUser.nickname || null,
+      avatarURL: mongoUser.avatarURL || null,
+      roles: mongoUser.roles || [],
+      badges: mongoUser.badges || [],
+      skillPoints: mongoUser.skillPoints || 0,
+      marketplaceListings: mongoUser.marketplaceListings || [],
+      claimedRewards: mongoUser.claimedRewards || [],
+      dailyGifts: mongoUser.dailyGifts || {
+        giftsGiven: {},
+        giftsReceived: {}
+      },
+      friendshipActivities: mongoUser.friendshipActivities || [],
+      isVIP: mongoUser.isVIP || false,
+      premiumUntil: mongoUser.premiumUntil || null,
+      vipTier: mongoUser.vipTier || 0,
+      stockPortfolio: mongoUser.stockPortfolio || [],
+      clanId: mongoUser.clanId || null,
+      clanRole: mongoUser.clanRole || null,
+      messages: mongoUser.messages || 0,
+      commands: mongoUser.commands || 0,
+      warnings: mongoUser.warnings || [],
+      notes: mongoUser.notes || null,
+      totalGamesPlayed: mongoUser.totalGamesPlayed || 0,
+      totalGamesWon: mongoUser.totalGamesWon || 0,
+      transactions: mongoUser.transactions || [],
+      transferStats: mongoUser.transferStats || {
+        dailyAmount: 0,
+        lastReset: new Date(),
+        recipients: {}
+      },
+      createdAt: mongoUser.createdAt || new Date()
+    };
+    
+    // اطمینان حاصل می‌کنیم که تمام فیلدهای نیاز شده در User وجود دارد
+    return user as User;
+  }
+
+  // سایر متدها با الگوی مشابه پیاده‌سازی می‌شوند
+  // در ابتدا، می‌توانیم تنها متدهای مهم را پیاده‌سازی کنیم
+  // و برای بقیه از توابع MemStorage استفاده کنیم
+
+  async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
+    try {
+      const user = await UserModel.findOneAndUpdate({ _id: id }, updates, { new: true });
+      if (!user) return undefined;
+      return this.convertMongoUserToUser(user);
+    } catch (error) {
+      console.error('Error updating user in MongoDB:', error);
+      return memStorage.updateUser(id, updates);
+    }
+  }
+
+  // برای سایر متدهای مهم، از memStorage استفاده می‌کنیم
+  // در آینده می‌توان این متدها را نیز با MongoDB پیاده‌سازی کرد
+  async getAllUsers(limit?: number): Promise<User[]> {
+    try {
+      const query = UserModel.find();
+      if (limit) {
+        query.limit(limit);
+      }
+      const users = await query.exec();
+      return users.map(user => this.convertMongoUserToUser(user));
+    } catch (error) {
+      console.error('Error getting all users from MongoDB:', error);
+      return memStorage.getAllUsers(limit);
+    }
+  }
+
+  async getUserCount(): Promise<number> {
+    try {
+      return await UserModel.countDocuments();
+    } catch (error) {
+      console.error('Error getting user count from MongoDB:', error);
+      return memStorage.getUserCount();
+    }
+  }
+  
+  // اضافه کردن متدهای مورد نیاز برای پنل مدیریت
+  async getAllItems(): Promise<Item[]> {
+    try {
+      const items = await ItemModel.find();
+      return items.map(item => ({
+        id: item.id,
+        name: item.name,
+        type: item.type,
+        description: item.description,
+        price: item.price,
+        crystalPrice: item.crystalPrice,
+        emoji: item.emoji,
+        duration: item.duration,
+        rarity: item.rarity,
+        effects: item.effects,
+        category: item.category
+      }));
+    } catch (error) {
+      console.error('Error getting all items from MongoDB:', error);
+      return memStorage.getAllItems();
+    }
+  }
+  
+  async getItem(itemId: number): Promise<Item | undefined> {
+    try {
+      const item = await ItemModel.findOne({ id: itemId });
+      if (!item) return undefined;
+      return {
+        id: item.id,
+        name: item.name,
+        type: item.type,
+        description: item.description,
+        price: item.price,
+        crystalPrice: item.crystalPrice,
+        emoji: item.emoji,
+        duration: item.duration,
+        rarity: item.rarity,
+        effects: item.effects,
+        category: item.category
+      };
+    } catch (error) {
+      console.error(`Error getting item ${itemId} from MongoDB:`, error);
+      return memStorage.getItem(itemId);
+    }
+  }
+  
+  async getAllQuests(): Promise<Quest[]> {
+    try {
+      const quests = await QuestModel.find();
+      return quests.map(quest => ({
+        id: quest.id,
+        title: quest.title,
+        description: quest.description,
+        type: quest.type,
+        requirement: quest.requirement,
+        targetAmount: quest.targetAmount,
+        reward: quest.reward,
+        category: quest.category,
+        active: quest.active,
+        minLevel: quest.minLevel
+      }));
+    } catch (error) {
+      console.error('Error getting all quests from MongoDB:', error);
+      return memStorage.getAllQuests();
+    }
+  }
+  
+  async getAllClans(): Promise<Clan[]> {
+    try {
+      const clans = await ClanModel.find();
+      return clans.map(clan => ({
+        id: clan.id,
+        name: clan.name,
+        description: clan.description,
+        ownerId: clan.ownerId,
+        bank: clan.bank,
+        level: clan.level,
+        experience: clan.experience || 0,
+        memberCount: clan.memberCount,
+        warWins: clan.warWins || 0,
+        warLosses: clan.warLosses || 0,
+        createdAt: clan.createdAt,
+        coLeaderIds: clan.coLeaderIds || [],
+        memberIds: clan.memberIds || [],
+        joinRequests: clan.joinRequests || [],
+        maxMembers: clan.maxMembers || 10,
+        lastActivity: clan.lastActivity,
+        color: clan.color,
+        icon: clan.icon,
+        banner: clan.banner
+      }));
+    } catch (error) {
+      console.error('Error getting all clans from MongoDB:', error);
+      return memStorage.getAllClans();
+    }
+  }
+  
+  async getClan(clanId: number): Promise<Clan | undefined> {
+    try {
+      const clan = await ClanModel.findOne({ id: clanId });
+      if (!clan) return undefined;
+      return {
+        id: clan.id,
+        name: clan.name,
+        description: clan.description,
+        ownerId: clan.ownerId,
+        bank: clan.bank,
+        level: clan.level,
+        experience: clan.experience || 0,
+        memberCount: clan.memberCount,
+        warWins: clan.warWins || 0,
+        warLosses: clan.warLosses || 0,
+        createdAt: clan.createdAt,
+        coLeaderIds: clan.coLeaderIds || [],
+        memberIds: clan.memberIds || [],
+        joinRequests: clan.joinRequests || [],
+        maxMembers: clan.maxMembers || 10,
+        lastActivity: clan.lastActivity,
+        color: clan.color,
+        icon: clan.icon,
+        banner: clan.banner
+      };
+    } catch (error) {
+      console.error(`Error getting clan ${clanId} from MongoDB:`, error);
+      return memStorage.getClan(clanId);
+    }
+  }
+  
+  async updateClan(clanId: number, updates: Partial<Clan>): Promise<Clan | undefined> {
+    try {
+      const clan = await ClanModel.findOneAndUpdate({ id: clanId }, updates, { new: true });
+      if (!clan) return undefined;
+      return {
+        id: clan.id,
+        name: clan.name,
+        description: clan.description,
+        ownerId: clan.ownerId,
+        bank: clan.bank,
+        level: clan.level,
+        experience: clan.experience || 0,
+        memberCount: clan.memberCount,
+        warWins: clan.warWins || 0,
+        warLosses: clan.warLosses || 0,
+        createdAt: clan.createdAt,
+        coLeaderIds: clan.coLeaderIds || [],
+        memberIds: clan.memberIds || [],
+        joinRequests: clan.joinRequests || [],
+        maxMembers: clan.maxMembers || 10,
+        lastActivity: clan.lastActivity,
+        color: clan.color,
+        icon: clan.icon,
+        banner: clan.banner
+      };
+    } catch (error) {
+      console.error(`Error updating clan ${clanId} in MongoDB:`, error);
+      return memStorage.updateClan(clanId, updates);
+    }
+  }
+
+  async getUserTransactions(userId: number): Promise<Transaction[]> {
+    return memStorage.getUserTransactions(userId);
+  }
+
+  async addToWallet(userId: number, amount: number): Promise<User | undefined> {
+    try {
+      // سعی کنید با _id پیدا کنید
+      let user = await UserModel.findOne({ _id: userId });
+      
+      // اگر پیدا نشد، با id عددی امتحان کنید
+      if (!user) {
+        user = await UserModel.findOne({ id: userId });
+      }
+      
+      // اگر همچنان پیدا نشد، با UserModel.findById امتحان کنید
+      if (!user) {
+        try {
+          user = await UserModel.findById(userId);
+        } catch (e) {
+          console.log('Error in findById:', e);
+          // خطا را نادیده بگیرید و ادامه دهید
+        }
+      }
+      
+      if (!user) {
+        console.log(`No user found with id ${userId} in MongoDB`);
+        return memStorage.addToWallet(userId, amount);
+      }
+      
+      user.wallet += amount;
+      
+      console.log(`Adding ${amount} to wallet of user ${user.username} (${user.discordId})`);
+      
+      await user.save();
+      return this.convertMongoUserToUser(user);
+    } catch (error) {
+      console.error('Error adding to wallet in MongoDB:', error);
+      return memStorage.addToWallet(userId, amount);
+    }
+  }
+
+  async addToBank(userId: number, amount: number): Promise<User | undefined> {
+    try {
+      // سعی کنید با _id پیدا کنید
+      let user = await UserModel.findOne({ _id: userId });
+      
+      // اگر پیدا نشد، با id عددی امتحان کنید
+      if (!user) {
+        user = await UserModel.findOne({ id: userId });
+      }
+      
+      // اگر همچنان پیدا نشد، با UserModel.findById امتحان کنید
+      if (!user) {
+        try {
+          user = await UserModel.findById(userId);
+        } catch (e) {
+          // خطا را نادیده بگیرید و ادامه دهید
+        }
+      }
+      
+      if (!user) {
+        console.log(`No user found with id ${userId} in MongoDB`);
+        return memStorage.addToBank(userId, amount);
+      }
+      
+      user.bank += amount;
+      
+      console.log(`Adding ${amount} to bank of user ${user.username} (${user.discordId})`);
+      
+      await user.save();
+      return this.convertMongoUserToUser(user);
+    } catch (error) {
+      console.error('Error adding to bank in MongoDB:', error);
+      return memStorage.addToBank(userId, amount);
+    }
+  }
+
+  async transferToBank(userId: number, amount: number): Promise<User | undefined> {
+    try {
+      // سعی کنید با _id پیدا کنید
+      let user = await UserModel.findOne({ _id: userId });
+      
+      // اگر پیدا نشد، با id عددی امتحان کنید
+      if (!user) {
+        user = await UserModel.findOne({ id: userId });
+      }
+      
+      // اگر همچنان پیدا نشد، با UserModel.findById امتحان کنید
+      if (!user) {
+        try {
+          user = await UserModel.findById(userId);
+        } catch (e) {
+          // خطا را نادیده بگیرید و ادامه دهید
+        }
+      }
+      
+      if (!user) {
+        console.log(`No user found with id ${userId} in MongoDB`);
+        return memStorage.transferToBank(userId, amount);
+      }
+      
+      if (user.wallet < amount) {
+        return memStorage.transferToBank(userId, amount);
+      }
+      
+      user.wallet -= amount;
+      user.bank += amount;
+      
+      console.log(`Transferred ${amount} from wallet to bank for user ${user.username} (${user.discordId})`);
+      
+      await user.save();
+      return this.convertMongoUserToUser(user);
+    } catch (error) {
+      console.error('Error transferring to bank in MongoDB:', error);
+      return memStorage.transferToBank(userId, amount);
+    }
+  }
+
+  async transferToWallet(userId: number, amount: number): Promise<User | undefined> {
+    try {
+      // سعی کنید با _id پیدا کنید
+      let user = await UserModel.findOne({ _id: userId });
+      
+      // اگر پیدا نشد، با id عددی امتحان کنید
+      if (!user) {
+        user = await UserModel.findOne({ id: userId });
+      }
+      
+      // اگر همچنان پیدا نشد، با UserModel.findById امتحان کنید
+      if (!user) {
+        try {
+          user = await UserModel.findById(userId);
+        } catch (e) {
+          // خطا را نادیده بگیرید و ادامه دهید
+        }
+      }
+      
+      if (!user) {
+        console.log(`No user found with id ${userId} in MongoDB`);
+        return memStorage.transferToWallet(userId, amount);
+      }
+      
+      if (user.bank < amount) {
+        return memStorage.transferToWallet(userId, amount);
+      }
+      
+      user.bank -= amount;
+      user.wallet += amount;
+      
+      console.log(`Transferred ${amount} from bank to wallet for user ${user.username} (${user.discordId})`);
+      
+      await user.save();
+      return this.convertMongoUserToUser(user);
+    } catch (error) {
+      console.error('Error transferring to wallet in MongoDB:', error);
+      return memStorage.transferToWallet(userId, amount);
+    }
+  }
+
+  // سایر متدها را می‌توان به تدریج پیاده‌سازی کرد
+  // برای جلوگیری از قطع عملکرد برنامه، ابتدا متدهای مهم را پیاده‌سازی می‌کنیم
+
+  // برای سایر متدها، از نسخه MemStorage استفاده می‌کنیم
+  // این امکان را می‌دهد که در آینده به تدریج به MongoDB منتقل شوند
+  async addCrystals(userId: number, amount: number): Promise<User | undefined> {
+    return memStorage.addCrystals(userId, amount);
+  }
+
+  async transferCoin(fromUserId: number, toUserId: number, amount: number): Promise<boolean> {
+    return memStorage.transferCoin(fromUserId, toUserId, amount);
+  }
+
+  // ... سایر متدهای IStorage که فعلاً از memStorage استفاده می‌کنند
+  async getTipChannelSettings(guildId: string): Promise<TipChannelSettings | undefined> {
+    try {
+      const settings = await TipChannelModel.findOne({ guildId });
+      if (!settings) return undefined;
+      
+      return {
+        guildId: settings.guildId,
+        channelId: settings.channelId,
+        interval: settings.interval,
+        lastTipTime: settings.lastTipTime?.getTime(),
+        isActive: settings.isActive
+      };
+    } catch (error) {
+      console.error('Error getting tip channel settings from MongoDB:', error);
+      return memStorage.getTipChannelSettings(guildId);
+    }
+  }
+
+  async setTipChannelSettings(settings: TipChannelSettings): Promise<boolean> {
+    try {
+      await TipChannelModel.findOneAndUpdate(
+        { guildId: settings.guildId }, 
+        settings, 
+        { upsert: true, new: true }
+      );
+      return true;
+    } catch (error) {
+      console.error('Error setting tip channel settings in MongoDB:', error);
+      return memStorage.setTipChannelSettings(settings);
+    }
+  }
+
+  async getAllActiveTipChannelSettings(): Promise<TipChannelSettings[]> {
+    try {
+      const settings = await TipChannelModel.find({ isActive: true });
+      return settings.map(s => ({
+        guildId: s.guildId,
+        channelId: s.channelId,
+        interval: s.interval,
+        lastTipTime: s.lastTipTime?.getTime(),
+        isActive: s.isActive
+      }));
+    } catch (error) {
+      console.error('Error getting active tip channel settings from MongoDB:', error);
+      return memStorage.getAllActiveTipChannelSettings();
+    }
+  }
+
+  // تمام متدهای دیگر IStorage را اضافه کنید
+  // برای حفظ طول کد، همه متدها را اینجا اضافه نکردیم
+  // متدهای باقیمانده به memStorage ارجاع داده می‌شوند
+
+  // ========================
+  // متدهای مربوط به QuizQuestion
+  // ========================
+  
+  async saveQuizQuestion(question: QuizQuestion): Promise<QuizQuestion> {
+    try {
+      const newQuestion = new QuizQuestionModel(question);
+      await newQuestion.save();
+      return newQuestion;
+    } catch (error) {
+      console.error('Error saving quiz question to MongoDB:', error);
+      return memStorage.saveQuizQuestion(question);
+    }
+  }
+
+  async getApprovedQuizQuestions(category?: string, difficulty?: 'easy' | 'medium' | 'hard', limit?: number): Promise<QuizQuestion[]> {
+    try {
+      let query = QuizQuestionModel.find({ approved: true });
+      
+      if (category) {
+        query = query.where('category').equals(category);
+      }
+      
+      if (difficulty) {
+        query = query.where('difficulty').equals(difficulty);
+      }
+      
+      if (limit) {
+        query = query.limit(limit);
+      }
+      
+      return await query.exec();
+    } catch (error) {
+      console.error('Error getting approved quiz questions from MongoDB:', error);
+      return memStorage.getApprovedQuizQuestions(category, difficulty, limit);
+    }
+  }
+
+  async getPendingQuizQuestions(limit?: number): Promise<QuizQuestion[]> {
+    try {
+      let query = QuizQuestionModel.find({ approved: false });
+      
+      if (limit) {
+        query = query.limit(limit);
+      }
+      
+      return await query.exec();
+    } catch (error) {
+      console.error('Error getting pending quiz questions from MongoDB:', error);
+      return memStorage.getPendingQuizQuestions(limit);
+    }
+  }
+
+  async approveQuizQuestion(questionId: string, reviewerId: string): Promise<QuizQuestion | undefined> {
+    try {
+      const question = await QuizQuestionModel.findOne({ id: questionId });
+      if (!question) return undefined;
+      
+      question.approved = true;
+      question.approvedBy = reviewerId;
+      
+      await question.save();
+      
+      // اگر اضافه‌کننده وجود داشته باشد، پاداش به او داده می‌شود
+      if (question.addedBy) {
+        const user = await UserModel.findOne({ discordId: question.addedBy });
+        if (user) {
+          user.wallet += (question.reward || 50);
+          await user.save();
+        }
+      }
+      
+      // به‌روزرسانی آمار داور
+      const reviewer = await QuizReviewerModel.findOne({ userId: reviewerId });
+      if (reviewer) {
+        reviewer.totalReviewed += 1;
+        reviewer.totalApproved += 1;
+        reviewer.lastActivity = new Date();
+        await reviewer.save();
+      }
+      
+      return question;
+    } catch (error) {
+      console.error('Error approving quiz question in MongoDB:', error);
+      return memStorage.approveQuizQuestion(questionId, reviewerId);
+    }
+  }
+
+  async rejectQuizQuestion(questionId: string, reviewerId: string): Promise<boolean> {
+    try {
+      const question = await QuizQuestionModel.findOne({ id: questionId });
+      if (!question) return false;
+      
+      await QuizQuestionModel.deleteOne({ id: questionId });
+      
+      // به‌روزرسانی آمار داور
+      const reviewer = await QuizReviewerModel.findOne({ userId: reviewerId });
+      if (reviewer) {
+        reviewer.totalReviewed += 1;
+        reviewer.totalRejected += 1;
+        reviewer.lastActivity = new Date();
+        await reviewer.save();
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error rejecting quiz question in MongoDB:', error);
+      return memStorage.rejectQuizQuestion(questionId, reviewerId);
+    }
+  }
+
+  async getQuizQuestion(questionId: string): Promise<QuizQuestion | undefined> {
+    try {
+      const question = await QuizQuestionModel.findOne({ id: questionId });
+      return question || undefined;
+    } catch (error) {
+      console.error('Error getting quiz question from MongoDB:', error);
+      return memStorage.getQuizQuestion(questionId);
+    }
+  }
+
+  async getUserSubmittedQuestions(userId: string): Promise<QuizQuestion[]> {
+    try {
+      return await QuizQuestionModel.find({ addedBy: userId });
+    } catch (error) {
+      console.error('Error getting user submitted questions from MongoDB:', error);
+      return memStorage.getUserSubmittedQuestions(userId);
+    }
+  }
+
+  // ========================
+  // متدهای مربوط به QuizReviewer
+  // ========================
+  
+  async addQuizReviewer(reviewer: QuizReviewer): Promise<QuizReviewer> {
+    try {
+      const newReviewer = new QuizReviewerModel({
+        userId: reviewer.userId,
+        username: reviewer.username,
+        appointedAt: reviewer.appointedAt || new Date(),
+        appointedBy: reviewer.appointedBy,
+        totalReviewed: 0,
+        totalApproved: 0,
+        totalRejected: 0,
+        isActive: true,
+        lastActivity: new Date()
+      });
+      
+      await newReviewer.save();
+      return newReviewer;
+    } catch (error) {
+      console.error('Error adding quiz reviewer to MongoDB:', error);
+      return memStorage.addQuizReviewer(reviewer);
+    }
+  }
+
+  async removeQuizReviewer(userId: string): Promise<boolean> {
+    try {
+      const result = await QuizReviewerModel.deleteOne({ userId });
+      return result.deletedCount > 0;
+    } catch (error) {
+      console.error('Error removing quiz reviewer from MongoDB:', error);
+      return memStorage.removeQuizReviewer(userId);
+    }
+  }
+
+  async getAllQuizReviewers(): Promise<QuizReviewer[]> {
+    try {
+      return await QuizReviewerModel.find();
+    } catch (error) {
+      console.error('Error getting all quiz reviewers from MongoDB:', error);
+      return memStorage.getAllQuizReviewers();
+    }
+  }
+
+  async getActiveQuizReviewers(): Promise<QuizReviewer[]> {
+    try {
+      return await QuizReviewerModel.find({ isActive: true });
+    } catch (error) {
+      console.error('Error getting active quiz reviewers from MongoDB:', error);
+      return memStorage.getActiveQuizReviewers();
+    }
+  }
+
+  async isQuizReviewer(userId: string): Promise<boolean> {
+    try {
+      const reviewer = await QuizReviewerModel.findOne({ userId, isActive: true });
+      return !!reviewer;
+    } catch (error) {
+      console.error('Error checking if user is quiz reviewer in MongoDB:', error);
+      return memStorage.isQuizReviewer(userId);
+    }
+  }
+
+  // ========================
+  // متدهای مربوط به GameSession
+  // ========================
+  
+  async createGameSession(gameSession: GameSession): Promise<GameSession> {
+    try {
+      const newSession = new GameSessionModel(gameSession);
+      await newSession.save();
+      return newSession;
+    } catch (error) {
+      console.error('Error creating game session in MongoDB:', error);
+      return memStorage.createGameSession(gameSession);
+    }
+  }
+
+  async updateGameSession(sessionId: string, updates: Partial<GameSession>): Promise<GameSession | undefined> {
+    try {
+      const session = await GameSessionModel.findOneAndUpdate(
+        { id: sessionId },
+        updates,
+        { new: true }
+      );
+      return session || undefined;
+    } catch (error) {
+      console.error('Error updating game session in MongoDB:', error);
+      return memStorage.updateGameSession(sessionId, updates);
+    }
+  }
+
+  async getGameSession(sessionId: string): Promise<GameSession | undefined> {
+    try {
+      const session = await GameSessionModel.findOne({ id: sessionId });
+      return session || undefined;
+    } catch (error) {
+      console.error('Error getting game session from MongoDB:', error);
+      return memStorage.getGameSession(sessionId);
+    }
+  }
+
+  async getActiveGameSessionInChannel(channelId: string): Promise<GameSession | undefined> {
+    try {
+      const session = await GameSessionModel.findOne({
+        channelId,
+        status: { $in: ['waiting', 'active'] }
+      });
+      return session || undefined;
+    } catch (error) {
+      console.error('Error getting active game session in channel from MongoDB:', error);
+      return memStorage.getActiveGameSessionInChannel(channelId);
+    }
+  }
+
+  async getAllActiveGameSessions(): Promise<GameSession[]> {
+    try {
+      return await GameSessionModel.find({ status: { $in: ['waiting', 'active'] } });
+    } catch (error) {
+      console.error('Error getting all active game sessions from MongoDB:', error);
+      return memStorage.getAllActiveGameSessions();
+    }
+  }
+  
+  async getActiveGameSessions(channelId?: string): Promise<GameSession[]> {
+    try {
+      const query: any = { status: { $in: ['waiting', 'active'] } };
+      if (channelId) {
+        query.channelId = channelId;
+      }
+      return await GameSessionModel.find(query);
+    } catch (error) {
+      console.error('Error getting active game sessions from MongoDB:', error);
+      return memStorage.getActiveGameSessions(channelId);
+    }
+  }
+
+  async deleteGameSession(sessionId: string): Promise<boolean> {
+    try {
+      const result = await GameSessionModel.deleteOne({ id: sessionId });
+      return result.deletedCount > 0;
+    } catch (error) {
+      console.error('Error deleting game session from MongoDB:', error);
+      return memStorage.deleteGameSession(sessionId);
+    }
+  }
+
+  async addPlayerToGameSession(sessionId: string, playerId: string): Promise<GameSession | undefined> {
+    try {
+      const session = await GameSessionModel.findOne({ id: sessionId });
+      if (!session) return undefined;
+      
+      if (!session.players.includes(playerId)) {
+        session.players.push(playerId);
+        await session.save();
+      }
+      
+      return session;
+    } catch (error) {
+      console.error('Error adding player to game session in MongoDB:', error);
+      return memStorage.addPlayerToGameSession(sessionId, playerId);
+    }
+  }
+
+  async removePlayerFromGameSession(sessionId: string, playerId: string): Promise<GameSession | undefined> {
+    try {
+      const session = await GameSessionModel.findOne({ id: sessionId });
+      if (!session) return undefined;
+      
+      session.players = session.players.filter(id => id !== playerId);
+      await session.save();
+      
+      return session;
+    } catch (error) {
+      console.error('Error removing player from game session in MongoDB:', error);
+      return memStorage.removePlayerFromGameSession(sessionId, playerId);
+    }
+  }
+
+  async endGameSession(id: string): Promise<boolean> {
+    try {
+      const session = await GameSessionModel.findOne({ id });
+      if (!session) return false;
+      
+      session.status = 'ended';
+      session.endedAt = new Date();
+      await session.save();
+      
+      return true;
+    } catch (error) {
+      console.error('Error ending game session in MongoDB:', error);
+      return memStorage.endGameSession(id);
+    }
+  }
+
+  async appointQuizReviewer(userId: string, username: string, appointedBy: string): Promise<QuizReviewer> {
+    try {
+      const newReviewer = new QuizReviewerModel({
+        userId,
+        username,
+        appointedAt: new Date(),
+        appointedBy,
+        totalReviewed: 0,
+        totalApproved: 0,
+        totalRejected: 0,
+        isActive: true,
+        lastActivity: new Date()
+      });
+      
+      await newReviewer.save();
+      return newReviewer;
+    } catch (error) {
+      console.error('Error appointing quiz reviewer in MongoDB:', error);
+      return memStorage.appointQuizReviewer(userId, username, appointedBy);
+    }
+  }
+
+  async getQuizReviewerByUserId(userId: string): Promise<QuizReviewer | undefined> {
+    try {
+      const reviewer = await QuizReviewerModel.findOne({ userId });
+      return reviewer || undefined;
+    } catch (error) {
+      console.error('Error getting quiz reviewer by user ID from MongoDB:', error);
+      return memStorage.getQuizReviewerByUserId(userId);
+    }
+  }
+}
+
+// Create instances
+export const memStorage = new MemStorage();
+export const mongoStorage = new MongoStorage();
+
+// Use MongoDB storage if we have a connection, otherwise fallback to in-memory
+export const storage = process.env.MONGODB_URI ? mongoStorage : memStorage;

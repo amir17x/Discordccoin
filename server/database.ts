@@ -1,4 +1,12 @@
 import mongoose from 'mongoose';
+import UserModel from './models/User';
+import ItemModel from './models/Item';
+import QuestModel from './models/Quest';
+import ClanModel from './models/Clan';
+import TipChannelModel from './models/TipChannel';
+
+// صادر کردن مدل‌ها برای استفاده در سایر ماژول‌ها
+export { UserModel, ItemModel, QuestModel, ClanModel, TipChannelModel };
 
 /**
  * راه‌اندازی اتصال به دیتابیس MongoDB

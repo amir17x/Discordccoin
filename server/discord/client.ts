@@ -8,6 +8,7 @@ import { log } from '../vite';
 import { storage } from '../storage';
 import { getLogger, LogType } from './utils/logger';
 import { botConfig } from './utils/config';
+import { setupTipSystem } from './components/tipSystem';
 
 // کش برای برهم‌کنش‌های پرتکرار
 type InteractionCache = {
@@ -189,6 +190,15 @@ export async function initDiscordBot() {
           console.error('Error updating watching status:', error);
         }
       }, 30 * 60 * 1000); // هر 30 دقیقه (به میلی‌ثانیه)
+      
+      // راه‌اندازی سیستم نکات
+      try {
+        setupTipSystem(client);
+        log('سیستم نکات با موفقیت راه‌اندازی شد', 'discord');
+      } catch (tipError) {
+        console.error('Error setting up tip system:', tipError);
+        log('خطا در راه‌اندازی سیستم نکات: ' + tipError, 'error');
+      }
     });
 
     // Command interaction

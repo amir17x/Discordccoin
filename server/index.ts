@@ -3,7 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initDiscordBot } from "./discord/client";
 import { setupAdminPanel } from "./admin";
-import { getTipSystem } from "./discord/components/tipSystem";
+// سیستم نکات از client.ts اجرا می‌شود
 import { connectToDatabase } from "./database";
 import 'dotenv/config';
 
@@ -58,23 +58,8 @@ app.use((req, res, next) => {
     const client = await initDiscordBot();
     log("Discord bot initialized successfully", "success");
     
-    // تنظیم سیستم نکات
-    if (client && client.user) {
-      // سیستم نکات از طریق کلاس TipSystem پیاده‌سازی شده است
-      // و در مقدار دهی اولیه به صورت خودکار زمان‌بندی می‌شود
-      try {
-        const tipSystem = getTipSystem();
-        if (tipSystem) {
-          log("Tip system scheduler initialized successfully", "success");
-        } else {
-          log("Tip system initialization failed", "warn");
-        }
-      } catch (err) {
-        log(`Error initializing tip system: ${err}`, "error");
-      }
-    } else {
-      log("Discord bot unavailable - tip system scheduler not initialized", "warn");
-    }
+    // سیستم نکات در رویداد ready بات دیسکورد راه‌اندازی می‌شود
+    log("Tip system will be initialized when Discord bot is ready", "success");
   } catch (error) {
     log(`Error initializing Discord bot: ${error}`, "error");
     log("Continuing without Discord bot functionality", "warn");

@@ -2,7 +2,7 @@ import { SlashCommandBuilder, Collection, Client, PermissionFlagsBits, EmbedBuil
 import { storage } from '../storage';
 import { mainMenu } from './components/mainMenu';
 import { adminMenu } from '../discord/components/adminMenu';
-import { getTipSystem } from './components/tipSystem';
+import { setupTipSystem, addTipChannel, removeTipChannel, toggleTipChannel, updateTipChannel, updateTipInterval, sendImmediateTip } from './components/tipSystem';
 
 // Command to display the main menu
 const menu = {
@@ -629,21 +629,28 @@ const tipChannel = {
         return;
       }
       
-      // تنظیم کانال
-      const tipSystem = getTipSystem();
-      if (!tipSystem) {
+      // تبدیل ساعت به دقیقه برای استفاده در interval
+      const intervalMinutes = interval * 60; // تبدیل ساعت به دقیقه
+      
+      // افزودن کانال به سیستم نکات
+      try {
+        const success = await addTipChannel(interaction.guildId, channel.id, intervalMinutes);
+        
+        if (!success) {
+          await interaction.reply({
+            content: '❌ خطا در تنظیم کانال نکات. لطفاً دوباره تلاش کنید.',
+            ephemeral: true
+          });
+          return;
+        }
+      } catch (error) {
+        console.error('Error setting up tip channel:', error);
         await interaction.reply({
-          content: '❌ سیستم نکات در حال حاضر در دسترس نیست. لطفاً با ادمین تماس بگیرید.',
+          content: '❌ خطا در تنظیم کانال نکات. لطفاً با ادمین تماس بگیرید.',
           ephemeral: true
         });
         return;
       }
-      
-      // تبدیل ساعت به Cron expression
-      const cronExpression = `0 0 */${interval} * * *`; // هر X ساعت یکبار
-      
-      // افزودن کانال به سیستم نکات
-      await tipSystem.addTipChannel(interaction.guildId, channel.id, cronExpression);
       const result = `کانال ${channel} با موفقیت برای ارسال نکات هر ${interval} ساعت تنظیم شد.`;
       
       // ایجاد Embed برای نمایش نتیجه
@@ -690,17 +697,24 @@ const unTipChannel = {
       }
       
       // غیرفعال کردن کانال نکات
-      const tipSystem = getTipSystem();
-      if (!tipSystem) {
+      try {
+        const success = await removeTipChannel(interaction.guildId);
+        
+        if (!success) {
+          await interaction.reply({
+            content: '❌ خطا در غیرفعال کردن سیستم نکات. لطفاً دوباره تلاش کنید.',
+            ephemeral: true
+          });
+          return;
+        }
+      } catch (error) {
+        console.error('Error removing tip channel:', error);
         await interaction.reply({
-          content: '❌ سیستم نکات در حال حاضر در دسترس نیست. لطفاً با ادمین تماس بگیرید.',
+          content: '❌ خطا در غیرفعال کردن سیستم نکات. لطفاً با ادمین تماس بگیرید.',
           ephemeral: true
         });
         return;
       }
-      
-      // حذف کانال از سیستم نکات
-      await tipSystem.removeTipChannel(interaction.guildId, "all");
       const result = `سیستم ارسال خودکار نکات برای این سرور غیرفعال شد.`;
       
       // ایجاد Embed برای نمایش نتیجه
