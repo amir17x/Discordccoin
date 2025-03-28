@@ -4,6 +4,7 @@ import { mainMenu } from './components/mainMenu';
 import { adminMenu } from '../discord/components/adminMenu';
 import { setupTipSystem, addTipChannel, removeTipChannel, toggleTipChannel, updateTipChannel, updateTipInterval, sendImmediateTip } from './components/tipSystem';
 import { handleGroupGamesMenu } from './components/groupGames';
+import { huggingFaceService } from './services/huggingface';
 
 // Command to display the main menu
 const menu = {
@@ -385,7 +386,8 @@ const help = {
                   '`/daily` - دریافت پاداش روزانه (هر 24 ساعت یکبار)\n' +
                   '`/help` - نمایش این راهنما\n' +
                   '`/admin` - پنل مدیریت (مخصوص ادمین‌ها)\n' +
-                  '`/ping` - بررسی وضعیت اتصال به ربات'
+                  '`/ping` - بررسی وضعیت اتصال به ربات\n' +
+                  '`/hf` - گفتگو با هوش مصنوعی Hugging Face و دریافت پاسخ هوشمند'
           },
           { 
             name: '📜 **راهنمای کامل‌تر**', 
@@ -394,7 +396,7 @@ const help = {
           }
         )
         .setFooter({ 
-          text: 'از Ccoin Bot v1.5.0 لذت ببرید! | برای شروع از /menu استفاده کنید', 
+          text: 'از Ccoin Bot v1.5.0 با پشتیبانی هوش مصنوعی Hugging Face لذت ببرید! | برای شروع از /menu استفاده کنید', 
           iconURL: interaction.client.user?.displayAvatarURL() 
         })
         .setTimestamp();
@@ -465,6 +467,8 @@ const admin = {
 };
 
 // Command for ping with comprehensive monitoring approach
+// پیش‌تر وارد شده است
+
 const ping = {
   data: new SlashCommandBuilder()
     .setName('ping')
@@ -506,19 +510,60 @@ const ping = {
         mongoPing = -1;
       }
       
+      // تست سرعت پاسخ‌گویی هوش مصنوعی
+      let aiStatus = '⚫ نامشخص';
+      let aiPing = -1;
+      let aiErrorMessage = '';
+      
+      // انجام تست پینگ Hugging Face
+      aiPing = await huggingFaceService.pingHuggingFace();
+      
+      // بررسی وضعیت پینگ هوش مصنوعی با توجه به کدهای خطای جدید
+      if (aiPing > 0) {
+        // پینگ موفق
+        aiStatus = aiPing < 1000 ? '🟢 عالی' : aiPing < 3000 ? '🟡 متوسط' : '🔴 ضعیف';
+      } else if (aiPing === -429) {
+        // خطای محدودیت تعداد درخواست‌ها یا اتمام اعتبار
+        aiStatus = '🔴 خطا در اتصال';
+        aiErrorMessage = 'محدودیت استفاده از API به پایان رسیده است';
+      } else if (aiPing === -401) {
+        // خطای احراز هویت
+        aiStatus = '🔴 خطا در اتصال';
+        aiErrorMessage = 'مشکل در احراز هویت API';
+      } else if (aiPing === -500) {
+        // خطای سرور
+        aiStatus = '🔴 خطا در اتصال';
+        aiErrorMessage = 'سرورهای Hugging Face با مشکل مواجه هستند';
+      } else {
+        // سایر خطاها
+        aiStatus = '🔴 خطا در اتصال';
+        aiErrorMessage = 'مشکل نامشخص در ارتباط با سرویس هوش مصنوعی';
+      }
+      
       // زمان پاسخگویی کلی سیستم
       const apiPing = Date.now() - interaction.createdTimestamp;
       const apiStatus = apiPing < 200 ? '🟢 عالی' : apiPing < 500 ? '🟡 متوسط' : '🔴 ضعیف';
       
-      // وضعیت کلی سیستم
-      const overallStatus = 
-        discordPing < 300 && mongoPing < 300 && apiPing < 500 ? 
-          '✅ همه سیستم‌ها آنلاین و پایدار هستند' : 
-        (mongoPing === -1) ? 
-          '❌ اتصال به دیتابیس با مشکل مواجه است' :
-        (discordPing > 500 || mongoPing > 500 || apiPing > 800) ?
-          '⚠️ تاخیر بیش از حد در بعضی سرویس‌ها' :
-          '✓ سیستم کار می‌کند اما تاخیر وجود دارد';
+      // وضعیت کلی سیستم - اکنون شامل Hugging Face هم می‌شود
+      let overallStatus = '';
+      
+      if (discordPing < 300 && mongoPing < 300 && apiPing < 500 && aiPing > 0) {
+        overallStatus = '✅ همه سیستم‌ها آنلاین و پایدار هستند';
+      } else if (mongoPing === -1) {
+        overallStatus = '❌ اتصال به دیتابیس با مشکل مواجه است';
+      } else if (aiPing === -429) {
+        overallStatus = '❌ محدودیت استفاده از API هوش مصنوعی به پایان رسیده است';
+      } else if (aiPing === -401) {
+        overallStatus = '❌ خطای احراز هویت در سرویس هوش مصنوعی';
+      } else if (aiPing === -500) {
+        overallStatus = '❌ سرورهای Hugging Face با مشکل مواجه هستند';
+      } else if (aiPing < 0) {
+        overallStatus = '❌ اتصال به سرویس هوش مصنوعی با مشکل مواجه است';
+      } else if (discordPing > 500 || mongoPing > 500 || apiPing > 800 || aiPing > 5000) {
+        overallStatus = '⚠️ تاخیر بیش از حد در بعضی سرویس‌ها';
+      } else {
+        overallStatus = '✓ سیستم کار می‌کند اما تاخیر وجود دارد';
+      }
       
       // ایجاد یک امبد زیبا و کامل
       const pingEmbed = new EmbedBuilder()
@@ -539,6 +584,11 @@ const ping = {
           { 
             name: '⚡ پینگ API', 
             value: `\`${apiPing}ms\` ${apiStatus}`, 
+            inline: true 
+          },
+          { 
+            name: '🧠 پینگ هوش مصنوعی', 
+            value: aiPing > 0 ? `\`${aiPing}ms\` ${aiStatus}` : `\`${aiErrorMessage}\` ${aiStatus}`, 
             inline: true 
           },
           { 
@@ -758,6 +808,144 @@ const groupGames = {
   }
 };
 
+// Command for Hugging Face AI interaction
+const hf = {
+  data: new SlashCommandBuilder()
+    .setName('hf')
+    .setDescription('🧠 گفتگو با هوش مصنوعی Hugging Face')
+    .addStringOption(option => 
+      option.setName('prompt')
+            .setDescription('سوال یا درخواست شما از هوش مصنوعی')
+            .setRequired(true)),
+  
+  async execute(interaction: any) {
+    try {
+      // نمایش "در حال تایپ" برای تعامل طولانی مدت
+      await interaction.deferReply();
+      
+      // بررسی وضعیت اتصال به سرویس Hugging Face قبل از ارسال درخواست
+      const connectionStatus = await huggingFaceService.checkConnectionStatus();
+      
+      // اگر سرویس در دسترس نیست، پیام خطای مناسب را نمایش دهیم
+      if (!connectionStatus.isAvailable) {
+        const errorEmbed = new EmbedBuilder()
+          .setColor('#FF0000') // رنگ قرمز برای خطا
+          .setTitle('⚠️ سرویس هوش مصنوعی در دسترس نیست')
+          .setDescription(connectionStatus.message)
+          .addFields([
+            {
+              name: '📝 راه حل پیشنهادی',
+              value: connectionStatus.statusCode === 429 
+                ? 'سهمیه API به پایان رسیده است. لطفاً با مدیر سیستم تماس بگیرید تا نسبت به شارژ یا تمدید حساب کاربری اقدام نماید.'
+                : 'لطفاً بعداً دوباره تلاش کنید یا با مدیر سیستم تماس بگیرید.'
+            }
+          ])
+          .setFooter({ 
+            text: `درخواست: ${interaction.user.username}`,
+            iconURL: interaction.user.displayAvatarURL() 
+          })
+          .setTimestamp();
+        
+        await interaction.editReply({
+          embeds: [errorEmbed]
+        });
+        return;
+      }
+      
+      // دریافت پرسش کاربر
+      const prompt = interaction.options.getString('prompt');
+      
+      // ارسال درخواست به Hugging Face
+      const response = await huggingFaceService.getAIResponse(prompt, {
+        maxTokens: 300, // افزایش طول پاسخ قابل دریافت
+        temperature: 0.7 // تنظیم خلاقیت پاسخ
+      });
+      
+      // بررسی اینکه آیا پاسخ حاوی پیام خطا است
+      if (response.startsWith('⚠️')) {
+        // اگر پیام با علامت خطا شروع شود، به عنوان خطا نمایش دهیم
+        const errorEmbed = new EmbedBuilder()
+          .setColor('#FF0000') // رنگ قرمز برای خطا
+          .setTitle('⚠️ خطا در سرویس هوش مصنوعی')
+          .setDescription(response)
+          .setFooter({ 
+            text: `درخواست: ${interaction.user.username}`,
+            iconURL: interaction.user.displayAvatarURL() 
+          })
+          .setTimestamp();
+        
+        await interaction.editReply({
+          embeds: [errorEmbed]
+        });
+      } else {
+        // ایجاد Embed برای پاسخ
+        const chatEmbed = new EmbedBuilder()
+          .setColor('#8A2BE2') // رنگ بنفش تیره
+          .setTitle('🤖 پاسخ هوش مصنوعی')
+          .setDescription(response)
+          .setFooter({ 
+            text: `درخواست: ${interaction.user.username} | با استفاده از Hugging Face`,
+            iconURL: interaction.user.displayAvatarURL() 
+          })
+          .setTimestamp();
+        
+        // پاسخ به کاربر
+        await interaction.editReply({
+          embeds: [chatEmbed]
+        });
+      }
+    } catch (error) {
+      console.error('Error in hf command:', error);
+      
+      // پیام خطای مناسب بر اساس نوع خطا
+      let errorMessage = '⚠️ خطا در ارتباط با هوش مصنوعی! لطفاً بعداً دوباره تلاش کنید.';
+      let errorTitle = '⚠️ خطا در سرویس هوش مصنوعی';
+      
+      // بررسی نوع خطا
+      if (error instanceof Error) {
+        const errorStr = error.toString().toLowerCase();
+        
+        if (errorStr.includes('429') || errorStr.includes('exceeded your current quota')) {
+          errorMessage = '⚠️ محدودیت استفاده از سرویس Hugging Face به پایان رسیده است. لطفاً این موضوع را به مدیر سیستم اطلاع دهید.';
+          errorTitle = '⚠️ محدودیت API به پایان رسیده است';
+        } else if (errorStr.includes('401') || errorStr.includes('403') || errorStr.includes('auth')) {
+          errorMessage = '⚠️ خطا در دسترسی به سرویس Hugging Face. کلید API نامعتبر است یا دسترسی ندارد.';
+          errorTitle = '⚠️ خطای احراز هویت در سرویس Hugging Face';
+        } else if (errorStr.includes('500')) {
+          errorMessage = '⚠️ سرورهای Hugging Face در حال حاضر با مشکل مواجه هستند. لطفاً بعداً دوباره تلاش کنید.';
+          errorTitle = '⚠️ خطای سرور Hugging Face';
+        }
+      }
+      
+      // ایجاد Embed برای خطا
+      const errorEmbed = new EmbedBuilder()
+        .setColor('#FF0000') // رنگ قرمز برای خطا
+        .setTitle(errorTitle)
+        .setDescription(errorMessage)
+        .setFooter({ 
+          text: `درخواست: ${interaction.user.username}`,
+          iconURL: interaction.user.displayAvatarURL() 
+        })
+        .setTimestamp();
+      
+      try {
+        if (interaction.deferred) {
+          await interaction.editReply({
+            embeds: [errorEmbed]
+          });
+        } else if (!interaction.replied) {
+          await interaction.reply({
+            embeds: [errorEmbed],
+            ephemeral: true
+          });
+        }
+      } catch (replyError) {
+        console.error('Error while sending hf error response:', replyError);
+      }
+    }
+  }
+};
+
 // Export function to load commands
 export async function loadCommands(client: Client) {
   // Add commands to the collection
@@ -770,6 +958,7 @@ export async function loadCommands(client: Client) {
   client.commands.set(tipChannel.data.name, tipChannel);
   client.commands.set(unTipChannel.data.name, unTipChannel);
   client.commands.set(groupGames.data.name, groupGames);
+  client.commands.set(hf.data.name, hf); // Add the Hugging Face AI command
 }
 
 export const commands = [
@@ -781,5 +970,6 @@ export const commands = [
   ping.data.toJSON(),
   tipChannel.data.toJSON(),
   unTipChannel.data.toJSON(),
-  groupGames.data.toJSON()
+  groupGames.data.toJSON(),
+  hf.data.toJSON() // Add the Hugging Face AI command to slash commands
 ];

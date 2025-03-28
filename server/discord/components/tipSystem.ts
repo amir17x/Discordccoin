@@ -7,6 +7,7 @@ import { Client, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, Tex
 import { storage } from '../../storage';
 import { v4 as uuidv4 } from 'uuid';
 import { TipChannelModel } from '../../database';
+import { generateAITip, tipTopics } from '../utils/aiTips';
 
 // برای ذخیره تایمرهای نکات فعال
 const tipTimers: Map<string, NodeJS.Timeout> = new Map();
@@ -19,7 +20,7 @@ export interface TipChannelSettings {
   guildId: string;
   channelId: string;
   interval: number; // به میلی‌ثانیه
-  lastTipTime: number | null;
+  lastTipTime?: number;
   isActive: boolean;
 }
 
@@ -170,20 +171,42 @@ async function sendTip(client: Client, settings: TipChannelSettings) {
       return;
     }
 
-    // انتخاب یک دسته تصادفی از نکات
-    const categories = Array.from(tips.keys());
-    const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+    // تعیین اینکه آیا از هوش مصنوعی استفاده شود (30% احتمال)
+    const useAI = Math.random() < 0.3;
     
-    // انتخاب یک نکته تصادفی از دسته انتخاب شده
-    const categoryTips = tips.get(randomCategory) || defaultTips;
-    const randomTip = categoryTips[Math.floor(Math.random() * categoryTips.length)];
+    let tipText = '';
+    let category = '';
+    
+    if (useAI) {
+      // استفاده از هوش مصنوعی برای تولید نکته
+      try {
+        tipText = await generateAITip();
+        category = 'ai';
+        console.log(`🤖 نکته هوشمند با استفاده از Hugging Face تولید شد.`);
+      } catch (aiError) {
+        console.error(`❌ خطا در تولید نکته هوشمند: ${aiError}. استفاده از نکات معمولی.`);
+        // در صورت خطا، استفاده از نکات معمولی
+        const categories = Array.from(tips.keys());
+        category = categories[Math.floor(Math.random() * categories.length)];
+        const categoryTips = tips.get(category) || defaultTips;
+        tipText = categoryTips[Math.floor(Math.random() * categoryTips.length)];
+      }
+    } else {
+      // استفاده از نکات از پیش تعریف شده
+      const categories = Array.from(tips.keys());
+      category = categories[Math.floor(Math.random() * categories.length)];
+      const categoryTips = tips.get(category) || defaultTips;
+      tipText = categoryTips[Math.floor(Math.random() * categoryTips.length)];
+    }
 
     // ایجاد امبد برای نمایش نکته
     const embed = new EmbedBuilder()
-      .setColor('#0099ff')
-      .setTitle('💡 نکته روز')
-      .setDescription(randomTip)
-      .setFooter({ text: `دسته: ${getCategoryDisplayName(randomCategory)} | برای غیرفعال کردن نکات از دستور /admin استفاده کنید` })
+      .setColor(useAI ? '#8A2BE2' : '#0099ff') // رنگ متفاوت برای نکات هوشمند
+      .setTitle(useAI ? '🧠 نکته هوشمند AI' : '💡 نکته روز')
+      .setDescription(tipText)
+      .setFooter({ 
+        text: `دسته: ${getCategoryDisplayName(category)} | ${useAI ? 'تولید شده توسط هوش مصنوعی (Hugging Face)' : ''} | برای غیرفعال کردن نکات از دستور /admin استفاده کنید` 
+      })
       .setTimestamp();
 
     // ارسال پیام
@@ -220,7 +243,8 @@ function getCategoryDisplayName(category: string): string {
     'general': 'عمومی',
     'economy': 'اقتصادی',
     'social': 'اجتماعی',
-    'games': 'بازی‌ها'
+    'games': 'بازی‌ها',
+    'ai': 'هوش مصنوعی'
   };
 
   return categoryMap[category] || 'عمومی';
@@ -243,7 +267,6 @@ export async function addTipChannel(guildId: string, channelId: string, interval
       guildId,
       channelId,
       interval: intervalMs,
-      lastTipTime: null,
       isActive: true
     };
 
