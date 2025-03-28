@@ -1,8 +1,10 @@
+/**
+ * مدل کلن
+ * این فایل مدل مونگوی کلن را تعریف می‌کند
+ */
+
 import mongoose, { Schema, Document } from 'mongoose';
 
-/**
- * رابط کلن برای استفاده در تایپ‌اسکریپت
- */
 export interface IClan extends Document {
   id: number;
   name: string;
@@ -19,16 +21,25 @@ export interface IClan extends Document {
   memberIds: string[];
   joinRequests: string[];
   maxMembers: number;
-  lastActivity: Date | null;
+  lastActivity: Date;
   color: string | null;
   icon: string | null;
   banner: string | null;
+  elderIds: string[];
+  warStatus: 'inactive' | 'searching' | 'in_war';
+  warOpponentId: number | null;
+  warOpponentName: string | null;
+  warStartTime: Date | null;
+  warEndTime: Date | null;
+  warPoints: number;
+  warContributions: Record<string, number>;
+  roles: Record<string, string>;
+  announcement: string | null;
+  inviteOnly: boolean;
+  minLevel: number;
 }
 
-/**
- * طرح داده‌ای کلن در MongoDB
- */
-const ClanSchema: Schema = new Schema({
+const clanSchema = new Schema<IClan>({
   id: { type: Number, required: true, unique: true },
   name: { type: String, required: true },
   description: { type: String, default: null },
@@ -44,13 +55,25 @@ const ClanSchema: Schema = new Schema({
   memberIds: { type: [String], default: [] },
   joinRequests: { type: [String], default: [] },
   maxMembers: { type: Number, default: 10 },
-  lastActivity: { type: Date, default: null },
+  lastActivity: { type: Date, default: Date.now },
   color: { type: String, default: null },
   icon: { type: String, default: null },
-  banner: { type: String, default: null }
-}, { 
-  timestamps: true,
-  versionKey: false
+  banner: { type: String, default: null },
+  elderIds: { type: [String], default: [] },
+  warStatus: { type: String, enum: ['inactive', 'searching', 'in_war'], default: 'inactive' },
+  warOpponentId: { type: Number, default: null },
+  warOpponentName: { type: String, default: null },
+  warStartTime: { type: Date, default: null },
+  warEndTime: { type: Date, default: null },
+  warPoints: { type: Number, default: 0 },
+  warContributions: { type: Map, of: Number, default: {} },
+  roles: { type: Map, of: String, default: {} },
+  announcement: { type: String, default: null },
+  inviteOnly: { type: Boolean, default: false },
+  minLevel: { type: Number, default: 1 }
 });
 
-export default mongoose.model<IClan>('Clan', ClanSchema);
+// اطمینان حاصل کنیم که مدل از قبل وجود ندارد
+const ClanModel = mongoose.models.Clan || mongoose.model<IClan>('Clan', clanSchema);
+
+export default ClanModel;

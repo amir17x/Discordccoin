@@ -487,8 +487,8 @@ const ping = {
   
   async execute(interaction: any) {
     try {
-      // برای بررسی دقیق‌تر استفاده می‌کنیم
-      await interaction.deferReply({ ephemeral: true });
+      // برای بررسی دقیق‌تر استفاده می‌کنیم - از flags استفاده می‌کنیم به جای ephemeral
+      await interaction.deferReply({ flags: 64 }); // 64 معادل Ephemeral flag است
       
       // بررسی سرعت اتصال دیسکورد
       const discordPing = interaction.client.ws.ping;
@@ -665,7 +665,7 @@ const ping = {
         } else if (!interaction.replied) {
           await interaction.reply({
             content: '⚠️ خطا در اجرای دستور پینگ!',
-            ephemeral: true
+            flags: 64 // استفاده از flags به جای ephemeral
           });
         }
       } catch (replyError) {
@@ -1005,7 +1005,7 @@ const hf = {
         } else if (!interaction.replied) {
           await interaction.reply({
             embeds: [errorEmbed],
-            ephemeral: true
+            flags: 64 // استفاده از flags به جای ephemeral
           });
         }
       } catch (replyError) {

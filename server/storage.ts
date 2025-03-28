@@ -3541,8 +3541,267 @@ import TipChannelModel from './models/TipChannel';
 import QuizQuestionModel from './models/QuizQuestion';
 import QuizReviewerModel from './models/QuizReviewer';
 import GameSessionModel from './models/GameSession';
+import { connectMongo } from './utils/connectMongo';
+import ItemModel from './models/Item';
+import QuestModel from './models/Quest';
 
 export class MongoStorage implements IStorage {
+  async getAllStocks(): Promise<StockData[]> {
+    // پیاده‌سازی متد getAllStocks برای MongoDB
+    try {
+      const stocksCollection = await connectMongo('stocks');
+      const stocks = await stocksCollection.find({}).toArray();
+      return stocks as StockData[];
+    } catch (error) {
+      console.error('Error getting all stocks from MongoDB:', error);
+      return [];
+    }
+  }
+  
+  async getStockById(stockId: number): Promise<StockData | null> {
+    try {
+      const stocksCollection = await connectMongo('stocks');
+      const stock = await stocksCollection.findOne({ id: stockId });
+      return stock as StockData || null;
+    } catch (error) {
+      console.error(`Error getting stock ${stockId} from MongoDB:`, error);
+      return null;
+    }
+  }
+  
+  async updateStockPrice(stockId: number, newPrice: number): Promise<boolean> {
+    try {
+      const stocksCollection = await connectMongo('stocks');
+      const stock = await stocksCollection.findOne({ id: stockId });
+      
+      if (!stock) return false;
+      
+      // ذخیره قیمت قبلی
+      const oldPrice = stock.currentPrice;
+      
+      // به‌روزرسانی قیمت جدید
+      await stocksCollection.updateOne(
+        { id: stockId },
+        { 
+          $set: { 
+            previousPrice: oldPrice,
+            currentPrice: newPrice,
+            updatedAt: new Date()
+          }
+        }
+      );
+      
+      // ذخیره تاریخچه قیمت
+      const now = new Date();
+      await stocksCollection.updateOne(
+        { id: stockId },
+        { 
+          $push: { 
+            priceHistory: {
+              price: newPrice,
+              timestamp: now
+            }
+          }
+        }
+      );
+      
+      return true;
+    } catch (error) {
+      console.error(`Error updating stock price for ${stockId} in MongoDB:`, error);
+      return false;
+    }
+  }
+  
+  async addStockNews(stockId: number, news: StockNews): Promise<boolean> {
+    try {
+      const stocksCollection = await connectMongo('stocks');
+      await stocksCollection.updateOne(
+        { id: stockId },
+        { $push: { news: news } }
+      );
+      return true;
+    } catch (error) {
+      console.error(`Error adding news for stock ${stockId} in MongoDB:`, error);
+      return false;
+    }
+  }
+  
+  async getStockNews(stockId: number, limit?: number): Promise<StockNews[]> {
+    try {
+      const stocksCollection = await connectMongo('stocks');
+      const stock = await stocksCollection.findOne({ id: stockId });
+      
+      if (!stock || !stock.news) return [];
+      
+      // اگر محدودیت تعیین شده، آخرین خبرها را برگردان
+      if (limit && stock.news.length > limit) {
+        return stock.news.slice(-limit);
+      }
+      
+      return stock.news;
+    } catch (error) {
+      console.error(`Error getting news for stock ${stockId} from MongoDB:`, error);
+      return [];
+    }
+  }
+  
+  async getStockPriceHistory(stockId: number, limit?: number): Promise<StockPriceHistory[]> {
+    try {
+      const stocksCollection = await connectMongo('stocks');
+      const stock = await stocksCollection.findOne({ id: stockId });
+      
+      if (!stock || !stock.priceHistory) return [];
+      
+      // اگر محدودیت تعیین شده، آخرین قیمت‌ها را برگردان
+      if (limit && stock.priceHistory.length > limit) {
+        return stock.priceHistory.slice(-limit);
+      }
+      
+      return stock.priceHistory;
+    } catch (error) {
+      console.error(`Error getting price history for stock ${stockId} from MongoDB:`, error);
+      return [];
+    }
+  }
+  
+  // معادل getStockById برای سازگاری با کد قبلی
+  async getStock(id: number): Promise<StockData | undefined> {
+    const stock = await this.getStockById(id);
+    return stock || undefined;
+  }
+  
+  // برای به‌روزرسانی کلی سهام
+  async updateStock(stockId: number, updates: Partial<StockData>): Promise<boolean> {
+    try {
+      const stocksCollection = await connectMongo('stocks');
+      await stocksCollection.updateOne(
+        { id: stockId },
+        { $set: updates }
+      );
+      return true;
+    } catch (error) {
+      console.error(`Error updating stock ${stockId} in MongoDB:`, error);
+      return false;
+    }
+  }
+  
+  // دریافت سهام‌های یک کاربر
+  async getUserStocks(userId: number): Promise<UserStockData[]> {
+    try {
+      const userModel = await UserModel.findOne({ id: userId });
+      if (!userModel || !userModel.stockPortfolio) return [];
+      
+      return userModel.stockPortfolio as UserStockData[];
+    } catch (error) {
+      console.error(`Error getting stocks for user ${userId} from MongoDB:`, error);
+      return [];
+    }
+  }
+  
+  // خرید سهام توسط کاربر
+  async buyStock(userId: number, stockId: number, quantity: number): Promise<boolean> {
+    try {
+      // دریافت اطلاعات سهام و کاربر
+      const stock = await this.getStockById(stockId);
+      const user = await UserModel.findOne({ id: userId });
+      
+      if (!stock || !user) return false;
+      
+      // محاسبه هزینه خرید
+      const cost = stock.currentPrice * quantity;
+      
+      // بررسی کافی بودن موجودی
+      if (user.wallet < cost) return false;
+      
+      // کم کردن هزینه از کیف پول کاربر
+      user.wallet -= cost;
+      
+      // اضافه کردن سهام به پورتفولیو کاربر
+      if (!user.stockPortfolio) user.stockPortfolio = [];
+      
+      // بررسی اگر کاربر از قبل این سهام را دارد
+      const existingStock = user.stockPortfolio.find((s: any) => s.stockId === stockId);
+      
+      if (existingStock) {
+        // افزایش تعداد سهام
+        existingStock.quantity += quantity;
+        existingStock.averagePrice = ((existingStock.averagePrice * (existingStock.quantity - quantity)) + (stock.currentPrice * quantity)) / existingStock.quantity;
+      } else {
+        // اضافه کردن سهام جدید به پورتفولیو
+        user.stockPortfolio.push({
+          stockId,
+          quantity,
+          averagePrice: stock.currentPrice,
+          boughtAt: new Date()
+        });
+      }
+      
+      // ثبت تراکنش
+      if (!user.transactions) user.transactions = [];
+      user.transactions.push({
+        type: 'stock_purchase',
+        amount: -cost,
+        fee: 0,
+        timestamp: new Date()
+      });
+      
+      // ذخیره تغییرات
+      await user.save();
+      
+      return true;
+    } catch (error) {
+      console.error(`Error buying stock ${stockId} for user ${userId} in MongoDB:`, error);
+      return false;
+    }
+  }
+  
+  // فروش سهام توسط کاربر
+  async sellStock(userId: number, stockId: number, quantity: number): Promise<boolean> {
+    try {
+      // دریافت اطلاعات سهام و کاربر
+      const stock = await this.getStockById(stockId);
+      const user = await UserModel.findOne({ id: userId });
+      
+      if (!stock || !user || !user.stockPortfolio) return false;
+      
+      // یافتن سهام در پورتفولیو کاربر
+      const userStock = user.stockPortfolio.find((s: any) => s.stockId === stockId);
+      
+      if (!userStock || userStock.quantity < quantity) return false;
+      
+      // محاسبه مبلغ دریافتی از فروش
+      const revenue = stock.currentPrice * quantity;
+      
+      // کم کردن تعداد سهام
+      userStock.quantity -= quantity;
+      
+      // اگر تعداد به صفر رسید، حذف از پورتفولیو
+      if (userStock.quantity === 0) {
+        user.stockPortfolio = user.stockPortfolio.filter((s: any) => s.stockId !== stockId);
+      }
+      
+      // اضافه کردن مبلغ به کیف پول کاربر
+      user.wallet += revenue;
+      
+      // ثبت تراکنش
+      if (!user.transactions) user.transactions = [];
+      user.transactions.push({
+        type: 'stock_sale',
+        amount: revenue,
+        fee: 0,
+        timestamp: new Date()
+      });
+      
+      // ذخیره تغییرات
+      await user.save();
+      
+      return true;
+    } catch (error) {
+      console.error(`Error selling stock ${stockId} for user ${userId} in MongoDB:`, error);
+      return false;
+    }
+  }
+  
   async recordGame(userId: number, type: string, bet: number, won: boolean, reward: number): Promise<Game> {
     try {
       // بررسی اگر در کش موجود است

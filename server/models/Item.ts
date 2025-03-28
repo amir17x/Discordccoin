@@ -1,8 +1,10 @@
+/**
+ * مدل آیتم
+ * این فایل مدل مونگوی آیتم را تعریف می‌کند
+ */
+
 import mongoose, { Schema, Document } from 'mongoose';
 
-/**
- * رابط آیتم برای استفاده در تایپ‌اسکریپت
- */
 export interface IItem extends Document {
   id: number;
   name: string;
@@ -13,14 +15,11 @@ export interface IItem extends Document {
   emoji: string;
   duration: number | null;
   rarity: string;
-  effects: any; // می‌توان بعداً به یک نوع دقیق‌تر تبدیل کرد
+  effects: any;
   category: string;
 }
 
-/**
- * طرح داده‌ای آیتم در MongoDB
- */
-const ItemSchema: Schema = new Schema({
+const itemSchema = new Schema<IItem>({
   id: { type: Number, required: true, unique: true },
   name: { type: String, required: true },
   type: { type: String, required: true },
@@ -32,9 +31,9 @@ const ItemSchema: Schema = new Schema({
   rarity: { type: String, required: true },
   effects: { type: Schema.Types.Mixed, default: {} },
   category: { type: String, required: true }
-}, { 
-  timestamps: true,
-  versionKey: false
 });
 
-export default mongoose.model<IItem>('Item', ItemSchema);
+// اطمینان حاصل کنیم که مدل از قبل وجود ندارد
+const ItemModel = mongoose.models.Item || mongoose.model<IItem>('Item', itemSchema);
+
+export default ItemModel;

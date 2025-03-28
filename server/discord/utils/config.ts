@@ -4,6 +4,9 @@ import { LogType } from './logger';
 
 // تعریف نوع تنظیمات بات
 export interface BotConfig {
+  // URI دیتابیس مونگو
+  mongodbUri?: string;
+  
   // تنظیمات لاگ‌ها
   logChannels: {
     [LogType.TRANSACTION]?: string;
@@ -85,6 +88,7 @@ export interface BotConfig {
 
 // تنظیمات پیش‌فرض
 const defaultConfig: BotConfig = {
+  mongodbUri: process.env.MONGODB_URI || 'mongodb://localhost:27017/ccoin',
   logChannels: {
     // تنظیم کانال پیش‌فرض برای لاگ‌ها (اگر کانال خاصی برای هر نوع لاگ تنظیم نشده باشد)
     default: undefined
@@ -203,6 +207,7 @@ export class BotConfigManager {
       : defaultConfig.ai;
     
     return {
+      mongodbUri: loadedConfig.mongodbUri || defaultConfig.mongodbUri,
       logChannels: { ...defaultConfig.logChannels, ...loadedConfig.logChannels },
       economy: { ...defaultConfig.economy, ...loadedConfig.economy },
       general: { ...defaultConfig.general, ...loadedConfig.general },
