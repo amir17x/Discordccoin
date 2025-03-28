@@ -26,6 +26,8 @@ import {
   StockData
 } from "@shared/schema";
 
+import { getCache, setCache, deleteCache } from './utils/cache';
+
 // تعریف انواع داده‌های مورد نیاز برای دوستی
 export interface Friend {
   id: string;
@@ -3455,6 +3457,59 @@ import QuizReviewerModel from './models/QuizReviewer';
 import GameSessionModel from './models/GameSession';
 
 export class MongoStorage implements IStorage {
+  async recordGame(userId: number, type: string, bet: number, won: boolean, reward: number): Promise<Game> {
+    try {
+      // بررسی اگر در کش موجود است
+      const cacheKey = `${userId}_${type}_${Date.now()}`;
+      const cachedGame = getCache<Game>('games', cacheKey);
+      if (cachedGame) return cachedGame;
+      
+      const user = await UserModel.findById(userId);
+      if (!user) return memStorage.recordGame(userId, type, bet, won, reward);
+      
+      const now = new Date();
+      const id = Date.now();
+      const game: Game = {
+        id,
+        userId,
+        type,
+        bet,
+        won,
+        reward,
+        playedAt: now
+      };
+      
+      // اگر آرایه بازی‌ها وجود ندارد، آن را ایجاد کنید
+      if (!user.games) user.games = [];
+      
+      // افزودن بازی جدید
+      user.games.push(game);
+      
+      // به‌روزرسانی آمار کاربر
+      user.totalGamesPlayed = (user.totalGamesPlayed || 0) + 1;
+      
+      // ذخیره تراکنش مربوط به بازی
+      if (!user.transactions) user.transactions = [];
+      user.transactions.push({
+        type: won ? 'game_win' : 'game_loss',
+        amount: won ? reward : -bet,
+        fee: 0,
+        timestamp: now
+      });
+      
+      await user.save();
+      
+      console.log(`Game recorded for user ${userId}: ${type}, bet: ${bet}, won: ${won}, reward: ${reward}`);
+      
+      // ذخیره در کش
+      setCache('games', cacheKey, game, 30 * 60 * 1000); // کش برای 30 دقیقه
+      
+      return game;
+    } catch (error) {
+      console.error('Error recording game in MongoDB:', error);
+      return memStorage.recordGame(userId, type, bet, won, reward);
+    }
+  }
   // User operations
   async getUser(id: number): Promise<User | undefined> {
     try {
@@ -3894,10 +3949,23 @@ export class MongoStorage implements IStorage {
         return memStorage.transferToBank(userId, amount);
       }
       
-      user.wallet -= amount;
-      user.bank += amount;
+      // محاسبه کارمزد
+      const fee = Math.ceil(amount * 0.01); // 1% fee
+      const depositAmount = amount - fee;
       
-      console.log(`Transferred ${amount} from wallet to bank for user ${user.username} (${user.discordId})`);
+      user.wallet -= amount;
+      user.bank += depositAmount;
+      
+      // ثبت تراکنش
+      if (!user.transactions) user.transactions = [];
+      user.transactions.push({
+        type: 'deposit',
+        amount: depositAmount,
+        fee: fee,
+        timestamp: new Date()
+      });
+      
+      console.log(`Transferred ${depositAmount} from wallet to bank for user ${user.username} (${user.discordId}) with fee ${fee}`);
       
       await user.save();
       return this.convertMongoUserToUser(user);
@@ -3937,6 +4005,15 @@ export class MongoStorage implements IStorage {
       
       user.bank -= amount;
       user.wallet += amount;
+      
+      // ثبت تراکنش
+      if (!user.transactions) user.transactions = [];
+      user.transactions.push({
+        type: 'withdraw',
+        amount: amount,
+        fee: 0, // برداشت از بانک کارمزد ندارد
+        timestamp: new Date()
+      });
       
       console.log(`Transferred ${amount} from bank to wallet for user ${user.username} (${user.discordId})`);
       
