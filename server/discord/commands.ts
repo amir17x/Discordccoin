@@ -4,11 +4,6 @@ import { mainMenu } from './components/mainMenu';
 import { adminMenu } from '../discord/components/adminMenu';
 import { setupTipSystem, addTipChannel, removeTipChannel, toggleTipChannel, updateTipChannel, updateTipInterval, sendImmediateTip } from './components/tipSystem';
 import { handleGroupGamesMenu } from './components/groupGames';
-import { huggingFaceService } from './services/huggingface';
-import { openAIService } from './services/chatgpt';
-import { googleAIService } from './services/googleai';
-import { grokService } from './services/grok';
-import { openRouterService } from './services/openrouter';
 import { botConfig } from './utils/config';
 import { pingCurrentAIService, generateAIResponse } from './services/aiService';
 
@@ -378,46 +373,55 @@ const help = {
   
   async execute(interaction: any) {
     try {
-      // ایجاد Embed زیبا برای راهنما
+      // ایجاد Embed زیبا و مدرن برای راهنما
       const helpEmbed = new EmbedBuilder()
-        .setColor('#FFFF99') // رنگ زرد روشن برای حس شادابی و انرژی
-        .setTitle('📖 راهنمای جامع ربات Ccoin 🌟')
-        .setDescription('به دنیای مجازی اقتصاد و سرگرمی Ccoin خوش اومدی! برای استفاده از ربات می‌تونی از دستورات زیر استفاده کنی:')
-        .setThumbnail(interaction.client.user?.displayAvatarURL() || '')
+        .setColor('#8A2BE2') // رنگ بنفش تیره برای ظاهر جذاب‌تر
+        .setTitle('✨ راهنمای جامع ربات Ccoin 🌠')
+        .setDescription('**به دنیای اقتصاد و سرگرمی پیشرفته Ccoin خوش آمدید!** 🚀\nاز دستورات زیر برای دسترسی به امکانات متنوع ربات استفاده کنید:')
+        .setThumbnail('https://img.icons8.com/fluency/96/treasure-chest.png')
         .addFields(
           { 
-            name: '🔸 **دستورات اصلی**', 
-            value: '`/menu` - منوی اصلی با تمام امکانات (اقتصاد، بازی‌ها، فروشگاه و...)\n' +
-                  '`/balance` - بررسی سریع موجودی حساب\n' +
-                  '`/daily` - دریافت پاداش روزانه (هر 24 ساعت یکبار)\n' +
-                  '`/help` - نمایش این راهنما\n' +
-                  '`/admin` - پنل مدیریت (مخصوص ادمین‌ها)\n' +
-                  '`/ping` - بررسی وضعیت اتصال به ربات\n' +
-                  '`/hf` - گفتگو با هوش مصنوعی Hugging Face و دریافت پاسخ هوشمند'
+            name: '🎮 **دستورات اصلی بازی**', 
+            value: '```yml\n/menu ⭐ منوی اصلی با تمام امکانات (کامل‌ترین روش)\n/balance 💰 بررسی سریع موجودی حساب\n/daily 🎁 دریافت پاداش روزانه (هر 24 ساعت)\n/help 📋 نمایش این راهنما\n```'
           },
           { 
-            name: '📜 **راهنمای کامل‌تر**', 
-            value: 'برای مشاهده راهنمای کامل‌تر و جزئیات هر بخش، روی دکمه "راهنمای جامع" کلیک کنید.\n' +
-                  'در آنجا می‌توانید با تمام ویژگی‌های ربات آشنا شوید! 📚'
+            name: '🧠 **هوش مصنوعی و ابزارها**', 
+            value: '```yml\n/askai 🤖 گفتگو با هوش مصنوعی هوشمند CCOIN AI\n/ping 📡 بررسی وضعیت اتصال و سلامت سیستم\n/admin 🛡️ پنل مدیریت (ویژه ادمین‌ها)\n```'
+          },
+          { 
+            name: '🔥 **ویژگی‌های جدید**', 
+            value: '• **بازی گرگینه**: مبارزه هیجان‌انگیز گروهی با نقش‌های متنوع 🐺\n• **سیستم دوستی پیشرفته**: تعامل بیشتر و پاداش‌های ویژه دوستان 👥\n• **هوش مصنوعی CCOIN AI**: دستیار شخصی با قابلیت‌های پیشرفته 🧠\n• **بخش گروه‌بازی‌ها**: ورود آسان‌تر و تجربه گیم‌پلی روان‌تر 🎯'
+          },
+          { 
+            name: '📚 **راهنمای تعاملی**', 
+            value: 'برای مشاهده راهنمای کامل و تعاملی، روی دکمه **"راهنمای جامع"** کلیک کنید.\nدر آنجا می‌توانید به‌صورت دسته‌بندی شده با تمام قابلیت‌های ربات آشنا شوید! 🌟'
           }
         )
+        .setImage('https://img.icons8.com/fluency/96/shooting-stars.png')
         .setFooter({ 
-          text: 'از Ccoin Bot v1.5.0 با پشتیبانی هوش مصنوعی Hugging Face لذت ببرید! | برای شروع از /menu استفاده کنید', 
+          text: 'از Ccoin Bot v1.5.0 با هوش مصنوعی اختصاصی CCOIN AI لذت ببرید! | برای شروع از /menu استفاده کنید', 
           iconURL: interaction.client.user?.displayAvatarURL() 
         })
         .setTimestamp();
       
-      // ساخت دکمه برای دسترسی به راهنمای کامل
+      // ساخت دکمه‌های زیبا برای دسترسی به راهنمای کامل و منو
       const row = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
           new ButtonBuilder()
             .setCustomId('help')
-            .setLabel('📚 راهنمای جامع')
+            .setLabel('✨ راهنمای کامل')
+            .setEmoji('📚')
             .setStyle(ButtonStyle.Primary),
           new ButtonBuilder()
             .setCustomId('menu')
-            .setLabel('🏠 منوی اصلی')
-            .setStyle(ButtonStyle.Success)
+            .setLabel('بازگشت به منوی اصلی')
+            .setEmoji('🏠')
+            .setStyle(ButtonStyle.Success),
+          new ButtonBuilder()
+            .setCustomId('feedback')
+            .setLabel('ارسال بازخورد')
+            .setEmoji('💬')
+            .setStyle(ButtonStyle.Secondary)
         );
       
       // استفاده از reply مستقیم به جای editReply
@@ -538,11 +542,11 @@ const ping = {
       let aiPing = -1;
       let aiErrorMessage = '';
       
-      // انجام تست پینگ سرویس فعال هوش مصنوعی (فقط Google AI)
+      // انجام تست پینگ سرویس فعال هوش مصنوعی (CCOIN AI)
       aiPing = await pingCurrentAIService();
       
       // نام نمایشی سرویس هوش مصنوعی
-      const aiServiceDisplayName = 'Google AI';
+      const aiServiceDisplayName = 'CCOIN AI';
       
       // بررسی وضعیت پینگ هوش مصنوعی با آستانه‌های جدید
       if (aiPing > 0) {
@@ -591,7 +595,7 @@ const ping = {
       } else if (aiPing === -401) {
         overallStatus = '❌ خطای احراز هویت در سرویس هوش مصنوعی';
       } else if (aiPing === -500) {
-        overallStatus = '❌ سرورهای Google AI با مشکل مواجه هستند';
+        overallStatus = '❌ سرورهای CCOIN AI با مشکل مواجه هستند';
       } else if (aiPing < 0) {
         overallStatus = '❌ اتصال به سرویس هوش مصنوعی با مشکل مواجه است';
       } else if (discordPing > 750 || mongoPing > 750) {
@@ -833,7 +837,7 @@ const unTipChannel = {
 // دستور گروه حذف شد و با منوی بازی‌ها یکپارچه شد
 // کاربران حالا می‌توانند از طریق منوی بازی‌ها به بازی‌های گروهی دسترسی داشته باشند
 
-// Command for Google AI interaction
+// Command for AI interaction
 const hf = {
   data: new SlashCommandBuilder()
     .setName('askai')
@@ -852,8 +856,8 @@ const hf = {
       const activeService = botConfig.getActiveAIService();
       const aiPing = await pingCurrentAIService();
       
-      // تعیین نام نمایشی سرویس هوش مصنوعی - فقط Google AI
-      const aiServiceDisplayName = 'Google AI';
+      // تعیین نام نمایشی سرویس هوش مصنوعی - CCOIN AI
+      const aiServiceDisplayName = 'CCOIN AI';
       
       // بررسی وضعیت اتصال بر اساس پینگ
       if (aiPing < 0) {
@@ -1003,7 +1007,7 @@ export async function loadCommands(client: Client) {
   client.commands.set(tipChannel.data.name, tipChannel);
   client.commands.set(unTipChannel.data.name, unTipChannel);
   // کامند بازی‌های گروهی حذف شد و با منوی بازی‌ها یکپارچه شد
-  client.commands.set(hf.data.name, hf); // Add the Google AI command
+  client.commands.set(hf.data.name, hf); // Add the CCOIN AI command
 }
 
 export const commands = [
@@ -1016,5 +1020,5 @@ export const commands = [
   tipChannel.data.toJSON(),
   unTipChannel.data.toJSON(),
   // کامند بازی‌های گروهی حذف شد و با منوی بازی‌ها یکپارچه شد
-  hf.data.toJSON() // Add the Google AI command to slash commands
+  hf.data.toJSON() // Add the CCOIN AI command to slash commands
 ];

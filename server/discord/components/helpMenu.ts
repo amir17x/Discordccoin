@@ -62,9 +62,9 @@ export async function helpMenu(interaction: ButtonInteraction | ChatInputCommand
       .addComponents(categorySelect);
     
     let embed = new EmbedBuilder()
-      .setColor('#FFFF99')
+      .setColor('#8A2BE2') // رنگ بنفش تیره برای هماهنگی با منوی اصلی
       .setFooter({ 
-        text: 'از Ccoin Bot لذت ببرید! | برای مشاهده منوی اصلی از /menu استفاده کنید', 
+        text: 'از Ccoin Bot با هوش مصنوعی اختصاصی CCOIN AI لذت ببرید! | برای مشاهده منوی اصلی از /menu استفاده کنید', 
         iconURL: interaction.client.user?.displayAvatarURL() 
       })
       .setTimestamp();
@@ -87,42 +87,88 @@ export async function helpMenu(interaction: ButtonInteraction | ChatInputCommand
       embed = createGeneralHelpEmbed(embed);
     }
     
-    // دکمه‌های منو
-    const buttonsRow = new ActionRowBuilder<ButtonBuilder>()
+    // دکمه‌های دسته‌بندی راهنما با طراحی جدید
+    const helpButtonsRow1 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('help_view_economy')
+          .setLabel('راهنمای اقتصاد')
+          .setEmoji('💰')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('help_view_games')
+          .setLabel('راهنمای بازی‌ها')
+          .setEmoji('🎮')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('help_view_shop')
+          .setLabel('راهنمای فروشگاه')
+          .setEmoji('🛒')
+          .setStyle(ButtonStyle.Primary)
+      );
+      
+    const helpButtonsRow2 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('help_view_quests')
+          .setLabel('راهنمای ماموریت‌ها')
+          .setEmoji('🎯')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('help_view_clans')
+          .setLabel('راهنمای کلن‌ها')
+          .setEmoji('🏰')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('help_view_friends')
+          .setLabel('راهنمای دوستی')
+          .setEmoji('👥')
+          .setStyle(ButtonStyle.Primary)
+      );
+    
+    // دکمه‌های ناوبری
+    const navButtonsRow = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
           .setCustomId('menu')
-          .setLabel('🏠 منوی اصلی')
-          .setStyle(ButtonStyle.Primary),
+          .setLabel('منوی اصلی')
+          .setEmoji('🏠')
+          .setStyle(ButtonStyle.Secondary),
         new ButtonBuilder()
           .setCustomId('help_search')
-          .setLabel('🔍 جستجو در راهنما')
+          .setLabel('جستجو')
+          .setEmoji('🔍')
           .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId('feedback')
+          .setLabel('ارسال بازخورد')
+          .setEmoji('💬')
+          .setStyle(ButtonStyle.Danger)
       );
     
     // ارسال پاسخ
     if (interaction.deferred) {
       await interaction.editReply({
         embeds: [embed],
-        components: [selectRow, buttonsRow]
+        components: [selectRow, helpButtonsRow1, helpButtonsRow2, navButtonsRow]
       });
     } else if ('update' in interaction && typeof interaction.update === 'function') {
       try {
         await interaction.update({
           embeds: [embed],
-          components: [selectRow, buttonsRow]
+          components: [selectRow, helpButtonsRow1, helpButtonsRow2, navButtonsRow]
         });
       } catch (e) {
         await interaction.reply({
           embeds: [embed],
-          components: [selectRow, buttonsRow],
+          components: [selectRow, helpButtonsRow1, helpButtonsRow2, navButtonsRow],
           ephemeral: true
         });
       }
     } else {
       await interaction.reply({
         embeds: [embed],
-        components: [selectRow, buttonsRow],
+        components: [selectRow, helpButtonsRow1, helpButtonsRow2, navButtonsRow],
         ephemeral: true
       });
     }
@@ -512,13 +558,14 @@ export async function searchHelp(interaction: ButtonInteraction | ChatInputComma
       return;
     }
     
-    // ایجاد امبد نتیجه جستجو
+    // ایجاد امبد نتیجه جستجو با طراحی جدید
     const embed = new EmbedBuilder()
-      .setColor('#FFFF99')
+      .setColor('#8A2BE2') // رنگ بنفش تیره برای هماهنگی با منوی اصلی
       .setTitle(`🔍 نتایج جستجو برای: "${query}"`)
       .setDescription('موارد زیر در راهنمای ربات یافت شد:')
+      .setThumbnail('https://img.icons8.com/fluency/48/search.png')
       .setFooter({ 
-        text: 'از Ccoin Bot لذت ببرید! | برای مشاهده منوی اصلی از /menu استفاده کنید', 
+        text: 'از Ccoin Bot با هوش مصنوعی اختصاصی CCOIN AI لذت ببرید! | برای مشاهده منوی اصلی از /menu استفاده کنید', 
         iconURL: interaction.client.user?.displayAvatarURL() 
       })
       .setTimestamp();
@@ -528,10 +575,24 @@ export async function searchHelp(interaction: ButtonInteraction | ChatInputComma
       // فقط چند نمونه برای تست
     ];
     
+    // بررسی عبارت در راهنمای کلی
+    if (searchTerm.includes('راهنما') || searchTerm.includes('کمک') || 
+        searchTerm.includes('دستور') || searchTerm.includes('کوین') || 
+        searchTerm.includes('سکه') || searchTerm.includes('بات') ||
+        searchTerm.includes('منو') || searchTerm.includes('صفحه') ||
+        searchTerm.includes('بخش')) {
+      results.push({
+        category: 'general',
+        title: '🏠 راهنمای کلی',
+        content: 'راهنمای جامع ربات، دستورات اصلی و نحوه شروع کار'
+      });
+    }
+    
     // بررسی عبارت در راهنمای اقتصادی
-    if ('بانک'.includes(searchTerm) || 'سکه'.includes(searchTerm) || 
-        'اقتصاد'.includes(searchTerm) || 'پول'.includes(searchTerm) || 
-        'انتقال'.includes(searchTerm) || 'کیف پول'.includes(searchTerm)) {
+    if (searchTerm.includes('بانک') || searchTerm.includes('سکه') || 
+        searchTerm.includes('اقتصاد') || searchTerm.includes('پول') || 
+        searchTerm.includes('انتقال') || searchTerm.includes('کیف پول') ||
+        searchTerm.includes('کریستال')) {
       results.push({
         category: 'economy',
         title: '💰 سیستم اقتصادی',
@@ -540,9 +601,11 @@ export async function searchHelp(interaction: ButtonInteraction | ChatInputComma
     }
     
     // بررسی عبارت در راهنمای بازی‌ها
-    if ('بازی'.includes(searchTerm) || 'شرط'.includes(searchTerm) || 
-        'دوئل'.includes(searchTerm) || 'تورنمنت'.includes(searchTerm) || 
-        'جایزه'.includes(searchTerm) || 'مسابقه'.includes(searchTerm)) {
+    if (searchTerm.includes('بازی') || searchTerm.includes('شرط') || 
+        searchTerm.includes('دوئل') || searchTerm.includes('تورنمنت') || 
+        searchTerm.includes('جایزه') || searchTerm.includes('مسابقه') ||
+        searchTerm.includes('گردونه') || searchTerm.includes('مافیا') || 
+        searchTerm.includes('گرگ نما')) {
       results.push({
         category: 'games',
         title: '🎮 بازی‌ها و سرگرمی',
@@ -551,9 +614,10 @@ export async function searchHelp(interaction: ButtonInteraction | ChatInputComma
     }
     
     // بررسی عبارت در راهنمای کلن‌ها
-    if ('کلن'.includes(searchTerm) || 'گروه'.includes(searchTerm) || 
-        'رهبر'.includes(searchTerm) || 'عضو'.includes(searchTerm) || 
-        'جنگ'.includes(searchTerm) || 'وار'.includes(searchTerm)) {
+    if (searchTerm.includes('کلن') || searchTerm.includes('گروه') || 
+        searchTerm.includes('رهبر') || searchTerm.includes('عضو') || 
+        searchTerm.includes('جنگ') || searchTerm.includes('وار') ||
+        searchTerm.includes('اتحاد')) {
       results.push({
         category: 'clans',
         title: '🏰 کلن‌ها و گروه‌ها',
@@ -562,9 +626,9 @@ export async function searchHelp(interaction: ButtonInteraction | ChatInputComma
     }
     
     // بررسی عبارت در راهنمای دوستی
-    if ('دوست'.includes(searchTerm) || 'رفیق'.includes(searchTerm) || 
-        'چت'.includes(searchTerm) || 'پیام'.includes(searchTerm) || 
-        'مسدود'.includes(searchTerm) || 'ارتباط'.includes(searchTerm)) {
+    if (searchTerm.includes('دوست') || searchTerm.includes('رفیق') || 
+        searchTerm.includes('چت') || searchTerm.includes('پیام') || 
+        searchTerm.includes('مسدود') || searchTerm.includes('ارتباط')) {
       results.push({
         category: 'friends',
         title: '👥 سیستم دوستی',
@@ -573,9 +637,10 @@ export async function searchHelp(interaction: ButtonInteraction | ChatInputComma
     }
     
     // بررسی عبارت در راهنمای مأموریت‌ها
-    if ('ماموریت'.includes(searchTerm) || 'مأموریت'.includes(searchTerm) || 
-        'دستاورد'.includes(searchTerm) || 'جایزه'.includes(searchTerm) || 
-        'هفتگی'.includes(searchTerm) || 'روزانه'.includes(searchTerm)) {
+    if (searchTerm.includes('ماموریت') || searchTerm.includes('مأموریت') || 
+        searchTerm.includes('دستاورد') || searchTerm.includes('جایزه') || 
+        searchTerm.includes('هفتگی') || searchTerm.includes('روزانه') ||
+        searchTerm.includes('کوییست') || searchTerm.includes('چالش')) {
       results.push({
         category: 'quests',
         title: '🎯 مأموریت‌ها و دستاوردها',
@@ -584,9 +649,11 @@ export async function searchHelp(interaction: ButtonInteraction | ChatInputComma
     }
     
     // بررسی عبارت در راهنمای فروشگاه
-    if ('فروشگاه'.includes(searchTerm) || 'خرید'.includes(searchTerm) || 
-        'آیتم'.includes(searchTerm) || 'کوله'.includes(searchTerm) || 
-        'جعبه'.includes(searchTerm) || 'نقش'.includes(searchTerm)) {
+    if (searchTerm.includes('فروشگاه') || searchTerm.includes('خرید') || 
+        searchTerm.includes('آیتم') || searchTerm.includes('کوله') || 
+        searchTerm.includes('جعبه') || searchTerm.includes('نقش') ||
+        searchTerm.includes('کیف') || searchTerm.includes('بک‌پک') ||
+        searchTerm.includes('فروش')) {
       results.push({
         category: 'shop',
         title: '🛒 فروشگاه و آیتم‌ها',
@@ -614,10 +681,12 @@ export async function searchHelp(interaction: ButtonInteraction | ChatInputComma
       const resultButtons = new ActionRowBuilder<ButtonBuilder>();
       
       results.slice(0, Math.min(5, results.length)).forEach((result, index) => {
+        const emoji = result.title.split(' ')[0]; // استخراج ایموجی از عنوان
         resultButtons.addComponents(
           new ButtonBuilder()
             .setCustomId(`help_view_${result.category}`)
-            .setLabel(`${index + 1}. ${result.title.split(' ')[1]}`)
+            .setLabel(`${result.title.split(' ')[1]}`) // حذف شماره گذاری برای زیبایی بیشتر
+            .setEmoji(emoji) // افزودن ایموجی به دکمه
             .setStyle(ButtonStyle.Primary)
         );
       });
@@ -625,17 +694,24 @@ export async function searchHelp(interaction: ButtonInteraction | ChatInputComma
       buttonRows.push(resultButtons);
     }
     
-    // دکمه‌های منو
+    // دکمه‌های منو با طراحی جدید
     const menuButtons = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
           .setCustomId('help')
-          .setLabel('🔙 بازگشت به راهنما')
+          .setLabel('بازگشت به راهنما')
+          .setEmoji('🔙')
           .setStyle(ButtonStyle.Secondary),
         new ButtonBuilder()
           .setCustomId('menu')
-          .setLabel('🏠 منوی اصلی')
-          .setStyle(ButtonStyle.Secondary),
+          .setLabel('منوی اصلی')
+          .setEmoji('🏠')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('help_search')
+          .setLabel('جستجوی جدید')
+          .setEmoji('🔍')
+          .setStyle(ButtonStyle.Success)
       );
     
     buttonRows.push(menuButtons);

@@ -1,15 +1,19 @@
-import FriendModel, { IFriend } from './Friend';
+import FriendModel from './Friend';
+import type { IFriend } from './Friend';
 import FriendRequestModel, { IFriendRequest } from './FriendRequest';
 import BlockedUserModel, { IBlockedUser } from './BlockedUser';
 import UserInterestsModel, { IUserInterests } from './UserInterests';
 
 export {
   FriendModel,
-  IFriend,
   FriendRequestModel,
-  IFriendRequest,
   BlockedUserModel,
+  UserInterestsModel
+};
+
+export type {
+  IFriend,
+  IFriendRequest,
   IBlockedUser,
-  UserInterestsModel,
   IUserInterests
 };

@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Document, Schema, Model } from 'mongoose';
 
 // تعریف ساختار کاربر مسدود شده
 export interface IBlockedUser extends Document {
@@ -6,6 +6,21 @@ export interface IBlockedUser extends Document {
   blockedUserId: string;
   reason?: string;
   blockedAt: Date;
+}
+
+// تعریف متدهای استاتیک
+interface IBlockedUserModel extends Model<IBlockedUser> {
+  isBlocked(userId: string, blockedUserId: string): Promise<boolean>;
+  blockUser(userId: string, blockedUserId: string, reason?: string): Promise<IBlockedUser>;
+  unblockUser(userId: string, blockedUserId: string): Promise<boolean>;
+  getBlockedUsers(userId: string, limit?: number, skip?: number): Promise<IBlockedUser[]>;
+  countBlockedUsers(userId: string): Promise<number>;
+  getBlockedBy(blockedUserId: string, limit?: number, skip?: number): Promise<IBlockedUser[]>;
+  countBlockedBy(blockedUserId: string): Promise<number>;
+  isMutuallyBlocked(user1Id: string, user2Id: string): Promise<boolean>;
+  getBlockInfo(userId: string, blockedUserId: string): Promise<IBlockedUser | null>;
+  updateBlockReason(userId: string, blockedUserId: string, reason: string): Promise<IBlockedUser | null>;
+  getRecentlyBlockedUsers(userId: string, days?: number, limit?: number): Promise<IBlockedUser[]>;
 }
 
 // اسکیما برای کاربر مسدود شده
@@ -119,10 +134,11 @@ BlockedUserSchema.statics.isMutuallyBlocked = async function(
   user1Id: string,
   user2Id: string
 ): Promise<boolean> {
-  const user1BlockedUser2 = await this.isBlocked(user1Id, user2Id);
-  const user2BlockedUser1 = await this.isBlocked(user2Id, user1Id);
+  // بررسی به صورت مستقیم بدون استفاده از متد isBlocked
+  const user1BlockedUser2Count = await this.countDocuments({ userId: user1Id, blockedUserId: user2Id });
+  const user2BlockedUser1Count = await this.countDocuments({ userId: user2Id, blockedUserId: user1Id });
   
-  return user1BlockedUser2 && user2BlockedUser1;
+  return user1BlockedUser2Count > 0 && user2BlockedUser1Count > 0;
 };
 
 // متد استاتیک برای دریافت اطلاعات مسدودیت
@@ -164,6 +180,6 @@ BlockedUserSchema.statics.getRecentlyBlockedUsers = async function(
 };
 
 // ایجاد و صادر کردن مدل
-export const BlockedUserModel = mongoose.model<IBlockedUser>('BlockedUser', BlockedUserSchema);
+export const BlockedUserModel = mongoose.model<IBlockedUser, IBlockedUserModel>('BlockedUser', BlockedUserSchema);
 
 export default BlockedUserModel;

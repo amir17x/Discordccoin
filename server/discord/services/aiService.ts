@@ -176,26 +176,31 @@ export async function generateAIResponse(
   try {
     const startTime = Date.now();
     
-    log(`ارسال درخواست به CCOIN AI: ${prompt.substring(0, 50)}...`, 'info');
-    
     // تبدیل سبک پاسخگویی به میزان خلاقیت مناسب
     const temperature = responseStyle ? 
       (responseStyle === 'خلاقانه' ? 0.9 : 
        responseStyle === 'دقیق' ? 0.3 : 
        responseStyle === 'طنزآمیز' ? 1.0 : 0.7) : 0.7;
     
+    // بررسی سرویس فعلی
+    const currentService = botConfig.getAISettings().service;
     let response: string;
+    let serviceUsed: AIService = 'ccoinai';
     
+    // سرویس‌های Gemini/CCOIN AI
+    log(`ارسال درخواست به CCOIN AI: ${prompt.substring(0, 50)}...`, 'info');
+      
     // سعی می‌کنیم ابتدا از سرویس SDK استفاده کنیم
     try {
       if (geminiSdkService.isAvailable()) {
         response = await geminiSdkService.generateContent(prompt, 1000, temperature);
+        serviceUsed = 'googleai';
       } else {
         // اگر SDK در دسترس نبود، از سرویس جایگزین استفاده می‌کنیم
         response = await ccoinAIAltService.generateContent(prompt, 1000, temperature);
       }
     } catch (e) {
-      // در صورت خطا در CCOIN AI به سرویس جایگزین می‌رویم
+      // در صورت خطا در CCOIN AI به سرویس پشتیبان می‌رویم
       log(`خطا در سرویس CCOIN AI: ${e}. استفاده از سرویس پشتیبان CCOIN AI...`, 'warn');
       response = await ccoinAIAltService.generateContent(prompt, 1000, temperature);
     }
@@ -205,13 +210,25 @@ export async function generateAIResponse(
     
     // بروزرسانی آمار - فقط برای درخواست‌های جدید (غیرکش شده)
     if (latency > 50) {
-      updateAIStats(usageType, latency, 'ccoinai');
+      updateAIStats(usageType, latency, serviceUsed);
     }
     
     return response;
   } catch (error) {
     log(`Error generating AI response: ${error}`, 'error');
-    return 'متأسفانه در تولید پاسخ هوش مصنوعی خطایی رخ داد.';
+    // پیام‌های خطای جایگزین با محتوای مرتبط با ویژگی‌های ربات
+    const errorResponses = [
+      "اوپس! CCOIN AI در حال استراحته 🛌 تا برگرده، یه سری به منوی بازی‌ها بزن و کمی سکه جمع کن! 🎮💰",
+      "هوش مصنوعی فعلاً در دسترس نیست 🤔 چه فرصت خوبی برای چرخوندن چرخ شانس و بردن جوایز! 🎡✨",
+      "CCOIN AI داره نفس تازه می‌کنه! ⏳ اما نگران نباش، فروشگاه همیشه بازه - می‌تونی آیتم‌های جدید بخری! 🛍️",
+      "سیستم هوش مصنوعی در حال به‌روزرسانیه 🔄 در این فاصله می‌تونی با دوستانت به گروه‌بازی‌های هیجان‌انگیز بپیوندی! 🎭",
+      "ظاهراً CCOIN AI به استراحت نیاز داشت 😴 بهتره الان یه ماموریت جدید شروع کنی و سکه جمع کنی! 🎯",
+      "هوش مصنوعی موقتاً در دسترس نیست 🚧 فرصت خوبیه که به کلنت سر بزنی یا یه کلن جدید بسازی! 🏰",
+      "CCOIN AI داره شارژ میشه! 🔋 تا برگرده، یادت نره پاداش روزانه‌ات رو بگیری! 🎁",
+      "سیستم هوش مصنوعی در حال بهینه‌سازیه 🛠️ چطوره توی این فاصله با قابلیت دزدی یکم سکه به دست بیاری؟ 🥷"
+    ];
+    
+    return errorResponses[Math.floor(Math.random() * errorResponses.length)];
   }
 }
 
@@ -247,7 +264,10 @@ export async function testAIService(
     let response: string;
     let serviceUsed: AIService = 'ccoinai';
 
-    // سعی می‌کنیم ابتدا از سرویس SDK استفاده کنیم
+    // بررسی سرویس فعلی
+    const currentService = botConfig.getAISettings().service;
+    
+    // سرویس‌های Gemini/CCOIN AI
     try {
       if (geminiSdkService.isAvailable()) {
         response = await geminiSdkService.generateContent(prompt, 200, temperature);
@@ -313,6 +333,9 @@ export async function pingCurrentAIService(): Promise<number> {
         });
       });
     };
+    
+    // بررسی سرویس فعلی
+    const currentService = botConfig.getAISettings().service;
     
     // ابتدا سرویس CCOIN AI را تست می‌کنیم
     if (geminiSdkService.isAvailable()) {
