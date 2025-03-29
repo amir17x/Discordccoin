@@ -1,0 +1,45 @@
+
+> rest-express@1.0.0 dev
+> tsx server/index.ts
+
+(node:2927) [MONGODB DRIVER] Warning: useNewUrlParser is a deprecated option: useNewUrlParser has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2927) [MONGODB DRIVER] Warning: useUnifiedTopology is a deprecated option: useUnifiedTopology has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+7:22:21 AM [info] Starting server with full functionality...
+🗄️ اتصال به MongoDB با موفقیت برقرار شد
+7:22:21 AM [success] Connected to MongoDB database
+7:22:21 AM [discord] Started refreshing application (/) commands.
+7:22:21 AM [discord] Successfully reloaded application (/) commands.
+7:22:21 AM [discord] Attempting to login with Discord token...
+7:22:21 AM [discord] Successfully logged in to Discord
+7:22:21 AM [success] Discord bot initialized successfully
+7:22:21 AM [success] Group games client initialized successfully
+7:22:21 AM [success] Tip system will be initialized when Discord bot is ready
+7:22:21 AM [info] Admin panel temporarily disabled
+7:22:21 AM [express] Server is running on port 5000
+7:22:22 AM [discord] Logged in as Ccoin#1873!
+🔍 در حال راه‌اندازی سیستم نکات...
+🔄 در حال بارگذاری کانال‌های نکات فعال...
+✅ سیستم نکات با موفقیت راه‌اندازی شد.
+7:22:22 AM [discord] سیستم نکات با موفقیت راه‌اندازی شد
+Sending request to Google AI (model: gemini-1.5-pro)
+7:22:22 AM [discord] سیستم جملات طنز هوش مصنوعی با موفقیت راه‌اندازی شد
+7:22:22 AM [discord] سیستم هوش مصنوعی بازار سهام با موفقیت راه‌اندازی شد
+🔄 اتصال به MongoDB مجدداً برقرار شد
+Connected to MongoDB with Mongoose
+📊 0 کانال نکات فعال یافت شد.
+7:22:23 AM [success] تولید پیام طنز برای تم "هوش مصنوعی": "آینده‌ی بشریت رو 👾"
+7:22:23 AM [info] وضعیت ربات به‌روزرسانی شد: آینده‌ی بشریت رو 👾
+7:22:23 AM [info] سیستم به‌روزرسانی خودکار وضعیت با فاصله 20 دقیقه راه‌اندازی شد
+Connected to MongoDB
+7:22:23 AM [error] هیچ سهمی در سیستم یافت نشد.
+7:22:23 AM [info] سیستم پویای بازار سهام با فاصله 60 دقیقه راه‌اندازی شد
+7:22:53 AM [error] هیچ سهمی برای به‌روزرسانی یافت نشد.
+7:22:55 AM [express] HEAD /api/stats 404 in 2ms
+7:22:58 AM [express] HEAD /api/health 404 in 1ms
+(node:2927) Warning: Supplying "ephemeral" for interaction response options is deprecated. Utilize flags instead.
+Active Players - Last 24h: 0, Last 7d: 0
+Active Players - Last 24h: 0, Last 7d: 0
+Active Players - Last 24h: 0, Last 7d: 0
+7:24:07 AM [discord] Executing command: ping
+7:24:08 AM [discord] Successfully executed command: ping

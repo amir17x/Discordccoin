@@ -12,20 +12,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API routes prefix
   const apiPrefix = "/api";
 
-  // Health check endpoint
-  app.get(`${apiPrefix}/health`, (req: Request, res: Response) => {
-    res.status(200).json({ status: "ok" });
-  });
+  // Health check endpoint - غیرفعال شده
+  // app.get(`${apiPrefix}/health`, (req: Request, res: Response) => {
+  //   res.status(200).json({ status: "ok" });
+  // });
 
-  // Bot status endpoint
-  app.get(`${apiPrefix}/bot/status`, (req: Request, res: Response) => {
-    res.status(200).json({ 
-      status: "online",
-      version: "1.0.0",
-      uptime: process.uptime(),
-      memoryUsage: process.memoryUsage()
-    });
-  });
+  // Bot status endpoint - غیرفعال شده
+  // app.get(`${apiPrefix}/bot/status`, (req: Request, res: Response) => {
+  //   res.status(200).json({ 
+  //     status: "online",
+  //     version: "1.0.0",
+  //     uptime: process.uptime(),
+  //     memoryUsage: process.memoryUsage()
+  //   });
+  // });
 
   // Get all users
   app.get(`${apiPrefix}/users`, async (req: Request, res: Response) => {
@@ -233,23 +233,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(200).json(achievements);
   });
 
-  // Stats endpoint
-  app.get(`${apiPrefix}/stats`, async (req: Request, res: Response) => {
-    const users = await storage.getAllUsers();
-    const clans = await storage.getAllClans();
-    
-    const totalUsers = users.length;
-    const totalCcoin = users.reduce((sum, user) => sum + user.wallet + user.bank, 0);
-    const totalCrystals = users.reduce((sum, user) => sum + user.crystals, 0);
-    const totalClans = clans.length;
-    
-    res.status(200).json({
-      totalUsers,
-      totalCcoin,
-      totalCrystals,
-      totalClans
-    });
-  });
+  // Stats endpoint - غیرفعال شده
+  // app.get(`${apiPrefix}/stats`, async (req: Request, res: Response) => {
+  //   const users = await storage.getAllUsers();
+  //   const clans = await storage.getAllClans();
+  //   
+  //   const totalUsers = users.length;
+  //   const totalCcoin = users.reduce((sum, user) => sum + user.wallet + user.bank, 0);
+  //   const totalCrystals = users.reduce((sum, user) => sum + user.crystals, 0);
+  //   const totalClans = clans.length;
+  //   
+  //   res.status(200).json({
+  //     totalUsers,
+  //     totalCcoin,
+  //     totalCrystals,
+  //     totalClans
+  //   });
+  // });
   
   /**
    * MongoDB API routes - These routes use the new MongoDB models
