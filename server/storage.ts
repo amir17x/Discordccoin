@@ -3775,6 +3775,7 @@ import GameSessionModel from './models/GameSession';
 import { connectMongo } from './utils/connectMongo';
 import ItemModel from './models/Item';
 import QuestModel from './models/Quest';
+import { FriendRequestModel, BlockedUserModel } from './models/friend';
 
 export class MongoStorage implements IStorage {
   async incrementTotalGamesWon(userId: number): Promise<void> {
@@ -6731,6 +6732,67 @@ export class MongoStorage implements IStorage {
       });
     } catch (error) {
       console.error('Error getting user game sessions from MongoDB:', error);
+      return [];
+    }
+  }
+
+  async isUserBlocked(userId: number, blockedUserId: number): Promise<boolean> {
+    try {
+      // تبدیل userId به رشته (چون در مدل MongoDB به صورت رشته ذخیره می‌شود)
+      const user = await UserModel.findOne({ id: userId });
+      const blockedUser = await UserModel.findOne({ id: blockedUserId });
+      
+      if (!user || !blockedUser) return false;
+      
+      // استفاده از متد استاتیک مدل BlockedUser برای بررسی مسدودیت
+      return await BlockedUserModel.isBlocked(user.discordId, blockedUser.discordId);
+    } catch (error) {
+      console.error(`Error checking if user ${userId} blocked user ${blockedUserId}:`, error);
+      return false;
+    }
+  }
+  
+  async getFriendRequests(userId: number): Promise<FriendRequest[]> {
+    try {
+      const user = await UserModel.findOne({ id: userId });
+      if (!user) return [];
+      
+      // دریافت درخواست‌های ارسال شده و دریافت شده
+      const sentRequests = await FriendRequestModel.getSentRequests(user.discordId, 'pending');
+      const receivedRequests = await FriendRequestModel.getReceivedRequests(user.discordId, 'pending');
+      
+      // تبدیل به ساختار مورد نیاز در اینترفیس IStorage
+      const friendRequests: FriendRequest[] = [];
+      
+      // تبدیل درخواست‌های ارسالی
+      for (const request of sentRequests) {
+        friendRequests.push({
+          id: request._id.toString(),
+          fromUserId: request.senderId,
+          toUserId: request.receiverId,
+          status: request.status,
+          message: request.message || undefined,
+          timestamp: request.createdAt,
+          respondedAt: request.respondedAt
+        });
+      }
+      
+      // تبدیل درخواست‌های دریافتی
+      for (const request of receivedRequests) {
+        friendRequests.push({
+          id: request._id.toString(),
+          fromUserId: request.senderId,
+          toUserId: request.receiverId,
+          status: request.status,
+          message: request.message || undefined,
+          timestamp: request.createdAt,
+          respondedAt: request.respondedAt
+        });
+      }
+      
+      return friendRequests;
+    } catch (error) {
+      console.error(`Error getting friend requests for user ${userId}:`, error);
       return [];
     }
   }

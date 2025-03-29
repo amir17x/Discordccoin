@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import { botConfig } from '../utils/config';
-import geminiAltService from './geminiAltService';
+import ccoinAIAltService from './ccoinAIAltService';
 import geminiService from './geminiService';
 import geminiSdkService from './geminiSdkService';
 import { log } from '../../vite';
@@ -10,7 +10,7 @@ import { log } from '../../vite';
 const AI_STATS_FILE = path.resolve(process.cwd(), 'ai_stats.json');
 
 // تعریف انواع سرویس‌های هوش مصنوعی
-export type AIService = 'geminialt' | 'googleai' | 'vertexai';
+export type AIService = 'ccoinai' | 'googleai' | 'vertexai';
 
 // ساختار داده آمار هوش مصنوعی
 interface AIStats {
@@ -20,7 +20,7 @@ interface AIStats {
   providerStats: {
     googleai: number;
     vertexai: number;
-    geminialt?: number;
+    ccoinai?: number;
   };
   usageCounts: {
     statusMessages: number;
@@ -35,13 +35,13 @@ interface AIStats {
 
 // مقدار پیش‌فرض برای آمار
 const defaultStats: AIStats = {
-  service: 'geminialt',
+  service: 'ccoinai',
   lastUsed: null,
   requestCount: 0,
   providerStats: {
     googleai: 0,
     vertexai: 0,
-    geminialt: 0
+    ccoinai: 0
   },
   usageCounts: {
     statusMessages: 0,
@@ -116,7 +116,7 @@ function saveAIStats(stats: AIStats): void {
 function updateAIStats(
   usageType: 'statusMessages' | 'marketAnalysis' | 'questStories' | 'aiAssistant' | 'other',
   latency: number,
-  provider: AIService = 'geminialt'
+  provider: AIService = 'ccoinai'
 ): void {
   try {
     const stats = loadAIStats();
@@ -133,11 +133,11 @@ function updateAIStats(
         stats.providerStats.vertexai = 0;
       }
       stats.providerStats.vertexai++;
-    } else if (provider === 'geminialt') {
-      if (!stats.providerStats.geminialt) {
-        stats.providerStats.geminialt = 0;
+    } else if (provider === 'ccoinai') {
+      if (!stats.providerStats.ccoinai) {
+        stats.providerStats.ccoinai = 0;
       }
-      stats.providerStats.geminialt++;
+      stats.providerStats.ccoinai++;
     }
     
     // بروزرسانی نوع استفاده
@@ -176,7 +176,7 @@ export async function generateAIResponse(
   try {
     const startTime = Date.now();
     
-    log(`ارسال درخواست به Google Gemini: ${prompt.substring(0, 50)}...`, 'info');
+    log(`ارسال درخواست به CCOIN AI: ${prompt.substring(0, 50)}...`, 'info');
     
     // تبدیل سبک پاسخگویی به میزان خلاقیت مناسب
     const temperature = responseStyle ? 
@@ -192,12 +192,12 @@ export async function generateAIResponse(
         response = await geminiSdkService.generateContent(prompt, 1000, temperature);
       } else {
         // اگر SDK در دسترس نبود، از سرویس جایگزین استفاده می‌کنیم
-        response = await geminiAltService.generateContent(prompt, 1000, temperature);
+        response = await ccoinAIAltService.generateContent(prompt, 1000, temperature);
       }
     } catch (e) {
-      // در صورت خطا در SDK به سرویس جایگزین می‌رویم
-      log(`خطا در سرویس SDK: ${e}. استفاده از سرویس جایگزین...`, 'warn');
-      response = await geminiAltService.generateContent(prompt, 1000, temperature);
+      // در صورت خطا در CCOIN AI به سرویس جایگزین می‌رویم
+      log(`خطا در سرویس CCOIN AI: ${e}. استفاده از سرویس پشتیبان CCOIN AI...`, 'warn');
+      response = await ccoinAIAltService.generateContent(prompt, 1000, temperature);
     }
     
     // محاسبه زمان پاسخگویی
@@ -205,7 +205,7 @@ export async function generateAIResponse(
     
     // بروزرسانی آمار - فقط برای درخواست‌های جدید (غیرکش شده)
     if (latency > 50) {
-      updateAIStats(usageType, latency, 'geminialt');
+      updateAIStats(usageType, latency, 'ccoinai');
     }
     
     return response;
@@ -245,7 +245,7 @@ export async function testAIService(
                          style === 'طنزآمیز' ? 1.0 : 0.7;
     
     let response: string;
-    let serviceUsed: AIService = 'geminialt';
+    let serviceUsed: AIService = 'ccoinai';
 
     // سعی می‌کنیم ابتدا از سرویس SDK استفاده کنیم
     try {
@@ -254,12 +254,12 @@ export async function testAIService(
         serviceUsed = 'googleai'; // SDK را به عنوان googleai در آمار نشان می‌دهیم
       } else {
         // اگر SDK در دسترس نبود، از سرویس جایگزین استفاده می‌کنیم
-        response = await geminiAltService.generateContent(prompt, 200, temperature);
+        response = await ccoinAIAltService.generateContent(prompt, 200, temperature);
       }
     } catch (e) {
-      // در صورت خطا در SDK به سرویس جایگزین می‌رویم
-      log(`خطا در سرویس SDK: ${e}. استفاده از سرویس جایگزین...`, 'warn');
-      response = await geminiAltService.generateContent(prompt, 200, temperature);
+      // در صورت خطا در CCOIN AI به سرویس پشتیبان می‌رویم
+      log(`خطا در سرویس CCOIN AI: ${e}. استفاده از سرویس پشتیبان CCOIN AI...`, 'warn');
+      response = await ccoinAIAltService.generateContent(prompt, 200, temperature);
     }
     
     // محاسبه زمان پاسخگویی
@@ -314,18 +314,18 @@ export async function pingCurrentAIService(): Promise<number> {
       });
     };
     
-    // ابتدا سرویس SDK را تست می‌کنیم
+    // ابتدا سرویس CCOIN AI را تست می‌کنیم
     if (geminiSdkService.isAvailable()) {
-      const sdkResult = await pingWithTimeout(() => geminiSdkService.testConnection(), 'geminiSdk');
+      const sdkResult = await pingWithTimeout(() => geminiSdkService.testConnection(), 'ccoinai');
       
-      // اگر SDK با موفقیت پاسخ داد، نتیجه را برمی‌گردانیم
+      // اگر CCOIN AI با موفقیت پاسخ داد، نتیجه را برمی‌گردانیم
       if (sdkResult > 0) {
         return sdkResult;
       }
     }
     
-    // اگر SDK در دسترس نبود یا با خطا مواجه شد، از سرویس جایگزین استفاده می‌کنیم
-    return await pingWithTimeout(() => geminiAltService.testConnection(), 'geminialt');
+    // اگر CCOIN AI در دسترس نبود یا با خطا مواجه شد، از سرویس پشتیبان CCOIN AI استفاده می‌کنیم
+    return await pingWithTimeout(() => ccoinAIAltService.testConnection(), 'ccoinai-backup');
   } catch (error) {
     console.error('Error pinging AI services:', error);
     return -1; // خطای نامشخص

@@ -54,10 +54,10 @@ export async function showAISettingsMenu(interaction: ButtonInteraction | ChatIn
       .setDescription('در این بخش می‌توانید تنظیمات مربوط به سیستم هوش مصنوعی (AI) ربات را مدیریت کنید.')
       .setColor('#9B59B6')
       .addFields(
-        { name: 'وضعیت ارتباط Google Gemini', value: `${statusColor} ${statusText}`, inline: false },
+        { name: 'وضعیت ارتباط CCOIN AI', value: `${statusColor} ${statusText}`, inline: false },
         { name: '🤖 مدل فعال', value: aiSettings.googleModel || 'gemini-1.5-pro', inline: true },
         { name: '🧠 حالت پاسخگویی', value: aiSettings.responseStyle || 'متعادل', inline: true },
-        { name: '⚙️ سیستم راهنما', value: 'فعال (Gemtay)', inline: true }
+        { name: '⚙️ سیستم راهنما', value: 'فعال (CCOIN AI)', inline: true }
       )
       .setTimestamp()
       .setFooter({ text: 'Ccoin AI System' });
@@ -67,9 +67,9 @@ export async function showAISettingsMenu(interaction: ButtonInteraction | ChatIn
       .setCustomId('ai_model_select')
       .setPlaceholder('انتخاب مدل هوش مصنوعی')
       .addOptions([
-        { label: 'Gemini 1.5 Pro', description: 'مدل قدرتمند Google Gemini (توصیه شده)', value: 'gemini-1.5-pro', default: aiSettings.googleModel === 'gemini-1.5-pro' },
-        { label: 'Gemini 1.5 Flash', description: 'مدل سریع Google Gemini', value: 'gemini-1.5-flash', default: aiSettings.googleModel === 'gemini-1.5-flash' },
-        { label: 'Gemini Pro', description: 'مدل پایدار قدیمی', value: 'gemini-pro', default: aiSettings.googleModel === 'gemini-pro' }
+        { label: 'CCOIN AI Pro', description: 'مدل قدرتمند CCOIN AI (توصیه شده)', value: 'gemini-1.5-pro', default: aiSettings.googleModel === 'gemini-1.5-pro' },
+        { label: 'CCOIN AI Fast', description: 'مدل سریع CCOIN AI', value: 'gemini-1.5-flash', default: aiSettings.googleModel === 'gemini-1.5-flash' },
+        { label: 'CCOIN AI Standard', description: 'مدل پایدار استاندارد', value: 'gemini-pro', default: aiSettings.googleModel === 'gemini-pro' }
       ]);
     
     // ایجاد منوی انتخاب سبک پاسخگویی
@@ -205,7 +205,7 @@ export async function handleTestAI(interaction: ButtonInteraction) {
     const response = await googleAIService.generateResponse(testPrompt, responseStyle);
     
     const embed = new EmbedBuilder()
-      .setTitle('🧪 تست هوش مصنوعی Gemtay')
+      .setTitle('🧪 تست هوش مصنوعی CCOIN AI')
       .setDescription('نتیجه تست ارتباط با هوش مصنوعی:')
       .setColor('#2ECC71')
       .addFields(
@@ -213,7 +213,7 @@ export async function handleTestAI(interaction: ButtonInteraction) {
         { name: 'پاسخ دریافتی:', value: response.length > 1024 ? response.substring(0, 1021) + '...' : response, inline: false }
       )
       .setTimestamp()
-      .setFooter({ text: 'Gemtay AI Test' });
+      .setFooter({ text: 'CCOIN AI Test' });
     
     await interaction.editReply({
       embeds: [embed]
@@ -272,9 +272,9 @@ export async function handleAIHelp(interaction: ButtonInteraction) {
         { 
           name: '🤖 مدل‌های هوش مصنوعی', 
           value: 
-            '• **Gemini 1.5 Pro**: مدل قدرتمند با توانایی پردازش متن و درک بالا (توصیه شده)\n' +
-            '• **Gemini 1.5 Flash**: مدل سریع‌تر با کارایی بالا، مناسب برای پاسخ‌های سریع\n' +
-            '• **Gemini Pro**: نسخه قدیمی و پایدار'
+            '• **CCOIN AI Pro**: مدل قدرتمند با توانایی پردازش متن و درک بالا (توصیه شده)\n' +
+            '• **CCOIN AI Fast**: مدل سریع‌تر با کارایی بالا، مناسب برای پاسخ‌های سریع\n' +
+            '• **CCOIN AI Standard**: نسخه استاندارد و پایدار'
         },
         { 
           name: '✏️ سبک‌های پاسخگویی', 
@@ -285,12 +285,12 @@ export async function handleAIHelp(interaction: ButtonInteraction) {
             '• **طنزآمیز**: پاسخ‌های با چاشنی شوخی و سرگرمی'
         },
         { 
-          name: '🧠 سیستم راهنمای Gemtay', 
-          value: 'دستیار هوشمند Gemtay با دانش کامل درباره ویژگی‌های ربات Ccoin، آماده پاسخگویی به سؤالات کاربران است. این سیستم به طور دقیق با ویژگی‌های اقتصادی، بازی‌ها، کلن‌ها و دیگر امکانات ربات آشنایی دارد.'
+          name: '🧠 سیستم راهنمای CCOIN AI', 
+          value: 'دستیار هوشمند CCOIN AI با دانش کامل درباره ویژگی‌های ربات Ccoin، آماده پاسخگویی به سؤالات کاربران است. این سیستم به طور دقیق با ویژگی‌های اقتصادی، بازی‌ها، کلن‌ها و دیگر امکانات ربات آشنایی دارد.'
         },
         { 
           name: '📝 استفاده از هوش مصنوعی', 
-          value: 'برای استفاده از دستیار هوشمند Gemtay، از دستور `/ai` استفاده کنید. توجه داشته باشید که استفاده از این ویژگی دارای محدودیت است و نیاز به خرید اشتراک دارد.'
+          value: 'برای استفاده از دستیار هوشمند CCOIN AI، از دستور `/ai` استفاده کنید. توجه داشته باشید که استفاده از این ویژگی دارای محدودیت است و نیاز به خرید اشتراک دارد.'
         }
       )
       .setTimestamp()

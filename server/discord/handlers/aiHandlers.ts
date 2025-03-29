@@ -2,7 +2,7 @@ import { ButtonInteraction, EmbedBuilder } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { switchAIProvider, getAIServiceStatus, testAIService } from '../services/aiService';
+import { switchAIProvider, getAIServiceStatus, testAIService, AIService } from '../services/aiService';
 import { botConfig } from '../utils/config';
 
 /**
@@ -12,7 +12,7 @@ import { botConfig } from '../utils/config';
  */
 export async function handleSwitchAIService(
   interaction: ButtonInteraction, 
-  serviceName: 'openai' | 'huggingface' | 'googleai' | 'grok' | 'openrouter'
+  serviceName: AIService
 ) {
   try {
     // دیفر کردن پاسخ برای جلوگیری از خطای تایم‌اوت
@@ -24,11 +24,9 @@ export async function handleSwitchAIService(
     
     // دریافت نام نمایشی سرویس
     const serviceDisplayName = 
-      serviceName === 'openai' ? 'OpenAI (ChatGPT)' : 
-      serviceName === 'huggingface' ? 'Hugging Face' :
-      serviceName === 'googleai' ? 'Google AI (Gemini)' :
-      serviceName === 'grok' ? 'Grok' :
-      serviceName === 'openrouter' ? 'OpenRouter' :
+      serviceName === 'googleai' ? 'CCOIN AI' :
+      serviceName === 'vertexai' ? 'CCOIN AI (Cloud)' :
+      serviceName === 'geminialt' ? 'CCOIN AI (Backup)' :
       'نامشخص';
     
     // اگر سرویس از قبل فعال بود، پیام دهیم و برگردیم
@@ -106,11 +104,9 @@ export async function handleTestAIService(interaction: ButtonInteraction) {
     
     // دریافت نام سرویس فعلی
     const aiSettings = botConfig.getAISettings();
-    const serviceName = aiSettings.service === 'openai' ? 'OpenAI (ChatGPT)' : 
-                   aiSettings.service === 'huggingface' ? 'Hugging Face' :
-                   aiSettings.service === 'googleai' ? 'Google AI (Gemini)' :
-                   aiSettings.service === 'grok' ? 'Grok' :
-                   aiSettings.service === 'openrouter' ? 'OpenRouter' :
+    const serviceName = aiSettings.service === 'googleai' ? 'CCOIN AI' :
+                   aiSettings.service === 'vertexai' ? 'CCOIN AI (Cloud)' :
+                   aiSettings.service === 'geminialt' ? 'CCOIN AI (Backup)' :
                    'نامشخص';
     
     // ساخت امبد نتیجه
@@ -154,11 +150,9 @@ export async function handleViewAIStatus(interaction: ButtonInteraction) {
       .addFields(
         { 
           name: '🤖 سرویس فعلی', 
-          value: aiStatus.service === 'openai' ? 'OpenAI (ChatGPT)' : 
-                 aiStatus.service === 'huggingface' ? 'Hugging Face' :
-                 aiStatus.service === 'googleai' ? 'Google AI (Gemini)' :
-                 aiStatus.service === 'grok' ? 'Grok' :
-                 aiStatus.service === 'openrouter' ? 'OpenRouter' :
+          value: aiStatus.service === 'googleai' ? 'CCOIN AI' :
+                 aiStatus.service === 'vertexai' ? 'CCOIN AI (Cloud)' :
+                 aiStatus.service === 'geminialt' ? 'CCOIN AI (Backup)' :
                  'نامشخص', 
           inline: true 
         },
@@ -173,28 +167,18 @@ export async function handleViewAIStatus(interaction: ButtonInteraction) {
           inline: true 
         },
         { 
-          name: '📊 درخواست‌های OpenAI', 
-          value: aiStatus.providerStats.openai.toLocaleString(), 
-          inline: true 
-        },
-        { 
-          name: '📊 درخواست‌های Hugging Face', 
-          value: aiStatus.providerStats.huggingface.toLocaleString(), 
-          inline: true 
-        },
-        { 
-          name: '📊 درخواست‌های Google AI', 
+          name: '📊 درخواست‌های CCOIN AI', 
           value: aiStatus.providerStats.googleai ? aiStatus.providerStats.googleai.toLocaleString() : '0', 
           inline: true 
         },
         { 
-          name: '📊 درخواست‌های Grok', 
-          value: aiStatus.providerStats.grok ? aiStatus.providerStats.grok.toLocaleString() : '0', 
+          name: '📊 درخواست‌های CCOIN AI (Cloud)', 
+          value: aiStatus.providerStats.vertexai ? aiStatus.providerStats.vertexai.toLocaleString() : '0', 
           inline: true 
         },
         { 
-          name: '📊 درخواست‌های OpenRouter', 
-          value: aiStatus.providerStats.openrouter ? aiStatus.providerStats.openrouter.toLocaleString() : '0', 
+          name: '📊 درخواست‌های CCOIN AI (Backup)', 
+          value: aiStatus.providerStats.geminialt ? aiStatus.providerStats.geminialt.toLocaleString() : '0', 
           inline: true 
         },
         { 

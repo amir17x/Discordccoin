@@ -55,7 +55,7 @@ function addToCache(prompt: string, response: string): void {
 }
 
 /**
- * تولید پاسخ با استفاده از مدل Google AI (Gemini) با کش و بهینه‌سازی
+ * تولید پاسخ با استفاده از مدل CCOIN AI با کش و بهینه‌سازی
  * @param prompt متن پرامپت
  * @returns پاسخ تولید شده
  */
@@ -135,7 +135,7 @@ export async function generateGoogleAIResponse(prompt: string, customStyle?: str
       ]
     };
 
-    console.log(`Sending request to Google AI (model: ${model})`);
+    console.log(`Sending request to CCOIN AI (model: ${model})`);
     
     // ارسال درخواست به API با تایم‌اوت
     const controller = new AbortController();
@@ -189,11 +189,11 @@ export async function generateGoogleAIResponse(prompt: string, customStyle?: str
 }
 
 /**
- * کلاس سرویس Google AI
+ * کلاس سرویس CCOIN AI
  */
 export class GoogleAIService {
   /**
-   * تولید پاسخ با استفاده از مدل Google AI
+   * تولید پاسخ با استفاده از مدل CCOIN AI
    * @param prompt متن پرامپت
    * @param customStyle سبک پاسخگویی سفارشی (اختیاری)
    * @returns پاسخ تولید شده
@@ -212,7 +212,7 @@ export class GoogleAIService {
   }
   
   /**
-   * تست سرعت پاسخگویی سرویس Google AI با تایم‌اوت و بهینه‌سازی سرعت
+   * تست سرعت پاسخگویی سرویس CCOIN AI با تایم‌اوت و بهینه‌سازی سرعت
    * @returns زمان پاسخگویی به میلی‌ثانیه یا کد خطا (مقدار منفی)
    */
   async pingGoogleAI(): Promise<number> {
@@ -267,7 +267,7 @@ export class GoogleAIService {
         throw fetchError;
       }
     } catch (error) {
-      console.error('Error in Google AI ping test:', error);
+      console.error('Error in CCOIN AI ping test:', error);
       
       // تشخیص نوع خطا و برگرداندن کد خطای مناسب
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -285,5 +285,5 @@ export class GoogleAIService {
   }
 }
 
-// ایجاد نمونه از سرویس Google AI برای استفاده در سراسر برنامه
+// ایجاد نمونه از سرویس CCOIN AI برای استفاده در سراسر برنامه
 export const googleAIService = new GoogleAIService();
