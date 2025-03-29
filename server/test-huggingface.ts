@@ -3,7 +3,7 @@
  * لطفاً به جای آن از test-ccoinai-tip.ts استفاده کنید
  */
 
-import { ccoinAiTipService } from './discord/services/ccoinAiTipService';
+import { ccoinAITipService } from './discord/services/ccoinAITipService';
 
 async function testReplacement() {
   console.log('⚠️ این فایل تست قدیمی است و با سرویس CCOIN AI جایگزین شده است.');
@@ -11,7 +11,7 @@ async function testReplacement() {
   
   try {
     // تست اتصال به سرویس جدید
-    const status = await ccoinAiTipService.checkConnectionStatus();
+    const status = await ccoinAITipService.checkConnectionStatus();
     console.log('📡 وضعیت اتصال به CCOIN AI:', status);
     
     if (status.isAvailable) {

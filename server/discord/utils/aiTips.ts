@@ -1,10 +1,10 @@
 /**
  * ماژول نکات هوشمند - این فایل صرفاً برای سازگاری با کد موجود حفظ شده و
- * قابلیت‌های اصلی آن به فایل ccoinAiTipService منتقل شده است
+ * قابلیت‌های اصلی آن به فایل ccoinAITipService منتقل شده است
  */
 
 import { log } from "../../vite";
-import { ccoinAiTipService, tipTopics } from "../services/ccoinAiTipService";
+import { ccoinAITipService, tipTopics } from "../services/ccoinAITipService";
 
 // صادر کردن مجموعه موضوعات از سرویس
 export { tipTopics };
@@ -16,7 +16,7 @@ export { tipTopics };
 export async function generateAITip(): Promise<string> {
   try {
     // استفاده از سرویس CCOIN AI برای تولید نکته اتفاقی
-    const tip = await ccoinAiTipService.generateRandomTip();
+    const tip = await ccoinAITipService.generateRandomTip();
     log(`✅ نکته هوشمند با موفقیت تولید شد: ${tip.substring(0, 30)}...`, 'discord');
     return tip;
   } catch (error) {
@@ -33,7 +33,7 @@ export async function generateAITip(): Promise<string> {
 export async function generateTopicTip(topic: string): Promise<string> {
   try {
     // استفاده از سرویس CCOIN AI برای تولید نکته با موضوع مشخص
-    const tip = await ccoinAiTipService.generateTopicTip(topic);
+    const tip = await ccoinAITipService.generateTopicTip(topic);
     log(`✅ نکته هوشمند موضوعی "${topic}" با موفقیت تولید شد: ${tip.substring(0, 30)}...`, 'discord');
     return tip;
   } catch (error) {
