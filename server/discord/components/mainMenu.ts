@@ -84,198 +84,102 @@ export async function mainMenu(
       return randomMessages[Math.floor(Math.random() * randomMessages.length)];
     };
     
-    // تولید اعلانات پویا، هوشمند و طنزآمیز برای کاربر
-    const getNotifications = () => {
-      // آرایه‌های اعلانات با اولویت‌های مختلف
-      const priorityHighNotifications = []; // اولویت 1: رویدادهای زمان‌دار
-      const priorityMediumNotifications = []; // اولویت 2: ماموریت‌ها و پاداش روزانه
-      const priorityLowNotifications = []; // اولویت 3: وضعیت پت، دزدی‌ها، و سایر فعالیت‌ها
-      
-      // تابع کمکی برای ایجاد اعلان با استایل مناسب (شبیه بدون کلن)
-      const formatNotification = (text: string) => {
-        return `\`${text}\``;
-      };
-      
-      // اولویت 1: رویدادهای زمان‌دار - هوشمندتر و واقعی‌تر
-      
-      // وار کلن (فرض می‌کنیم اگر کاربر عضو کلن است، امکان وار فعال هم وجود دارد)
-      if (user.clanId && Math.random() > 0.5) {
-        const timeLeft = Math.floor(Math.random() * 5) + 1;
-        priorityHighNotifications.push(formatNotification(`وار کلن شما تا ${timeLeft} ساعت دیگه تموم می‌شه! ⚔️ تنبلی نکن!`));
-      }
-      
-      // تورنمنت (به صورت تصادفی با جزئیات بیشتر)
-      if (Math.random() > 0.65) {
-        const tournamentTypes = [
-          "حدس عدد", "سنگ کاغذ قیچی", "بلک‌جک", "پوکر", "تاس دوئل"
-        ];
-        const randomTournament = tournamentTypes[Math.floor(Math.random() * tournamentTypes.length)];
-        const hoursLeft = Math.floor(Math.random() * 5) + 1;
-        const prizeAmount = (Math.floor(Math.random() * 10) + 1) * 1000;
-        priorityHighNotifications.push(formatNotification(`تورنمنت ${randomTournament} تا ${hoursLeft} ساعت دیگه تمومه! 🏆 جایزه: ${prizeAmount} کوین`));
-      }
-      
-      // فصل (به صورت تصادفی با جزئیات بیشتر)
-      if (Math.random() > 0.75) {
-        const daysLeft = Math.floor(Math.random() * 3) + 1;
-        priorityHighNotifications.push(formatNotification(`فصل جاری تا ${daysLeft} روز دیگه تموم می‌شه! 🏆 رتبه خودت رو ارتقا بده!`));
-      }
-      
-      // بازار سهام (تغییرات قیمت)
-      if (Math.random() > 0.7) {
-        const stockNames = ["تکنو", "پترو", "بانک", "معدن", "خودرو"];
-        const randomStock = stockNames[Math.floor(Math.random() * stockNames.length)];
-        const changePercent = Math.floor(Math.random() * 15) + 5;
-        const direction = Math.random() > 0.5 ? "افزایش" : "کاهش";
-        const emoji = direction === "افزایش" ? "📈" : "📉";
-        priorityHighNotifications.push(formatNotification(`سهام ${randomStock} ${changePercent}% ${direction} داشته! ${emoji} فرصت رو از دست نده!`));
-      }
-      
-      // اولویت 2: ماموریت‌ها و پاداش روزانه - هوشمندتر و متنوع‌تر
-      
-      // پاداش روزانه با محاسبه مقدار پاداش
-      if (dailyAvailable) {
-        const streakBonus = (user.dailyStreak || 0) * 50;
-        const totalReward = 500 + streakBonus;
-        priorityMediumNotifications.push(formatNotification(`پاداش روزانه‌ات (${totalReward} کوین) منتظرته! 🎁 زود بگیرش!`));
-      }
-      
-      // ماموریت روزانه با جزئیات بیشتر
-      if (Math.random() > 0.55) {
-        const questTypes = [
-          "بازی کردن",
-          "انتقال پول",
-          "خرید از فروشگاه",
-          "سرمایه‌گذاری",
-          "شرکت در تورنمنت"
-        ];
-        const randomQuest = questTypes[Math.floor(Math.random() * questTypes.length)];
-        const reward = (Math.floor(Math.random() * 5) + 1) * 100;
-        priorityMediumNotifications.push(formatNotification(`ماموریت ${randomQuest} رو انجام بده! 🎯 جایزه: ${reward} کوین`));
-      }
-      
-      // ماموریت کلن با جزئیات پیشرفت
-      if (user.clanId && Math.random() > 0.6) {
-        const progress = Math.floor(Math.random() * 70) + 10;
-        priorityMediumNotifications.push(formatNotification(`ماموریت کلن شما ${progress}% پیشرفت داره! 🏰 کمک کن تکمیل بشه!`));
-      }
-      
-      // دستاوردهای نزدیک به تکمیل
-      if (Math.random() > 0.7) {
-        const achievements = [
-          "سرمایه‌دار",
-          "قهرمان بازی‌ها",
-          "جمع‌آوری کننده",
-          "سارق حرفه‌ای",
-          "معامله‌گر برتر"
-        ];
-        const randomAchievement = achievements[Math.floor(Math.random() * achievements.length)];
-        const progress = Math.floor(Math.random() * 15) + 85;
-        priorityMediumNotifications.push(formatNotification(`دستاورد "${randomAchievement}" ${progress}% تکمیل شده! 🏅 چیزی نمونده!`));
-      }
-      
-      // اولویت 3: وضعیت پت، دزدی‌ها، و سایر فعالیت‌ها - با جزئیات بیشتر و هوشمندتر
-      
-      // وضعیت پت با جزئیات بیشتر و پاداش
-      if (Math.random() > 0.55) {
-        const petTypes = ["سگ", "گربه", "خرگوش", "اژدها", "ققنوس"];
-        const randomPet = petTypes[Math.floor(Math.random() * petTypes.length)];
-        const petActions = [
-          "گرسنشه", "حوصلش سر رفته", "غرغر می‌کنه", "منتظر بازیه", "دلش برات تنگ شده"
-        ];
-        const randomAction = petActions[Math.floor(Math.random() * petActions.length)];
-        const bonusType = Math.random() > 0.5 ? "شانس" : "تجربه";
-        const bonusAmount = Math.floor(Math.random() * 10) + 5;
-        priorityLowNotifications.push(formatNotification(`${randomPet} شما ${randomAction}! 🐾 مراقبت کنی ${bonusAmount}% ${bonusType} می‌گیری!`));
-      }
-      
-      // دزدی هوشمندتر با احتمال موفقیت
-      if (Math.random() > 0.7) {
-        if (Math.random() > 0.5) {
-          // دزدی موفق
-          const stolenAmount = Math.floor(Math.random() * 500) + 100;
-          priorityLowNotifications.push(formatNotification(`آخرین دزدیت موفق بود! 🖐️ ${stolenAmount} کوین دزدیدی!`));
-        } else {
-          // دزدی ناموفق
-          const penalty = Math.floor(Math.random() * 300) + 50;
-          priorityLowNotifications.push(formatNotification(`دزدی اخیرت لو رفت! 🚨 ${penalty} کوین جریمه شدی!`));
+    // تولید اعلانات هوشمند شخصی‌سازی شده با هوش مصنوعی
+    const getNotifications = async () => {
+      try {
+        // تابع کمکی برای ایجاد اعلان با استایل مناسب
+        const formatNotification = (text: string) => {
+          return `\`${text}\``;
+        };
+        
+        // استفاده از سیستم اعلانات هوشمند و شخصی‌سازی شده با Gemini
+        const { generateUserNotifications } = await import('../utils/aiPersonalNotifications');
+        
+        // دریافت اعلانات شخصی‌سازی شده بر اساس وضعیت واقعی کاربر
+        let personalizedNotifications = await generateUserNotifications(interaction.user.id, 3);
+        
+        // اگر هیچ اعلانی دریافت نشد، از اعلانات پیش‌فرض استفاده می‌کنیم
+        if (!personalizedNotifications || personalizedNotifications.length === 0) {
+          personalizedNotifications = [
+            "امروز روز شانس توئه! 🍀 یه بازی انجام بده!",
+            "می‌خوای پولدار بشی؟ 💰 از فروشگاه آیتم بخر!",
+            "تو می‌تونی بهترین باشی! 🏆 به تلاشت ادامه بده!"
+          ];
         }
+        
+        // اضافه کردن شماره به ابتدای هر اعلان
+        const numberedNotifications = personalizedNotifications.map((notification, index) => 
+          `${index + 1}. ${notification}`
+        );
+        
+        // تبدیل آرایه به رشته با جداکننده خط جدید
+        return "اعلانیه‌ها:\n" + numberedNotifications.map(text => `\`${text}\``).join("\n");
+      } catch (error) {
+        console.error('خطا در دریافت اعلانات شخصی‌سازی شده:', error);
+        
+        // در صورت خطا، از اعلانات هوشمند دست‌ساز استفاده می‌کنیم که نیازی به API هوش مصنوعی ندارند
+        // این اعلانات به صورت پویا بر اساس وضعیت کاربر تولید می‌شوند
+        const smartNotifications = [];
+        
+        // اعلانات مربوط به موجودی کاربر
+        if (user.wallet < 1000) {
+          smartNotifications.push(`فقط ${user.wallet} سکه تو کیف پولت داری! 😱 یه ماموریت انجام بده!`);
+        } else if (user.wallet > 5000) {
+          smartNotifications.push(`${user.wallet} سکه تو کیف پولت داری! 🤑 یکم سرمایه‌گذاری کن!`);
+        }
+        
+        // اعلانات مربوط به پاداش روزانه
+        if (dailyAvailable) {
+          smartNotifications.push(`پاداش روزانه‌ات آماده دریافته! 🎁 زود بگیرش!`);
+        } else {
+          const lastDailyDate = new Date(user.lastDaily || Date.now());
+          const nextDaily = new Date(lastDailyDate.getTime() + 24 * 60 * 60 * 1000);
+          const hoursRemaining = Math.floor((nextDaily.getTime() - Date.now()) / (60 * 60 * 1000));
+          if (hoursRemaining > 0) {
+            smartNotifications.push(`${hoursRemaining} ساعت دیگه تا پاداش روزانه بعدیت مونده! ⏰`);
+          }
+        }
+        
+        // اعلانات مربوط به استریک
+        if (user.dailyStreak > 3) {
+          smartNotifications.push(`استریک ${user.dailyStreak} روزه داری! 🔥 فردا هم فراموش نکن!`);
+        }
+        
+        // اعلانات مربوط به کلن
+        if (user.clanId) {
+          smartNotifications.push(`عضو کلن هستی! 🏰 یادت نره به هم‌تیمی‌هات کمک کنی!`);
+        } else {
+          smartNotifications.push(`هنوز کلن نداری! 🏯 به یکی بپیوند یا خودت بساز!`);
+        }
+        
+        // اعلانات عمومی پرکاربرد
+        smartNotifications.push(`در بازی‌ها شرکت کن و جایزه بگیر! 🎮 امتیازت: ${user.points || 0}`);
+        smartNotifications.push(`ماموریت‌های جدید = سکه بیشتر! 🎯 چک کردی امروز؟`);
+        smartNotifications.push(`بازار سهام رو یادت نره! 📈 قیمت‌ها دائم تغییر می‌کنن!`);
+        
+        // انتخاب سه مورد تصادفی
+        const selectedNotifications: string[] = [];
+        for (let i = 0; i < 3; i++) {
+          if (smartNotifications.length === 0) break;
+          const randomIndex = Math.floor(Math.random() * smartNotifications.length);
+          selectedNotifications.push(smartNotifications[randomIndex]);
+          smartNotifications.splice(randomIndex, 1); // حذف مورد انتخاب شده
+        }
+        
+        // اضافه کردن شماره به ابتدای هر اعلان
+        const numberedNotifications = selectedNotifications.map((notification, index) => 
+          `${index + 1}. ${notification}`
+        );
+        
+        // تبدیل آرایه به رشته با جداکننده خط جدید
+        return "اعلانیه‌ها:\n" + numberedNotifications.map(text => `\`${text}\``).join("\n");
       }
-      
-      // وضعیت حساب (کیف پول و بانک) - هوشمندتر
-      if (user.wallet < 200) {
-        const suggestions = [
-          "یه بازی کن",
-          "ماموریت انجام بده", 
-          "پاداش روزانه بگیر", 
-          "یه دزدی انجام بده"
-        ];
-        const randomSuggestion = suggestions[Math.floor(Math.random() * suggestions.length)];
-        priorityLowNotifications.push(formatNotification(`کیف پولت خالیه! 💸 ${randomSuggestion} تا پولدار بشی!`));
-      } else if (user.wallet > 5000) {
-        const suggestions = [
-          "آیتم جدید بخر",
-          "سرمایه‌گذاری کن", 
-          "سهام بخر", 
-          "به کلن کمک کن"
-        ];
-        const randomSuggestion = suggestions[Math.floor(Math.random() * suggestions.length)];
-        priorityLowNotifications.push(formatNotification(`کیف پولت پره! 🤑 ${randomSuggestion} تا سودمند باشه!`));
-      }
-      
-      // توصیه‌های سرمایه‌گذاری هوشمندتر
-      if (user.bank > 3000 && Math.random() > 0.6) {
-        const investmentTypes = ["کم‌ریسک", "متوسط", "پرریسک"];
-        const randomType = investmentTypes[Math.floor(Math.random() * investmentTypes.length)];
-        const returnRate = randomType === "کم‌ریسک" ? "10%" : (randomType === "متوسط" ? "25%" : "50%");
-        priorityLowNotifications.push(formatNotification(`سرمایه‌گذاری ${randomType} با سود ${returnRate} فعاله! 💹 فرصت طلایی!`));
-      }
-      
-      // قرعه‌کشی با جزئیات جایزه
-      if (Math.random() > 0.7) {
-        const prizePool = (Math.floor(Math.random() * 50) + 10) * 1000;
-        const ticketPrice = Math.floor(Math.random() * 5) + 1 * 100;
-        priorityLowNotifications.push(formatNotification(`قرعه‌کشی با جایزه ${prizePool} کوین! 🎲 هر بلیط ${ticketPrice} کوین`));
-      }
-      
-      // رویدادهای ویژه
-      if (Math.random() > 0.9) {
-        const events = [
-          "جنگ کلن‌ها با جایزه 50,000 کوین",
-          "تخفیف 50% فروشگاه تا 3 ساعت دیگه",
-          "مهمانی دو برابر شدن تجربه این هفته",
-          "چالش هفتگی با جایزه ویژه",
-          "حراج آیتم‌های کمیاب"
-        ];
-        const randomEvent = events[Math.floor(Math.random() * events.length)];
-        priorityHighNotifications.push(formatNotification(`رویداد ویژه: ${randomEvent}! 🔥 از دست نده!`));
-      }
-      
-      // ادغام اعلانات با حفظ اولویت و محدودیت به حداکثر 3 اعلان
-      let finalNotifications = [
-        ...priorityHighNotifications, 
-        ...priorityMediumNotifications, 
-        ...priorityLowNotifications
-      ].slice(0, 3);
-      
-      // اگر هیچ اعلانی وجود نداشت، یک پیام پیش‌فرض طنزآمیز نمایش داده می‌شود
-      if (finalNotifications.length === 0) {
-        finalNotifications.push(formatNotification("انگار همه چی آرومه! 😎 یه بازی کن و سرگرم شو!"));
-      }
-      
-      // اضافه کردن شماره به ابتدای هر اعلان
-      const numberedNotifications = finalNotifications.map((notification, index) => 
-        `${index + 1}. ${notification.replace(/^\`|\`$/g, '')}`
-      );
-      
-      // تبدیل آرایه به رشته با جداکننده خط جدید
-      return "وضعیت:\n" + numberedNotifications.map(text => formatNotification(text)).join("\n");
     };
     
     // پیام شخصی کاربر
     const personalMessage = getPersonalizedMessage();
     // اعلانات کاربر
-    const notifications = getNotifications();
+    const notifications = await getNotifications();
     
     // Create the main embed
     const embed = new EmbedBuilder()

@@ -763,11 +763,24 @@ ${prompt}
         // آماده‌سازی فوتر بر اساس نوع اشتراک
         let footerText = '';
         
-        if (aiDetails?.subscription) {
-          // کاربر اشتراک دارد
-          const expireDate = aiDetails.subscriptionExpires;
-          const expireDateStr = expireDate ? new Date(expireDate).toLocaleDateString('fa-IR') : 'نامشخص';
-          footerText = `اشتراک ${aiDetails.subscriptionTier === 'weekly' ? 'هفتگی' : 'ماهانه'} | انقضا: ${expireDateStr}`;
+        // بررسی وضعیت اشتراک و تاریخ انقضا
+        let isSubscriptionActive = false;
+        
+        if (aiDetails?.subscription && aiDetails?.subscriptionExpires) {
+          // بررسی معتبر بودن تاریخ انقضا
+          const now = new Date();
+          const expiryDate = new Date(aiDetails.subscriptionExpires);
+          
+          if (expiryDate > now) {
+            // اشتراک فعال است
+            isSubscriptionActive = true;
+            const daysLeft = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+            const expireDateStr = expiryDate.toLocaleDateString('fa-IR');
+            footerText = `اشتراک ${aiDetails.subscriptionTier === 'weekly' ? 'هفتگی' : 'ماهانه'} | انقضا: ${expireDateStr} (${daysLeft} روز باقیمانده)`;
+          } else {
+            // اشتراک منقضی شده
+            footerText = `اشتراک شما منقضی شده است | ${aiDetails?.questionsRemaining || 0} سوال باقی‌مانده از ${aiDetails?.totalQuestions || 5} سوال رایگان`;
+          }
         } else {
           // کاربر اشتراک ندارد (رایگان)
           footerText = `${aiDetails?.questionsRemaining || 0} سوال باقی‌مانده از ${aiDetails?.totalQuestions || 5} سوال رایگان`;
@@ -785,7 +798,7 @@ ${prompt}
           .setTimestamp();
         
         // اضافه کردن دکمه‌های خرید اشتراک برای کاربران رایگان
-        if (!aiDetails?.subscription) {
+        if (!isSubscriptionActive) {
           const subscriptionRow = new ActionRowBuilder<ButtonBuilder>()
             .addComponents(
               new ButtonBuilder()

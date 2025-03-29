@@ -2,10 +2,12 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initDiscordBot } from "./discord/client";
-import { setupAdminPanel } from "./admin";
 // سیستم نکات از client.ts اجرا می‌شود
 import { connectToDatabase } from "./database";
 import 'dotenv/config';
+
+// حذف موقت ارتباط با پنل ادمین
+// import { setupAdminPanel } from "./admin";
 
 const app = express();
 app.use(express.json());
@@ -74,68 +76,31 @@ app.use((req, res, next) => {
     log("Continuing without Discord bot functionality", "warn");
   }
 
-  // راه‌اندازی پنل ادمین
-  try {
-    setupAdminPanel(app);
-    log("Admin panel initialized successfully", "success");
-  } catch (error) {
-    log(`Error initializing admin panel: ${error}`, "error");
-    
-    // صفحه موقت ادمین در صورت خطا
-    app.get('/admin', (_req, res) => {
-      res.send(`
-        <html>
-          <head>
-            <title>Ccoin Admin Panel</title>
-            <style>
-              body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-              h1 { color: #333; text-align: center; }
-              .notice { background: #f8f9fa; border-left: 4px solid #17a2b8; padding: 15px; margin: 20px 0; }
-              .status { display: flex; flex-wrap: wrap; gap: 20px; }
-              .status-item { background: #e9ecef; padding: 15px; border-radius: 5px; flex: 1; min-width: 200px; }
-              .features { margin-top: 30px; }
-              .feature { background: #f1f1f1; margin: 10px 0; padding: 15px; border-radius: 5px; }
-            </style>
-          </head>
-          <body>
-            <h1>Ccoin Admin Panel (Backup)</h1>
-            <div class="notice">این یک نسخه پشتیبان از پنل ادمین است. در حال رفع مشکل ادمین پنل اصلی هستیم.</div>
-            
-            <div class="status">
-              <div class="status-item">
-                <h3>وضعیت سرور</h3>
-                <p>✅ سرور فعال است</p>
-              </div>
-              <div class="status-item">
-                <h3>وضعیت دیتابیس</h3>
-                <p>⚠️ در حال بررسی اتصال</p>
-              </div>
-              <div class="status-item">
-                <h3>وضعیت ربات Discord</h3>
-                <p>⚠️ در حال بررسی اتصال</p>
-              </div>
-            </div>
-            
-            <div class="features">
-              <h2>ویژگی‌های ربات</h2>
-              <div class="feature">
-                <h3>سیستم اقتصادی</h3>
-                <p>سیستم مدیریت سکه و بانک برای کاربران Discord</p>
-              </div>
-              <div class="feature">
-                <h3>سیستم مچ‌میکینگ</h3>
-                <p>سیستم هوشمند برای دوئل و بازی بین کاربران</p>
-              </div>
-              <div class="feature">
-                <h3>سیستم نکات</h3>
-                <p>ارسال خودکار نکات آموزشی به کانال‌های تنظیم شده</p>
-              </div>
-            </div>
-          </body>
-        </html>
-      `);
-    });
-  }
+  // راه‌اندازی پنل ادمین - غیرفعال شده به صورت موقت
+  // به درخواست کاربر، ارتباط بین ربات دیسکورد و پنل ادمین قطع شده است
+  log("Admin panel temporarily disabled", "info");
+  
+  // const setupAdminPanel = await import("./admin").then(module => module.setupAdminPanel);
+  
+  // صفحه موقت ادمین
+  app.get('/admin', (_req, res) => {
+    res.send(`
+      <html>
+        <head>
+          <title>Ccoin Admin Panel</title>
+          <style>
+            body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+            h1 { color: #333; text-align: center; }
+            .notice { background: #f8f9fa; border-left: 4px solid #e74c3c; padding: 15px; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <h1>Ccoin Admin Panel</h1>
+          <div class="notice">پنل ادمین به صورت موقت غیرفعال شده است. بعداً مجدداً توسعه خواهد یافت.</div>
+        </body>
+      </html>
+    `);
+  });
 
   const server = await registerRoutes(app);
 

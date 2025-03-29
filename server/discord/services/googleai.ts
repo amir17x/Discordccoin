@@ -59,7 +59,7 @@ function addToCache(prompt: string, response: string): void {
  * @param prompt متن پرامپت
  * @returns پاسخ تولید شده
  */
-export async function generateGoogleAIResponse(prompt: string): Promise<string> {
+export async function generateGoogleAIResponse(prompt: string, customStyle?: string): Promise<string> {
   try {
     // ابتدا کش را بررسی می‌کنیم
     const cachedResponse = getCachedResponse(prompt);
@@ -80,20 +80,38 @@ export async function generateGoogleAIResponse(prompt: string): Promise<string> 
     // URL API - استفاده از نسخه v1 به جای v1beta
     const apiUrl = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${GOOGLE_AI_API_KEY}`;
     
-    // تنظیمات درخواست با بهینه‌سازی و راهنمای Gemini
+    // تنظیمات درخواست با بهینه‌سازی، راهنمای Gemini و سبک پاسخگویی
+    // تنظیم دما و توکن‌ها بر اساس سبک پاسخگویی
+    let temperature = 0.7;
+    let maxOutputTokens = 500;
+    
+    // تنظیم پارامترها بر اساس سبک پاسخگویی
+    // اولویت با سبک سفارشی است، در غیر این صورت از تنظیمات کلی استفاده می‌شود
+    const responseStyle = customStyle || aiSettings.responseStyle || 'متعادل';
+    if (responseStyle === 'خلاقانه') {
+      temperature = 0.9;
+      maxOutputTokens = 600;
+    } else if (responseStyle === 'دقیق') {
+      temperature = 0.3;
+      maxOutputTokens = 450;
+    } else if (responseStyle === 'طنزآمیز') {
+      temperature = 0.85;
+      maxOutputTokens = 550;
+    }
+    
     const requestBody = {
       contents: [
         {
           parts: [
             {
-              text: createGeminiPrompt(prompt)
+              text: createGeminiPrompt(prompt, responseStyle)
             }
           ]
         }
       ],
       generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 500,
+        temperature: temperature,
+        maxOutputTokens: maxOutputTokens,
         topP: 0.9
       },
       // تنظیمات کارایی - بهینه سازی سرعت
@@ -177,10 +195,20 @@ export class GoogleAIService {
   /**
    * تولید پاسخ با استفاده از مدل Google AI
    * @param prompt متن پرامپت
+   * @param customStyle سبک پاسخگویی سفارشی (اختیاری)
    * @returns پاسخ تولید شده
    */
-  async generateResponse(prompt: string): Promise<string> {
-    return generateGoogleAIResponse(prompt);
+  async generateResponse(prompt: string, customStyle?: string): Promise<string> {
+    // اگر سبک سفارشی ارائه شده باشد از آن استفاده می‌کنیم، در غیر این صورت 
+    // از تنظیمات پیش‌فرض استفاده می‌شود
+    const aiSettings = botConfig.getAISettings();
+    const responseStyle = customStyle || aiSettings.responseStyle;
+    
+    // تغییر شکل متن ورودی برای حذف کاراکترهای غیرمجاز و بهبود جریان مکالمه
+    const cleanPrompt = prompt.trim();
+    
+    console.log(`Generating AI response with style: ${responseStyle || 'default'}`);
+    return generateGoogleAIResponse(cleanPrompt, responseStyle);
   }
   
   /**

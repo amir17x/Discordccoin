@@ -379,8 +379,21 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
         // بررسی وضعیت استفاده از دستیار هوشمند
         const aiDetails = await storage.getUserAIAssistantDetails(user.id);
         
-        // اگر کاربر اشتراک ندارد و سوالات رایگان تمام شده، پیام خطا
-        if (!aiDetails?.subscription && aiDetails?.questionsRemaining <= 0) {
+        // بررسی اشتراک کاربر و تاریخ انقضا
+        let isSubscriptionActive = false;
+        
+        if (aiDetails?.subscription && aiDetails?.subscriptionExpires) {
+          // بررسی معتبر بودن تاریخ انقضا
+          const now = new Date();
+          const expiryDate = new Date(aiDetails.subscriptionExpires);
+          
+          if (expiryDate > now) {
+            isSubscriptionActive = true;
+          }
+        }
+        
+        // اگر کاربر اشتراک فعال ندارد و سوالات رایگان تمام شده، پیام خطا
+        if (!isSubscriptionActive && (aiDetails?.questionsRemaining === undefined || aiDetails?.questionsRemaining <= 0)) {
           const subscriptionRow = new ActionRowBuilder<ButtonBuilder>()
             .addComponents(
               new ButtonBuilder()

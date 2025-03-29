@@ -282,19 +282,49 @@ ${AI_ASSISTANT_SYSTEM}
 /**
  * تابع ترکیب راهنمای Gemini با پرامپت کاربر
  * @param userPrompt متن پرامپت کاربر
+ * @param responseStyle سبک پاسخگویی (متعادل، خلاقانه، دقیق، طنزآمیز)
  * @returns پرامپت نهایی با راهنما
  */
-export function createGeminiPrompt(userPrompt: string): string {
-  return `${COMPLETE_BOT_GUIDE}\n\n### سوال کاربر:\n${userPrompt}\n\n### پاسخ Gemtay:`;
+export function createGeminiPrompt(userPrompt: string, responseStyle?: string): string {
+  // راهنمایی برای سبک پاسخگویی بر اساس تنظیمات
+  let styleInstruction = '';
+  
+  if (responseStyle === 'خلاقانه') {
+    styleInstruction = 'لطفاً به شیوه‌ای خلاقانه، متنوع و تخیلی پاسخ دهید. از مثال‌های جالب و غیرمعمول استفاده کنید و کمی از چارچوب‌های معمول خارج شوید.';
+  } else if (responseStyle === 'دقیق') {
+    styleInstruction = 'لطفاً پاسخی دقیق، خلاصه و به دور از زائده‌های غیرضروری ارائه دهید. بر واقعیت‌ها و اطلاعات مشخص تمرکز کنید و از ارائه نظرات شخصی و تفسیرهای اضافی خودداری کنید.';
+  } else if (responseStyle === 'طنزآمیز') {
+    styleInstruction = 'لطفاً پاسخی بامزه، طنزآمیز و سرگرم‌کننده ارائه دهید. از شوخی‌های مناسب، اصطلاحات بامزه و لحن شوخ استفاده کنید. سعی کنید خنده بر لب مخاطب بیاورید.';
+  } else {
+    // متعادل (پیش‌فرض)
+    styleInstruction = 'لطفاً پاسخی متعادل و همه‌جانبه ارائه دهید. ترکیبی از اطلاعات دقیق و لحن دوستانه را حفظ کنید.';
+  }
+
+  return `${COMPLETE_BOT_GUIDE}\n\n### سبک پاسخگویی:\n${styleInstruction}\n\n### سوال کاربر:\n${userPrompt}\n\n### پاسخ Gemtay:`;
 }
 
 /**
  * تابع ترکیب راهنمای خلاصه با پرامپت کاربر (برای درخواست‌های کوتاه)
  * @param userPrompt متن پرامپت کاربر
+ * @param responseStyle سبک پاسخگویی (متعادل، خلاقانه، دقیق، طنزآمیز)
  * @returns پرامپت نهایی با راهنمای خلاصه
  */
-export function createShortGeminiPrompt(userPrompt: string): string {
-  return `${BOT_INTRODUCTION}\n\n### سوال کاربر:\n${userPrompt}\n\n### پاسخ Gemtay:`;
+export function createShortGeminiPrompt(userPrompt: string, responseStyle?: string): string {
+  // راهنمایی برای سبک پاسخگویی بر اساس تنظیمات
+  let styleInstruction = '';
+  
+  if (responseStyle === 'خلاقانه') {
+    styleInstruction = 'به شیوه‌ای خلاقانه و متنوع پاسخ دهید.';
+  } else if (responseStyle === 'دقیق') {
+    styleInstruction = 'پاسخی دقیق و واقع‌گرایانه ارائه دهید.';
+  } else if (responseStyle === 'طنزآمیز') {
+    styleInstruction = 'پاسخی بامزه و سرگرم‌کننده با چاشنی طنز ارائه دهید.';
+  } else {
+    // متعادل (پیش‌فرض)
+    styleInstruction = 'پاسخی متعادل ارائه دهید.';
+  }
+
+  return `${BOT_INTRODUCTION}\n\n### سبک پاسخگویی: ${styleInstruction}\n\n### سوال کاربر:\n${userPrompt}\n\n### پاسخ Gemtay:`;
 }
 
 export default {

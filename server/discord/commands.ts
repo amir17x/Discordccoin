@@ -567,17 +567,14 @@ const ping = {
         aiErrorMessage = `مشکل نامشخص در ارتباط با سرویس هوش مصنوعی ${aiServiceDisplayName}`;
       }
       
-      // زمان پاسخگویی کلی سیستم با آستانه‌های بهینه‌سازی شده
-      const apiPing = Date.now() - interaction.createdTimestamp;
-      const apiStatus = apiPing < 120 ? '🟢 عالی' : 
-                      apiPing < 250 ? '🟡 متوسط' : 
-                      apiPing < 750 ? '🟠 ضعیف' : 
-                      '⚫ ناپایدار';
+      // حذف پینگ API طبق درخواست کاربر
       
       // وضعیت کلی سیستم
       let overallStatus = '';
       
-      if (discordPing < 120 && mongoPing < 120 && apiPing < 120 && aiPing > 0 && aiPing < 250) {
+      // متغیر apiPing حذف شده است - فقط پینگ دیسکورد، دیتابیس و هوش مصنوعی نمایش داده می‌شود
+      
+      if (discordPing < 120 && mongoPing < 120 && aiPing > 0 && aiPing < 250) {
         overallStatus = '✅ همه سیستم‌ها آنلاین و پایدار هستند';
       } else if (mongoPing === -1) {
         overallStatus = '❌ اتصال به دیتابیس با مشکل مواجه است';
@@ -591,9 +588,9 @@ const ping = {
         overallStatus = '❌ سرورهای Google AI با مشکل مواجه هستند';
       } else if (aiPing < 0) {
         overallStatus = '❌ اتصال به سرویس هوش مصنوعی با مشکل مواجه است';
-      } else if (discordPing > 750 || mongoPing > 750 || apiPing > 750 || aiPing > 750) {
+      } else if (discordPing > 750 || mongoPing > 750) {
         overallStatus = '⚫ ناپایداری در سیستم‌ها - نیاز به رفع مشکل';
-      } else if (discordPing > 250 || mongoPing > 250 || apiPing > 250 || aiPing > 250) {
+      } else if (discordPing > 250 || mongoPing > 250) {
         overallStatus = '⚠️ تاخیر بیش از حد در بعضی سرویس‌ها';
       } else {
         overallStatus = '✓ سیستم‌ها در حال کار هستند';
@@ -615,11 +612,7 @@ const ping = {
             value: mongoPing !== -1 ? `\`${mongoPing}ms\` ${mongoStatus}` : '`خطا در اتصال` 🔴', 
             inline: true 
           },
-          { 
-            name: '⚡ پینگ API', 
-            value: `\`${apiPing}ms\` ${apiStatus}`, 
-            inline: true 
-          },
+
           { 
             name: '🧠 پینگ هوش مصنوعی', 
             value: aiPing > 0 ? `\`${aiPing}ms\` ${aiStatus}` : `\`${aiErrorMessage}\` ${aiStatus}`, 
@@ -850,10 +843,10 @@ const groupGames = {
   }
 };
 
-// Command for Hugging Face AI interaction
+// Command for Google AI interaction
 const hf = {
   data: new SlashCommandBuilder()
-    .setName('هوش')
+    .setName('askai')
     .setDescription('🧠 گفتگو با هوش مصنوعی پیشرفته')
     .addStringOption(option => 
       option.setName('prompt')
@@ -1020,7 +1013,7 @@ export async function loadCommands(client: Client) {
   client.commands.set(tipChannel.data.name, tipChannel);
   client.commands.set(unTipChannel.data.name, unTipChannel);
   client.commands.set(groupGames.data.name, groupGames);
-  client.commands.set(hf.data.name, hf); // Add the Hugging Face AI command
+  client.commands.set(hf.data.name, hf); // Add the Google AI command
 }
 
 export const commands = [
@@ -1033,5 +1026,5 @@ export const commands = [
   tipChannel.data.toJSON(),
   unTipChannel.data.toJSON(),
   groupGames.data.toJSON(),
-  hf.data.toJSON() // Add the Hugging Face AI command to slash commands
+  hf.data.toJSON() // Add the Google AI command to slash commands
 ];

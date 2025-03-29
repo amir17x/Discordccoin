@@ -47,6 +47,9 @@ export async function profileMenu(
              item.type === 'role';
     });
     
+    // بررسی وضعیت اشتراک دستیار هوشمند
+    const aiDetails = await storage.getUserAIAssistantDetails(user.id);
+    
     // Create the profile embed
     const embed = new EmbedBuilder()
       .setColor('#5865F2')
@@ -85,6 +88,43 @@ export async function profileMenu(
       embed.addFields({ name: '🏆 دستاوردها', value: `${achievementsText}\n*${completedAchievements.length} دستاورد تکمیل شده از ${userAchievements.length} دستاورد*`, inline: false });
     } else {
       embed.addFields({ name: '🏆 دستاوردها', value: 'هنوز هیچ دستاوردی کسب نکرده‌اید.', inline: false });
+    }
+    
+    // Add AI assistant subscription info if available
+    if (aiDetails) {
+      // بررسی وضعیت فعال بودن اشتراک
+      let subscriptionStatus = '❌ فاقد اشتراک';
+      let expiryInfo = '';
+      
+      if (aiDetails.subscription && aiDetails.subscriptionExpires) {
+        const now = new Date();
+        const expiryDate = new Date(aiDetails.subscriptionExpires);
+        
+        if (expiryDate > now) {
+          // اشتراک فعال است
+          subscriptionStatus = '✅ اشتراک فعال';
+          
+          // محاسبه زمان باقیمانده
+          const daysLeft = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          expiryInfo = `\n**تاریخ انقضا:** ${expiryDate.toLocaleDateString('fa-IR')} (${daysLeft} روز باقیمانده)`;
+        } else {
+          // اشتراک منقضی شده
+          subscriptionStatus = '⏱️ اشتراک منقضی شده';
+          expiryInfo = `\n**تاریخ انقضا:** ${expiryDate.toLocaleDateString('fa-IR')} (منقضی شده)`;
+        }
+      }
+      
+      // نمایش اطلاعات سوالات رایگان (در صورت عدم وجود اشتراک فعال)
+      let freeQuestionsInfo = '';
+      if (!aiDetails.subscription || (aiDetails.subscriptionExpires && new Date(aiDetails.subscriptionExpires) <= new Date())) {
+        freeQuestionsInfo = `\n**سوالات رایگان باقیمانده:** ${aiDetails.questionsRemaining || 0} / ${aiDetails.totalQuestions || 5}`;
+      }
+      
+      embed.addFields({ 
+        name: '🧠 دستیار هوشمند جمتای',
+        value: `**وضعیت:** ${subscriptionStatus}${expiryInfo}${freeQuestionsInfo}`, 
+        inline: false 
+      });
     }
     
     // Create colorful button rows

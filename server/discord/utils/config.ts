@@ -77,6 +77,7 @@ export interface BotConfig {
   ai?: {
     service?: 'googleai'; // سرویس فعال هوش مصنوعی
     googleModel?: string; // مدل Google AI
+    responseStyle?: string; // سبک پاسخگویی (متعادل، خلاقانه، دقیق، طنزآمیز)
   };
 }
 
@@ -133,7 +134,8 @@ const defaultConfig: BotConfig = {
   },
   ai: {
     service: 'googleai',
-    googleModel: 'gemini-1.5-pro'
+    googleModel: 'gemini-1.5-pro',
+    responseStyle: 'متعادل'
   }
 };
 
@@ -226,7 +228,8 @@ export class BotConfigManager {
   public getAISettings(): NonNullable<BotConfig['ai']> {
     const defaultAISettings: NonNullable<BotConfig['ai']> = {
       service: 'googleai',
-      googleModel: 'gemini-1.5-pro'
+      googleModel: 'gemini-1.5-pro',
+      responseStyle: 'متعادل'
     };
     
     return this.config.ai ? { ...defaultAISettings, ...this.config.ai } : defaultAISettings;

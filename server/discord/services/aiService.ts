@@ -145,17 +145,19 @@ export function getAIServiceStatus(): AIStats {
  * تولید پاسخ با استفاده از هوش مصنوعی
  * @param prompt پرامپت ارسالی به هوش مصنوعی
  * @param usageType نوع استفاده (برای آمار)
+ * @param responseStyle سبک پاسخگویی (اختیاری)
  * @returns پاسخ تولید شده
  */
 export async function generateAIResponse(
   prompt: string,
-  usageType: 'statusMessages' | 'marketAnalysis' | 'questStories' | 'aiAssistant' | 'other' = 'other'
+  usageType: 'statusMessages' | 'marketAnalysis' | 'questStories' | 'aiAssistant' | 'other' = 'other',
+  responseStyle?: string
 ): Promise<string> {
   try {
     const startTime = Date.now();
     
-    // استفاده از سیستم کش‌شده گوگل AI
-    const response = await generateGoogleAIResponse(prompt);
+    // استفاده از سیستم کش‌شده گوگل AI با سبک پاسخگویی مشخص شده
+    const response = await generateGoogleAIResponse(prompt, responseStyle);
     
     // محاسبه زمان پاسخگویی
     const latency = Date.now() - startTime;
@@ -176,19 +178,28 @@ export async function generateAIResponse(
 /**
  * تست سرویس هوش مصنوعی با یک پرامپت ساده
  * @param prompt پرامپت تست
+ * @param responseStyle سبک پاسخگویی (اختیاری)
  * @returns نتیجه تست
  */
-export async function testAIService(prompt: string = 'سلام. حالت چطوره؟'): Promise<{
+export async function testAIService(
+  prompt: string = 'سلام. حالت چطوره؟',
+  responseStyle?: string
+): Promise<{
   success: boolean;
   response?: string;
   error?: string;
   latency: number;
+  style?: string;
 }> {
   try {
     const startTime = Date.now();
     
+    // استفاده از سبک پاسخگویی مشخص شده
+    const aiSettings = botConfig.getAISettings();
+    const style = responseStyle || aiSettings.responseStyle || 'متعادل';
+    
     // فقط از سرویس گوگل استفاده می‌کنیم
-    const response = await generateGoogleAIResponse(prompt);
+    const response = await generateGoogleAIResponse(prompt, style);
     
     // محاسبه زمان پاسخگویی
     const latency = Date.now() - startTime;
@@ -196,7 +207,8 @@ export async function testAIService(prompt: string = 'سلام. حالت چطو�
     return {
       success: true,
       response,
-      latency
+      latency,
+      style
     };
   } catch (error) {
     const latency = 0; // در صورت خطا، زمان پاسخگویی معنایی ندارد

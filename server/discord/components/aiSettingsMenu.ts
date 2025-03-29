@@ -199,8 +199,10 @@ export async function handleTestAI(interaction: ButtonInteraction) {
     
     const testPrompt = "سلام! لطفاً خودت رو معرفی کن و بگو چه کمکی می‌تونی به کاربران Ccoin بکنی؟";
     
-    // استفاده از پرامپت راهنما برای ایجاد پاسخ
-    const response = await googleAIService.generateResponse(testPrompt);
+    // استفاده از پرامپت راهنما برای ایجاد پاسخ با سبک فعلی
+    const aiSettings = botConfig.getAISettings();
+    const responseStyle = aiSettings.responseStyle || 'متعادل';
+    const response = await googleAIService.generateResponse(testPrompt, responseStyle);
     
     const embed = new EmbedBuilder()
       .setTitle('🧪 تست هوش مصنوعی Gemtay')
