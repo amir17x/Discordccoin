@@ -13,7 +13,25 @@ import { buyGiveawayTickets } from '../components/giveawayBridge';
 import { processTransfer } from '../components/economyMenu';
 import { handleRobbery } from '../components/robberyMenu';
 import { processBuyPet, processRenamePet } from '../components/petMenu';
-import { logger } from '../utils/logger';
+import { log } from '../utils/logger';
+
+// Helper function for admin logging since the old logger.logAdminAction is no longer available
+const logger = {
+  logAdminAction: (
+    adminId: string, 
+    adminName: string, 
+    action: string, 
+    targetId?: string, 
+    targetName?: string, 
+    details?: string
+  ) => {
+    const logMessage = 
+      `ADMIN ACTION: ${adminName} (${adminId}) performed ${action}` + 
+      (targetId ? ` on ${targetName} (${targetId})` : '') + 
+      (details ? `: ${details}` : '');
+    log(logMessage, 'info');
+  }
+};
 import { botConfig } from '../utils/config';
 import { adminMenu } from '../components/adminMenu';
 import { clansMenu } from '../components/clansMenu';

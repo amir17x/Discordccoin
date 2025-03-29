@@ -92,7 +92,7 @@ export interface QuizQuestion {
  */
 interface GameSession {
   id: string;
-  gameType: 'quiz' | 'drawguess' | 'truthordare' | 'bingo' | 'wordchain' | 'mafia' | 'werewolf' | 'spy';
+  gameType: 'quiz' | 'drawguess' | 'truthordare' | 'bingo' | 'wordchain' | 'word_chain' | 'mafia' | 'werewolf' | 'spy';
   channelId: string;
   createdBy: string;
   players: string[];
@@ -148,6 +148,35 @@ export function getActiveGamesCount(): number {
 }
 
 /**
+ * دریافت آمار بازی‌های فعال بر اساس نوع بازی
+ * @returns آبجکتی با آمار انواع بازی‌ها
+ */
+export function getActiveGamesByType(): { [key: string]: number } {
+  const stats: { [key: string]: number } = {
+    'quiz': 0,
+    'drawguess': 0,
+    'truthordare': 0,
+    'bingo': 0,
+    'wordchain': 0,
+    'mafia': 0,
+    'werewolf': 0,
+    'spy': 0,
+    'total': 0
+  };
+  
+  Array.from(activeGames.values())
+    .filter(game => game.status !== 'ended')
+    .forEach(game => {
+      if (stats[game.gameType] !== undefined) {
+        stats[game.gameType]++;
+      }
+      stats.total++;
+    });
+  
+  return stats;
+}
+
+/**
  * دریافت لیست تمام بازیکنان فعال
  * @returns آرایه‌ای از شناسه‌های کاربری بازیکنان فعال
  */
@@ -166,7 +195,19 @@ export function getActivePlayers(): string[] {
 }
 
 /**
+ * دریافت تعداد بازیکنان فعال
+ * @returns تعداد بازیکنان فعال
+ */
+export function getActivePlayersCount(): number {
+  return getActivePlayers().length;
+}
+
+/**
  * نمایش منوی جلسات فعال بازی‌های گروهی با امکانات پیشرفته و جزئیات بیشتر
+ * @param interaction برهم‌کنش کاربر
+ */
+/**
+ * نمایش منوی جلسات فعال بازی‌های گروهی با امکانات پیشرفته، جزئیات بیشتر، و دسته‌بندی بر اساس نوع بازی
  * @param interaction برهم‌کنش کاربر
  */
 export async function showActiveSessionsMenu(interaction: ButtonInteraction) {
@@ -181,8 +222,24 @@ export async function showActiveSessionsMenu(interaction: ButtonInteraction) {
         return bTime.getTime() - aTime.getTime();
       });
 
-    // تعداد کل بازیکنان فعال
-    const totalActivePlayers = getActivePlayers().length;
+    // دریافت تعداد کل بازیکنان فعال و آمار بازی‌ها
+    const totalActivePlayers = getActivePlayersCount();
+    const gameTypeStats = getActiveGamesByType();
+    
+    // گروه‌بندی بازی‌ها بر اساس نوع
+    const gamesByType: Record<string, GameSession[]> = {};
+    activeGamesList.forEach(game => {
+      if (!gamesByType[game.gameType]) {
+        gamesByType[game.gameType] = [];
+      }
+      gamesByType[game.gameType].push(game);
+    });
+    
+    // محاسبه تعداد بازی‌های فعال هر نوع
+    const gameTypeCounts: Record<string, number> = {};
+    Object.keys(gamesByType).forEach(type => {
+      gameTypeCounts[type] = gamesByType[type].length;
+    });
     
     // ایجاد Embed
     const embed = new EmbedBuilder()
@@ -190,11 +247,44 @@ export async function showActiveSessionsMenu(interaction: ButtonInteraction) {
       .setDescription('لیست تمام بازی‌های گروهی فعال در حال حاضر')
       .setColor('#9B59B6')
       .addFields(
-        { name: '🎲 کل جلسات فعال', value: `${activeGamesList.length} جلسه`, inline: true },
+        { name: '🎲 کل جلسات فعال', value: `${gameTypeStats.total} جلسه`, inline: true },
         { name: '👥 کل بازیکنان حاضر', value: `${totalActivePlayers} بازیکن`, inline: true }
       )
       .setFooter({ text: 'برای پیوستن به یک بازی، روی دکمه مربوطه کلیک کنید' })
       .setTimestamp();
+    
+    // تعیین نام و ایموجی انواع بازی‌ها
+    const gameTypeNames: Record<string, string> = {
+      'mafia': '🕵️‍♂️ مافیا',
+      'werewolf': '🐺 گرگینه',
+      'quiz': '📚 مسابقه اطلاعات عمومی',
+      'drawguess': '🎨 نقاشی حدس بزن',
+      'truthordare': '🎯 جرات یا حقیقت',
+      'bingo': '🎲 بینگو',
+      'wordchain': '📝 زنجیره کلمات',
+      'spy': '🕴️ جاسوس مخفی'
+    };
+    
+    // تبدیل وضعیت بازی به متن فارسی
+    const gameStatusText: Record<string, string> = {
+      'waiting': '⏳ در انتظار شروع',
+      'active': '🟢 در حال انجام',
+      'ended': '🔴 پایان یافته'
+    };
+    
+    // اضافه کردن آمار بازی‌ها به تفکیک نوع
+    if (Object.keys(gameTypeCounts).length > 0) {
+      let statsText = '';
+      Object.keys(gameTypeCounts).forEach(type => {
+        const typeName = gameTypeNames[type] || type;
+        statsText += `${typeName}: **${gameTypeCounts[type]}** جلسه\n`;
+      });
+      
+      embed.addFields({
+        name: '📊 آمار بازی‌ها به تفکیک نوع',
+        value: statsText
+      });
+    }
     
     // اضافه کردن اطلاعات هر بازی فعال به Embed
     if (activeGamesList.length > 0) {
@@ -202,34 +292,17 @@ export async function showActiveSessionsMenu(interaction: ButtonInteraction) {
       const displayGames = activeGamesList.slice(0, 8);
       
       displayGames.forEach((game, index) => {
-        // تبدیل نوع بازی به نام فارسی
-        const gameTypeNames: Record<string, string> = {
-          'mafia': '🕵️‍♂️ مافیا',
-          'werewolf': '🐺 گرگینه',
-          'quiz': '📚 مسابقه اطلاعات عمومی',
-          'drawguess': '🎨 نقاشی حدس بزن',
-          'truthordare': '🎯 جرات یا حقیقت',
-          'bingo': '🎲 بینگو',
-          'wordchain': '📝 زنجیره کلمات',
-          'spy': '🕴️ جاسوس مخفی'
-        };
-        
-        // تبدیل وضعیت بازی به متن فارسی
-        const gameStatusText: Record<string, string> = {
-          'waiting': '⏳ در انتظار شروع',
-          'active': '🟢 در حال انجام',
-          'ended': '🔴 پایان یافته'
-        };
-        
         const gameTypeName = gameTypeNames[game.gameType] || game.gameType;
         const hostUser = client.users.cache.get(game.createdBy)?.username || 'کاربر ناشناس';
         const startTime = game.startedAt ? new Date(game.startedAt).toLocaleTimeString('fa-IR') : 'در انتظار شروع';
         
-        // ساخت تگ برای بازی خصوصی
+        // ساخت تگ برای بازی خصوصی و نمایش کانال
         const privateTag = game.gameSettings?.isPrivate ? ' 🔒' : '';
+        const channel = client.channels.cache.get(game.channelId) as TextChannel;
+        const channelTag = channel ? ` - ${channel.name}` : '';
         
         embed.addFields({
-          name: `${index + 1}. ${gameTypeName}${privateTag}`,
+          name: `${index + 1}. ${gameTypeName}${privateTag}${channelTag}`,
           value: `👤 میزبان: ${hostUser}\n` +
                  `👥 بازیکنان: ${game.players.length} نفر\n` +
                  `⏰ شروع: ${startTime}\n` +
@@ -352,19 +425,56 @@ export async function showActiveSessionsMenu(interaction: ButtonInteraction) {
 export async function handleGroupGamesMenu(interaction: ChatInputCommandInteraction) {
   try {
     // دریافت تعداد بازیکنان فعال و کل بازی‌های فعال
-    const activePlayers = getActivePlayers().length;
-    const activeGamesCount = getActiveGamesCount();
+    const activePlayers = getActivePlayersCount();
+    const gameStats = getActiveGamesByType();
     
+    // ساخت Embed اصلی
     const embed = new EmbedBuilder()
       .setTitle('🎮 بازی‌های گروهی')
       .setDescription('🎲 سرگرمی دسته‌جمعی با دوستان و اعضای سرور!\n\n🎯 این بازی‌ها برای 3 تا 10 نفر طراحی شده‌اند. هیچ هزینه‌ای برای شرکت در این بازی‌ها نیاز نیست و هدف اصلی سرگرمی است.')
       .setColor('#9B59B6') // رنگ بنفش برای بازی‌های گروهی
       .addFields(
         { name: '👥 بازیکنان فعال', value: `${activePlayers} نفر`, inline: true },
-        { name: '🎲 بازی‌های جاری', value: `${activeGamesCount} بازی`, inline: true }
+        { name: '🎲 بازی‌های جاری', value: `${gameStats.total} بازی`, inline: true }
       )
       .setImage('https://media.discordapp.net/attachments/1005948809465335931/1111362362733785190/group_games_banner.png?width=915&height=147')
       .setFooter({ text: 'برای انتخاب بازی از دکمه‌های زیر استفاده کنید' });
+      
+    // اضافه کردن آمار جزئی بازی‌ها اگر بازی فعالی وجود داشته باشد
+    if (gameStats.total > 0) {
+      // ایجاد متن جزئیات بازی‌های فعال
+      const gameTypeEmojis: Record<string, string> = {
+        'quiz': '📚',
+        'drawguess': '🎨',
+        'truthordare': '🎯',
+        'bingo': '🎲',
+        'wordchain': '📝',
+        'mafia': '🕵️‍♂️',
+        'werewolf': '🐺',
+        'spy': '🕴️'
+      };
+      
+      let detailsText = '';
+      for (const [gameType, count] of Object.entries(gameStats)) {
+        if (gameType !== 'total' && count > 0) {
+          const emoji = gameTypeEmojis[gameType] || '🎮';
+          const name = gameType === 'quiz' ? 'اطلاعات عمومی' :
+                       gameType === 'drawguess' ? 'نقاشی حدس بزن' :
+                       gameType === 'truthordare' ? 'جرأت یا حقیقت' :
+                       gameType === 'bingo' ? 'بینگو' :
+                       gameType === 'wordchain' ? 'زنجیره کلمات' :
+                       gameType === 'mafia' ? 'مافیا' :
+                       gameType === 'werewolf' ? 'گرگینه' :
+                       gameType === 'spy' ? 'جاسوس مخفی' : gameType;
+          
+          detailsText += `${emoji} **${name}**: ${count} بازی\n`;
+        }
+      }
+      
+      if (detailsText) {
+        embed.addFields({ name: '📊 آمار بازی‌های فعال', value: detailsText });
+      }
+    }
 
     const buttonsRow1 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
@@ -539,6 +649,9 @@ export async function handleGroupGamesButton(interaction: ButtonInteraction) {
         await handleBingoGame(interaction);
         break;
       case 'group_wordchain':
+        await handleWordChainGame(interaction);
+        break;
+      case 'wordchain':
         await handleWordChainGame(interaction);
         break;
       case 'group_mafia':
@@ -3316,34 +3429,150 @@ async function handleTruthOrDareGame(interaction: ButtonInteraction) {
 /**
  * مدیریت بازی بینگو
  */
+/**
+ * مدیریت بازی بینگو و ارسال آن به ماژول مخصوص بینگو
+ */
 async function handleBingoGame(interaction: ButtonInteraction) {
   try {
-    const embed = new EmbedBuilder()
-      .setTitle('🎰 بینگو')
-      .setDescription('این بازی به زودی در دسترس قرار خواهد گرفت. لطفاً صبور باشید!')
-      .setColor(0x55AAFF);
-    
-    await interaction.reply({ embeds: [embed], ephemeral: true });
+    // ماژول بینگو را در components/bingoGame.ts پیاده‌سازی کرده‌ایم
+    // ارجاع به تابع createBingoGame در آن ماژول
+    const { createBingoGame } = await import('./bingoGame');
+    await createBingoGame(interaction);
   } catch (error) {
     log(`Error handling bingo game: ${error}`, 'error');
-    await interaction.reply({ content: '❌ خطایی در اجرای بازی رخ داد. لطفاً بعداً دوباره تلاش کنید.', ephemeral: true });
+    await interaction.reply({ 
+      content: '❌ خطایی در اجرای بازی بینگو رخ داد. لطفاً بعداً دوباره تلاش کنید.', 
+      ephemeral: true 
+    });
   }
 }
 
 /**
  * مدیریت بازی زنجیره کلمات
  */
+/**
+ * مدیریت بازی زنجیره کلمات
+ */
 async function handleWordChainGame(interaction: ButtonInteraction) {
   try {
-    const embed = new EmbedBuilder()
-      .setTitle('🔗 زنجیره کلمات')
-      .setDescription('این بازی به زودی در دسترس قرار خواهد گرفت. لطفاً صبور باشید!')
-      .setColor(0x55FF55);
+    // در اینجا بررسی می‌کنیم که کاربر قبلاً در پایگاه داده وجود داشته باشد
+    const user = await storage.getUserByDiscordId(interaction.user.id);
+    if (!user) {
+      await interaction.reply({ 
+        content: '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور `/menu` استفاده نمایید.', 
+        ephemeral: true 
+      });
+      return;
+    }
     
-    await interaction.reply({ embeds: [embed], ephemeral: true });
+    // بررسی وجود بازی فعال در کانال
+    const activeGameInChannel = Array.from(activeGames.values()).find(
+      game => game.channelId === interaction.channelId && 
+      game.gameType === 'wordchain' && 
+      game.status !== 'ended'
+    );
+    
+    if (activeGameInChannel) {
+      await interaction.reply({ 
+        content: '⚠️ یک بازی زنجیره کلمات در حال حاضر در این کانال فعال است!', 
+        ephemeral: true 
+      });
+      return;
+    }
+
+    // ایجاد بازی جدید
+    const gameId = `word_chain_${Date.now()}`;
+    
+    // تنظیمات بازی
+    const newGame: GameSession = {
+      id: gameId,
+      gameType: 'wordchain',
+      channelId: interaction.channelId,
+      createdBy: interaction.user.id,
+      players: [interaction.user.id],
+      status: 'waiting',
+      data: {
+        usedWords: [],
+        currentLetter: '',
+        currentTurn: 0,
+        roundTime: 30,
+        minWordLength: 3,
+        language: 'fa',
+        scores: {}
+      }
+    };
+    
+    // ثبت نام میزبان به عنوان اولین بازیکن
+    newGame.data.scores[interaction.user.id] = 0;
+    
+    // ذخیره در حافظه
+    activeGames.set(gameId, newGame);
+    
+    // ساخت Embed توضیحات بازی
+    const embed = new EmbedBuilder()
+      .setTitle('🔗 بازی زنجیره کلمات')
+      .setDescription('در این بازی هر بازیکن باید کلمه‌ای را بگوید که با آخرین حرف کلمه بازیکن قبلی شروع شود.')
+      .setColor('#55FF55')
+      .addFields(
+        { name: '👥 تعداد بازیکنان', value: '1/8', inline: true },
+        { name: '⏱️ زمان هر نوبت', value: '30 ثانیه', inline: true },
+        { name: '📏 حداقل طول کلمات', value: '3 حرف', inline: true },
+        { name: '👨‍💼 میزبان', value: interaction.user.username, inline: true },
+        { name: '📝 بازیکنان', value: interaction.user.username, inline: true }
+      )
+      .setFooter({ text: 'برای شرکت در بازی روی دکمه "ورود به بازی" کلیک کنید' });
+    
+    // دکمه‌های بازی
+    const row = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId(`word_chain_join_${gameId}`)
+          .setLabel('ورود به بازی')
+          .setEmoji('🎮')
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId(`word_chain_start_${gameId}`)
+          .setLabel('شروع بازی')
+          .setEmoji('▶️')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId(`word_chain_rules_${gameId}`)
+          .setLabel('قوانین بازی')
+          .setEmoji('📜')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId(`word_chain_cancel_${gameId}`)
+          .setLabel('لغو بازی')
+          .setEmoji('🚫')
+          .setStyle(ButtonStyle.Danger)
+      );
+    
+    // ارسال پیام و ذخیره شناسه آن
+    const response = await interaction.reply({ 
+      content: '🎮 یک بازی جدید زنجیره کلمات ایجاد شد!',
+      embeds: [embed], 
+      components: [row],
+      fetchReply: true 
+    });
+    
+    // ذخیره شناسه پیام در داده‌های بازی
+    newGame.data.messageId = response.id;
+    activeGames.set(gameId, newGame);
+    
+    // در صورت امکان، ذخیره در دیتابیس
+    try {
+      await storage.saveGameSession(newGame);
+    } catch (dbError) {
+      log(`Error saving word chain game to database: ${dbError}`, 'warn');
+      // ادامه روند بازی حتی در صورت خطا در ذخیره‌سازی
+    }
+    
   } catch (error) {
     log(`Error handling word chain game: ${error}`, 'error');
-    await interaction.reply({ content: '❌ خطایی در اجرای بازی رخ داد. لطفاً بعداً دوباره تلاش کنید.', ephemeral: true });
+    await interaction.reply({ 
+      content: '❌ خطایی در اجرای بازی زنجیره کلمات رخ داد. لطفاً بعداً دوباره تلاش کنید.', 
+      ephemeral: true 
+    });
   }
 }
 
