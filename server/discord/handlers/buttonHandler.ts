@@ -164,7 +164,13 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     
   // اجرای منوی بازی‌های گروهی
   if (customId.startsWith('group_') || customId.startsWith('quiz_') || customId.startsWith('drawguess_')) {
-    await handleGroupGamesButton(interaction);
+    if (customId === 'group_games') {
+      // اگر دکمه "بازی‌های گروهی" در منوی اصلی انتخاب شده، به منوی بازی‌ها با حالت گروهی برو
+      await gamesMenu(interaction, false, 'group');
+    } else {
+      // اجرای سایر دکمه‌های بازی‌های گروهی
+      await handleGroupGamesButton(interaction);
+    }
     return;
   }
   
@@ -481,7 +487,7 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     }
     
     if (action === 'group_games') {
-      await gamesMenu(interaction);
+      await gamesMenu(interaction, false, 'group');
       return;
     }
 

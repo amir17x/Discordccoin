@@ -13,7 +13,8 @@ import { storage } from '../../storage';
 // Function to create and send the games menu
 export async function gamesMenu(
   interaction: ButtonInteraction | MessageComponentInteraction,
-  followUp: boolean = false
+  followUp: boolean = false,
+  state: string = 'main'
 ) {
   try {
     // راه‌اندازی پاسخ با تاخیر (defer) تا از خطای تایم‌اوت جلوگیری شود
@@ -110,17 +111,18 @@ export async function gamesMenu(
           .setStyle(ButtonStyle.Secondary)
       );
     
-    // Track what state we're in
-    let state = 'main';
-    
-    // Check what custom ID we have to determine state
-    const customId = interaction.customId;
-    if (customId === 'solo_games') {
-      state = 'solo';
-    } else if (customId === 'competitive_games') {
-      state = 'competitive';
-    } else if (customId === 'group_games') {
-      state = 'group';
+    // اگر حالت از پارامتر ورودی تعیین نشده باشد، بر اساس customId آن را تعیین کن
+    // در غیر این صورت از پارامتر وارد شده استفاده کن
+    if (state === 'main') {
+      // Check what custom ID we have to determine state
+      const customId = interaction.customId;
+      if (customId === 'solo_games') {
+        state = 'solo';
+      } else if (customId === 'competitive_games') {
+        state = 'competitive';
+      } else if (customId === 'group_games') {
+        state = 'group';
+      }
     }
     
     // Send the appropriate menu based on the state

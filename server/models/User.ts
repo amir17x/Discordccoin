@@ -45,6 +45,11 @@ export interface IUser extends Document {
     multiplier: number;
     expiresAt: Date | null;
   };
+  // اعلانات شخصی ذخیره شده
+  personalNotifications: {
+    notifications: string[];
+    lastUpdated: Date;
+  };
   nickname: string | null;
   avatarURL: string | null;
   roles: string[];
@@ -179,6 +184,13 @@ const userSchema = new Schema<IUser>({
     }
   },
   games: { type: Array, default: [] },
+  personalNotifications: {
+    type: Object,
+    default: {
+      notifications: [],
+      lastUpdated: Date.now
+    }
+  },
   createdAt: { type: Date, default: Date.now }
 });
 

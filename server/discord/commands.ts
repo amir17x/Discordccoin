@@ -824,24 +824,8 @@ const unTipChannel = {
   }
 };
 
-// بازی های گروهی - دستور برای نمایش منوی بازی های گروهی
-const groupGames = {
-  data: new SlashCommandBuilder()
-    .setName('group')
-    .setDescription('🎮 منوی بازی‌های گروهی و سرگرمی دسته‌جمعی'),
-  
-  async execute(interaction: any) {
-    try {
-      await handleGroupGamesMenu(interaction);
-    } catch (error) {
-      console.error('Error in group games command:', error);
-      await interaction.reply({
-        content: '⚠️ خطا در نمایش منوی بازی‌های گروهی! لطفاً دوباره تلاش کنید.',
-        ephemeral: true
-      });
-    }
-  }
-};
+// دستور گروه حذف شد و با منوی بازی‌ها یکپارچه شد
+// کاربران حالا می‌توانند از طریق منوی بازی‌ها به بازی‌های گروهی دسترسی داشته باشند
 
 // Command for Google AI interaction
 const hf = {
@@ -1012,7 +996,7 @@ export async function loadCommands(client: Client) {
   client.commands.set(ping.data.name, ping);
   client.commands.set(tipChannel.data.name, tipChannel);
   client.commands.set(unTipChannel.data.name, unTipChannel);
-  client.commands.set(groupGames.data.name, groupGames);
+  // کامند بازی‌های گروهی حذف شد و با منوی بازی‌ها یکپارچه شد
   client.commands.set(hf.data.name, hf); // Add the Google AI command
 }
 
@@ -1025,6 +1009,6 @@ export const commands = [
   ping.data.toJSON(),
   tipChannel.data.toJSON(),
   unTipChannel.data.toJSON(),
-  groupGames.data.toJSON(),
+  // کامند بازی‌های گروهی حذف شد و با منوی بازی‌ها یکپارچه شد
   hf.data.toJSON() // Add the Google AI command to slash commands
 ];

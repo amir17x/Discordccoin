@@ -6,6 +6,7 @@
 import { generateAIResponse } from '../services/aiService';
 import { log } from '../../vite';
 import { storage } from '../../storage';
+import UserModel from '../../models/User';
 
 // نوع اطلاعات کاربر برای تولید اعلانات شخصی
 interface UserNotificationContext {
@@ -297,6 +298,9 @@ const notificationsCache: { [key: string]: { notifications: string[], timestamp:
 // مدت زمان اعتبار کش (15 دقیقه)
 const CACHE_TTL = 15 * 60 * 1000;
 
+// مدت زمان اعتبار اعلانات ذخیره شده در دیتابیس (2 ساعت)
+const DB_NOTIFICATIONS_TTL = 2 * 60 * 60 * 1000;
+
 /**
  * تولید اعلانات شخصی برای کاربر با استفاده از Gemini
  * @param userContext اطلاعات کاربر
@@ -328,7 +332,7 @@ async function generatePersonalizedNotifications(
       const prompt = buildNotificationPrompt(userContext, category);
       
       // دریافت پاسخ از Gemini با سبک طنزآمیز
-      const aiResponse = await generateAIResponse(prompt, 'notifications', 'طنزآمیز');
+      const aiResponse = await generateAIResponse(prompt, 'other', 'طنزآمیز');
       
       // تبدیل پاسخ به آرایه‌ای از اعلانات
       if (aiResponse) {
@@ -603,8 +607,87 @@ function getCategoryPersianName(category: NotificationCategory): string {
  * @param count تعداد اعلانات مورد نیاز
  * @returns لیست اعلانات شخصی‌سازی شده
  */
+/**
+ * ذخیره اعلانات شخصی برای کاربر در دیتابیس
+ * @param userId شناسه دیسکورد کاربر
+ * @param notifications اعلانات شخصی‌سازی شده
+ */
+async function saveUserNotifications(userId: string, notifications: string[]): Promise<void> {
+  try {
+    const user = await storage.getUserByDiscordId(userId);
+    if (!user) {
+      log(`کاربر با شناسه ${userId} برای ذخیره اعلانات یافت نشد.`, 'error');
+      return;
+    }
+
+    // استفاده از Mongoose API برای به‌روزرسانی مستقیم
+    // این روش بهتر از storage.updateUser است چون فیلد personalNotifications را پشتیبانی می‌کند
+    try {
+      await UserModel.updateOne(
+        { discordId: userId },
+        {
+          $set: {
+            'personalNotifications.notifications': notifications,
+            'personalNotifications.lastUpdated': new Date()
+          }
+        }
+      );
+      
+      log(`اعلانات شخصی برای کاربر ${userId} با موفقیت در دیتابیس ذخیره شد.`, 'success');
+    } catch (mongoError) {
+      log(`خطا در به‌روزرسانی کاربر در دیتابیس: ${mongoError}`, 'error');
+    }
+  } catch (error) {
+    log(`خطا در ذخیره اعلانات شخصی: ${error}`, 'error');
+  }
+}
+
+/**
+ * دریافت اعلانات شخصی کاربر از دیتابیس
+ * @param userId شناسه دیسکورد کاربر
+ * @returns اعلانات شخصی‌سازی شده یا null در صورت عدم وجود یا منقضی شدن
+ */
+async function getUserNotificationsFromDB(userId: string): Promise<string[] | null> {
+  try {
+    // استفاده مستقیم از مدل مونگوس برای دسترسی به فیلد personalNotifications
+    const user = await UserModel.findOne({ discordId: userId }).lean();
+    
+    if (!user || !user.personalNotifications || !user.personalNotifications.notifications || !user.personalNotifications.lastUpdated) {
+      return null;
+    }
+
+    // بررسی تاریخ انقضا
+    const lastUpdated = new Date(user.personalNotifications.lastUpdated);
+    const now = new Date();
+    
+    // اگر زمان آخرین به‌روزرسانی اعلانات بیشتر از مدت زمان مشخص شده گذشته است، منقضی شده است
+    if (now.getTime() - lastUpdated.getTime() > DB_NOTIFICATIONS_TTL) {
+      log(`اعلانات شخصی کاربر ${userId} منقضی شده است. تولید اعلانات جدید...`, 'info');
+      return null;
+    }
+    
+    // در غیر این صورت، اعلانات ذخیره شده را برمی‌گردانیم
+    return user.personalNotifications.notifications;
+  } catch (error) {
+    log(`خطا در دریافت اعلانات شخصی از دیتابیس: ${error}`, 'error');
+    return null;
+  }
+}
+
 export async function generateUserNotifications(userId: string, count: number = 3): Promise<string[]> {
   try {
+    // ابتدا بررسی می‌کنیم آیا اعلانات معتبر در دیتابیس وجود دارد
+    const savedNotifications = await getUserNotificationsFromDB(userId);
+    
+    // اگر اعلانات معتبر در دیتابیس وجود دارد، از آن‌ها استفاده می‌کنیم
+    if (savedNotifications && savedNotifications.length >= count) {
+      log(`استفاده از اعلانات ذخیره شده در دیتابیس برای کاربر ${userId}`, 'info');
+      return savedNotifications.slice(0, count);
+    }
+    
+    // در غیر این صورت، اعلانات جدید تولید می‌کنیم
+    log(`تولید اعلانات جدید برای کاربر ${userId}`, 'info');
+    
     // دریافت اطلاعات کاربر
     const userContext = await getUserNotificationContext(userId);
     
@@ -666,6 +749,24 @@ export async function generateUserNotifications(userId: string, count: number = 
     }
     
     log(`${notifications.length} اعلان شخصی‌سازی شده برای کاربر ${userId} تولید شد.`, 'success');
+    
+    // ذخیره اعلانات در دیتابیس برای استفاده‌های بعدی
+    // ما حداقل 5 اعلان تولید می‌کنیم تا در استفاده‌های بعدی تنوع داشته باشیم
+    const notificationsToSave = [...notifications];
+    if (notificationsToSave.length < 5) {
+      // تولید اعلانات بیشتر برای ذخیره‌سازی
+      const extraCount = 5 - notificationsToSave.length;
+      for (let i = 0; i < extraCount; i++) {
+        const category = selectNotificationCategory(priorities);
+        const categoryNotifications = await generatePersonalizedNotifications(userContext, category);
+        const randomIndex = Math.floor(Math.random() * categoryNotifications.length);
+        notificationsToSave.push(categoryNotifications[randomIndex]);
+      }
+    }
+    
+    // ذخیره در دیتابیس
+    await saveUserNotifications(userId, notificationsToSave);
+    
     return notifications;
   } catch (error) {
     log(`خطا در تولید اعلانات شخصی‌سازی شده: ${error}`, 'error');

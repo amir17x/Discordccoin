@@ -87,15 +87,13 @@ export async function mainMenu(
     // تولید اعلانات هوشمند شخصی‌سازی شده با هوش مصنوعی
     const getNotifications = async () => {
       try {
-        // تابع کمکی برای ایجاد اعلان با استایل مناسب
-        const formatNotification = (text: string) => {
-          return `\`${text}\``;
-        };
-        
         // استفاده از سیستم اعلانات هوشمند و شخصی‌سازی شده با Gemini
+        // با بهینه‌سازی جدید، اعلانات از قبل در دیتابیس ذخیره می‌شوند
+        // و فقط در صورت نیاز از API هوش مصنوعی استفاده می‌شود
         const { generateUserNotifications } = await import('../utils/aiPersonalNotifications');
         
         // دریافت اعلانات شخصی‌سازی شده بر اساس وضعیت واقعی کاربر
+        // این تابع ابتدا اعلانات را از دیتابیس دریافت می‌کند و فقط در صورت نیاز اعلانات جدید تولید می‌کند
         let personalizedNotifications = await generateUserNotifications(interaction.user.id, 3);
         
         // اگر هیچ اعلانی دریافت نشد، از اعلانات پیش‌فرض استفاده می‌کنیم
