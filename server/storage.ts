@@ -5717,10 +5717,31 @@ export class MongoStorage implements IStorage {
   }
 
   // AI Assistant operations - پیاده‌سازی متدهای مربوط به دستیار هوش مصنوعی
-  async getUserAIAssistantDetails(userId: number): Promise<{subscription: boolean, subscriptionTier: string, subscriptionExpires: Date | null, questionsRemaining: number, totalQuestions: number} | undefined> {
+  async getUserAIAssistantDetails(userId: number | string): Promise<{subscription: boolean, subscriptionTier: string, subscriptionExpires: Date | null, questionsRemaining: number, totalQuestions: number} | undefined> {
     try {
-      const user = await UserModel.findOne({ id: userId });
-      if (!user) return undefined;
+      // ابتدا با discordId جستجو کنیم (این معمولاً همان userId است که از طرف دیسکورد می‌آید)
+      let user = await UserModel.findOne({ discordId: String(userId) });
+      
+      // اگر پیدا نشد، با id عددی امتحان کنیم
+      if (!user) {
+        if (typeof userId === 'number') {
+          user = await UserModel.findOne({ id: userId });
+        } else {
+          // سعی کنیم ببینیم آیا userId یک MongoDB ObjectId معتبر است
+          try {
+            if (mongoose.Types.ObjectId.isValid(userId)) {
+              user = await UserModel.findById(userId);
+            }
+          } catch (e) {
+            console.log('Error in findById for AI assistant:', e);
+          }
+        }
+      }
+      
+      if (!user) {
+        console.warn(`User not found for AI assistant with ID ${userId}`);
+        return undefined;
+      }
       
       // اگر فیلد aiAssistant وجود نداشت، مقدار پیش‌فرض برگردان
       if (!user.aiAssistant) {
@@ -5739,14 +5760,35 @@ export class MongoStorage implements IStorage {
       return user.aiAssistant;
     } catch (error) {
       console.error('Error getting AI assistant details from MongoDB:', error);
-      return memStorage.getUserAIAssistantDetails(userId);
+      return memStorage.getUserAIAssistantDetails(typeof userId === 'number' ? userId : parseInt(userId as string, 10));
     }
   }
   
-  async useAIAssistantQuestion(userId: number): Promise<boolean> {
+  async useAIAssistantQuestion(userId: number | string): Promise<boolean> {
     try {
-      const user = await UserModel.findOne({ id: userId });
-      if (!user) return false;
+      // ابتدا با discordId جستجو کنیم (این معمولاً همان userId است که از طرف دیسکورد می‌آید)
+      let user = await UserModel.findOne({ discordId: String(userId) });
+      
+      // اگر پیدا نشد، با id عددی امتحان کنیم
+      if (!user) {
+        if (typeof userId === 'number') {
+          user = await UserModel.findOne({ id: userId });
+        } else {
+          // سعی کنیم ببینیم آیا userId یک MongoDB ObjectId معتبر است
+          try {
+            if (mongoose.Types.ObjectId.isValid(userId)) {
+              user = await UserModel.findById(userId);
+            }
+          } catch (e) {
+            console.log('Error in findById for AI assistant question:', e);
+          }
+        }
+      }
+      
+      if (!user) {
+        console.warn(`User not found for AI assistant question with ID ${userId}`);
+        return false;
+      }
       
       // مطمئن شویم که فیلد aiAssistant وجود دارد
       if (!user.aiAssistant) {
@@ -5789,14 +5831,35 @@ export class MongoStorage implements IStorage {
       return true;
     } catch (error) {
       console.error('Error using AI assistant question in MongoDB:', error);
-      return memStorage.useAIAssistantQuestion(userId);
+      return memStorage.useAIAssistantQuestion(typeof userId === 'number' ? userId : parseInt(userId as string, 10));
     }
   }
   
-  async subscribeToAIAssistant(userId: number, tier: 'weekly' | 'monthly', amountPaid: number): Promise<boolean> {
+  async subscribeToAIAssistant(userId: number | string, tier: 'weekly' | 'monthly', amountPaid: number): Promise<boolean> {
     try {
-      const user = await UserModel.findOne({ id: userId });
-      if (!user) return false;
+      // ابتدا با discordId جستجو کنیم (این معمولاً همان userId است که از طرف دیسکورد می‌آید)
+      let user = await UserModel.findOne({ discordId: String(userId) });
+      
+      // اگر پیدا نشد، با id عددی امتحان کنیم
+      if (!user) {
+        if (typeof userId === 'number') {
+          user = await UserModel.findOne({ id: userId });
+        } else {
+          // سعی کنیم ببینیم آیا userId یک MongoDB ObjectId معتبر است
+          try {
+            if (mongoose.Types.ObjectId.isValid(userId)) {
+              user = await UserModel.findById(userId);
+            }
+          } catch (e) {
+            console.log('Error in findById for AI assistant subscription:', e);
+          }
+        }
+      }
+      
+      if (!user) {
+        console.warn(`User not found for AI assistant subscription with ID ${userId}`);
+        return false;
+      }
       
       // مطمئن شویم که فیلد aiAssistant وجود دارد
       if (!user.aiAssistant) {
@@ -5839,20 +5902,47 @@ export class MongoStorage implements IStorage {
         }
       });
       
+      // کم کردن هزینه اشتراک از کیف پول کاربر
+      user.wallet -= amountPaid;
+      if (user.wallet < 0) {
+        user.wallet = 0; // برای اطمینان از اینکه موجودی منفی نشود
+      }
+      
       // ذخیره تغییرات
       await user.save();
       
       return true;
     } catch (error) {
       console.error('Error subscribing to AI assistant in MongoDB:', error);
-      return memStorage.subscribeToAIAssistant(userId, tier, amountPaid);
+      return memStorage.subscribeToAIAssistant(typeof userId === 'number' ? userId : parseInt(userId as string, 10), tier, amountPaid);
     }
   }
   
-  async resetAIAssistantQuestions(userId: number): Promise<boolean> {
+  async resetAIAssistantQuestions(userId: number | string): Promise<boolean> {
     try {
-      const user = await UserModel.findOne({ id: userId });
-      if (!user) return false;
+      // ابتدا با discordId جستجو کنیم (این معمولاً همان userId است که از طرف دیسکورد می‌آید)
+      let user = await UserModel.findOne({ discordId: String(userId) });
+      
+      // اگر پیدا نشد، با id عددی امتحان کنیم
+      if (!user) {
+        if (typeof userId === 'number') {
+          user = await UserModel.findOne({ id: userId });
+        } else {
+          // سعی کنیم ببینیم آیا userId یک MongoDB ObjectId معتبر است
+          try {
+            if (mongoose.Types.ObjectId.isValid(userId)) {
+              user = await UserModel.findById(userId);
+            }
+          } catch (e) {
+            console.log('Error in findById for AI assistant reset questions:', e);
+          }
+        }
+      }
+      
+      if (!user) {
+        console.warn(`User not found for AI assistant reset questions with ID ${userId}`);
+        return false;
+      }
       
       // مطمئن شویم که فیلد aiAssistant وجود دارد
       if (!user.aiAssistant) {
@@ -5874,20 +5964,38 @@ export class MongoStorage implements IStorage {
       return true;
     } catch (error) {
       console.error('Error resetting AI assistant questions in MongoDB:', error);
-      return memStorage.resetAIAssistantQuestions(userId);
+      return memStorage.resetAIAssistantQuestions(typeof userId === 'number' ? userId : parseInt(userId as string, 10));
     }
   }
   
-  async getUserAIAssistantUsage(userId: number): Promise<number> {
+  async getUserAIAssistantUsage(userId: number | string): Promise<number> {
     try {
-      const user = await UserModel.findOne({ id: userId });
+      // ابتدا با discordId جستجو کنیم (این معمولاً همان userId است که از طرف دیسکورد می‌آید)
+      let user = await UserModel.findOne({ discordId: String(userId) });
+      
+      // اگر پیدا نشد، با id عددی امتحان کنیم
+      if (!user) {
+        if (typeof userId === 'number') {
+          user = await UserModel.findOne({ id: userId });
+        } else {
+          // سعی کنیم ببینیم آیا userId یک MongoDB ObjectId معتبر است
+          try {
+            if (mongoose.Types.ObjectId.isValid(userId)) {
+              user = await UserModel.findById(userId);
+            }
+          } catch (e) {
+            console.log('Error in findById for AI assistant usage:', e);
+          }
+        }
+      }
+      
       if (!user || !user.aiAssistant) return 0;
       
       // محاسبه تعداد سوالات استفاده شده
       return user.aiAssistant.totalQuestions - user.aiAssistant.questionsRemaining;
     } catch (error) {
       console.error('Error getting AI assistant usage from MongoDB:', error);
-      return memStorage.getUserAIAssistantUsage(userId);
+      return memStorage.getUserAIAssistantUsage(typeof userId === 'number' ? userId : parseInt(userId as string, 10));
     }
   }
 
