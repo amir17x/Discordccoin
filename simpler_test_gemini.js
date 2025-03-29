@@ -3,13 +3,15 @@ import axios from 'axios';
 
 dotenv.config();
 
-// کلید API
-const API_KEY = process.env.GOOGLE_AI_API_KEY;
-console.log(`API Key length: ${API_KEY ? API_KEY.length : 0}`);
-console.log(`API Key starts with: ${API_KEY ? API_KEY.substring(0, 5) + '...' : 'undefined'}`);
+// کلید API - چک کردن هر دو کلید احتمالی
+const API_KEY = process.env.GOOGLE_AI_API_KEY || process.env.VORTEX_AI_API_KEY;
+console.log(`API Key available: ${API_KEY ? 'Yes' : 'No'}`);
+// برای امنیت بیشتر از نمایش هر بخشی از کلید خودداری می‌کنیم
+console.log(`API Key source: ${process.env.GOOGLE_AI_API_KEY ? 'GOOGLE_AI_API_KEY' : 
+                             process.env.VORTEX_AI_API_KEY ? 'VORTEX_AI_API_KEY' : 'None'}`);
 
-// تنظیمات API
-const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent';
+// تنظیمات API - استفاده از مدل flash بجای pro برای مصرف توکن کمتر و احتمال خطای کمتر برای سهمیه
+const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
 async function testGemini() {
   try {

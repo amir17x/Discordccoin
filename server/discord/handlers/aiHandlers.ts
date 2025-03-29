@@ -22,12 +22,8 @@ export async function handleSwitchAIService(
     const aiSettings = botConfig.getAISettings();
     const currentService = aiSettings.service || 'huggingface';
     
-    // دریافت نام نمایشی سرویس
-    const serviceDisplayName = 
-      serviceName === 'googleai' ? 'CCOIN AI' :
-      serviceName === 'vertexai' ? 'CCOIN AI (Cloud)' :
-      serviceName === 'ccoinai' ? 'CCOIN AI' :
-      'نامشخص';
+    // دریافت نام نمایشی سرویس - فقط CCOIN AI را نمایش می‌دهیم
+    const serviceDisplayName = 'CCOIN AI';
     
     // اگر سرویس از قبل فعال بود، پیام دهیم و برگردیم
     if (currentService === serviceName) {
@@ -102,12 +98,8 @@ export async function handleTestAIService(interaction: ButtonInteraction) {
     const testPrompt = 'یک جمله انگیزشی کوتاه به زبان فارسی بنویس (حداکثر 100 کاراکتر)';
     const testResult = await testAIService(testPrompt);
     
-    // دریافت نام سرویس فعلی
-    const aiSettings = botConfig.getAISettings();
-    const serviceName = aiSettings.service === 'googleai' ? 'CCOIN AI' :
-                   aiSettings.service === 'vertexai' ? 'CCOIN AI (Cloud)' :
-                   aiSettings.service === 'ccoinai' ? 'CCOIN AI' :
-                   'نامشخص';
+    // دریافت نام سرویس فعلی - نمایش فقط CCOIN AI
+    const serviceName = 'CCOIN AI';
     
     // ساخت امبد نتیجه
     const resultEmbed = new EmbedBuilder()
@@ -150,10 +142,7 @@ export async function handleViewAIStatus(interaction: ButtonInteraction) {
       .addFields(
         { 
           name: '🤖 سرویس فعلی', 
-          value: aiStatus.service === 'googleai' ? 'CCOIN AI' :
-                 aiStatus.service === 'vertexai' ? 'CCOIN AI (Cloud)' :
-                 aiStatus.service === 'ccoinai' ? 'CCOIN AI' :
-                 'نامشخص', 
+          value: 'CCOIN AI', 
           inline: true 
         },
         { 
@@ -168,17 +157,9 @@ export async function handleViewAIStatus(interaction: ButtonInteraction) {
         },
         { 
           name: '📊 درخواست‌های CCOIN AI', 
-          value: aiStatus.providerStats.googleai ? aiStatus.providerStats.googleai.toLocaleString() : '0', 
-          inline: true 
-        },
-        { 
-          name: '📊 درخواست‌های CCOIN AI (Cloud)', 
-          value: aiStatus.providerStats.vertexai ? aiStatus.providerStats.vertexai.toLocaleString() : '0', 
-          inline: true 
-        },
-        { 
-          name: '📊 درخواست‌های CCOIN AI (نسخه پایه)', 
-          value: aiStatus.providerStats.ccoinai ? aiStatus.providerStats.ccoinai.toLocaleString() : '0', 
+          value: ((aiStatus.providerStats.googleai || 0) + 
+                 (aiStatus.providerStats.vertexai || 0) + 
+                 (aiStatus.providerStats.ccoinai || 0)).toLocaleString(), 
           inline: true 
         },
         { 

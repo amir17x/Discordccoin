@@ -16,9 +16,11 @@ export { tipTopics };
 export async function generateAITip(): Promise<string> {
   try {
     // استفاده از سرویس CCOIN AI برای تولید نکته اتفاقی
-    return await ccoinAiTipService.generateRandomTip();
+    const tip = await ccoinAiTipService.generateRandomTip();
+    log(`✅ نکته هوشمند با موفقیت تولید شد: ${tip.substring(0, 30)}...`, 'discord');
+    return tip;
   } catch (error) {
-    log(`Error generating AI tip: ${error}`, 'error');
+    log(`❌ خطا در تولید نکته هوشمند: ${error}`, 'error');
     return "💡 با استفاده از دستور `/daily` می‌توانید هر ۲۴ ساعت یکبار جایزه روزانه خود را دریافت کنید. با حفظ استریک ۷ روزه، جوایز ویژه‌ای دریافت خواهید کرد!";
   }
 }
@@ -31,9 +33,11 @@ export async function generateAITip(): Promise<string> {
 export async function generateTopicTip(topic: string): Promise<string> {
   try {
     // استفاده از سرویس CCOIN AI برای تولید نکته با موضوع مشخص
-    return await ccoinAiTipService.generateTopicTip(topic);
+    const tip = await ccoinAiTipService.generateTopicTip(topic);
+    log(`✅ نکته هوشمند موضوعی "${topic}" با موفقیت تولید شد: ${tip.substring(0, 30)}...`, 'discord');
+    return tip;
   } catch (error) {
-    log(`Error generating AI topic tip: ${error}`, 'error');
+    log(`❌ خطا در تولید نکته هوشمند موضوعی: ${error}`, 'error');
     return `💡 ${topic} یکی از ویژگی‌های مهم ربات Ccoin است که به شما کمک می‌کند تجربه بهتری داشته باشید. برای اطلاعات بیشتر از دستور /help استفاده کنید!`;
   }
 }
