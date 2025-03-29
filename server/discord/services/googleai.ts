@@ -2,7 +2,7 @@ import { botConfig } from '../utils/config';
 import { createGeminiPrompt, createShortGeminiPrompt } from '../utils/botGeminiPrompt';
 
 // کلید Google AI API
-const GOOGLE_AI_API_KEY = process.env.GOOGLE_AI_API_KEY || '';
+const GOOGLE_AI_API_KEY = process.env.GOOGLE_AI_API_KEY || process.env.VORTEX_AI_API_KEY || '';
 
 // کش برای ذخیره تعاملات API و کاهش تعداد درخواست‌ها
 interface CacheItem {

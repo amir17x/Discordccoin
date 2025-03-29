@@ -9,13 +9,13 @@ export interface BotConfig {
   
   // تنظیمات لاگ‌ها
   logChannels: {
-    [LogType.TRANSACTION]?: string;
-    [LogType.GAME]?: string;
-    [LogType.USER]?: string;
-    [LogType.ADMIN]?: string;
-    [LogType.SECURITY]?: string;
-    [LogType.SYSTEM]?: string;
-    [LogType.ERROR]?: string;
+    transaction?: string;
+    game?: string;
+    user?: string;
+    admin?: string;
+    security?: string;
+    system?: string;
+    error?: string;
     default?: string;
   };
   
@@ -75,7 +75,7 @@ export interface BotConfig {
   
   // تنظیمات هوش مصنوعی
   ai?: {
-    service?: 'googleai'; // سرویس فعال هوش مصنوعی
+    service?: 'googleai' | 'vertexai' | 'geminialt'; // سرویس فعال هوش مصنوعی
     googleModel?: string; // مدل Google AI
     responseStyle?: string; // سبک پاسخگویی (متعادل، خلاقانه، دقیق، طنزآمیز)
   };
@@ -247,7 +247,7 @@ export class BotConfigManager {
    * تنظیم کانال لاگ
    */
   public setLogChannel(logType: LogType, channelId: string): void {
-    this.config.logChannels[logType] = channelId;
+    (this.config.logChannels as any)[logType] = channelId;
     this.saveConfig(this.config);
   }
 
@@ -263,7 +263,8 @@ export class BotConfigManager {
    * دریافت آی‌دی کانال لاگ
    */
   public getLogChannel(logType: LogType): string | undefined {
-    return this.config.logChannels[logType] || this.config.logChannels.default;
+    // نام کانال مستقیماً از مقدار enum استفاده می‌شود
+    return (this.config.logChannels as any)[logType] || this.config.logChannels.default;
   }
 
   /**

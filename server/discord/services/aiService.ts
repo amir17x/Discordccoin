@@ -2,12 +2,14 @@ import path from 'path';
 import fs from 'fs';
 import { botConfig } from '../utils/config';
 import { generateGoogleAIResponse, googleAIService } from './googleai';
+import { generateVertexAIResponse, vertexAIService } from './vertexai';
+import { generateGeminiAltResponse, geminiAltService } from './geminiAltService';
 
 // مسیر فایل آمار هوش مصنوعی
 const AI_STATS_FILE = path.resolve(process.cwd(), 'ai_stats.json');
 
 // تعریف انواع سرویس‌های هوش مصنوعی
-export type AIService = 'googleai';
+export type AIService = 'googleai' | 'vertexai' | 'geminialt';
 
 // ساختار داده آمار هوش مصنوعی
 interface AIStats {
@@ -16,6 +18,8 @@ interface AIStats {
   requestCount: number;
   providerStats: {
     googleai: number;
+    vertexai: number;
+    geminialt?: number;
   };
   usageCounts: {
     statusMessages: number;
@@ -34,7 +38,8 @@ const defaultStats: AIStats = {
   lastUsed: null,
   requestCount: 0,
   providerStats: {
-    googleai: 0
+    googleai: 0,
+    vertexai: 0
   },
   usageCounts: {
     statusMessages: 0,
@@ -108,7 +113,8 @@ function saveAIStats(stats: AIStats): void {
  */
 function updateAIStats(
   usageType: 'statusMessages' | 'marketAnalysis' | 'questStories' | 'aiAssistant' | 'other',
-  latency: number
+  latency: number,
+  provider: AIService = 'googleai'
 ): void {
   try {
     const stats = loadAIStats();
@@ -117,8 +123,20 @@ function updateAIStats(
     stats.requestCount++;
     stats.lastUsed = new Date().toISOString();
     
-    // فقط آمار سرویس گوگل را به‌روز می‌کنیم
-    stats.providerStats.googleai++;
+    // بروزرسانی آمار سرویس‌ها
+    if (provider === 'googleai') {
+      stats.providerStats.googleai++;
+    } else if (provider === 'vertexai') {
+      if (!stats.providerStats.vertexai) {
+        stats.providerStats.vertexai = 0;
+      }
+      stats.providerStats.vertexai++;
+    } else if (provider === 'geminialt') {
+      if (!stats.providerStats.geminialt) {
+        stats.providerStats.geminialt = 0;
+      }
+      stats.providerStats.geminialt++;
+    }
     
     // بروزرسانی نوع استفاده
     stats.usageCounts[usageType]++;
@@ -156,16 +174,59 @@ export async function generateAIResponse(
   try {
     const startTime = Date.now();
     
-    // استفاده از سیستم کش‌شده گوگل AI با سبک پاسخگویی مشخص شده
+    // بررسی سرویس فعال
+    const aiSettings = botConfig.getAISettings();
+    const activeService = aiSettings.service || 'googleai';
+    
+    if (activeService === 'geminialt') {
+      try {
+        // استفاده از GeminiAlt
+        const response = await generateGeminiAltResponse(prompt, responseStyle);
+        
+        // محاسبه زمان پاسخگویی
+        const latency = Date.now() - startTime;
+        
+        // بروزرسانی آمار - فقط برای درخواست‌های جدید (غیرکش شده)
+        if (latency > 50) {
+          updateAIStats(usageType, latency, 'geminialt');
+        }
+        
+        return response;
+      } catch (geminiError) {
+        console.error('Error with Gemini Alt, fallback to Google AI:', geminiError);
+        // ادامه به روش فالبک
+      }
+    }
+    
+    // اگر سرویس فعال Vertex AI باشد یا Gemini Alt خطا داده باشد، تلاش می‌کنیم با Vertex AI پاسخ بگیریم
+    if (activeService === 'vertexai' || activeService === 'geminialt') {
+      try {
+        const response = await generateVertexAIResponse(prompt, responseStyle);
+        
+        // محاسبه زمان پاسخگویی
+        const latency = Date.now() - startTime;
+        
+        // بروزرسانی آمار - فقط برای درخواست‌های جدید (غیرکش شده)
+        if (latency > 50) {
+          updateAIStats(usageType, latency, 'vertexai');
+        }
+        
+        return response;
+      } catch (vertexError) {
+        console.error('Error with Vertex AI, fallback to Google AI:', vertexError);
+        // ادامه به روش فالبک
+      }
+    }
+    
+    // در صورت خطا یا اگر سرویس فعال Google AI باشد، از آن استفاده می‌کنیم
     const response = await generateGoogleAIResponse(prompt, responseStyle);
     
     // محاسبه زمان پاسخگویی
     const latency = Date.now() - startTime;
     
     // بروزرسانی آمار - فقط برای درخواست‌های جدید (غیرکش شده)
-    // زمان پاسخگویی کمتر از 50ms احتمالاً نشان‌دهنده استفاده از کش است
     if (latency > 50) {
-      updateAIStats(usageType, latency);
+      updateAIStats(usageType, latency, 'googleai');
     }
     
     return response;
@@ -190,6 +251,7 @@ export async function testAIService(
   error?: string;
   latency: number;
   style?: string;
+  service?: AIService;
 }> {
   try {
     const startTime = Date.now();
@@ -197,8 +259,51 @@ export async function testAIService(
     // استفاده از سبک پاسخگویی مشخص شده
     const aiSettings = botConfig.getAISettings();
     const style = responseStyle || aiSettings.responseStyle || 'متعادل';
+    const activeService = aiSettings.service || 'googleai';
     
-    // فقط از سرویس گوگل استفاده می‌کنیم
+    // اگر سرویس فعال GeminiAlt باشد، ابتدا آن را آزمایش می‌کنیم
+    if (activeService === 'geminialt') {
+      try {
+        const response = await generateGeminiAltResponse(prompt, style);
+        
+        // محاسبه زمان پاسخگویی
+        const latency = Date.now() - startTime;
+        
+        return {
+          success: true,
+          response,
+          latency,
+          style,
+          service: 'geminialt'
+        };
+      } catch (geminiAltError) {
+        console.log('Failed to use Gemini Alt for test, trying Vertex AI:', geminiAltError);
+        // ادامه به مرحله بعدی
+      }
+    }
+    
+    // آزمایش Vertex AI
+    if (activeService === 'vertexai' || activeService === 'geminialt') {
+      try {
+        const response = await generateVertexAIResponse(prompt, style);
+        
+        // محاسبه زمان پاسخگویی
+        const latency = Date.now() - startTime;
+        
+        return {
+          success: true,
+          response,
+          latency,
+          style,
+          service: 'vertexai'
+        };
+      } catch (vertexError) {
+        console.log('Failed to use Vertex AI for test, fallback to Google AI:', vertexError);
+        // ادامه به مرحله بعدی
+      }
+    }
+    
+    // استفاده از Google AI به عنوان آخرین گزینه
     const response = await generateGoogleAIResponse(prompt, style);
     
     // محاسبه زمان پاسخگویی
@@ -208,7 +313,8 @@ export async function testAIService(
       success: true,
       response,
       latency,
-      style
+      style,
+      service: 'googleai'
     };
   } catch (error) {
     const latency = 0; // در صورت خطا، زمان پاسخگویی معنایی ندارد
@@ -228,11 +334,8 @@ export async function testAIService(
  */
 export async function pingCurrentAIService(): Promise<number> {
   try {
-    // همیشه از سرویس گوگل استفاده می‌کنیم
-    const service = 'googleai';
-    
     // تابع کمکی برای اعمال تایم‌اوت روی پینگ
-    const pingWithTimeout = async (pingFunc: () => Promise<number>, timeout: number = 5000): Promise<number> => {
+    const pingWithTimeout = async (pingFunc: () => Promise<number>, service: string, timeout: number = 5000): Promise<number> => {
       return new Promise<number>((resolve) => {
         // تنظیم تایمر برای تایم‌اوت
         const timer = setTimeout(() => {
@@ -252,10 +355,44 @@ export async function pingCurrentAIService(): Promise<number> {
       });
     };
     
-    // فقط از سرویس گوگل استفاده می‌کنیم
-    return await pingWithTimeout(() => googleAIService.pingGoogleAI());
+    // بررسی سرویس فعال
+    const aiSettings = botConfig.getAISettings();
+    const activeService = aiSettings.service || 'googleai';
+    
+    // اگر سرویس فعال GeminiAlt باشد، ابتدا آن را امتحان می‌کنیم
+    if (activeService === 'geminialt') {
+      try {
+        const geminiAltResult = await pingWithTimeout(() => geminiAltService.pingGeminiAlt(), 'geminialt');
+        if (geminiAltResult > 0 || geminiAltResult === -429) {
+          return geminiAltResult;
+        }
+        
+        // اگر GeminiAlt مشکل داشت، از Vertex AI استفاده می‌کنیم
+        console.log('Gemini Alt ping failed, trying Vertex AI');
+      } catch (geminiAltError) {
+        console.error('Error pinging Gemini Alt:', geminiAltError);
+      }
+    }
+    
+    // اگر سرویس فعال Vertex AI باشد یا GeminiAlt خطا داده باشد
+    if (activeService === 'vertexai' || activeService === 'geminialt') {
+      try {
+        const vertexResult = await pingWithTimeout(() => vertexAIService.pingVertexAI(), 'vertexai');
+        if (vertexResult > 0 || vertexResult === -429) {
+          return vertexResult;
+        }
+        
+        // اگر Vertex AI مشکل داشت، از Google AI استفاده می‌کنیم
+        console.log('Vertex AI ping failed, trying Google AI');
+      } catch (vertexError) {
+        console.error('Error pinging Vertex AI:', vertexError);
+      }
+    }
+    
+    // فالبک به Google AI
+    return await pingWithTimeout(() => googleAIService.pingGoogleAI(), 'googleai');
   } catch (error) {
-    console.error('Error pinging AI service:', error);
+    console.error('Error pinging AI services:', error);
     return -1; // خطای نامشخص
   }
 }

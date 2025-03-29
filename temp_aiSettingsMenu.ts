@@ -26,30 +26,52 @@ export async function aiSettingsMenu(interaction: ButtonInteraction | ChatInputC
       .setTimestamp();
     
     // تنظیمات هوش مصنوعی فعلی
-    const aiService = config.ai?.service || 'huggingface';
+    const aiService = config.ai?.service || 'googleai';
+    
+    // تعیین نام سرویس
+    let serviceDisplay = '';
+    switch (aiService) {
+      case 'googleai':
+        serviceDisplay = '**Google AI (Free)** - مدل استاندارد گوگل';
+        break;
+      case 'vertexai':
+        serviceDisplay = '**Vertex AI (Google Cloud)** - مدل حرفه‌ای با API کلید';
+        break;
+      case 'geminialt':
+        serviceDisplay = '**Gemini API (مستقیم)** - دسترسی مستقیم به API جمینای';
+        break;
+      default:
+        serviceDisplay = '**Google AI** - سرویس پیش‌فرض';
+    }
     
     // افزودن فیلدها به Embed
     embed.addFields(
       { 
         name: '🤖 سرویس فعلی هوش مصنوعی', 
-        value: aiService === 'openai' ? 
-          '**OpenAI (ChatGPT)** - کیفیت بالاتر با محدودیت بیشتر' : 
-          '**Hugging Face** - کیفیت متوسط بدون محدودیت', 
+        value: serviceDisplay, 
         inline: false 
       },
       { 
         name: '📊 مقایسه سرویس‌ها', 
         value: 
-        `**OpenAI (ChatGPT)**:\n` +
-        `✅ کیفیت بالای پاسخ‌ها\n` +
-        `✅ درک بهتر زبان فارسی\n` +
-        `⚠️ محدودیت در تعداد درخواست‌ها\n` +
-        `⚠️ هزینه بالاتر\n\n` +
-        `**Hugging Face**:\n` +
-        `✅ بدون محدودیت در تعداد درخواست‌ها\n` +
-        `✅ هزینه کمتر\n` +
-        `⚠️ کیفیت متوسط پاسخ‌ها\n` +
-        `⚠️ درک محدودتر زبان فارسی`, 
+        `**Google AI (Free)**:\n` +
+        `✅ دسترسی رایگان و آسان\n` +
+        `✅ بدون نیاز به اعتبارسنجی پیچیده\n` +
+        `⚠️ محدودیت در تعداد درخواست‌ها (سهمیه روزانه)\n` +
+        `⚠️ محدودیت در اندازه درخواست‌ها\n\n` +
+        
+        `**Vertex AI (Cloud)**:\n` +
+        `✅ کیفیت بالاتر با مدل‌های پیشرفته‌تر\n` +
+        `✅ محدودیت‌های کمتر با اعتبار گوگل کلود\n` +
+        `⚠️ نیاز به تنظیم حساب Google Cloud\n` +
+        `⚠️ ممکن است هزینه داشته باشد\n\n` +
+        
+        `**Gemini API (مستقیم)**:\n` +
+        `✅ دسترسی مستقیم به API و بدون واسطه\n` +
+        `✅ کنترل بیشتر بر روی پارامترها\n` +
+        `⚠️ نیاز به کلید API معتبر\n` +
+        `⚠️ محدودیت‌های سهمیه مشابه Google AI`,
+        
         inline: false 
       }
     );
@@ -58,17 +80,23 @@ export async function aiSettingsMenu(interaction: ButtonInteraction | ChatInputC
     const row1 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
-          .setCustomId('admin_switch_to_openai')
-          .setLabel('استفاده از OpenAI')
-          .setEmoji('🤖')
-          .setStyle(aiService === 'openai' ? ButtonStyle.Success : ButtonStyle.Primary)
-          .setDisabled(aiService === 'openai'),
+          .setCustomId('admin_switch_to_googleai')
+          .setLabel('Google AI (Free)')
+          .setEmoji('🔄')
+          .setStyle(aiService === 'googleai' ? ButtonStyle.Success : ButtonStyle.Primary)
+          .setDisabled(aiService === 'googleai'),
         new ButtonBuilder()
-          .setCustomId('admin_switch_to_huggingface')
-          .setLabel('استفاده از Hugging Face')
-          .setEmoji('🧠')
-          .setStyle(aiService === 'huggingface' ? ButtonStyle.Success : ButtonStyle.Primary)
-          .setDisabled(aiService === 'huggingface'),
+          .setCustomId('admin_switch_to_vertexai')
+          .setLabel('Vertex AI (Cloud)')
+          .setEmoji('☁️')
+          .setStyle(aiService === 'vertexai' ? ButtonStyle.Success : ButtonStyle.Primary)
+          .setDisabled(aiService === 'vertexai'),
+        new ButtonBuilder()
+          .setCustomId('admin_switch_to_geminialt')
+          .setLabel('Gemini API (مستقیم)')
+          .setEmoji('🤖')
+          .setStyle(aiService === 'geminialt' ? ButtonStyle.Success : ButtonStyle.Primary)
+          .setDisabled(aiService === 'geminialt'),
       );
     
     // دکمه‌های تست و مشاهده وضعیت
