@@ -17,6 +17,7 @@ import {
   handleQuizQuestionModalSubmit, 
   handleQuizAnswer 
 } from '../components/groupGames';
+import { handleBingoInteraction } from '../components/bingoGame';
 import { handleSwitchAIService, handleTestAIService, handleViewAIStatus } from './aiHandlers';
 import { showAISettingsMenu, handleModelSelect, handleStyleSelect, handleTestAI, handleResetAI, handleAIHelp } from '../components/aiSettingsMenu';
 import { 
@@ -57,7 +58,7 @@ import { handleRockPaperScissors } from '../games/rockPaperScissors';
 import { handleNumberGuess } from '../games/numberGuess';
 import { handleDiceDuel } from '../games/diceDuel';
 import { showMatchmakingMenu, startRandomMatchmaking, showInviteOpponentMenu, cancelMatchmaking } from '../games/matchmaking';
-import { getLogger, LogType } from '../utils/logger';
+import { log } from '../utils/logger';
 import { botConfig } from '../utils/config';
 
 // زمان انتظار دزدی - تعریف شده در robberyMenu.ts
@@ -161,6 +162,28 @@ async function handleInvestmentHistory(interaction: ButtonInteraction) {
 export async function handleButtonInteraction(interaction: ButtonInteraction) {
   // Get the custom ID of the button
   const customId = interaction.customId;
+  
+  // پردازش دکمه‌های بازی بینگو
+  if (customId === 'bingo' || customId.startsWith('bingo_')) {
+    // سعی در پردازش دکمه‌های بینگو
+    if (await handleBingoInteraction(interaction)) {
+      return;
+    }
+  }
+  
+  // پردازش دکمه‌های زنجیره کلمات
+  if (customId === 'word_chain' || customId.startsWith('word_chain_')) {
+    // ارسال به پردازشگر بازی‌های گروهی
+    await handleGroupGamesButton(interaction);
+    return;
+  }
+  
+  // پردازش دکمه‌های جرأت یا حقیقت
+  if (customId === 'truth_or_dare' || customId.startsWith('truth_or_dare_')) {
+    // ارسال به پردازشگر بازی‌های گروهی
+    await handleGroupGamesButton(interaction);
+    return;
+  }
     
   // اجرای منوی بازی‌های گروهی
   if (customId.startsWith('group_') || customId.startsWith('quiz_') || customId.startsWith('drawguess_')) {
@@ -2130,7 +2153,7 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     // Handle log settings
     if (action.startsWith('admin_set_') && action.endsWith('_log')) {
       // Extract the log type from the button ID (e.g., admin_set_transaction_log -> transaction)
-      const logType = action.replace('admin_set_', '').replace('_log', '') as LogType;
+      const logType = action.replace('admin_set_', '').replace('_log', '');
       await handleSetLogChannel(interaction, logType);
       return;
     }
@@ -2683,7 +2706,7 @@ async function handleExchange(interaction: ButtonInteraction, crystalAmount: num
 }
 
 // Handler for setting log channels
-export async function handleSetLogChannel(interaction: ButtonInteraction, logType: LogType) {
+export async function handleSetLogChannel(interaction: ButtonInteraction, logType: string) {
   try {
     // Check if user has admin permissions
     const member = interaction.guild?.members.cache.get(interaction.user.id);
@@ -2919,8 +2942,19 @@ async function handleTestLogs(interaction: ButtonInteraction) {
       return;
     }
     
-    // Get logger instance
-    const logger = getLogger(interaction.client);
+    // Get logger from utils/logger
+    const logger = { 
+      logTransaction: (userId, username, type, amount, description) => log(`Transaction: ${username} (${userId}) - ${type}: ${amount} - ${description}`),
+      logGame: (userId, username, gameType, result, bet, reward) => log(`Game: ${username} (${userId}) - ${gameType} - ${result} - Bet: ${bet} - Reward: ${reward}`),
+      logUserActivity: (userId, username, activity, details) => log(`User Activity: ${username} (${userId}) - ${activity} - ${details}`),
+      logAdminAction: (adminId, adminName, action, targetId, targetName, details) => log(`Admin Action: ${adminName} (${adminId}) - ${action} - Target: ${targetName} (${targetId}) - ${details}`),
+      logSecurity: (userId, username, eventType, severity, details) => log(`Security: ${username} (${userId}) - ${eventType} - Severity: ${severity} - ${details}`),
+      logError: (error, module, userId, username) => log(`Error in ${module}: ${error}${userId ? ` - User: ${username} (${userId})` : ''}`),
+      logSystem: (eventType, details, fields) => log(`System: ${eventType} - ${details}`)
+    };
+    
+    // Simple log function
+    const log = (message: string) => console.log(`[LOG] ${message}`);
     
     // Test all configured log types
     const config = botConfig.getConfig();
@@ -2928,7 +2962,7 @@ async function handleTestLogs(interaction: ButtonInteraction) {
     let failures: string[] = [];
     
     // Test transaction log
-    if (config.logChannels[LogType.TRANSACTION]) {
+    if (config.logChannels['transaction']) {
       try {
         await logger.logTransaction(
           interaction.user.id,
@@ -2944,7 +2978,7 @@ async function handleTestLogs(interaction: ButtonInteraction) {
     }
     
     // Test game log
-    if (config.logChannels[LogType.GAME]) {
+    if (config.logChannels['game']) {
       try {
         await logger.logGame(
           interaction.user.id,
@@ -2961,7 +2995,7 @@ async function handleTestLogs(interaction: ButtonInteraction) {
     }
     
     // Test user log
-    if (config.logChannels[LogType.USER]) {
+    if (config.logChannels['user']) {
       try {
         await logger.logUserActivity(
           interaction.user.id,
@@ -2976,7 +3010,7 @@ async function handleTestLogs(interaction: ButtonInteraction) {
     }
     
     // Test admin log
-    if (config.logChannels[LogType.ADMIN]) {
+    if (config.logChannels['admin']) {
       try {
         await logger.logAdminAction(
           interaction.user.id,
@@ -2993,7 +3027,7 @@ async function handleTestLogs(interaction: ButtonInteraction) {
     }
     
     // Test security log
-    if (config.logChannels[LogType.SECURITY]) {
+    if (config.logChannels['security']) {
       try {
         await logger.logSecurity(
           interaction.user.id,
@@ -3009,7 +3043,7 @@ async function handleTestLogs(interaction: ButtonInteraction) {
     }
     
     // Test error log
-    if (config.logChannels[LogType.ERROR]) {
+    if (config.logChannels['error']) {
       try {
         await logger.logError(
           'این یک خطای تستی است',
@@ -3024,7 +3058,7 @@ async function handleTestLogs(interaction: ButtonInteraction) {
     }
     
     // Test system log
-    if (config.logChannels[LogType.SYSTEM]) {
+    if (config.logChannels['system']) {
       try {
         await logger.logSystem(
           'تست',

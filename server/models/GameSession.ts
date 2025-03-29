@@ -1,52 +1,84 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose from 'mongoose';
 
-/**
- * مدل جلسه بازی گروهی
- */
-export interface GameSession extends Document {
-  id: string;
-  gameType: 'quiz' | 'drawguess' | 'truthordare' | 'bingo' | 'wordchain' | 'mafia' | 'werewolf' | 'spy';
-  channelId: string;
-  createdBy: string;
-  players: string[];
-  status: 'waiting' | 'active' | 'ended';
-  startedAt?: Date;
-  endedAt?: Date;
-  data: any; // اطلاعات خاص هر بازی
-  createdAt: Date;
-}
-
-/**
- * اسکیمای جلسه بازی گروهی
- */
-const GameSessionSchema = new Schema<GameSession>({
-  id: { type: String, required: true, unique: true },
-  gameType: { 
-    type: String, 
-    required: true,
-    enum: ['quiz', 'drawguess', 'truthordare', 'bingo', 'wordchain', 'mafia', 'werewolf', 'spy']
-  },
-  channelId: { type: String, required: true },
-  createdBy: { type: String, required: true },
-  players: { type: [String], default: [] },
-  status: { 
-    type: String, 
-    required: true,
-    enum: ['waiting', 'active', 'ended'],
-    default: 'waiting'
-  },
-  startedAt: { type: Date },
-  endedAt: { type: Date },
-  data: { type: Schema.Types.Mixed },
-  createdAt: { type: Date, default: Date.now }
+// اسکیما امتیازات بازی
+const GameScoreSchema = new mongoose.Schema({
+  playerId: { type: String, required: true },
+  score: { type: Number, default: 0 }
 });
 
-// ایجاد یک ایندکس برای جستجوی سریع‌تر
-GameSessionSchema.index({ channelId: 1, status: 1 });
+// اسکیما تنظیمات بازی
+const GameSettingsSchema = new mongoose.Schema({
+  timePerTurn: { type: Number, default: 60 },
+  isPrivate: { type: Boolean, default: false },
+  allowSpectators: { type: Boolean, default: true },
+  maxPlayers: { type: Number, default: 10 },
+  minPlayers: { type: Number, default: 3 },
+  prizeCoin: { type: Number, default: 100 },
+  language: { type: String, enum: ['fa', 'en'], default: 'fa' }
+}, { _id: false });
+
+// اسکیما جلسه بازی
+const GameSessionSchema = new mongoose.Schema({
+  gameId: { type: String, required: true, unique: true, index: true },
+  gameType: { 
+    type: String, 
+    required: true, 
+    enum: ['quiz', 'truth_or_dare', 'wordchain', 'drawguess', 'bingo', 'mafia'] 
+  },
+  guildId: { type: String, required: true },
+  channelId: { type: String, required: true },
+  hostId: { type: String, required: true },
+  players: [{ type: String }],
+  scores: [GameScoreSchema],
+  status: { 
+    type: String, 
+    enum: ['waiting', 'active', 'ended'], 
+    default: 'waiting' 
+  },
+  settings: { 
+    type: GameSettingsSchema, 
+    default: () => ({}) 
+  },
+  sessionNumber: { type: Number, default: 1 },
+  startedAt: { type: Date },
+  endedAt: { type: Date },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+// ایندکس‌ها برای جستجوی سریع
+GameSessionSchema.index({ guildId: 1, gameType: 1 });
+GameSessionSchema.index({ status: 1 });
 GameSessionSchema.index({ gameType: 1, status: 1 });
 
-// ساخت مدل
-export const GameSessionModel = mongoose.model<GameSession>('GameSession', GameSessionSchema);
+// مدل مونگوس
+const GameSessionModel = mongoose.model('GameSession', GameSessionSchema);
 
-// صادر کردن مدل
+// Define type for a game session document
+export interface GameSession {
+  gameId: string;
+  gameType: 'quiz' | 'truth_or_dare' | 'wordchain' | 'drawguess' | 'bingo' | 'mafia';
+  guildId: string;
+  channelId: string;
+  hostId: string;
+  players: string[];
+  scores: { playerId: string; score: number }[];
+  status: 'waiting' | 'active' | 'ended';
+  settings: {
+    timePerTurn: number;
+    isPrivate: boolean;
+    allowSpectators: boolean;
+    maxPlayers: number;
+    minPlayers: number;
+    prizeCoin: number;
+    language: 'fa' | 'en';
+  };
+  sessionNumber?: number;
+  startedAt?: Date;
+  endedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export { GameSessionModel };
 export default GameSessionModel;

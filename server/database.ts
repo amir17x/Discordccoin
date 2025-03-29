@@ -6,7 +6,7 @@ import ClanModel from './models/Clan';
 import TipChannelModel from './models/TipChannel';
 import { QuizQuestionModel } from './models/QuizQuestion';
 import { QuizReviewerModel } from './models/QuizReviewer';
-import { GameSessionModel } from './models/GameSession';
+import GameSessionModel from './models/GameSession';
 
 // تعریف اینترفیس برای کش
 interface CacheItem {

@@ -1,0 +1,1366 @@
+
+خیلی خوب! از بازی چهارم یعنی مسابقه اطلاعات عمومی (General Knowledge Quiz) ادامه می‌دم. این بازی نیازی به ویس چت نداره، چون بیشتر مبتنی بر پاسخ به سوالات متنیه و می‌تونه کاملاً با دکمه‌ها مدیریت بشه. من مستندسازی، قوانین، و کد این بازی رو با جزئیات کامل و به صورت کاربرپسند با ایموجی‌های جذاب و ساختار Embed ارائه می‌دم.
+
+4. 🧠 مسابقه اطلاعات عمومی (General Knowledge Quiz)
+Embed مستندسازی
+json
+
+Collapse
+
+Wrap
+
+Copy
+{
+  "embeds": [
+    {
+      "title": "🧠 مسابقه اطلاعات عمومی",
+      "description": "دانشت رو به چالش بکش! تو این مسابقه باید به سوالات جواب بدی و امتیاز جمع کنی! 📚",
+      "color": 5763719,
+      "fields": [
+        {
+          "name": "👥 تعداد بازیکنان",
+          "value": "0/10",
+          "inline": true
+        },
+        {
+          "name": "⏱️ زمان هر سوال",
+          "value": "30 ثانیه",
+          "inline": true
+        },
+        {
+          "name": "👤 حداقل بازیکنان",
+          "value": "3 نفر",
+          "inline": true
+        },
+        {
+          "name": "💰 جایزه بازی",
+          "value": "برنده 200 کوین 🤑",
+          "inline": true
+        }
+      ],
+      "footer": {
+        "text": "برای شرکت تو مسابقه، روی دکمه ورود کلیک کن! 🎮"
+      }
+    }
+  ],
+  "components": [
+    {
+      "type": 1,
+      "components": [
+        {
+          "type": 2,
+          "style": 3,
+          "label": "ورود به بازی",
+          "custom_id": "join_quiz"
+        },
+        {
+          "type": 2,
+          "style": 1,
+          "label": "شروع بازی",
+          "custom_id": "start_quiz"
+        },
+        {
+          "type": 2,
+          "style": 2,
+          "label": "قوانین بازی 📜",
+          "custom_id": "quiz_rules"
+        },
+        {
+          "type": 2,
+          "style": 2,
+          "label": "بازگشت 🔙",
+          "custom_id": "back_to_menu"
+        }
+      ]
+    }
+  ]
+}
+قوانین بازی مسابقه اطلاعات عمومی (دکمه قوانین)
+json
+
+Collapse
+
+Wrap
+
+Copy
+{
+  "embeds": [
+    {
+      "title": "📜 قوانین مسابقه اطلاعات عمومی",
+      "description": "اینجا قوانین کامل مسابقه اطلاعات عمومی رو می‌تونی بخونی! 🧠",
+      "color": 5763719,
+      "fields": [
+        {
+          "name": "👥 شروع بازی",
+          "value": "🔹 بازی با حداقل 3 بازیکن شروع می‌شه.\n🔹 ربات به هر بازیکن یه پیام خوش‌آمدگویی می‌فرسته و بازی رو آماده می‌کنه.",
+          "inline": false
+        },
+        {
+          "name": "❓ سوالات و پاسخ‌ها",
+          "value": "🔹 ربات هر دور یه سوال چندگزینه‌ای می‌فرسته (4 گزینه: A، B، C، D).\n🔹 هر بازیکن 30 ثانیه وقت داره تا با دکمه‌ها جوابش رو انتخاب کنه.\n🔹 جواب درست 10 امتیاز داره، جواب اشتباه امتیازی نداره.",
+          "inline": false
+        },
+        {
+          "name": "⏳ زمان‌بندی",
+          "value": "🔹 هر سوال 30 ثانیه طول می‌کشه.\n🔹 اگه تو این مدت جواب ندی، به طور خودکار 0 امتیاز می‌گیری.\n🔹 بازی 10 دور طول می‌کشه (10 سوال).",
+          "inline": false
+        },
+        {
+          "name": "🏆 پایان بازی و اعلام برنده",
+          "value": "🔹 بعد از 10 دور، بازیکنی که بیشترین امتیاز رو داره برنده می‌شه.\n🔹 اگه چند نفر امتیاز برابر داشته باشن، یه سوال اضافه برای تای‌بریکر (Tiebreaker) پرسیده می‌شه.\n🔹 جایزه (200 کوین) به برنده داده می‌شه.",
+          "inline": false
+        },
+        {
+          "name": "📊 نمایش امتیازات",
+          "value": "🔹 بعد از هر دور، ربات امتیازات فعلی همه بازیکنا رو نمایش می‌ده.\n🔹 تو پایان بازی، یه جدول کامل از امتیازات و رتبه‌بندی نشون داده می‌شه.",
+          "inline": false
+        }
+      ],
+      "footer": {
+        "text": "برای بازگشت به منوی بازی، روی دکمه بازگشت کلیک کن! 🔙"
+      }
+    }
+  ],
+  "components": [
+    {
+      "type": 1,
+      "components": [
+        {
+          "type": 2,
+          "style": 2,
+          "label": "بازگشت 🔙",
+          "custom_id": "back_to_quiz_menu"
+        }
+      ]
+    }
+  ]
+}
+کد بازی مسابقه اطلاعات عمومی
+javascript
+
+Collapse
+
+Wrap
+
+Copy
+const { Client, GatewayIntentBits } = require('discord.js');
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
+
+let quizPlayers = [];
+let quizScores = {};
+let quizQuestions = [
+  { question: "پایتخت ایران کجاست؟", options: ["A) تهران", "B) شیراز", "C) اصفهان", "D) تبریز"], answer: "A" },
+  { question: "بزرگ‌ترین اقیانوس جهان کدام است؟", options: ["A) اطلس", "B) آرام", "C) هند", "D) منجمد شمالی"], answer: "B" },
+  { question: "عدد پی (π) تقریباً چقدر است؟", options: ["A) 2.14", "B) 3.14", "C) 4.14", "D) 5.14"], answer: "B" },
+  { question: "کدام سیاره به حلقه‌هایش معروفه؟", options: ["A) مریخ", "B) زحل", "C) مشتری", "D) نپتون"], answer: "B" },
+  { question: "نویسنده کتاب 'شازده کوچولو' کیست؟", options: ["A) آنتوان دو سنت‌اگزوپری", "B) ویکتور هوگو", "C) چارلز دیکنز", "D) جین آستین"], answer: "A" },
+  { question: "کدام عنصر شیمیایی با نماد 'O' شناخته می‌شه؟", options: ["A) طلا", "B) اکسیژن", "C) آهن", "D) نقره"], answer: "B" },
+  { question: "بلندترین کوه جهان کدام است؟", options: ["A) اورست", "B) K2", "C) کانچن‌جونگا", "D) ماکالو"], answer: "A" },
+  { question: "کدام کشور پرجمعیت‌ترین کشور جهانه؟", options: ["A) هند", "B) چین", "C) آمریکا", "D) برزیل"], answer: "B" },
+  { question: "اولین انسان روی ماه کی بود؟", options: ["A) یوری گاگارین", "B) نیل آرمسترانگ", "C) باز آلدرین", "D) جان گلن"], answer: "B" },
+  { question: "کدام حیوان به 'پادشاه جنگل' معروفه؟", options: ["A) شیر", "B) ببر", "C) فیل", "D) پلنگ"], answer: "A" }
+];
+let currentQuestion = 0;
+let quizMessage;
+
+client.once('ready', () => {
+  console.log('ربات مسابقه اطلاعات عمومی آماده است!');
+});
+
+client.on('messageCreate', async message => {
+  if (message.content === '!start_quiz_menu') {
+    const quizEmbed = {
+      embeds: [
+        {
+          title: "🧠 مسابقه اطلاعات عمومی",
+          description: "دانشت رو به چالش بکش! تو این مسابقه باید به سوالات جواب بدی و امتیاز جمع کنی! 📚",
+          color: 5763719,
+          fields: [
+            { name: "👥 تعداد بازیکنان", value: `${quizPlayers.length}/10`, inline: true },
+            { name: "⏱️ زمان هر سوال", value: "30 ثانیه", inline: true },
+            { name: "👤 حداقل بازیکنان", value: "3 نفر", inline: true },
+            { name: "💰 جایزه بازی", value: "برنده 200 کوین 🤑", inline: true }
+          ],
+          footer: { text: "برای شرکت تو مسابقه، روی دکمه ورود کلیک کن! 🎮" }
+        }
+      ],
+      components: [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 3, label: "ورود به بازی", custom_id: "join_quiz" },
+            { type: 2, style: 1, label: "شروع بازی", custom_id: "start_quiz" },
+            { type: 2, style: 2, label: "قوانین بازی 📜", custom_id: "quiz_rules" },
+            { type: 2, style: 2, label: "بازگشت 🔙", custom_id: "back_to_menu" }
+          ]
+        }
+      ]
+    };
+    quizMessage = await message.channel.send(quizEmbed);
+  }
+});
+
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isButton()) return;
+
+  // ورود به بازی
+  if (interaction.customId === 'join_quiz') {
+    if (quizPlayers.includes(interaction.user.id)) {
+      await interaction.reply({ content: 'تو قبلاً وارد بازی شدی! ⏳', ephemeral: true });
+      return;
+    }
+    if (quizPlayers.length >= 10) {
+      await interaction.reply({ content: 'ظرفیت بازی پر شده! 🚫', ephemeral: true });
+      return;
+    }
+    quizPlayers.push(interaction.user.id);
+    quizScores[interaction.user.id] = 0;
+    const updatedEmbed = {
+      embeds: [
+        {
+          title: "🧠 مسابقه اطلاعات عمومی",
+          description: "دانشت رو به چالش بکش! تو این مسابقه باید به سوالات جواب بدی و امتیاز جمع کنی! 📚",
+          color: 5763719,
+          fields: [
+            { name: "👥 تعداد بازیکنان", value: `${quizPlayers.length}/10`, inline: true },
+            { name: "⏱️ زمان هر سوال", value: "30 ثانیه", inline: true },
+            { name: "👤 حداقل بازیکنان", value: "3 نفر", inline: true },
+            { name: "💰 جایزه بازی", value: "برنده 200 کوین 🤑", inline: true }
+          ],
+          footer: { text: "برای شرکت تو مسابقه، روی دکمه ورود کلیک کن! 🎮" }
+        }
+      ],
+      components: [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 3, label: "ورود به بازی", custom_id: "join_quiz" },
+            { type: 2, style: 1, label: "شروع بازی", custom_id: "start_quiz" },
+            { type: 2, style: 2, label: "قوانین بازی 📜", custom_id: "quiz_rules" },
+            { type: 2, style: 2, label: "بازگشت 🔙", custom_id: "back_to_menu" }
+          ]
+        }
+      ]
+    };
+    await quizMessage.edit(updatedEmbed);
+    await interaction.reply({ content: 'با موفقیت وارد بازی شدی! ✅', ephemeral: true });
+  }
+
+  // نمایش قوانین
+  if (interaction.customId === 'quiz_rules') {
+    const rulesEmbed = {
+      embeds: [
+        {
+          title: "📜 قوانین مسابقه اطلاعات عمومی",
+          description: "اینجا قوانین کامل مسابقه اطلاعات عمومی رو می‌تونی بخونی! 🧠",
+          color: 5763719,
+          fields: [
+            { name: "👥 شروع بازی", value: "🔹 بازی با حداقل 3 بازیکن شروع می‌شه.\n🔹 ربات به هر بازیکن یه پیام خوش‌آمدگویی می‌فرسته و بازی رو آماده می‌کنه.", inline: false },
+            { name: "❓ سوالات و پاسخ‌ها", value: "🔹 ربات هر دور یه سوال چندگزینه‌ای می‌فرسته (4 گزینه: A، B، C، D).\n🔹 هر بازیکن 30 ثانیه وقت داره تا با دکمه‌ها جوابش رو انتخاب کنه.\n🔹 جواب درست 10 امتیاز داره، جواب اشتباه امتیازی نداره.", inline: false },
+            { name: "⏳ زمان‌بندی", value: "🔹 هر سوال 30 ثانیه طول می‌کشه.\n🔹 اگه تو این مدت جواب ندی، به طور خودکار 0 امتیاز می‌گیری.\n🔹 بازی 10 دور طول می‌کشه (10 سوال).", inline: false },
+            { name: "🏆 پایان بازی و اعلام برنده", value: "🔹 بعد از 10 دور، بازیکنی که بیشترین امتیاز رو داره برنده می‌شه.\n🔹 اگه چند نفر امتیاز برابر داشته باشن، یه سوال اضافه برای تای‌بریکر (Tiebreaker) پرسیده می‌شه.\n🔹 جایزه (200 کوین) به برنده داده می‌شه.", inline: false },
+            { name: "📊 نمایش امتیازات", value: "🔹 بعد از هر دور، ربات امتیازات فعلی همه بازیکنا رو نمایش می‌ده.\n🔹 تو پایان بازی، یه جدول کامل از امتیازات و رتبه‌بندی نشون داده می‌شه.", inline: false }
+          ],
+          footer: { text: "برای بازگشت به منوی بازی، روی دکمه بازگشت کلیک کن! 🔙" }
+        }
+      ],
+      components: [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 2, label: "بازگشت 🔙", custom_id: "back_to_quiz_menu" }
+          ]
+        }
+      ]
+    };
+    await interaction.reply({ ...rulesEmbed, ephemeral: true });
+  }
+
+  // بازگشت به منوی مسابقه
+  if (interaction.customId === 'back_to_quiz_menu') {
+    const quizEmbed = {
+      embeds: [
+        {
+          title: "🧠 مسابقه اطلاعات عمومی",
+          description: "دانشت رو به چالش بکش! تو این مسابقه باید به سوالات جواب بدی و امتیاز جمع کنی! 📚",
+          color: 5763719,
+          fields: [
+            { name: "👥 تعداد بازیکنان", value: `${quizPlayers.length}/10`, inline: true },
+            { name: "⏱️ زمان هر سوال", value: "30 ثانیه", inline: true },
+            { name: "👤 حداقل بازیکنان", value: "3 نفر", inline: true },
+            { name: "💰 جایزه بازی", value: "برنده 200 کوین 🤑", inline: true }
+          ],
+          footer: { text: "برای شرکت تو مسابقه، روی دکمه ورود کلیک کن! 🎮" }
+        }
+      ],
+      components: [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 3, label: "ورود به بازی", custom_id: "join_quiz" },
+            { type: 2, style: 1, label: "شروع بازی", custom_id: "start_quiz" },
+            { type: 2, style: 2, label: "قوانین بازی 📜", custom_id: "quiz_rules" },
+            { type: 2, style: 2, label: "بازگشت 🔙", custom_id: "back_to_menu" }
+          ]
+        }
+      ]
+    };
+    await interaction.reply({ ...quizEmbed, ephemeral: true });
+  }
+
+  // شروع بازی
+  if (interaction.customId === 'start_quiz') {
+    if (quizPlayers.length < 3) {
+      await interaction.reply({ content: 'حداقل 3 بازیکن برای شروع بازی نیازه! 🚫', ephemeral: true });
+      return;
+    }
+
+    currentQuestion = 0;
+    await askQuestion(interaction);
+  }
+
+  // پاسخ به سوالات
+  if (interaction.customId.startsWith('answer_')) {
+    const answer = interaction.customId.split('_')[1];
+    const correctAnswer = quizQuestions[currentQuestion].answer;
+    const userId = interaction.user.id;
+
+    if (answer === correctAnswer) {
+      quizScores[userId] += 10;
+      await interaction.reply({ content: 'جواب درست! +10 امتیاز 🎉', ephemeral: true });
+    } else {
+      await interaction.reply({ content: `جواب اشتباه! جواب درست: **${correctAnswer}** 😔`, ephemeral: true });
+    }
+
+    // غیرفعال کردن دکمه‌ها برای این بازیکن
+    interaction.message.components[0].components.forEach(button => {
+      if (button.custom_id.startsWith('answer_')) {
+        button.disabled = true;
+      }
+    });
+    await interaction.message.edit({ components: interaction.message.components });
+
+    // بررسی اتمام زمان و رفتن به سوال بعدی
+    setTimeout(async () => {
+      currentQuestion++;
+      if (currentQuestion < quizQuestions.length) {
+        await askQuestion(interaction);
+      } else {
+        await endQuiz(interaction);
+      }
+    }, 30000); // 30 ثانیه
+  }
+});
+
+async function askQuestion(interaction) {
+  const question = quizQuestions[currentQuestion];
+  const questionEmbed = {
+    embeds: [
+      {
+        title: `❓ سوال ${currentQuestion + 1}`,
+        description: `${question.question}\n\n${question.options.join('\n')}`,
+        color: 5763719,
+        footer: { text: "30 ثانیه وقت داری! ⏳" }
+      }
+    ],
+    components: [
+      {
+        type: 1,
+        components: [
+          { type: 2, style: 1, label: "A", custom_id: "answer_A" },
+          { type: 2, style: 1, label: "B", custom_id: "answer_B" },
+          { type: 2, style: 1, label: "C", custom_id: "answer_C" },
+          { type: 2, style: 1, label: "D", custom_id: "answer_D" }
+        ]
+      }
+    ]
+  };
+  await interaction.channel.send(questionEmbed);
+
+  // نمایش امتیازات فعلی
+  let scoresText = '';
+  for (const playerId of quizPlayers) {
+    const member = await interaction.guild.members.fetch(playerId);
+    scoresText += `${member.user.username}: ${quizScores[playerId]} امتیاز\n`;
+  }
+  await interaction.channel.send({
+    embeds: [
+      {
+        title: "📊 امتیازات فعلی",
+        description: scoresText || 'هنوز امتیازی ثبت نشده!',
+        color: 5763719
+      }
+    ]
+  });
+}
+
+async function endQuiz(interaction) {
+  let scoresText = '';
+  let highestScore = 0;
+  let winner = null;
+
+  for (const playerId of quizPlayers) {
+    const member = await interaction.guild.members.fetch(playerId);
+    scoresText += `${member.user.username}: ${quizScores[playerId]} امتیاز\n`;
+    if (quizScores[playerId] > highestScore) {
+      highestScore = quizScores[playerId];
+      winner = member.user.username;
+    }
+  }
+
+  await interaction.channel.send({
+    embeds: [
+      {
+        title: "🏆 پایان بازی!",
+        description: `مسابقه تموم شد! برنده: **${winner}** با ${highestScore} امتیاز 🎉\n\n**جدول امتیازات:**\n${scoresText}`,
+        color: 5763719
+      }
+    ]
+  });
+
+  // ریست بازی
+  quizPlayers = [];
+  quizScores = {};
+  currentQuestion = 0;
+  const resetEmbed = {
+    embeds: [
+      {
+        title: "🧠 مسابقه اطلاعات عمومی",
+        description: "دانشت رو به چالش بکش! تو این مسابقه باید به سوالات جواب بدی و امتیاز جمع کنی! 📚",
+        color: 5763719,
+        fields: [
+          { name: "👥 تعداد بازیکنان", value: `${quizPlayers.length}/10`, inline: true },
+          { name: "⏱️ زمان هر سوال", value: "30 ثانیه", inline: true },
+          { name: "👤 حداقل بازیکنان", value: "3 نفر", inline: true },
+          { name: "💰 جایزه بازی", value: "برنده 200 کوین 🤑", inline: true }
+        ],
+        footer: { text: "برای شرکت تو مسابقه، روی دکمه ورود کلیک کن! 🎮" }
+      }
+    ],
+    components: [
+      {
+        type: 1,
+        components: [
+          { type: 2, style: 3, label: "ورود به بازی", custom_id: "join_quiz" },
+          { type: 2, style: 1, label: "شروع بازی", custom_id: "start_quiz" },
+          { type: 2, style: 2, label: "قوانین بازی 📜", custom_id: "quiz_rules" },
+          { type: 2, style: 2, label: "بازگشت 🔙", custom_id: "back_to_menu" }
+        ]
+      }
+    ]
+  };
+  await quizMessage.edit(resetEmbed);
+}
+
+client.login('YOUR_BOT_TOKEN');
+توضیحات کد
+مدیریت بازی: بازی با دکمه‌ها کنترل می‌شه. کاربران می‌تونن وارد بازی بشن، سوالات رو جواب بدن و امتیازاتشون رو ببینن.
+سوالات: 10 سوال از پیش تعریف شده وجود داره که به ترتیب نمایش داده می‌شن.
+امتیازات: هر جواب درست 10 امتیاز داره. در پایان، برنده با بیشترین امتیاز اعلام می‌شه.
+زمان‌بندی: هر سوال 30 ثانیه طول می‌کشه و بعد از اتمام زمان، سوال بعدی نمایش داده می‌شه.
+5. 🎨 بازی اوتو (Oto)
+Embed مستندسازی
+json
+
+Collapse
+
+Wrap
+
+Copy
+{
+  "embeds": [
+    {
+      "title": "🎨 بازی اوتو",
+      "description": "خلاقیتت رو نشون بده! یه موضوع می‌گیری، نقاشی می‌کنی و بقیه باید حدس بزنن! ✍️",
+      "color": 15548997,
+      "fields": [
+        {
+          "name": "👥 تعداد بازیکنان",
+          "value": "0/8",
+          "inline": true
+        },
+        {
+          "name": "⏱️ زمان نقاشی",
+          "value": "2 دقیقه",
+          "inline": true
+        },
+        {
+          "name": "👤 حداقل بازیکنان",
+          "value": "3 نفر",
+          "inline": true
+        },
+        {
+          "name": "💰 جایزه بازی",
+          "value": "برنده 150 کوین 🤑",
+          "inline": true
+        }
+      ],
+      "footer": {
+        "text": "برای شرکت تو بازی، روی دکمه ورود کلیک کن! 🎮"
+      }
+    }
+  ],
+  "components": [
+    {
+      "type": 1,
+      "components": [
+        {
+          "type": 2,
+          "style": 3,
+          "label": "ورود به بازی",
+          "custom_id": "join_oto"
+        },
+        {
+          "type": 2,
+          "style": 1,
+          "label": "شروع بازی",
+          "custom_id": "start_oto"
+        },
+        {
+          "type": 2,
+          "style": 2,
+          "label": "قوانین بازی 📜",
+          "custom_id": "oto_rules"
+        },
+        {
+          "type": 2,
+          "style": 2,
+          "label": "بازگشت 🔙",
+          "custom_id": "back_to_menu"
+        }
+      ]
+    }
+  ]
+}
+قوانین بازی اوتو (دکمه قوانین)
+json
+
+Collapse
+
+Wrap
+
+Copy
+{
+  "embeds": [
+    {
+      "title": "📜 قوانین بازی اوتو",
+      "description": "اینجا قوانین کامل بازی اوتو رو می‌تونی بخونی! 🎨",
+      "color": 15548997,
+      "fields": [
+        {
+          "name": "👥 شروع بازی",
+          "value": "🔹 بازی با حداقل 3 بازیکن شروع می‌شه.\n🔹 هر دور، یه بازیکن به عنوان نقاش انتخاب می‌شه.",
+          "inline": false
+        },
+        {
+          "name": "✍️ فاز نقاشی",
+          "value": "🔹 نقاش یه موضوع از ربات می‌گیره (مثلاً 'گربه'، 'درخت'، 'ماشین').\n🔹 نقاش 2 دقیقه وقت داره تا تو یه ابزار نقاشی (مثلاً Paint یا یه سایت آنلاین مثل Skribbl.io) نقاشی بکشه.\n🔹 نقاش باید نقاشی رو تو چت آپلود کنه.",
+          "inline": false
+        },
+        {
+          "name": "🎯 فاز حدس زدن",
+          "value": "🔹 بقیه بازیکنا باید تو چت حدس بزنن که نقاشی چیه.\n🔹 اولین بازیکنی که درست حدس بزنه، 10 امتیاز می‌گیره.\n🔹 نقاش هم اگه حدس درست باشه، 5 امتیاز می‌گیره.",
+          "inline": false
+        },
+        {
+          "name": "⏳ زمان‌بندی",
+          "value": "🔹 هر دور 3 دقیقه طول می‌کشه (2 دقیقه نقاشی + 1 دقیقه حدس زدن).\n🔹 بازی 5 دور طول می‌کشه (هر بازیکن حداقل یه بار نقاش می‌شه).",
+          "inline": false
+        },
+        {
+          "name": "🏆 پایان بازی",
+          "value": "🔹 بازیکنی که بیشترین امتیاز رو داشته باشه برنده می‌شه.\n🔹 جایزه (150 کوین) به برنده داده می‌شه.",
+          "inline": false
+        }
+      ],
+      "footer": {
+        "text": "برای بازگشت به منوی بازی، روی دکمه بازگشت کلیک کن! 🔙"
+      }
+    }
+  ],
+  "components": [
+    {
+      "type": 1,
+      "components": [
+        {
+          "type": 2,
+          "style": 2,
+          "label": "بازگشت 🔙",
+          "custom_id": "back_to_oto_menu"
+        }
+      ]
+    }
+  ]
+}
+کد بازی اوتو
+javascript
+
+Collapse
+
+Wrap
+
+Copy
+const { Client, GatewayIntentBits } = require('discord.js');
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
+
+let otoPlayers = [];
+let otoScores = {};
+let otoTopics = ['گربه', 'درخت', 'ماشین', 'خورشید', 'خانه', 'پرنده', 'کتاب', 'سیب'];
+let currentRound = 0;
+let currentPainter = 0;
+let otoMessage;
+
+client.once('ready', () => {
+  console.log('ربات اوتو آماده است!');
+});
+
+client.on('messageCreate', async message => {
+  if (message.content === '!start_oto_menu') {
+    const otoEmbed = {
+      embeds: [
+        {
+          title: "🎨 بازی اوتو",
+          description: "خلاقیتت رو نشون بده! یه موضوع می‌گیری، نقاشی می‌کنی و بقیه باید حدس بزنن! ✍️",
+          color: 15548997,
+          fields: [
+            { name: "👥 تعداد بازیکنان", value: `${otoPlayers.length}/8`, inline: true },
+            { name: "⏱️ زمان نقاشی", value: "2 دقیقه", inline: true },
+            { name: "👤 حداقل بازیکنان", value: "3 نفر", inline: true },
+            { name: "💰 جایزه بازی", value: "برنده 150 کوین 🤑", inline: true }
+          ],
+          footer: { text: "برای شرکت تو بازی، روی دکمه ورود کلیک کن! 🎮" }
+        }
+      ],
+      components: [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 3, label: "ورود به بازی", custom_id: "join_oto" },
+            { type: 2, style: 1, label: "شروع بازی", custom_id: "start_oto" },
+            { type: 2, style: 2, label: "قوانین بازی 📜", custom_id: "oto_rules" },
+            { type: 2, style: 2, label: "بازگشت 🔙", custom_id: "back_to_menu" }
+          ]
+        }
+      ]
+    };
+    otoMessage = await message.channel.send(otoEmbed);
+  }
+
+  // بررسی آپلود نقاشی
+  if (message.attachments.size > 0 && otoPlayers[currentPainter] === message.author.id && currentRound < 5) {
+    await message.channel.send({
+      embeds: [
+        {
+          title: "🎨 نقاشی آپلود شد!",
+          description: "بقیه بازیکنا، لطفاً حدستون رو تو چت بنویسید! ⏳",
+          color: 15548997,
+          image: { url: message.attachments.first().url }
+        }
+      ]
+    });
+
+    // بررسی حدس‌ها
+    const filter = m => otoPlayers.includes(m.author.id) && m.author.id !== otoPlayers[currentPainter];
+    const collector = message.channel.createMessageCollector({ filter, time: 60000 });
+
+    collector.on('collect', async m => {
+      if (m.content.toLowerCase() === otoTopics[currentRound].toLowerCase()) {
+        otoScores[m.author.id] += 10;
+        otoScores[otoPlayers[currentPainter]] += 5;
+        await message.channel.send({
+          embeds: [
+            {
+              title: "🎉 حدس درست!",
+              description: `${m.author.username} درست حدس زد! +10 امتیاز\nنقاش هم 5 امتیاز گرفت! 🎨`,
+              color: 15548997
+            }
+          ]
+        });
+        collector.stop();
+        await nextRound(message);
+      }
+    });
+
+    collector.on('end', async () => {
+      if (currentRound < 5) await nextRound(message);
+    });
+  }
+});
+
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isButton()) return;
+
+  // ورود به بازی
+  if (interaction.customId === 'join_oto') {
+    if (otoPlayers.includes(interaction.user.id)) {
+      await interaction.reply({ content: 'تو قبلاً وارد بازی شدی! ⏳', ephemeral: true });
+      return;
+    }
+    if (otoPlayers.length >= 8) {
+      await interaction.reply({ content: 'ظرفیت بازی پر شده! 🚫', ephemeral: true });
+      return;
+    }
+    otoPlayers.push(interaction.user.id);
+    otoScores[interaction.user.id] = 0;
+    const updatedEmbed = {
+      embeds: [
+        {
+          title: "🎨 بازی اوتو",
+          description: "خلاقیتت رو نشون بده! یه موضوع می‌گیری، نقاشی می‌کنی و بقیه باید حدس بزنن! ✍️",
+          color: 15548997,
+          fields: [
+            { name: "👥 تعداد بازیکنان", value: `${otoPlayers.length}/8`, inline: true },
+            { name: "⏱️ زمان نقاشی", value: "2 دقیقه", inline: true },
+            { name: "👤 حداقل بازیکنان", value: "3 نفر", inline: true },
+            { name: "💰 جایزه بازی", value: "برنده 150 کوین 🤑", inline: true }
+          ],
+          footer: { text: "برای شرکت تو بازی، روی دکمه ورود کلیک کن! 🎮" }
+        }
+      ],
+      components: [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 3, label: "ورود به بازی", custom_id: "join_oto" },
+            { type: 2, style: 1, label: "شروع بازی", custom_id: "start_oto" },
+            { type: 2, style: 2, label: "قوانین بازی 📜", custom_id: "oto_rules" },
+            { type: 2, style: 2, label: "بازگشت 🔙", custom_id: "back_to_menu" }
+          ]
+        }
+      ]
+    };
+    await otoMessage.edit(updatedEmbed);
+    await interaction.reply({ content: 'با موفقیت وارد بازی شدی! ✅', ephemeral: true });
+  }
+
+  // نمایش قوانین
+  if (interaction.customId === 'oto_rules') {
+    const rulesEmbed = {
+      embeds: [
+        {
+          title: "📜 قوانین بازی اوتو",
+          description: "اینجا قوانین کامل بازی اوتو رو می‌تونی بخونی! 🎨",
+          color: 15548997,
+          fields: [
+            { name: "👥 شروع بازی", value: "🔹 بازی با حداقل 3 بازیکن شروع می‌شه.\n🔹 هر دور، یه بازیکن به عنوان نقاش انتخاب می‌شه.", inline: false },
+            { name: "✍️ فاز نقاشی", value: "🔹 نقاش یه موضوع از ربات می‌گیره (مثلاً 'گربه'، 'درخت'، 'ماشین').\n🔹 نقاش 2 دقیقه وقت داره تا تو یه ابزار نقاشی (مثلاً Paint یا یه سایت آنلاین مثل Skribbl.io) نقاشی بکشه.\n🔹 نقاش باید نقاشی رو تو چت آپلود کنه.", inline: false },
+            { name: "🎯 فاز حدس زدن", value: "🔹 بقیه بازیکنا باید تو چت حدس بزنن که نقاشی چیه.\n🔹 اولین بازیکنی که درست حدس بزنه، 10 امتیاز می‌گیره.\n🔹 نقاش هم اگه حدس درست باشه، 5 امتیاز می‌گیره.", inline: false },
+            { name: "⏳ زمان‌بندی", value: "🔹 هر دور 3 دقیقه طول می‌کشه (2 دقیقه نقاشی + 1 دقیقه حدس زدن).\n🔹 بازی 5 دور طول می‌کشه (هر بازیکن حداقل یه بار نقاش می‌شه).", inline: false },
+            { name: "🏆 پایان بازی", value: "🔹 بازیکنی که بیشترین امتیاز رو داشته باشه برنده می‌شه.\n🔹 جایزه (150 کوین) به برنده داده می‌شه.", inline: false }
+          ],
+          footer: { text: "برای بازگشت به منوی بازی، روی دکمه بازگشت کلیک کن! 🔙" }
+        }
+      ],
+      components: [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 2, label: "بازگشت 🔙", custom_id: "back_to_oto_menu" }
+          ]
+        }
+      ]
+    };
+    await interaction.reply({ ...rulesEmbed, ephemeral: true });
+  }
+
+  // بازگشت به منوی اوتو
+  if (interaction.customId === 'back_to_oto_menu') {
+    const otoEmbed = {
+      embeds: [
+        {
+          title: "🎨 بازی اوتو",
+          description: "خلاقیتت رو نشون بده! یه موضوع می‌گیری، نقاشی می‌کنی و بقیه باید حدس بزنن! ✍️",
+          color: 15548997,
+          fields: [
+            { name: "👥 تعداد بازیکنان", value: `${otoPlayers.length}/8`, inline: true },
+            { name: "⏱️ زمان نقاشی", value: "2 دقیقه", inline: true },
+            { name: "👤 حداقل بازیکنان", value: "3 نفر", inline: true },
+            { name: "💰 جایزه بازی", value: "برنده 150 کوین 🤑", inline: true }
+          ],
+          footer: { text: "برای شرکت تو بازی، روی دکمه ورود کلیک کن! 🎮" }
+        }
+      ],
+      components: [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 3, label: "ورود به بازی", custom_id: "join_oto" },
+            { type: 2, style: 1, label: "شروع بازی", custom_id: "start_oto" },
+            { type: 2, style: 2, label: "قوانین بازی 📜", custom_id: "oto_rules" },
+            { type: 2, style: 2, label: "بازگشت 🔙", custom_id: "back_to_menu" }
+          ]
+        }
+      ]
+    };
+    await interaction.reply({ ...otoEmbed, ephemeral: true });
+  }
+
+  // شروع بازی
+  if (interaction.customId === 'start_oto') {
+    if (otoPlayers.length < 3) {
+      await interaction.reply({ content: 'حداقل 3 بازیکن برای شروع بازی نیازه! 🚫', ephemeral: true });
+      return;
+    }
+
+    currentRound = 0;
+    currentPainter = 0;
+    await startRound(interaction);
+  }
+});
+
+async function startRound(interaction) {
+  const painterId = otoPlayers[currentPainter];
+  const painter = await interaction.guild.members.fetch(painterId);
+  const topic = otoTopics[currentRound];
+
+  await painter.send(`موضوع این دور: **${topic}** 🎨\nلطفاً نقاشی خودت رو تو 2 دقیقه بکش و تو چت آپلود کن! ⏳`);
+
+  await interaction.channel.send({
+    embeds: [
+      {
+        title: `🎨 دور ${currentRound + 1}`,
+        description: `${painter.user.username} نقاش این دوره! لطفاً منتظر آپلود نقاشی باشید... ⏳`,
+        color: 15548997
+      }
+    ]
+  });
+}
+
+async function nextRound(message) {
+  currentPainter = (currentPainter + 1) % otoPlayers.length;
+  currentRound++;
+
+  if (currentRound < 5) {
+    const painterId = otoPlayers[currentPainter];
+    const painter = await message.guild.members.fetch(painterId);
+    const topic = otoTopics[currentRound];
+
+    await painter.send(`موضوع این دور: **${topic}** 🎨\nلطفاً نقاشی خودت رو تو 2 دقیقه بکش و تو چت آپلود کن! ⏳`);
+
+    await message.channel.send({
+      embeds: [
+        {
+          title: `🎨 دور ${currentRound + 1}`,
+          description: `${painter.user.username} نقاش این دوره! لطفاً منتظر آپلود نقاشی باشید... ⏳`,
+          color: 15548997
+        }
+      ]
+    });
+  } else {
+    let scoresText = '';
+    let highestScore = 0;
+    let winner = null;
+
+    for (const playerId of otoPlayers) {
+      const member = await message.guild.members.fetch(playerId);
+      scoresText += `${member.user.username}: ${otoScores[playerId]} امتیاز\n`;
+      if (otoScores[playerId] > highestScore) {
+        highestScore = otoScores[playerId];
+        winner = member.user.username;
+      }
+    }
+
+    await message.channel.send({
+      embeds: [
+        {
+          title: "🏆 پایان بازی!",
+          description: `بازی تموم شد! برنده: **${winner}** با ${highestScore} امتیاز 🎉\n\n**جدول امتیازات:**\n${scoresText}`,
+          color: 15548997
+        }
+      ]
+    });
+
+    // ریست بازی
+    otoPlayers = [];
+    otoScores = {};
+    currentRound = 0;
+    currentPainter = 0;
+    const resetEmbed = {
+      embeds: [
+        {
+          title: "🎨 بازی اوتو",
+          description: "خلاقیتت رو نشون بده! یه موضوع می‌گیری، نقاشی می‌کنی و بقیه باید حدس بزنن! ✍️",
+          color: 15548997,
+          fields: [
+            { name: "👥 تعداد بازیکنان", value: `${otoPlayers.length}/8`, inline: true },
+            { name: "⏱️ زمان نقاشی", value: "2 دقیقه", inline: true },
+            { name: "👤 حداقل بازیکنان", value: "3 نفر", inline: true },
+            { name: "💰 جایزه بازی", value: "برنده 150 کوین 🤑", inline: true }
+          ],
+          footer: { text: "برای شرکت تو بازی، روی دکمه ورود کلیک کن! 🎮" }
+        }
+      ],
+      components: [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 3, label: "ورود به بازی", custom_id: "join_oto" },
+            { type: 2, style: 1, label: "شروع بازی", custom_id: "start_oto" },
+            { type: 2, style: 2, label: "قوانین بازی 📜", custom_id: "oto_rules" },
+            { type: 2, style: 2, label: "بازگشت 🔙", custom_id: "back_to_menu" }
+          ]
+        }
+      ]
+    };
+    await otoMessage.edit(resetEmbed);
+  }
+}
+
+client.login('YOUR_BOT_TOKEN');
+توضیحات کد
+مدیریت بازی: بازی با دکمه‌ها کنترل می‌شه. هر دور، یه بازیکن به عنوان نقاش انتخاب می‌شه و موضوع بهش داده می‌شه.
+نقاشی و حدس: نقاش باید نقاشی رو آپلود کنه و بقیه بازیکنا تو چت حدس می‌زنن.
+امتیازات: حدس درست 10 امتیاز و نقاشی موفق 5 امتیاز داره. در پایان، برنده اعلام می‌شه.
+6. ✍️ بازی نقاشی حدس بزن (Guess the Drawing)
+Embed مستندسازی
+json
+
+Collapse
+
+Wrap
+
+Copy
+{
+  "embeds": [
+    {
+      "title": "✍️ بازی نقاشی حدس بزن",
+      "description": "نقاشی بکش و بذار بقیه حدس بزنن! یه بازی پر از خلاقیت و خنده! 🎨",
+      "color": 16776960,
+      "fields": [
+        {
+          "name": "👥 تعداد بازیکنان",
+          "value": "0/8",
+          "inline": true
+        },
+        {
+          "name": "⏱️ زمان نقاشی",
+          "value": "2 دقیقه",
+          "inline": true
+        },
+        {
+          "name": "👤 حداقل بازیکنان",
+          "value": "3 نفر",
+          "inline": true
+        },
+        {
+          "name": "💰 جایزه بازی",
+          "value": "برنده 150 کوین 🤑",
+          "inline": true
+        }
+      ],
+      "footer": {
+        "text": "برای شرکت تو بازی، روی دکمه ورود کلیک کن! 🎮"
+      }
+    }
+  ],
+  "components": [
+    {
+      "type": 1,
+      "components": [
+        {
+          "type": 2,
+          "style": 3,
+          "label": "ورود به بازی",
+          "custom_id": "join_draw"
+        },
+        {
+          "type": 2,
+          "style": 1,
+          "label": "شروع بازی",
+          "custom_id": "start_draw"
+        },
+        {
+          "type": 2,
+          "style": 2,
+          "label": "قوانین بازی 📜",
+          "custom_id": "draw_rules"
+        },
+        {
+          "type": 2,
+          "style": 2,
+          "label": "بازگشت 🔙",
+          "custom_id": "back_to_menu"
+        }
+      ]
+    }
+  ]
+}
+قوانین بازی نقاشی حدس بزن (دکمه قوانین)
+json
+
+Collapse
+
+Wrap
+
+Copy
+{
+  "embeds": [
+    {
+      "title": "📜 قوانین بازی نقاشی حدس بزن",
+      "description": "اینجا قوانین کامل بازی نقاشی حدس بزن رو می‌تونی بخونی! ✍️",
+      "color": 16776960,
+      "fields": [
+        {
+          "name": "👥 شروع بازی",
+          "value": "🔹 بازی با حداقل 3 بازیکن شروع می‌شه.\n🔹 هر دور، یه بازیکن به عنوان نقاش انتخاب می‌شه.",
+          "inline": false
+        },
+        {
+          "name": "✍️ فاز نقاشی",
+          "value": "🔹 نقاش یه کلمه از ربات می‌گیره (مثلاً 'سگ'، 'ماه'، 'قایق').\n🔹 نقاش 2 دقیقه وقت داره تا نقاشی بکشه و تو چت آپلود کنه.",
+          "inline": false
+        },
+        {
+          "name": "🎯 فاز حدس زدن",
+          "value": "🔹 بقیه بازیکنا باید تو چت حدس بزنن که نقاشی چیه.\n🔹 اولین بازیکنی که درست حدس بزنه، 10 امتیاز می‌گیره.\n🔹 نقاش هم اگه حدس درست باشه، 5 امتیاز می‌گیره.",
+          "inline": false
+        },
+        {
+          "name": "⏳ زمان‌بندی",
+          "value": "🔹 هر دور 3 دقیقه طول می‌کشه (2 دقیقه نقاشی + 1 دقیقه حدس زدن).\n🔹 بازی 5 دور طول می‌کشه.",
+          "inline": false
+        },
+        {
+          "name": "🏆 پایان بازی",
+          "value": "🔹 بازیکنی که بیشترین امتیاز رو داشته باشه برنده می‌شه.\n🔹 جایزه (150 کوین) به برنده داده می‌شه.",
+          "inline": false
+        }
+      ],
+      "footer": {
+        "text": "برای بازگشت به منوی بازی، روی دکمه بازگشت کلیک کن! 🔙"
+      }
+    }
+  ],
+  "components": [
+    {
+      "type": 1,
+      "components": [
+        {
+          "type": 2,
+          "style": 2,
+          "label": "بازگشت 🔙",
+          "custom_id": "back_to_draw_menu"
+        }
+      ]
+    }
+  ]
+}
+کد بازی نقاشی حدس بزن
+javascript
+
+Collapse
+
+Wrap
+
+Copy
+const { Client, GatewayIntentBits } = require('discord.js');
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
+
+let drawPlayers = [];
+let drawScores = {};
+let drawWords = ['سگ', 'ماه', 'قایق', 'گل', 'آتش', 'ستاره', 'ماهی', 'ابر'];
+let currentRound = 0;
+let currentPainter = 0;
+let drawMessage;
+
+client.once('ready', () => {
+  console.log('ربات نقاشی حدس بزن آماده است!');
+});
+
+client.on('messageCreate', async message => {
+  if (message.content === '!start_draw_menu') {
+    const drawEmbed = {
+      embeds: [
+        {
+          title: "✍️ بازی نقاشی حدس بزن",
+          description: "نقاشی بکش و بذار بقیه حدس بزنن! یه بازی پر از خلاقیت و خنده! 🎨",
+          color: 16776960,
+          fields: [
+            { name: "👥 تعداد بازیکنان", value: `${drawPlayers.length}/8`, inline: true },
+            { name: "⏱️ زمان نقاشی", value: "2 دقیقه", inline: true },
+            { name: "👤 حداقل بازیکنان", value: "3 نفر", inline: true },
+            { name: "💰 جایزه بازی", value: "برنده 150 کوین 🤑", inline: true }
+          ],
+          footer: { text: "برای شرکت تو بازی، روی دکمه ورود کلیک کن! 🎮" }
+        }
+      ],
+      components: [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 3, label: "ورود به بازی", custom_id: "join_draw" },
+            { type: 2, style: 1, label: "شروع بازی", custom_id: "start_draw" },
+            { type: 2, style: 2, label: "قوانین بازی 📜", custom_id: "draw_rules" },
+            { type: 2, style: 2, label: "بازگشت 🔙", custom_id: "back_to_menu" }
+          ]
+        }
+      ]
+    };
+    drawMessage = await message.channel.send(drawEmbed);
+  }
+
+  // بررسی آپلود نقاشی
+  if (message.attachments.size > 0 && drawPlayers[currentPainter] === message.author.id && currentRound < 5) {
+    await message.channel.send({
+      embeds: [
+        {
+          title: "🎨 نقاشی آپلود شد!",
+          description: "بقیه بازیکنا، لطفاً حدستون رو تو چت بنویسید! ⏳",
+          color: 16776960,
+          image: { url: message.attachments.first().url }
+        }
+      ]
+    });
+
+    // بررسی حدس‌ها
+    const filter = m => drawPlayers.includes(m.author.id) && m.author.id !== drawPlayers[currentPainter];
+    const collector = message.channel.createMessageCollector({ filter, time: 60000 });
+
+    collector.on('collect', async m => {
+      if (m.content.toLowerCase() === drawWords[currentRound].toLowerCase()) {
+        drawScores[m.author.id] += 10;
+        drawScores[drawPlayers[currentPainter]] += 5;
+        await message.channel.send({
+          embeds: [
+            {
+              title: "🎉 حدس درست!",
+              description: `${m.author.username} درست حدس زد! +10 امتیاز\nنقاش هم 5 امتیاز گرفت! 🎨`,
+              color: 16776960
+            }
+          ]
+        });
+        collector.stop();
+        await nextDrawRound(message);
+      }
+    });
+
+    collector.on('end', async () => {
+      if (currentRound < 5) await nextDrawRound(message);
+    });
+  }
+});
+
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isButton()) return;
+
+  // ورود به بازی
+  if (interaction.customId === 'join_draw') {
+    if (drawPlayers.includes(interaction.user.id)) {
+      await interaction.reply({ content: 'تو قبلاً وارد بازی شدی! ⏳', ephemeral: true });
+      return;
+    }
+    if (drawPlayers.length >= 8) {
+      await interaction.reply({ content: 'ظرفیت بازی پر شده! 🚫', ephemeral: true });
+      return;
+    }
+    drawPlayers.push(interaction.user.id);
+    drawScores[interaction.user.id] = 0;
+    const updatedEmbed = {
+      embeds: [
+        {
+          title: "✍️ بازی نقاشی حدس بزن",
+          description: "نقاشی بکش و بذار بقیه حدس بزنن! یه بازی پر از خلاقیت و خنده! 🎨",
+          color: 16776960,
+          fields: [
+            { name: "👥 تعداد بازیکنان", value: `${drawPlayers.length}/8`, inline: true },
+            { name: "⏱️ زمان نقاشی", value: "2 دقیقه", inline: true },
+            { name: "👤 حداقل بازیکنان", value: "3 نفر", inline: true },
+            { name: "💰 جایزه بازی", value: "برنده 150 کوین 🤑", inline: true }
+          ],
+          footer: { text: "برای شرکت تو بازی، روی دکمه ورود کلیک کن! 🎮" }
+        }
+      ],
+      components: [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 3, label: "ورود به بازی", custom_id: "join_draw" },
+            { type: 2, style: 1, label: "شروع بازی", custom_id: "start_draw" },
+            { type: 2, style: 2, label: "قوانین بازی 📜", custom_id: "draw_rules" },
+            { type: 2, style: 2, label: "بازگشت 🔙", custom_id: "back_to_menu" }
+          ]
+        }
+      ]
+    };
+    await drawMessage.edit(updatedEmbed);
+    await interaction.reply({ content: 'با موفقیت وارد بازی شدی! ✅', ephemeral: true });
+  }
+
+  // نمایش قوانین
+  if (interaction.customId === 'draw_rules') {
+    const rulesEmbed = {
+      embeds: [
+        {
+          title: "📜 قوانین بازی نقاشی حدس بزن",
+          description: "اینجا قوانین کامل بازی نقاشی حدس بزن رو می‌تونی بخونی! ✍️",
+          color: 16776960,
+          fields: [
+            { name: "👥 شروع بازی", value: "🔹 بازی با حداقل 3 بازیکن شروع می‌شه.\n🔹 هر دور، یه بازیکن به عنوان نقاش انتخاب می‌شه.", inline: false },
+            { name: "✍️ فاز نقاشی", value: "🔹 نقاش یه کلمه از ربات می‌گیره (مثلاً 'سگ'، 'ماه'، 'قایق').\n🔹 نقاش 2 دقیقه وقت داره تا نقاشی بکشه و تو چت آپلود کنه.", inline: false },
+            { name: "🎯 فاز حدس زدن", value: "🔹 بقیه بازیکنا باید تو چت حدس بزنن که نقاشی چیه.\n🔹 اولین بازیکنی که درست حدس بزنه، 10 امتیاز می‌گیره.\n🔹 نقاش هم اگه حدس درست باشه، 5 امتیاز می‌گیره.", inline: false },
+            { name: "⏳ زمان‌بندی", value: "🔹 هر دور 3 دقیقه طول می‌کشه (2 دقیقه نقاشی + 1 دقیقه حدس زدن).\n🔹 بازی 5 دور طول می‌کشه.", inline: false },
+            { name: "🏆 پایان بازی", value: "🔹 بازیکنی که بیشترین امتیاز رو داشته باشه برنده می‌شه.\n🔹 جایزه (150 کوین) به برنده داده می‌شه.", inline: false }
+          ],
+          footer: { text: "برای بازگشت به منوی بازی، روی دکمه بازگشت کلیک کن! 🔙" }
+        }
+      ],
+      components: [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 2, label: "بازگشت 🔙", custom_id: "back_to_draw_menu" }
+          ]
+        }
+      ]
+    };
+    await interaction.reply({ ...rulesEmbed, ephemeral: true });
+  }
+
+  // بازگشت به منوی نقاشی حدس بزن
+  if (interaction.customId === 'back_to_draw_menu') {
+    const drawEmbed = {
+      embeds: [
+        {
+          title: "✍️ بازی نقاشی حدس بزن",
+          description: "نقاشی بکش و بذار بقیه حدس بزنن! یه بازی پر از خلاقیت و خنده! 🎨",
+          color: 16776960,
+          fields: [
+            { name: "👥 تعداد بازیکنان", value: `${drawPlayers.length}/8`, inline: true },
+            { name: "⏱️ زمان نقاشی", value: "2 دقیقه", inline: true },
+            { name: "👤 حداقل بازیکنان", value: "3 نفر", inline: true },
+            { name: "💰 جایزه بازی", value: "برنده 150 کوین 🤑", inline: true }
+          ],
+          footer: { text: "برای شرکت تو بازی، روی دکمه ورود کلیک کن! 🎮" }
+        }
+      ],
+      components: [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 3, label: "ورود به بازی", custom_id: "join_draw" },
+            { type: 2, style: 1, label: "شروع بازی", custom_id: "start_draw" },
+            { type: 2, style: 2, label: "قوانین بازی 📜", custom_id: "draw_rules" },
+            { type: 2, style: 2, label: "بازگشت 🔙", custom_id: "back_to_menu" }
+          ]
+        }
+      ]
+    };
+    await interaction.reply({ ...drawEmbed, ephemeral: true });
+  }
+
+  // شروع بازی
+  if (interaction.customId === 'start_draw') {
+    if (drawPlayers.length < 3) {
+      await interaction.reply({ content: 'حداقل 3 بازیکن برای شروع بازی نیازه! 🚫', ephemeral: true });
+      return;
+    }
+
+    currentRound = 0;
+    currentPainter = 0;
+    await startDrawRound(interaction);
+  }
+});
+
+async function startDrawRound(interaction) {
+  const painterId = drawPlayers[currentPainter];
+  const painter = await interaction.guild.members.fetch(painterId);
+  const word = drawWords[currentRound];
+
+  await painter.send(`کلمه این دور: **${word}** ✍️\nلطفاً نقاشی خودت رو تو 2 دقیقه بکش و تو چت آپلود کن! ⏳`);
+
+  await interaction.channel.send({
+    embeds: [
+      {
+        title: `✍️ دور ${currentRound + 1}`,
+        description: `${painter.user.username} نقاش این دوره! لطفاً منتظر آپلود نقاشی باشید... ⏳`,
+        color: 16776960
+      }
+    ]
+  });
+}
+
+async function nextDrawRound(message) {
+  currentPainter = (currentPainter + 1) % drawPlayers.length;
+  currentRound++;
+
+  if (currentRound < 5) {
+    const painterId = drawPlayers[currentPainter];
+    const painter = await message.guild.members.fetch(painterId);
+    const word = drawWords[currentRound];
+
+    await painter.send(`کلمه این دور: **${word}** ✍️\nلطفاً نقاشی خودت رو تو 2 دقیقه بکش و تو چت آپلود کن! ⏳`);
+
+    await message.channel.send({
+      embeds: [
+        {
+          title: `✍️ دور ${currentRound + 1}`,
+          description: `${painter.user.username} نقاش این دوره! لطفاً منتظر آپلود نقاشی باشید... ⏳`,
+          color: 16776960
+        }
+      ]
+    });
+  } else {
+    let scoresText = '';
+    let highestScore = 0;
+    let winner = null;
+
+    for (const playerId of drawPlayers) {
+      const member = await message.guild.members.fetch(playerId);
+      scoresText += `${member.user.username}: ${drawScores[playerId]} امتیاز\n`;
+      if (drawScores[playerId] > highestScore) {
+        highestScore = drawScores[playerId];
+        winner = member.user.username;
+      }
+    }
+
+    await message.channel.send({
+      embeds: [
+        {
+          title: "🏆 پایان بازی!",
+          description: `بازی تموم شد! برنده: **${winner}** با ${highestScore} امتیاز 🎉\n\n**جدول امتیازات:**\n${scoresText}`,
+          color: 16776960
+        }
+      ]
+    });
+
+    // ریست بازی
+    drawPlayers = [];
+    drawScores = {};
+    currentRound = 0;
+    currentPainter = 0;
+    const resetEmbed = {
+      embeds: [
+        {
+          title: "✍️ بازی نقاشی حدس بزن",
+          description: "نقاشی بکش و بذار بقیه حدس بزنن! یه بازی پر از خلاقیت و خنده! 🎨",
+          color: 16776960,
+          fields: [
+            { name: "👥 تعداد بازیکنان", value: `${drawPlayers.length}/8`, inline: true },
+            { name: "⏱️ زمان نقاشی", value: "2 دقیقه", inline: true },
+            { name: "👤 حداقل بازیکنان", value: "3 نفر", inline: true },
+            { name: "💰 جایزه بازی", value: "برنده 150 کوین 🤑", inline: true }
+          ],
+          footer: { text: "برای شرکت تو بازی، روی دکمه ورود کلیک کن! 🎮" }
+        }
+      ],
+      components: [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 3, label: "ورود به بازی", custom_id: "join_draw" },
+            { type: 2, style: 1, label: "شروع بازی", custom_id: "start_draw" },
+            { type: 2, style: 2, label: "قوانین بازی 📜", custom_id: "draw_rules" },
+            { type: 2, style: 2, label: "بازگشت 🔙", custom_id: "back_to_menu" }
+          ]
+        }
+      ]
+    };
+    await drawMessage.edit(resetEmbed);
+  }
+}
+
+client.login('YOUR_BOT_TOKEN');
+توضیحات کد
+مدیریت بازی: مشابه بازی اوتو، هر دور یه نقاش انتخاب می‌شه و کلمه‌ای بهش داده می‌شه.
+نقاشی و حدس: نقاش نقاشی رو آپلود می‌کنه و بقیه تو چت حدس می‌زنن.
+امتیازات: حدس درست 10 امتیاز و نقاشی موفق 5 امتیاز داره.

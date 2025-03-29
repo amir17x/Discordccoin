@@ -10,7 +10,6 @@ import {
 } from 'discord.js';
 import { storage } from '../../storage';
 import { log } from '../../vite';
-import { getLogger, LogType } from '../utils/logger';
 
 /**
  * سیستم سرمایه‌گذاری برای کاربران
@@ -437,19 +436,7 @@ export async function processInvestment(
     });
     
     // لاگ سرمایه‌گذاری
-    const logger = getLogger(interaction.client);
-    logger.logTransaction(
-      interaction.user.id,
-      interaction.user.username,
-      'investment',
-      -amount,
-      `یک سرمایه‌گذاری ${type === 'low_risk' ? 'کم ریسک' : type === 'medium_risk' ? 'با ریسک متوسط' : 'پرریسک'} انجام داد`,
-      [
-        { name: '📈 سود مورد انتظار', value: `${expectedReturn - amount} Ccoin`, inline: true },
-        { name: '📆 مدت زمان', value: `${durationDays} روز`, inline: true },
-        { name: '📊 نرخ ریسک', value: `${riskRate * 100}%`, inline: true }
-      ]
-    );
+    log(`User ${interaction.user.id} (${interaction.user.username}) invested ${amount} Ccoin in a ${type} investment. Expected return: ${expectedReturn - amount} Ccoin`);
     
     // ارسال پیام موفقیت
     if ('update' in interaction && typeof interaction.update === 'function') {
@@ -558,19 +545,7 @@ export async function processInvestmentReturns(client: any) {
         
         // لاگ کردن نتیجه سرمایه‌گذاری
         if (updatedUser) {
-          const logger = getLogger(client);
-          logger.logTransaction(
-            user.discordId,
-            user.username,
-            success ? 'investment_return' : 'investment_loss',
-            finalAmount,
-            success ? 'سود سرمایه‌گذاری دریافت کرد' : 'در سرمایه‌گذاری متحمل ضرر شد',
-            [
-              { name: '💰 سرمایه اولیه', value: `${investment.amount} Ccoin`, inline: true },
-              { name: success ? '📈 سود' : '📉 ضرر', value: `${success ? finalAmount - investment.amount : investment.amount - finalAmount} Ccoin`, inline: true },
-              { name: '📊 نوع سرمایه‌گذاری', value: investment.type === 'low_risk' ? 'کم ریسک' : investment.type === 'medium_risk' ? 'ریسک متوسط' : 'پرریسک', inline: true }
-            ]
-          );
+          log(`Investment ${success ? 'success' : 'failure'} for User ${user.discordId} (${user.username}): Initial amount: ${investment.amount} Ccoin, ${success ? 'Profit' : 'Loss'}: ${success ? finalAmount - investment.amount : investment.amount - finalAmount} Ccoin, Final amount: ${finalAmount} Ccoin`);
           
           // ارسال پیام به کاربر در صورت امکان
           try {
@@ -606,7 +581,7 @@ export async function processInvestmentReturns(client: any) {
     }
     
     if (completedCount > 0) {
-      log(`Processed ${completedCount} completed investments`, 'discord');
+      log(`Processed ${completedCount} completed investments`);
     }
     
   } catch (error) {

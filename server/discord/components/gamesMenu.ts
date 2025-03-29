@@ -307,15 +307,15 @@ export async function gamesMenu(
       const groupGameRow3 = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
           new ButtonBuilder()
-            .setCustomId('game:truth_or_dare:create')
+            .setCustomId('truth_or_dare')
             .setLabel('🎯 جرات یا حقیقت')
             .setStyle(ButtonStyle.Primary), // آبی برای بازی‌های اجتماعی
           new ButtonBuilder()
-            .setCustomId('game:word_chain:create')
+            .setCustomId('word_chain')
             .setLabel('📝 زنجیره کلمات')
             .setStyle(ButtonStyle.Success), // سبز برای بازی‌های فکری
           new ButtonBuilder()
-            .setCustomId('game:bingo:create')
+            .setCustomId('bingo')
             .setLabel('🎲 بینگو')
             .setStyle(ButtonStyle.Primary) // آبی برای بازی‌های شانسی
         );

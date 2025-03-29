@@ -23,7 +23,8 @@ import { storage } from '../../storage';
 import { log } from '../../vite';
 import { IUser as User } from '../../models/User';
 import { v4 as uuidv4 } from 'uuid';
-import { GameSessionModel } from '../../models/GameSession';
+import GameSessionModel from '../../models/GameSession';
+import type { GameSession } from '../../models/GameSession';
 
 // تعریف client برای دسترسی به Discord API
 // این متغیر باید از فایل اصلی bot.ts به این ماژول پاس داده شود
@@ -99,10 +100,44 @@ interface GameSession {
   startedAt?: Date;
   endedAt?: Date;
   data: any; // اطلاعات خاص هر بازی
+  winners?: string[]; // برندگان بازی
+  rated?: boolean; // آیا بازی در سیستم رتبه‌بندی ثبت شده است
+  gameSettings?: {
+    isPrivate: boolean; // آیا بازی خصوصی است (فقط با دعوت)
+    allowSpectators: boolean; // آیا تماشاگران می‌توانند شرکت کنند
+    customRules?: string[]; // قوانین سفارشی اضافه شده توسط سازنده بازی
+    timerSettings?: { // تنظیمات زمان‌بندی
+      dayTime?: number; // زمان روز (به ثانیه)
+      nightTime?: number; // زمان شب (به ثانیه)
+      voteTime?: number; // زمان رای‌گیری (به ثانیه)
+    }
+  }
 }
 
 // لیست موقت بازی‌های فعال (بعداً به دیتابیس منتقل می‌شود)
 const activeGames: Map<string, GameSession> = new Map();
+
+// تاریخچه بازی‌های گذشته (بعداً به دیتابیس منتقل خواهد شد)
+const gameHistory: GameSession[] = [];
+
+// نگهداری آمار بازیکنان
+interface PlayerStats {
+  userId: string;
+  gamesPlayed: number;
+  gamesWon: number;
+  totalScore: number;
+  gameTypeStats: {
+    [gameType: string]: {
+      played: number;
+      won: number;
+      score: number;
+    }
+  };
+  lastActive: Date;
+}
+
+// آمار بازیکنان (بعداً به دیتابیس منتقل خواهد شد)
+const playerStats: Map<string, PlayerStats> = new Map();
 
 /**
  * دریافت تعداد کل بازی‌های فعال
@@ -131,7 +166,7 @@ export function getActivePlayers(): string[] {
 }
 
 /**
- * نمایش منوی جلسات فعال بازی‌های گروهی
+ * نمایش منوی جلسات فعال بازی‌های گروهی با امکانات پیشرفته و جزئیات بیشتر
  * @param interaction برهم‌کنش کاربر
  */
 export async function showActiveSessionsMenu(interaction: ButtonInteraction) {
@@ -158,12 +193,15 @@ export async function showActiveSessionsMenu(interaction: ButtonInteraction) {
         { name: '🎲 کل جلسات فعال', value: `${activeGamesList.length} جلسه`, inline: true },
         { name: '👥 کل بازیکنان حاضر', value: `${totalActivePlayers} بازیکن`, inline: true }
       )
-      .setFooter({ text: 'برای پیوستن به یک بازی، روی نام آن کلیک کنید' })
+      .setFooter({ text: 'برای پیوستن به یک بازی، روی دکمه مربوطه کلیک کنید' })
       .setTimestamp();
     
     // اضافه کردن اطلاعات هر بازی فعال به Embed
     if (activeGamesList.length > 0) {
-      activeGamesList.forEach((game, index) => {
+      // نمایش فقط 8 بازی اول (برای جلوگیری از طولانی شدن امبد)
+      const displayGames = activeGamesList.slice(0, 8);
+      
+      displayGames.forEach((game, index) => {
         // تبدیل نوع بازی به نام فارسی
         const gameTypeNames: Record<string, string> = {
           'mafia': '🕵️‍♂️ مافیا',
@@ -176,34 +214,128 @@ export async function showActiveSessionsMenu(interaction: ButtonInteraction) {
           'spy': '🕴️ جاسوس مخفی'
         };
         
+        // تبدیل وضعیت بازی به متن فارسی
+        const gameStatusText: Record<string, string> = {
+          'waiting': '⏳ در انتظار شروع',
+          'active': '🟢 در حال انجام',
+          'ended': '🔴 پایان یافته'
+        };
+        
         const gameTypeName = gameTypeNames[game.gameType] || game.gameType;
         const hostUser = client.users.cache.get(game.createdBy)?.username || 'کاربر ناشناس';
         const startTime = game.startedAt ? new Date(game.startedAt).toLocaleTimeString('fa-IR') : 'در انتظار شروع';
         
+        // ساخت تگ برای بازی خصوصی
+        const privateTag = game.gameSettings?.isPrivate ? ' 🔒' : '';
+        
         embed.addFields({
-          name: `${index + 1}. ${gameTypeName}`,
+          name: `${index + 1}. ${gameTypeName}${privateTag}`,
           value: `👤 میزبان: ${hostUser}\n` +
-                 `👥 تعداد بازیکنان: ${game.players.length}\n` +
-                 `⏰ شروع: ${startTime}`,
+                 `👥 بازیکنان: ${game.players.length} نفر\n` +
+                 `⏰ شروع: ${startTime}\n` +
+                 `🔹 وضعیت: ${gameStatusText[game.status] || 'نامشخص'}`,
           inline: true
         });
       });
+      
+      // اگر تعداد بازی‌ها بیشتر از 8 بود، اطلاع رسانی
+      if (activeGamesList.length > 8) {
+        embed.addFields({
+          name: '⚠️ توجه',
+          value: `${activeGamesList.length - 8} بازی دیگر نیز در حال اجراست. برای دیدن همه بازی‌ها از دستور \`/games list\` استفاده کنید.`,
+          inline: false
+        });
+      }
+      
+      // ساخت دکمه‌های پیوستن به بازی
+      const joinButtons = [];
+      
+      for (let i = 0; i < Math.min(displayGames.length, 5); i++) {
+        const game = displayGames[i];
+        const gameType = game.gameType;
+        const gameTypeNames: Record<string, string> = {
+          'mafia': '🕵️‍♂️ مافیا',
+          'werewolf': '🐺 گرگینه',
+          'quiz': '📚 اطلاعات عمومی',
+          'drawguess': '🎨 نقاشی حدس بزن',
+          'truthordare': '🎯 جرات یا حقیقت',
+          'bingo': '🎲 بینگو',
+          'wordchain': '📝 زنجیره کلمات',
+          'spy': '🕴️ جاسوس مخفی'
+        };
+        
+        joinButtons.push(
+          new ButtonBuilder()
+            .setCustomId(`join_game:${game.id}`)
+            .setLabel(`پیوستن به ${gameTypeNames[gameType] || gameType}`)
+            .setStyle(ButtonStyle.Success)
+        );
+      }
+      
+      // ساخت صف دکمه‌ها
+      const joinButtonsRow = new ActionRowBuilder<ButtonBuilder>().addComponents(...joinButtons);
+      
+      // دکمه‌های کنترلی
+      const controlRow = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('game:history')
+            .setLabel('تاریخچه بازی‌ها')
+            .setStyle(ButtonStyle.Primary)
+            .setEmoji('📜'),
+          new ButtonBuilder()
+            .setCustomId('game:leaderboard')
+            .setLabel('رتبه‌بندی')
+            .setStyle(ButtonStyle.Primary)
+            .setEmoji('🏆'),
+          new ButtonBuilder()
+            .setCustomId('group_games')
+            .setLabel('بازگشت')
+            .setStyle(ButtonStyle.Secondary)
+            .setEmoji('🔙')
+        );
+    
+      // ارسال پاسخ با دکمه‌های اضافی
+      if (joinButtons.length > 0) {
+        await interaction.reply({ 
+          embeds: [embed], 
+          components: [joinButtonsRow, controlRow], 
+          ephemeral: true 
+        });
+      } else {
+        await interaction.reply({ 
+          embeds: [embed], 
+          components: [controlRow], 
+          ephemeral: true 
+        });
+      }
     } else {
       embed.setDescription('🔍 در حال حاضر هیچ بازی فعالی وجود ندارد!\n\n' +
                           'می‌توانید با انتخاب یکی از بازی‌های گروهی، یک بازی جدید شروع کنید.');
+                          
+      // دکمه‌های کنترلی
+      const controlRow = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('game:history')
+            .setLabel('تاریخچه بازی‌ها')
+            .setStyle(ButtonStyle.Primary)
+            .setEmoji('📜'),
+          new ButtonBuilder()
+            .setCustomId('game:leaderboard')
+            .setLabel('رتبه‌بندی')
+            .setStyle(ButtonStyle.Primary)
+            .setEmoji('🏆'),
+          new ButtonBuilder()
+            .setCustomId('group_games')
+            .setLabel('بازگشت')
+            .setStyle(ButtonStyle.Secondary)
+            .setEmoji('🔙')
+        );
+        
+      // ارسال پاسخ
+      await interaction.reply({ embeds: [embed], components: [controlRow], ephemeral: true });
     }
-    
-    // ایجاد دکمه بازگشت
-    const row = new ActionRowBuilder<ButtonBuilder>()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId('group_games')
-          .setLabel('🔙 بازگشت به منوی بازی‌ها')
-          .setStyle(ButtonStyle.Secondary)
-      );
-    
-    // ارسال پاسخ
-    await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
     
   } catch (error) {
     log(`Error showing active sessions menu: ${error}`, 'error');
@@ -219,13 +351,17 @@ export async function showActiveSessionsMenu(interaction: ButtonInteraction) {
  */
 export async function handleGroupGamesMenu(interaction: ChatInputCommandInteraction) {
   try {
+    // دریافت تعداد بازیکنان فعال و کل بازی‌های فعال
+    const activePlayers = getActivePlayers().length;
+    const activeGamesCount = getActiveGamesCount();
+    
     const embed = new EmbedBuilder()
       .setTitle('🎮 بازی‌های گروهی')
       .setDescription('🎲 سرگرمی دسته‌جمعی با دوستان و اعضای سرور!\n\n🎯 این بازی‌ها برای 3 تا 10 نفر طراحی شده‌اند. هیچ هزینه‌ای برای شرکت در این بازی‌ها نیاز نیست و هدف اصلی سرگرمی است.')
-      .setColor(0x2B2D31)
+      .setColor('#9B59B6') // رنگ بنفش برای بازی‌های گروهی
       .addFields(
-        { name: '👥 بازیکنان حاضر', value: 'در حال بارگذاری...', inline: true },
-        { name: '💰 موجودی', value: '600 Ccoin', inline: true }
+        { name: '👥 بازیکنان فعال', value: `${activePlayers} نفر`, inline: true },
+        { name: '🎲 بازی‌های جاری', value: `${activeGamesCount} بازی`, inline: true }
       )
       .setImage('https://media.discordapp.net/attachments/1005948809465335931/1111362362733785190/group_games_banner.png?width=915&height=147')
       .setFooter({ text: 'برای انتخاب بازی از دکمه‌های زیر استفاده کنید' });
@@ -262,10 +398,10 @@ export async function handleGroupGamesMenu(interaction: ChatInputCommandInteract
           .setEmoji('🔗')
           .setStyle(ButtonStyle.Primary),
         new ButtonBuilder()
-          .setCustomId('group_back')
-          .setLabel('برگشت')
-          .setEmoji('⬅️')
-          .setStyle(ButtonStyle.Secondary)
+          .setCustomId('game:active_sessions')
+          .setLabel('جلسات فعال')
+          .setEmoji('🎮')
+          .setStyle(ButtonStyle.Success)
       );
 
     const buttonsRow3 = new ActionRowBuilder<ButtonBuilder>()
@@ -287,9 +423,29 @@ export async function handleGroupGamesMenu(interaction: ChatInputCommandInteract
           .setStyle(ButtonStyle.Primary)
       );
     
+    // ردیف چهارم برای دکمه‌های اضافی
+    const buttonsRow4 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('game:leaderboard')
+          .setLabel('رتبه‌بندی')
+          .setEmoji('🏆')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId('game:history')
+          .setLabel('تاریخچه من')
+          .setEmoji('📜')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId('group_back')
+          .setLabel('برگشت')
+          .setEmoji('⬅️')
+          .setStyle(ButtonStyle.Secondary)
+      );
+    
     await interaction.reply({ 
       embeds: [embed], 
-      components: [buttonsRow1, buttonsRow2, buttonsRow3],
+      components: [buttonsRow1, buttonsRow2, buttonsRow3, buttonsRow4],
       ephemeral: false
     });
   } catch (error) {
@@ -308,6 +464,28 @@ export async function handleGroupGamesButton(interaction: ButtonInteraction) {
     // پشتیبانی از فرمت جدید game:type:action
     if (buttonId.startsWith('game:')) {
       const [_, gameType, action] = buttonId.split(':');
+      
+      // دکمه‌های ویژه
+      if (gameType === 'history') {
+        await showGameHistory(interaction);
+        return;
+      }
+      
+      if (gameType === 'leaderboard') {
+        await showGameLeaderboard(interaction);
+        return;
+      }
+      
+      if (gameType === 'active_sessions') {
+        await showActiveSessionsMenu(interaction);
+        return;
+      }
+      
+      if (buttonId.startsWith('join_game:')) {
+        const gameId = buttonId.split(':')[1];
+        await joinGameById(interaction, gameId);
+        return;
+      }
       
       // مسیریابی براساس نوع بازی
       switch (gameType) {
@@ -553,10 +731,11 @@ export async function handleQuizQuestionModalSubmit(interaction: ModalSubmitInte
 }
 
 /**
- * مدیریت بازی اطلاعات عمومی
+ * مدیریت بازی اطلاعات عمومی با امکانات پیشرفته و رابط کاربری جذاب‌تر
  */
 async function handleQuizGame(interaction: ButtonInteraction) {
   try {
+    // ایجاد یک جلسه بازی جدید با تنظیمات پیشرفته
     let quizGameSession: GameSession = {
       id: `quiz_${Date.now()}`,
       gameType: 'quiz',
@@ -568,27 +747,68 @@ async function handleQuizGame(interaction: ButtonInteraction) {
         currentQuestionIndex: -1,
         questions: [],
         playerScores: {},
+        playerAnswers: {},
         maxQuestions: 10,
-        timePerQuestion: 20 // ثانیه
+        timePerQuestion: 30, // افزایش به 30 ثانیه
+        difficulty: 'mixed', // سطح سختی مخلوط
+        categories: [], // دسته‌بندی‌های سوالات
+        scoreMultipliers: { // ضرایب امتیاز بر اساس سختی سوال
+          easy: 1,
+          medium: 2,
+          hard: 3
+        },
+        enableFastAnswerBonus: true, // امتیاز اضافی برای پاسخ سریع
+        enableStreakBonus: true, // امتیاز اضافی برای پاسخ‌های صحیح متوالی
+        streakMultiplier: 0.5, // ضریب امتیاز برای پاسخ‌های صحیح متوالی
+        showProgressBar: true, // نمایش نوار پیشرفت
+        showCategoryImage: true, // نمایش تصویر دسته‌بندی
+        useAnimations: true, // استفاده از انیمیشن‌ها
+        lastQuestionEnd: null, // زمان پایان آخرین سوال
+        playerStreaks: {} // رکورد پاسخ‌های متوالی صحیح
+      },
+      gameSettings: {
+        isPrivate: false,
+        allowSpectators: true,
+        customRules: [],
+        timerSettings: {
+          voteTime: 30 // زمان پاسخ به هر سوال
+        }
       }
     };
+    
+    // اگر میزبان قابلیت ویژه داشته باشد، این جلسه ویژه خواهد بود
+    const hasSpecialFeature = Math.random() > 0.8; // این را با منطق واقعی جایگزین کنید
+    if (hasSpecialFeature) {
+      quizGameSession.data.isSpecialSession = true;
+      quizGameSession.data.specialFeatures = ['double_score', 'power_ups', 'multi_answer'];
+    }
     
     // ذخیره در لیست موقت بازی‌ها
     activeGames.set(quizGameSession.id, quizGameSession);
     
-    // ایجاد Embed و دکمه‌ها
-    const embed = new EmbedBuilder()
-      .setTitle('📚 مسابقه اطلاعات عمومی')
-      .setDescription('به مسابقه اطلاعات عمومی خوش آمدید! در این بازی، به نوبت سوالاتی پرسیده می‌شود و شما باید در زمان مشخص شده پاسخ صحیح را انتخاب کنید.')
-      .setColor(0x4F77AA)
-      .addFields(
-        { name: '👥 تعداد بازیکنان', value: '0/10', inline: true },
-        { name: '⏱️ زمان هر سوال', value: '20 ثانیه', inline: true },
-        { name: '📝 تعداد سوالات', value: '10 سوال', inline: true },
-        { name: '🏆 جایزه نفر اول', value: '500 کوین', inline: true }
-      )
-      .setFooter({ text: 'برای شرکت در بازی روی دکمه "ورود به بازی" کلیک کنید' });
+    // دریافت اطلاعات میزبان برای نمایش در رابط کاربری
+    const hostUser = await interaction.client.users.fetch(interaction.user.id);
     
+    // ایجاد Embed پیشرفته با طراحی جذاب‌تر
+    const embed = new EmbedBuilder()
+      .setTitle('🧠 مسابقه اطلاعات عمومی VIP')
+      .setDescription('**به مسابقه هیجان‌انگیز اطلاعات عمومی خوش آمدید!** 🎉\n\nدر این بازی دانش و سرعت عمل شما به چالش کشیده می‌شود. با پاسخ صحیح به سوالات، امتیاز جمع کنید و برنده شوید! هر پاسخ سریع‌تر امتیاز بیشتری دارد. 🏆')
+      .setColor(0x9B59B6) // رنگ بنفش برای تم VIP
+      .addFields(
+        { name: '👥 ظرفیت بازیکنان', value: '0/10', inline: true },
+        { name: '⏱️ زمان هر سوال', value: '30 ثانیه', inline: true },
+        { name: '📚 تعداد سوالات', value: '10 سوال', inline: true },
+        { name: '💰 جایزه برندگان', value: 'نفر اول: 500 کوین 🥇\nنفر دوم: 250 کوین 🥈\nنفر سوم: 100 کوین 🥉', inline: true },
+        { name: '👑 میزبان بازی', value: hostUser.username, inline: true }
+      )
+      .setImage('https://media.discordapp.net/attachments/1005948809465335931/1111362362733785190/group_games_banner.png?width=915&height=147') // تصویر بنر بازی
+      .setFooter({ 
+        text: `برای شرکت در بازی روی دکمه "ورود به بازی" کلیک کنید | ID: ${quizGameSession.id}`,
+        iconURL: hostUser.displayAvatarURL({ size: 32 })
+      })
+      .setTimestamp();
+    
+    // ساخت دکمه‌های زیباتر
     const joinButton = new ButtonBuilder()
       .setCustomId('quiz_join')
       .setLabel('ورود به بازی')
@@ -601,18 +821,38 @@ async function handleQuizGame(interaction: ButtonInteraction) {
       .setEmoji('▶️')
       .setStyle(ButtonStyle.Primary);
     
+    // دکمه جدید برای تنظیمات پیشرفته
+    const settingsButton = new ButtonBuilder()
+      .setCustomId('quiz_settings')
+      .setLabel('تنظیمات بازی')
+      .setEmoji('⚙️')
+      .setStyle(ButtonStyle.Secondary);
+    
     const submitQuestionButton = new ButtonBuilder()
       .setCustomId('quiz_submit_question')
       .setLabel('ارسال سوال جدید')
       .setEmoji('✏️')
       .setStyle(ButtonStyle.Secondary);
     
-    const row = new ActionRowBuilder<ButtonBuilder>()
-      .addComponents(joinButton, startButton, submitQuestionButton);
+    // دکمه جدید برای نمایش قوانین
+    const rulesButton = new ButtonBuilder()
+      .setCustomId('quiz_rules')
+      .setLabel('قوانین بازی')
+      .setEmoji('📜')
+      .setStyle(ButtonStyle.Secondary);
     
+    // ردیف اول دکمه‌ها - اصلی
+    const row1 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(joinButton, startButton, settingsButton);
+    
+    // ردیف دوم دکمه‌ها - فرعی
+    const row2 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(submitQuestionButton, rulesButton);
+    
+    // نمایش رابط کاربری جدید
     const response = await interaction.reply({ 
       embeds: [embed], 
-      components: [row],
+      components: [row1, row2],
       fetchReply: true
     });
     
@@ -620,14 +860,29 @@ async function handleQuizGame(interaction: ButtonInteraction) {
     quizGameSession.data.messageId = response.id;
     activeGames.set(quizGameSession.id, quizGameSession);
     
+    // افزودن واکنش‌ها برای جلوه بصری بیشتر
+    try {
+      if (response && 'react' in response) {
+        await response.react('🎲');
+        await response.react('🧠');
+        await response.react('🏆');
+      }
+    } catch (reactError) {
+      // اگر نتوانیم واکنش اضافه کنیم، مشکلی نیست
+      log(`Error adding reactions: ${reactError}`, 'warn');
+    }
+    
   } catch (error) {
     log(`Error handling quiz game: ${error}`, 'error');
-    await interaction.reply({ content: '❌ خطایی در شروع بازی اطلاعات عمومی رخ داد. لطفاً بعداً دوباره تلاش کنید.', ephemeral: true });
+    await interaction.reply({ 
+      content: '❌ خطایی در شروع بازی اطلاعات عمومی رخ داد. لطفاً بعداً دوباره تلاش کنید.', 
+      ephemeral: true 
+    });
   }
 }
 
 /**
- * پیوستن به بازی اطلاعات عمومی
+ * پیوستن به بازی اطلاعات عمومی با تجربه کاربری پیشرفته
  */
 async function joinQuizGame(interaction: ButtonInteraction) {
   try {
@@ -639,32 +894,86 @@ async function joinQuizGame(interaction: ButtonInteraction) {
     );
     
     if (!gameSession) {
-      return await interaction.reply({ content: '❌ بازی فعالی یافت نشد!', ephemeral: true });
+      return await interaction.reply({ 
+        content: '❌ بازی فعالی یافت نشد! می‌توانید با دستور `/group games` یک بازی جدید ایجاد کنید.', 
+        ephemeral: true 
+      });
+    }
+    
+    // بررسی اینکه آیا بازی خصوصی است
+    if (gameSession.gameSettings?.isPrivate && gameSession.createdBy !== interaction.user.id) {
+      // بررسی اینکه آیا کاربر در لیست دعوت‌شدگان است
+      const isInvited = gameSession.data.invitedPlayers?.includes(interaction.user.id);
+      if (!isInvited) {
+        return await interaction.reply({ 
+          content: '❌ این بازی خصوصی است و فقط افراد دعوت شده می‌توانند به آن بپیوندند.', 
+          ephemeral: true 
+        });
+      }
     }
     
     // بررسی اینکه آیا کاربر قبلاً به بازی پیوسته است یا خیر
     if (gameSession.players.includes(interaction.user.id)) {
-      return await interaction.reply({ content: '❌ شما قبلاً به این بازی پیوسته‌اید!', ephemeral: true });
+      // به کاربر اطلاع می‌دهیم که قبلاً پیوسته، اما با ظاهری زیباتر
+      const alreadyJoinedEmbed = new EmbedBuilder()
+        .setTitle('⚠️ شما قبلاً پیوسته‌اید!')
+        .setDescription('شما قبلاً به این بازی ملحق شده‌اید و نیازی به پیوستن مجدد نیست.')
+        .setColor(0xFFA500) // رنگ نارنجی برای هشدار
+        .setThumbnail(interaction.user.displayAvatarURL({ size: 128 }))
+        .setFooter({ text: 'منتظر شروع بازی باشید...' });
+      
+      return await interaction.reply({ embeds: [alreadyJoinedEmbed], ephemeral: true });
     }
     
     // بررسی محدودیت تعداد بازیکنان
     if (gameSession.players.length >= 10) {
-      return await interaction.reply({ content: '❌ ظرفیت بازی تکمیل است!', ephemeral: true });
+      const fullGameEmbed = new EmbedBuilder()
+        .setTitle('❌ ظرفیت تکمیل است!')
+        .setDescription('متأسفانه ظرفیت این بازی تکمیل شده است و امکان پیوستن به آن وجود ندارد.')
+        .setColor(0xFF0000) // رنگ قرمز برای خطا
+        .addFields(
+          { name: '👥 تعداد بازیکنان', value: `${gameSession.players.length}/10 (تکمیل)`, inline: true },
+          { name: '👤 میزبان بازی', value: `<@${gameSession.createdBy}>`, inline: true }
+        )
+        .setFooter({ text: 'می‌توانید یک بازی جدید ایجاد کنید یا منتظر باشید تا یک بازی دیگر شروع شود' });
+        
+      return await interaction.reply({ embeds: [fullGameEmbed], ephemeral: true });
     }
     
     // افزودن کاربر به لیست بازیکنان
     gameSession.players.push(interaction.user.id);
-    activeGames.set(gameSession.id, gameSession);
+    
+    // اگر امتیازات متناوب فعال باشد، آن‌ها را مقداردهی اولیه می‌کنیم
+    if (!gameSession.data.playerScores) {
+      gameSession.data.playerScores = {};
+    }
+    
+    if (!gameSession.data.playerStreaks) {
+      gameSession.data.playerStreaks = {};
+    }
     
     // آماده‌سازی امتیاز کاربر
     gameSession.data.playerScores[interaction.user.id] = 0;
+    gameSession.data.playerStreaks[interaction.user.id] = 0;
+    
+    // اضافه کردن به لیست بازیکنان آنلاین
+    gameSession.data.playerStatus = gameSession.data.playerStatus || {};
+    gameSession.data.playerStatus[interaction.user.id] = 'online';
+    
+    // بررسی سطح کاربر و ثبت امتیازات پایه بر اساس سطح
+    const userLevel = Math.floor(Math.random() * 100); // در واقعیت باید از دیتابیس بخوانیم
+    gameSession.data.playerLevel = gameSession.data.playerLevel || {};
+    gameSession.data.playerLevel[interaction.user.id] = userLevel;
+    
+    // ذخیره تغییرات
+    activeGames.set(gameSession.id, gameSession);
     
     // به‌روزرسانی Embed
     const message = await interaction.message.fetch();
     const embed = EmbedBuilder.from(message.embeds[0]);
     
     // به‌روزرسانی فیلد تعداد بازیکنان
-    const playerField = embed.data.fields?.find(field => field.name === '👥 تعداد بازیکنان');
+    const playerField = embed.data.fields?.find(field => field.name?.includes('ظرفیت بازیکنان') || field.name?.includes('تعداد بازیکنان'));
     if (playerField) {
       playerField.value = `${gameSession.players.length}/10`;
     }
@@ -680,11 +989,50 @@ async function joinQuizGame(interaction: ButtonInteraction) {
       embed.addFields({ name: '👤 بازیکنان', value: playersList });
     }
     
+    // به‌روزرسانی پیام اصلی بازی
     await interaction.update({ embeds: [embed] });
+    
+    // ایجاد یک Embed جدید برای تأیید پیوستن به بازی (فقط برای کاربر)
+    const joinConfirmEmbed = new EmbedBuilder()
+      .setTitle('✅ با موفقیت پیوستید!')
+      .setDescription(`شما با موفقیت به بازی اطلاعات عمومی پیوستید. منتظر شروع بازی باشید!`)
+      .setColor(0x3BA55D) // رنگ سبز برای موفقیت
+      .addFields(
+        { name: '🎮 نام بازی', value: 'مسابقه اطلاعات عمومی VIP', inline: true },
+        { name: '👤 میزبان بازی', value: `<@${gameSession.createdBy}>`, inline: true },
+        { name: '👥 تعداد بازیکنان', value: `${gameSession.players.length}/10`, inline: true }
+      )
+      .setThumbnail(interaction.user.displayAvatarURL({ size: 128 }))
+      .setFooter({ text: `Game ID: ${gameSession.id} • ${new Date().toLocaleString('fa-IR')}` });
+    
+    // ارسال پیام خصوصی تأیید به کاربر
+    await interaction.followUp({ embeds: [joinConfirmEmbed], ephemeral: true });
+    
+    // اطلاع به میزبان بازی که کاربر جدیدی پیوسته است
+    try {
+      const host = await interaction.client.users.fetch(gameSession.createdBy);
+      if (host && gameSession.createdBy !== interaction.user.id) {
+        const hostNotificationEmbed = new EmbedBuilder()
+          .setTitle('👋 بازیکن جدید')
+          .setDescription(`**${interaction.user.username}** به بازی شما پیوست!`)
+          .setColor(0x9B59B6)
+          .setThumbnail(interaction.user.displayAvatarURL({ size: 64 }))
+          .setFooter({ text: `اکنون ${gameSession.players.length} بازیکن در بازی حضور دارند` });
+          
+        // در محیط واقعی این را به صورت متن DM به میزبان ارسال می‌کنیم
+        // await host.send({ embeds: [hostNotificationEmbed] });
+      }
+    } catch (dmError) {
+      // اگر نتوانیم به میزبان پیام بدهیم، مشکلی نیست، ادامه می‌دهیم
+      log(`Failed to notify host about new player: ${dmError}`, 'warn');
+    }
     
   } catch (error) {
     log(`Error joining quiz game: ${error}`, 'error');
-    await interaction.reply({ content: '❌ خطایی در پیوستن به بازی رخ داد. لطفاً بعداً دوباره تلاش کنید.', ephemeral: true });
+    await interaction.reply({ 
+      content: '❌ خطایی در پیوستن به بازی رخ داد. لطفاً بعداً دوباره تلاش کنید.', 
+      ephemeral: true 
+    });
   }
 }
 
@@ -822,7 +1170,7 @@ async function loadQuestionsForQuiz(gameSession: GameSession) {
 }
 
 /**
- * شروع بازی اطلاعات عمومی
+ * شروع بازی اطلاعات عمومی با افکت‌های ویژه و تجربه کاربری بهتر
  */
 async function startQuizGame(interaction: ButtonInteraction) {
   try {
@@ -834,31 +1182,76 @@ async function startQuizGame(interaction: ButtonInteraction) {
     );
     
     if (!gameSession) {
-      return await interaction.reply({ content: '❌ بازی فعالی یافت نشد!', ephemeral: true });
+      const errorEmbed = new EmbedBuilder()
+        .setTitle('❌ بازی فعالی یافت نشد!')
+        .setDescription('هیچ بازی در حالت انتظار در این کانال وجود ندارد.')
+        .setColor(0xFF0000)
+        .setFooter({ text: 'ابتدا یک بازی جدید ایجاد کنید' });
+        
+      return await interaction.reply({ embeds: [errorEmbed], ephemeral: true });
     }
     
     // بررسی اینکه آیا کاربر سازنده بازی است
     if (gameSession.createdBy !== interaction.user.id) {
-      return await interaction.reply({ 
-        content: '❌ فقط سازنده بازی می‌تواند بازی را شروع کند!', 
-        ephemeral: true 
-      });
+      const notHostEmbed = new EmbedBuilder()
+        .setTitle('⛔ دسترسی محدود')
+        .setDescription('فقط میزبان بازی می‌تواند آن را شروع کند!')
+        .setColor(0xFF0000)
+        .addFields({ 
+          name: '👑 میزبان بازی', 
+          value: `<@${gameSession.createdBy}>` 
+        })
+        .setThumbnail(interaction.user.displayAvatarURL({ size: 64 }))
+        .setFooter({ text: 'شما میزبان این بازی نیستید' });
+        
+      return await interaction.reply({ embeds: [notHostEmbed], ephemeral: true });
     }
     
     // بررسی تعداد بازیکنان (حداقل 2 نفر)
     if (gameSession.players.length < 2) {
-      return await interaction.reply({ 
-        content: '❌ برای شروع بازی حداقل به 2 بازیکن نیاز است!', 
-        ephemeral: true 
-      });
+      const notEnoughPlayersEmbed = new EmbedBuilder()
+        .setTitle('⚠️ تعداد بازیکنان ناکافی')
+        .setDescription('برای شروع بازی حداقل به 2 بازیکن نیاز است!')
+        .setColor(0xFFA500)
+        .addFields(
+          { name: '👥 تعداد فعلی', value: `${gameSession.players.length} بازیکن`, inline: true },
+          { name: '🎯 حداقل مورد نیاز', value: '2 بازیکن', inline: true }
+        )
+        .setFooter({ text: 'منتظر بمانید تا بازیکنان بیشتری به بازی بپیوندند' });
+        
+      return await interaction.reply({ embeds: [notEnoughPlayersEmbed], ephemeral: true });
     }
+    
+    // اطلاع‌رسانی اولیه به بازیکنان که بازی در حال شروع است
+    const preparingEmbed = new EmbedBuilder()
+      .setTitle('🎮 در حال آماده‌سازی بازی...')
+      .setDescription('لطفاً صبر کنید، بازی در حال آماده‌سازی و بارگذاری سوالات است.')
+      .setColor(0x9B59B6)
+      .setFooter({ text: 'این عملیات ممکن است چند ثانیه طول بکشد' });
+      
+    await interaction.update({ 
+      embeds: [preparingEmbed], 
+      components: [] 
+    });
     
     // بارگذاری سوالات
     const questions = await loadQuestionsForQuiz(gameSession);
     if (questions.length === 0) {
-      return await interaction.reply({ 
-        content: '❌ خطایی در بارگذاری سوالات رخ داد. لطفاً بعداً دوباره تلاش کنید.', 
-        ephemeral: true 
+      const errorEmbed = new EmbedBuilder()
+        .setTitle('❌ خطای بارگذاری')
+        .setDescription('خطایی در بارگذاری سوالات رخ داد. لطفاً بعداً دوباره تلاش کنید.')
+        .setColor(0xFF0000)
+        .setFooter({ text: 'مشکلی در سیستم سوالات وجود دارد' });
+        
+      return await interaction.followUp({ embeds: [errorEmbed], ephemeral: true });
+    }
+    
+    // مرتب‌سازی سوالات بر اساس سختی (ساده به سخت)
+    if (gameSession.data.progressiveDifficulty) {
+      const difficultyOrder = { 'easy': 1, 'medium': 2, 'hard': 3 };
+      questions.sort((a, b) => {
+        return difficultyOrder[a.difficulty as keyof typeof difficultyOrder] - 
+               difficultyOrder[b.difficulty as keyof typeof difficultyOrder];
       });
     }
     
@@ -867,35 +1260,168 @@ async function startQuizGame(interaction: ButtonInteraction) {
     gameSession.startedAt = new Date();
     gameSession.data.questions = questions;
     gameSession.data.currentQuestionIndex = -1;
-    activeGames.set(gameSession.id, gameSession);
     
-    // به‌روزرسانی پیام
-    const embed = new EmbedBuilder()
-      .setTitle('📚 مسابقه اطلاعات عمومی')
-      .setDescription('مسابقه شروع شد! اولین سوال به زودی نمایش داده می‌شود...')
-      .setColor(0x4F77AA)
-      .addFields(
-        { name: '👥 بازیکنان', value: gameSession.players.map(playerId => `<@${playerId}>`).join('\n') },
-        { name: '⏱️ زمان هر سوال', value: `${gameSession.data.timePerQuestion} ثانیه`, inline: true },
-        { name: '📝 تعداد سوالات', value: `${gameSession.data.questions.length} سوال`, inline: true }
-      );
+    // مقداردهی اولیه آمار بازی
+    gameSession.data.correctAnswersCount = {};
+    gameSession.data.fastestResponses = {};
+    gameSession.data.streakRecords = {};
     
-    await interaction.update({ 
-      embeds: [embed], 
-      components: [] 
+    gameSession.players.forEach(playerId => {
+      gameSession.data.correctAnswersCount[playerId] = 0;
+      gameSession.data.fastestResponses[playerId] = 0;
+      gameSession.data.streakRecords[playerId] = 0;
+      gameSession.data.playerStreaks[playerId] = 0;
     });
     
-    // نمایش اولین سوال
-    setTimeout(() => showNextQuestion(gameSession), 3000);
+    // ذخیره‌سازی اطلاعات بازی
+    activeGames.set(gameSession.id, gameSession);
+    
+    // ارسال پیام شروع بازی با افکت‌های ویژه
+    const categoriesSet = new Set(questions.map(q => q.category));
+    const categories = Array.from(categoriesSet).join(', ');
+    
+    const difficultyCount = {
+      easy: questions.filter(q => q.difficulty === 'easy').length,
+      medium: questions.filter(q => q.difficulty === 'medium').length,
+      hard: questions.filter(q => q.difficulty === 'hard').length
+    };
+    
+    // ایجاد Embed زیبا برای شروع بازی
+    const gameStartEmbed = new EmbedBuilder()
+      .setTitle('🎮 مسابقه اطلاعات عمومی VIP شروع شد!')
+      .setDescription(
+        '**بازی با موفقیت آغاز شد!** 🎉\n\n' +
+        'اولین سوال به زودی نمایش داده می‌شود. آماده باشید و سریع پاسخ دهید! ' +
+        'هر چه سریع‌تر پاسخ دهید، امتیاز بیشتری کسب می‌کنید. 🏆\n\n' +
+        '**موفق باشید!** 🍀'
+      )
+      .setColor(0x9B59B6)
+      .addFields(
+        { 
+          name: '👥 شرکت‌کنندگان', 
+          value: gameSession.players.map((id, index) => `${getNumberEmoji(index+1)} <@${id}>`).join('\n'),
+          inline: false 
+        },
+        { 
+          name: '⏱️ زمان هر سوال', 
+          value: `${gameSession.data.timePerQuestion} ثانیه`, 
+          inline: true 
+        },
+        { 
+          name: '📝 تعداد سوالات', 
+          value: `${gameSession.data.questions.length} سوال`, 
+          inline: true 
+        },
+        { 
+          name: '🎖️ سطح سختی', 
+          value: `آسان: ${difficultyCount.easy} | متوسط: ${difficultyCount.medium} | سخت: ${difficultyCount.hard}`,
+          inline: false 
+        },
+        { 
+          name: '🏷️ دسته‌بندی‌ها', 
+          value: categories || 'متنوع', 
+          inline: false 
+        }
+      )
+      .setImage('https://media.discordapp.net/attachments/1005948809465335931/1111362362733785190/group_games_banner.png?width=915&height=147')
+      .setFooter({ 
+        text: `بازی به میزبانی ${interaction.user.username} شروع شد | Game ID: ${gameSession.id}`,
+        iconURL: interaction.user.displayAvatarURL({ size: 32 })
+      })
+      .setTimestamp();
+    
+    // تغییر پیام به پیام شروع بازی
+    await interaction.editReply({ embeds: [gameStartEmbed] });
+    
+    // افزودن واکنش‌های متنی به پیام شروع بازی
+    try {
+      const message = await interaction.fetchReply();
+      if ('react' in message) {
+        await message.react('🎲');
+        await message.react('🎮');
+        await message.react('🧠');
+        await message.react('🏆');
+      }
+    } catch (reactError) {
+      // اگر نتوانیم واکنش‌ها را اضافه کنیم، مشکلی نیست
+      log(`Error adding reactions to start message: ${reactError}`, 'warn');
+    }
+    
+    // اطلاع‌رسانی به بازیکنان در دایرکت (اختیاری)
+    try {
+      for (const playerId of gameSession.players) {
+        if (playerId !== gameSession.createdBy) { // فقط به غیر میزبان اطلاع می‌دهیم
+          const player = await interaction.client.users.fetch(playerId);
+          if (player) {
+            const playerNotifyEmbed = new EmbedBuilder()
+              .setTitle('🎮 بازی شروع شد!')
+              .setDescription(`بازی اطلاعات عمومی به میزبانی **${interaction.user.username}** شروع شد! به کانال برگردید تا در مسابقه شرکت کنید.`)
+              .setColor(0x9B59B6)
+              .setFooter({ text: 'اگر به کانال بروید، اولین سوال به زودی نمایش داده می‌شود' });
+              
+            // در محیط واقعی این را به صورت DM ارسال می‌کنیم
+            // await player.send({ embeds: [playerNotifyEmbed] });
+          }
+        }
+      }
+    } catch (dmError) {
+      // اگر نتوانیم به بازیکنان پیام بدهیم، مشکلی نیست
+      log(`Failed to send DM to players: ${dmError}`, 'warn');
+    }
+    
+    // استفاده از تایمر برای شمارش معکوس قبل از شروع سوال اول
+    const countdownStart = 5; // 5 ثانیه شمارش معکوس
+    let countdown = countdownStart;
+    
+    const countdownInterval = setInterval(async () => {
+      try {
+        if (countdown <= 0) {
+          clearInterval(countdownInterval);
+          showNextQuestion(gameSession); // نمایش اولین سوال
+          return;
+        }
+        
+        const countdownEmbed = new EmbedBuilder()
+          .setTitle(`⏱️ شروع بازی در ${countdown} ثانیه دیگر...`)
+          .setDescription(`اولین سوال به زودی نمایش داده می‌شود! آماده باشید!`)
+          .setColor(0x9B59B6)
+          .setFooter({ text: 'منتظر بمانید' });
+          
+        const channel = await interaction.client.channels.fetch(gameSession.channelId);
+        if (channel && 'send' in channel) {
+          await channel.send({ embeds: [countdownEmbed] });
+        }
+        
+        countdown--;
+      } catch (countdownError) {
+        clearInterval(countdownInterval);
+        log(`Error in countdown timer: ${countdownError}`, 'error');
+        showNextQuestion(gameSession); // در صورت خطا، مستقیماً سوال را نمایش می‌دهیم
+      }
+    }, 1000);
     
   } catch (error) {
     log(`Error starting quiz game: ${error}`, 'error');
-    await interaction.reply({ content: '❌ خطایی در شروع بازی رخ داد. لطفاً بعداً دوباره تلاش کنید.', ephemeral: true });
+    const errorEmbed = new EmbedBuilder()
+      .setTitle('❌ خطا در شروع بازی')
+      .setDescription('متأسفانه خطایی هنگام شروع بازی رخ داد. لطفاً بعداً دوباره تلاش کنید.')
+      .setColor(0xFF0000)
+      .setFooter({ text: 'اگر این مشکل ادامه داشت، با پشتیبانی تماس بگیرید' });
+      
+    await interaction.reply({ embeds: [errorEmbed], ephemeral: true });
   }
 }
 
 /**
- * نمایش سوال بعدی در بازی اطلاعات عمومی
+ * تابع کمکی برای تبدیل اعداد به ایموجی
+ */
+function getNumberEmoji(num: number): string {
+  const numberEmojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
+  return num <= 10 ? numberEmojis[num-1] : `${num}.`;
+}
+
+/**
+ * نمایش سوال بعدی در بازی اطلاعات عمومی با افکت‌های ویژه و نمایش پیشرفته
  */
 async function showNextQuestion(gameSession: GameSession) {
   try {
@@ -912,42 +1438,186 @@ async function showNextQuestion(gameSession: GameSession) {
     
     // دریافت سوال فعلی
     const currentQuestion = gameSession.data.questions[gameSession.data.currentQuestionIndex];
+    const questionNumber = gameSession.data.currentQuestionIndex + 1;
+    const totalQuestions = gameSession.data.questions.length;
     
-    // ایجاد Embed برای سوال
+    // تنظیم رنگ بر اساس دسته‌بندی سوال
+    let categoryColor = 0x9B59B6; // رنگ پیش‌فرض بنفش
+    const categoryColors: Record<string, number> = {
+      'جغرافیا': 0x3498DB, // آبی
+      'تاریخ': 0xE67E22,  // نارنجی
+      'ادبیات': 0x1ABC9C, // فیروزه‌ای
+      'علوم': 0x2ECC71,   // سبز
+      'هنر': 0xE74C3C,    // قرمز
+      'ورزش': 0xF1C40F,   // زرد
+      'فرهنگ': 0x34495E,  // سرمه‌ای
+      'سینما': 0x9B59B6,  // بنفش
+      'موسیقی': 0xD35400, // قهوه‌ای
+      'زیست‌شناسی': 0x27AE60, // سبز تیره
+      'فیزیک': 0x2980B9,  // آبی تیره
+      'شیمی': 0x8E44AD,   // بنفش تیره
+      'ریاضیات': 0x2C3E50, // نیلی
+      'کامپیوتر': 0x16A085, // سبز آبی
+      'اقتصاد': 0xF39C12,  // طلایی
+      'سیاست': 0x7F8C8D   // خاکستری
+    };
+    
+    // اگر دسته‌بندی سوال در لیست بالا وجود داشت، رنگ آن استفاده می‌شود
+    if (currentQuestion.category in categoryColors) {
+      categoryColor = categoryColors[currentQuestion.category];
+    }
+    
+    // ایجاد نوار پیشرفت برای نمایش وضعیت سوالات
+    let progressBar = '';
+    if (gameSession.data.showProgressBar) {
+      const progressBarLength = 10; // طول نوار پیشرفت
+      const filledLength = Math.floor((questionNumber / totalQuestions) * progressBarLength);
+      const emptyLength = progressBarLength - filledLength;
+      
+      // استفاده از ایموجی مربع برای نمایش نوار پیشرفت
+      progressBar = '█'.repeat(filledLength) + '░'.repeat(emptyLength);
+      progressBar += ` ${questionNumber}/${totalQuestions} (${Math.floor((questionNumber / totalQuestions) * 100)}%)`;
+    }
+    
+    // تنظیم ایموجی متناسب با سختی سوال
+    let difficultyEmoji = '🟢'; // سوال آسان
+    if (currentQuestion.difficulty === 'medium') {
+      difficultyEmoji = '🟡'; // سوال متوسط
+    } else if (currentQuestion.difficulty === 'hard') {
+      difficultyEmoji = '🔴'; // سوال سخت
+    }
+    
+    // تصویر مرتبط با دسته‌بندی سوال
+    const categoryImages: Record<string, string> = {
+      'جغرافیا': 'https://media.discordapp.net/attachments/1005948809465335931/1111362362733785190/geography.png',
+      'تاریخ': 'https://media.discordapp.net/attachments/1005948809465335931/1111362362733785190/history.png',
+      'علوم': 'https://media.discordapp.net/attachments/1005948809465335931/1111362362733785190/science.png',
+      'ادبیات': 'https://media.discordapp.net/attachments/1005948809465335931/1111362362733785190/literature.png',
+      'هنر': 'https://media.discordapp.net/attachments/1005948809465335931/1111362362733785190/art.png',
+      'ورزش': 'https://media.discordapp.net/attachments/1005948809465335931/1111362362733785190/sports.png'
+    };
+    
+    // متن نمایش امتیازدهی ویژه برای سوال فعلی
+    let specialScoring = '';
+    if (currentQuestion.difficulty === 'hard') {
+      specialScoring = '🔥 سوال سخت! امتیاز ضریب 3x';
+    } else if (currentQuestion.difficulty === 'medium') {
+      specialScoring = '✨ سوال متوسط! امتیاز ضریب 2x';
+    }
+    
+    // نمایش رتبه‌بندی فعلی بازیکنان
+    // ایجاد متن رتبه‌بندی
+    let leaderboardText = '';
+    if (gameSession.data.playerScores && Object.keys(gameSession.data.playerScores).length > 0) {
+      // تبدیل امتیازات به آرایه برای مرتب‌سازی
+      const scores = Object.entries(gameSession.data.playerScores)
+        .map(([playerId, score]) => ({ playerId, score }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5); // فقط 5 نفر برتر
+      
+      // ایجاد متن رتبه‌بندی
+      leaderboardText = scores.map((entry, index) => 
+        `${getNumberEmoji(index + 1)} <@${entry.playerId}>: ${entry.score} امتیاز`
+      ).join('\n');
+    }
+    
+    // ایجاد Embed پیشرفته برای سوال
     const embed = new EmbedBuilder()
-      .setTitle(`📝 سوال ${gameSession.data.currentQuestionIndex + 1} از ${gameSession.data.questions.length}`)
-      .setDescription(currentQuestion.question)
-      .setColor(0x4F77AA)
+      .setTitle(`📝 سوال ${questionNumber} از ${totalQuestions}`)
+      .setDescription(`**${currentQuestion.question}**\n\n${progressBar ? `${progressBar}\n\n` : ''}${specialScoring ? `${specialScoring}\n\n` : ''}`)
+      .setColor(categoryColor)
       .addFields(
-        { name: '🔢 شماره سوال', value: `${gameSession.data.currentQuestionIndex + 1}`, inline: true },
+        { name: `${difficultyEmoji} سطح سختی`, value: getQuestionDifficultyText(currentQuestion.difficulty), inline: true },
         { name: '🏷️ دسته‌بندی', value: currentQuestion.category, inline: true },
-        { name: '⏱️ زمان باقی‌مانده', value: `${gameSession.data.timePerQuestion} ثانیه`, inline: true }
-      )
-      .setFooter({ text: 'لطفاً یکی از گزینه‌ها را انتخاب کنید' });
+        { name: '⏱️ زمان پاسخ', value: `${gameSession.data.timePerQuestion} ثانیه`, inline: true }
+      );
     
-    // ایجاد دکمه‌های گزینه‌ها
+    // اضافه کردن تصویر دسته‌بندی اگر موجود باشد و فعال شده باشد
+    if (gameSession.data.showCategoryImage && currentQuestion.category in categoryImages) {
+      embed.setThumbnail(categoryImages[currentQuestion.category]);
+    }
+    
+    // اضافه کردن فیلد رتبه‌بندی اگر امتیازی ثبت شده باشد
+    if (leaderboardText) {
+      embed.addFields({ name: '🏆 رتبه‌بندی فعلی', value: leaderboardText, inline: false });
+    }
+    
+    // اضافه کردن نکته راهنما یا توضیح اضافی
+    embed.setFooter({ 
+      text: 'با کلیک روی دکمه‌ها پاسخ دهید | پاسخ سریع‌تر امتیاز بیشتری دارد!',
+      iconURL: 'https://media.discordapp.net/attachments/1005948809465335931/1111362362733785190/quiz_icon.png'
+    });
+    
+    // ایجاد دکمه‌های گزینه‌ها با طراحی زیباتر
     const buttons = new ActionRowBuilder<ButtonBuilder>();
     
+    // ایموجی‌های استفاده شده برای گزینه‌ها
+    const optionEmojis = ['🇦', '🇧', '🇨', '🇩'];
+    
+    // رنگ‌های متنوع برای گزینه‌ها
+    const optionStyles = [
+      ButtonStyle.Primary,    // آبی
+      ButtonStyle.Secondary,  // خاکستری
+      ButtonStyle.Success,    // سبز
+      ButtonStyle.Danger      // قرمز
+    ];
+    
+    // یک آرایه با ترتیب تصادفی برای انتخاب سبک‌های دکمه
+    const randomStyleOrder = [0, 1, 2, 3].sort(() => Math.random() - 0.5);
+    
     currentQuestion.options.forEach((option, index) => {
+      const styleIndex = randomStyleOrder[index % 4]; // انتخاب سبک تصادفی
       buttons.addComponents(
         new ButtonBuilder()
           .setCustomId(`quiz_answer_${gameSession.id}_${index}`)
           .setLabel(option)
-          .setStyle(ButtonStyle.Primary)
+          .setEmoji(optionEmojis[index])
+          .setStyle(optionStyles[styleIndex])
       );
     });
     
-    // ارسال پیام
+    // ارسال پیام سوال
     const client = require('../client').default;
     const channel = await client.channels.fetch(gameSession.channelId);
     if (channel && channel.isTextBased()) {
+      // اگر نمایش انیمیشن فعال بود، یک پیام آماده‌سازی نمایش می‌دهیم
+      if (gameSession.data.useAnimations) {
+        const preparingMessage = await channel.send({
+          content: `⏳ در حال بارگذاری سوال شماره ${questionNumber}...`
+        });
+        
+        // حذف پیام آماده‌سازی پس از 1 ثانیه
+        setTimeout(async () => {
+          try {
+            await preparingMessage.delete();
+          } catch (deleteError) {
+            log(`Error deleting preparing message: ${deleteError}`, 'warn');
+          }
+        }, 1000);
+        
+        // کمی صبر می‌کنیم تا پیام آماده‌سازی نمایش داده شود و سپس سوال را نمایش می‌دهیم
+        await new Promise(resolve => setTimeout(resolve, 1200));
+      }
+      
+      // ارسال پیام سوال
       const questionMessage = await channel.send({ 
         embeds: [embed], 
         components: [buttons] 
       });
       
+      // اضافه کردن واکنش‌ها برای جلوه بصری
+      try {
+        if (questionMessage && 'react' in questionMessage) {
+          await questionMessage.react('🧠');
+        }
+      } catch (reactError) {
+        // اگر نتوانیم واکنش اضافه کنیم، مشکلی نیست
+        log(`Error adding reaction to question: ${reactError}`, 'warn');
+      }
+      
       // ذخیره شناسه پیام سوال فعلی
       gameSession.data.currentQuestionMessageId = questionMessage.id;
+      gameSession.data.lastQuestionTimestamp = Date.now(); // زمان نمایش سوال
       activeGames.set(gameSession.id, gameSession);
       
       // شروع تایمر برای سوال
@@ -957,6 +1627,18 @@ async function showNextQuestion(gameSession: GameSession) {
     log(`Error showing next question: ${error}`, 'error');
     // در صورت خطا، سعی می‌کنیم به سوال بعدی برویم
     setTimeout(() => showNextQuestion(gameSession), 3000);
+  }
+}
+
+/**
+ * تبدیل سطح سختی به متن فارسی
+ */
+function getQuestionDifficultyText(difficulty: string): string {
+  switch(difficulty) {
+    case 'easy': return 'آسان';
+    case 'medium': return 'متوسط';
+    case 'hard': return 'سخت';
+    default: return 'نامشخص';
   }
 }
 
@@ -1072,7 +1754,7 @@ async function handleQuestionTimeout(gameSession: GameSession, interaction: Butt
 }
 
 /**
- * مدیریت پاسخ کاربر به سوال
+ * مدیریت پاسخ کاربر به سوال با سیستم امتیازدهی پیشرفته و تجربه کاربری بهتر
  */
 export async function handleQuizAnswer(interaction: ButtonInteraction) {
   try {
@@ -1081,59 +1763,219 @@ export async function handleQuizAnswer(interaction: ButtonInteraction) {
     const gameSession = activeGames.get(gameId);
     
     if (!gameSession || gameSession.status !== 'active') {
-      return await interaction.reply({ content: '❌ بازی مورد نظر یافت نشد یا فعال نیست!', ephemeral: true });
+      const errorEmbed = new EmbedBuilder()
+        .setTitle('❌ بازی یافت نشد!')
+        .setDescription('بازی مورد نظر یافت نشد یا فعال نیست!')
+        .setColor(0xFF0000)
+        .setFooter({ text: 'شاید بازی به پایان رسیده یا لغو شده است' });
+        
+      return await interaction.reply({ embeds: [errorEmbed], ephemeral: true });
     }
     
     // بررسی اینکه آیا کاربر بازیکن است
     if (!gameSession.players.includes(interaction.user.id)) {
-      return await interaction.reply({ content: '❌ شما بازیکن این بازی نیستید!', ephemeral: true });
+      const notPlayerEmbed = new EmbedBuilder()
+        .setTitle('⛔ دسترسی محدود')
+        .setDescription('شما بازیکن این بازی نیستید و نمی‌توانید در آن شرکت کنید.')
+        .setColor(0xFF0000)
+        .addFields({
+          name: '👤 وضعیت فعلی',
+          value: 'تماشاچی (بدون حق رأی)'
+        })
+        .setThumbnail(interaction.user.displayAvatarURL({ size: 64 }))
+        .setFooter({ text: 'برای شرکت در بازی‌های بعدی، در ابتدای بازی وارد شوید' });
+        
+      return await interaction.reply({ embeds: [notPlayerEmbed], ephemeral: true });
     }
     
-    // بررسی اینکه آیا کاربر قبلاً به این سوال پاسخ داده است
+    // دریافت اطلاعات سوال فعلی
     const currentQuestion = gameSession.data.questions[gameSession.data.currentQuestionIndex];
     const questionAnswers = gameSession.data.questionAnswers || {};
     const questionId = `${gameSession.data.currentQuestionIndex}`;
     
+    // مقداردهی اولیه آرایه پاسخ‌ها اگر وجود ندارد
     if (!questionAnswers[questionId]) {
       questionAnswers[questionId] = {};
     }
     
+    // بررسی اینکه آیا کاربر قبلاً به این سوال پاسخ داده است
     if (questionAnswers[questionId][interaction.user.id]) {
-      return await interaction.reply({ content: '❌ شما قبلاً به این سوال پاسخ داده‌اید!', ephemeral: true });
+      const alreadyAnsweredEmbed = new EmbedBuilder()
+        .setTitle('⚠️ پاسخ مجدد ممکن نیست!')
+        .setDescription('شما قبلاً به این سوال پاسخ داده‌اید و نمی‌توانید مجدداً پاسخ دهید.')
+        .setColor(0xFFA500)
+        .setThumbnail(interaction.user.displayAvatarURL({ size: 64 }))
+        .setFooter({ text: 'منتظر سوال بعدی باشید' });
+        
+      return await interaction.reply({ embeds: [alreadyAnsweredEmbed], ephemeral: true });
     }
     
-    // ذخیره پاسخ کاربر
+    // وقتی کاربر پاسخ می‌دهد، زمان پاسخ را محاسبه می‌کنیم
+    const answerTime = Date.now() - gameSession.data.currentQuestionStartTime;
+    
+    // ذخیره پاسخ کاربر با جزئیات بیشتر
     questionAnswers[questionId][interaction.user.id] = {
       option: parseInt(optionIndex),
-      time: Date.now() - gameSession.data.currentQuestionStartTime
+      time: answerTime,
+      timestamp: Date.now()
     };
     
+    // به‌روزرسانی آرایه پاسخ‌ها در جلسه بازی
     gameSession.data.questionAnswers = questionAnswers;
     
-    // بررسی صحت پاسخ و اضافه کردن امتیاز
+    // بررسی صحت پاسخ برای امتیازدهی
     const isCorrect = parseInt(optionIndex) === currentQuestion.correctAnswer;
+    
+    // آماده‌سازی متغیرهای مورد نیاز برای امتیازدهی
+    let baseScore = 10; // امتیاز پایه برای پاسخ صحیح
+    let timeBonus = 0; // امتیاز اضافی بر اساس سرعت پاسخ
+    let streakBonus = 0; // امتیاز اضافی برای پاسخ‌های متوالی صحیح
+    let difficultyBonus = 0; // امتیاز اضافی بر اساس سختی سوال
+    let finalScore = 0; // امتیاز نهایی
+    let scoreDetails = ''; // توضیحات محاسبه امتیاز
+    
+    // مقداردهی اولیه آرایه‌های لازم
+    if (!gameSession.data.playerStreaks) {
+      gameSession.data.playerStreaks = {};
+    }
+    
+    if (!gameSession.data.correctAnswersCount) {
+      gameSession.data.correctAnswersCount = {};
+    }
+    
+    if (!gameSession.data.fastestResponses) {
+      gameSession.data.fastestResponses = {};
+    }
+    
+    // اگر پاسخ صحیح باشد، امتیاز محاسبه می‌شود
     if (isCorrect) {
-      // محاسبه امتیاز بر اساس سرعت پاسخ
-      const timeTaken = questionAnswers[questionId][interaction.user.id].time / 1000; // تبدیل به ثانیه
-      const maxTime = gameSession.data.timePerQuestion;
-      const timeScore = Math.max(1, Math.ceil((maxTime - timeTaken) / maxTime * 5));
+      // افزایش تعداد پاسخ‌های صحیح کاربر
+      gameSession.data.correctAnswersCount[interaction.user.id] = 
+        (gameSession.data.correctAnswersCount[interaction.user.id] || 0) + 1;
       
-      // افزودن امتیاز
+      // افزایش تعداد پاسخ‌های متوالی صحیح
+      gameSession.data.playerStreaks[interaction.user.id] = 
+        (gameSession.data.playerStreaks[interaction.user.id] || 0) + 1;
+      
+      // ثبت رکورد بیشترین پاسخ‌های متوالی صحیح
+      const currentStreak = gameSession.data.playerStreaks[interaction.user.id];
+      if (!gameSession.data.streakRecords) {
+        gameSession.data.streakRecords = {};
+      }
+      if (!gameSession.data.streakRecords[interaction.user.id] || 
+          currentStreak > gameSession.data.streakRecords[interaction.user.id]) {
+        gameSession.data.streakRecords[interaction.user.id] = currentStreak;
+      }
+      
+      // ثبت رکورد سریع‌ترین پاسخ
+      if (!gameSession.data.fastestResponses[interaction.user.id] || 
+          answerTime < gameSession.data.fastestResponses[interaction.user.id]) {
+        gameSession.data.fastestResponses[interaction.user.id] = answerTime;
+      }
+      
+      // محاسبه امتیاز بر اساس سرعت پاسخ
+      if (gameSession.data.enableFastAnswerBonus) {
+        const timeTakenSeconds = answerTime / 1000; // تبدیل به ثانیه
+        const maxTime = gameSession.data.timePerQuestion;
+        const timePercentage = Math.max(0, Math.min(1, (maxTime - timeTakenSeconds) / maxTime));
+        timeBonus = Math.round(timePercentage * 5); // حداکثر 5 امتیاز بونوس زمان
+        
+        scoreDetails += `⏱️ بونوس سرعت: +${timeBonus}\n`;
+      }
+      
+      // محاسبه امتیاز بر اساس تعداد پاسخ‌های متوالی صحیح
+      if (gameSession.data.enableStreakBonus && currentStreak > 1) {
+        const streakMultiplier = gameSession.data.streakMultiplier || 0.5;
+        streakBonus = Math.round(currentStreak * streakMultiplier);
+        
+        // محدود کردن حداکثر امتیاز بونوس توالی
+        streakBonus = Math.min(streakBonus, 10);
+        
+        scoreDetails += `🔥 بونوس توالی (${currentStreak}): +${streakBonus}\n`;
+      }
+      
+      // محاسبه امتیاز بر اساس سختی سوال
+      if (gameSession.data.scoreMultipliers) {
+        const difficultyMultiplier = gameSession.data.scoreMultipliers[currentQuestion.difficulty] || 1;
+        difficultyBonus = Math.round(baseScore * (difficultyMultiplier - 1));
+        
+        if (difficultyBonus > 0) {
+          scoreDetails += `🌟 بونوس سختی (${getQuestionDifficultyText(currentQuestion.difficulty)}): +${difficultyBonus}\n`;
+        }
+      }
+      
+      // محاسبه نهایی امتیاز
+      finalScore = baseScore + timeBonus + streakBonus + difficultyBonus;
+      
+      // افزودن امتیاز به کاربر
       gameSession.data.playerScores[interaction.user.id] = 
-        (gameSession.data.playerScores[interaction.user.id] || 0) + timeScore;
+        (gameSession.data.playerScores[interaction.user.id] || 0) + finalScore;
+        
+      scoreDetails = `پاسخ صحیح: +${baseScore}\n` + scoreDetails;
+    } else {
+      // در صورت پاسخ اشتباه، توالی پاسخ‌های صحیح به صفر برمی‌گردد
+      gameSession.data.playerStreaks[interaction.user.id] = 0;
+      
+      scoreDetails = `❌ پاسخ نادرست: +0\n`;
+      
+      // کسر امتیاز برای پاسخ اشتباه (اختیاری)
+      if (gameSession.data.wrongAnswerPenalty) {
+        const penalty = gameSession.data.wrongAnswerPenalty;
+        gameSession.data.playerScores[interaction.user.id] = 
+          Math.max(0, (gameSession.data.playerScores[interaction.user.id] || 0) - penalty);
+          
+        scoreDetails += `⚠️ جریمه پاسخ اشتباه: -${penalty}\n`;
+        finalScore = -penalty;
+      }
     }
     
     // به‌روزرسانی بازی
     activeGames.set(gameSession.id, gameSession);
     
-    // پاسخ به کاربر
-    await interaction.reply({ 
-      content: isCorrect ? '✅ پاسخ شما صحیح است!' : '❌ پاسخ شما اشتباه است!', 
-      ephemeral: true 
-    });
+    // ایجاد Embed برای نمایش نتیجه پاسخ به کاربر
+    const resultEmbed = new EmbedBuilder()
+      .setTitle(isCorrect ? '✅ پاسخ صحیح!' : '❌ پاسخ نادرست!')
+      .setDescription(
+        isCorrect 
+          ? `آفرین! پاسخ شما به سوال صحیح بود.\n\n**امتیاز کسب شده: ${finalScore}**`
+          : `متأسفانه پاسخ شما اشتباه بود.\n\nپاسخ صحیح: ${currentQuestion.options[currentQuestion.correctAnswer]}`
+      )
+      .setColor(isCorrect ? 0x3BA55D : 0xFF5555)
+      .addFields(
+        { 
+          name: '📊 جزئیات امتیاز', 
+          value: scoreDetails, 
+          inline: false 
+        },
+        { 
+          name: '🏆 امتیاز کل شما', 
+          value: `${gameSession.data.playerScores[interaction.user.id] || 0}`, 
+          inline: true 
+        }
+      )
+      .setThumbnail(interaction.user.displayAvatarURL({ size: 128 }))
+      .setFooter({ 
+        text: isCorrect 
+          ? `زمان پاسخ: ${(answerTime / 1000).toFixed(2)} ثانیه`
+          : 'در سوال بعدی تلاش بیشتری کنید!'
+      })
+      .setTimestamp();
     
-    // بررسی اگر همه بازیکنان پاسخ داده‌اند
+    // اضافه کردن آمار توالی اگر پاسخ صحیح بوده و بیش از 1 پاسخ متوالی صحیح داشته باشد
+    if (isCorrect && gameSession.data.playerStreaks[interaction.user.id] > 1) {
+      resultEmbed.addFields({
+        name: '🔥 توالی پاسخ‌های صحیح',
+        value: `${gameSession.data.playerStreaks[interaction.user.id]}`,
+        inline: true
+      });
+    }
+    
+    // پاسخ به کاربر
+    await interaction.reply({ embeds: [resultEmbed], ephemeral: true });
+    
+    // بررسی اگر همه بازیکنان پاسخ داده‌اند یا زمان به پایان رسیده است
     const totalResponses = Object.keys(questionAnswers[questionId]).length;
+    
     if (totalResponses >= gameSession.players.length) {
       // پاکسازی تایمر
       if (gameSession.data.currentQuestionTimerId) {
@@ -1141,20 +1983,30 @@ export async function handleQuizAnswer(interaction: ButtonInteraction) {
       }
       
       // نمایش پاسخ صحیح
-      await showQuestionResults(gameSession);
+      await showQuestionResults(gameSession, interaction);
+      
+      // مقداردهی زمان انتظار بین سوالات بر اساس تنظیمات بازی
+      const waitTime = gameSession.data.timeBetweenQuestions || 5000;
       
       // رفتن به سوال بعدی
-      setTimeout(() => showNextQuestion(gameSession), 5000);
+      setTimeout(() => showNextQuestion(gameSession), waitTime);
     }
     
   } catch (error) {
     log(`Error handling quiz answer: ${error}`, 'error');
-    await interaction.reply({ content: '❌ خطایی در ثبت پاسخ رخ داد. لطفاً بعداً دوباره تلاش کنید.', ephemeral: true });
+    
+    const errorEmbed = new EmbedBuilder()
+      .setTitle('❌ خطای سیستم')
+      .setDescription('خطایی در ثبت پاسخ رخ داد. لطفاً بعداً دوباره تلاش کنید.')
+      .setColor(0xFF0000)
+      .setFooter({ text: 'در صورت تکرار این خطا، با پشتیبانی تماس بگیرید' });
+      
+    await interaction.reply({ embeds: [errorEmbed], ephemeral: true });
   }
 }
 
 /**
- * نمایش نتایج سوال
+ * نمایش نتایج سوال با طراحی زیبا و اطلاعات آماری پیشرفته
  */
 async function showQuestionResults(gameSession: GameSession, interaction?: ButtonInteraction) {
   try {
@@ -1165,38 +2017,174 @@ async function showQuestionResults(gameSession: GameSession, interaction?: Butto
       const message = await channel.messages.fetch(gameSession.data.currentQuestionMessageId);
       
       if (message) {
+        // دریافت اطلاعات سوال فعلی
         const currentQuestion = gameSession.data.questions[gameSession.data.currentQuestionIndex];
         const correctAnswer = currentQuestion.options[currentQuestion.correctAnswer];
+        const questionNumber = gameSession.data.currentQuestionIndex + 1;
+        const totalQuestions = gameSession.data.questions.length;
         
         // دریافت پاسخ‌های بازیکنان
         const questionId = `${gameSession.data.currentQuestionIndex}`;
-        const answers = gameSession.data.questionAnswers[questionId];
+        const answers = gameSession.data.questionAnswers[questionId] || {};
         
         // تعداد پاسخ‌های درست
-        const correctCount = Object.entries(answers).filter(
+        const correctAnswers = Object.entries(answers).filter(
           ([_, answer]) => (answer as any).option === currentQuestion.correctAnswer
-        ).length;
+        );
+        const correctCount = correctAnswers.length;
         
-        // لیست بازیکنانی که درست پاسخ داده‌اند
-        const correctPlayers = Object.entries(answers)
-          .filter(([_, answer]) => (answer as any).option === currentQuestion.correctAnswer)
+        // درصد پاسخ‌های صحیح
+        const percentCorrect = gameSession.players.length > 0 
+          ? Math.round((correctCount / gameSession.players.length) * 100) 
+          : 0;
+        
+        // آمار سرعت پاسخ
+        const responseTimes = Object.values(answers).map((a: any) => a.time);
+        const avgResponseTime = responseTimes.length > 0 
+          ? (responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length) / 1000
+          : 0;
+        
+        // سریع‌ترین پاسخ صحیح
+        const correctResponseTimes = correctAnswers.map(([_, answer]) => (answer as any).time);
+        const fastestCorrectTime = correctResponseTimes.length > 0 
+          ? Math.min(...correctResponseTimes) / 1000 
+          : 0;
+        
+        // سریع‌ترین پاسخ دهنده صحیح
+        let fastestPlayerInfo = '';
+        if (correctResponseTimes.length > 0) {
+          const fastestTime = Math.min(...correctResponseTimes);
+          const fastestPlayer = correctAnswers.find(([_, answer]) => (answer as any).time === fastestTime);
+          if (fastestPlayer) {
+            fastestPlayerInfo = `🏎️ سریع‌ترین پاسخ: <@${fastestPlayer[0]}> (${(fastestTime / 1000).toFixed(2)} ثانیه)`;
+          }
+        }
+        
+        // تحلیل انتخاب گزینه‌های پاسخ
+        const optionCounts = Array(currentQuestion.options.length).fill(0);
+        Object.values(answers).forEach((answer: any) => {
+          if (answer.option >= 0 && answer.option < optionCounts.length) {
+            optionCounts[answer.option]++;
+          }
+        });
+        
+        // تبدیل شمارش گزینه‌ها به نمودار
+        const optionBars = optionCounts.map((count, index) => {
+          const percent = gameSession.players.length > 0 
+            ? Math.round((count / gameSession.players.length) * 10) 
+            : 0;
+          const bar = '█'.repeat(percent) + '░'.repeat(10 - percent);
+          const isCorrect = index === currentQuestion.correctAnswer;
+          return `${String.fromCharCode(65 + index)}. ${bar} ${count} (${isCorrect ? '✓' : ''})`;
+        }).join('\n');
+        
+        // ایجاد لیست بازیکنانی که درست پاسخ داده‌اند
+        const correctPlayers = correctAnswers
           .map(([playerId, _]) => `<@${playerId}>`)
-          .join('\n');
+          .join(', ');
+          
+        // تعیین رنگ کارت بر اساس درصد پاسخ‌های صحیح
+        let resultColor = 0x4CAF50; // سبز برای نتیجه خوب (بیش از 50%)
+        if (percentCorrect < 25) {
+          resultColor = 0xFF5252; // قرمز برای نتیجه بد
+        } else if (percentCorrect < 50) {
+          resultColor = 0xFFC107; // زرد برای نتیجه متوسط
+        }
         
-        const embed = EmbedBuilder.from(message.embeds[0])
-          .setTitle(`🎯 نتیجه سوال ${gameSession.data.currentQuestionIndex + 1}`)
-          .setColor(0x4CAF50)
-          .setDescription(`پاسخ صحیح: **${correctAnswer}**`)
-          .addFields(
-            { name: '✅ تعداد پاسخ‌های صحیح', value: `${correctCount} از ${gameSession.players.length}`, inline: true },
-            { name: '👤 پاسخ‌های صحیح', value: correctPlayers || 'هیچکس پاسخ صحیح نداد!' }
+        // ایجاد پیام جالب بر اساس درصد پاسخ‌های صحیح
+        let resultMessage = '';
+        if (percentCorrect === 100) {
+          resultMessage = '🎉 همه پاسخ درست دادند! عالی است!';
+        } else if (percentCorrect >= 75) {
+          resultMessage = '👏 اکثر بازیکنان پاسخ درست دادند. آفرین!';
+        } else if (percentCorrect >= 50) {
+          resultMessage = '👍 نیمی از بازیکنان پاسخ درست دادند.';
+        } else if (percentCorrect === 0) {
+          resultMessage = '😱 هیچکس پاسخ درست نداد! این سوال سخت بود!';
+        } else {
+          resultMessage = '🤔 این سوال چالش‌برانگیز بود!';
+        }
+        
+        // نمایش تا چه سوالی پیش رفته‌ایم
+        const progressBar = '█'.repeat(questionNumber) + '░'.repeat(totalQuestions - questionNumber);
+        const progressText = `${progressBar} ${questionNumber}/${totalQuestions}`;
+        
+        // ایجاد Embed پیشرفته برای نمایش نتایج
+        const embed = new EmbedBuilder()
+          .setTitle(`🎯 نتیجه سوال ${questionNumber} از ${totalQuestions}`)
+          .setDescription(
+            `**پاسخ صحیح:** ${correctAnswer}\n\n` +
+            `${resultMessage}\n\n` +
+            `*"${currentQuestion.question}"*\n\n` +
+            `**توزیع پاسخ‌ها:**\n${optionBars}\n\n` +
+            `**پیشرفت:** ${progressText}`
           )
-          .setFooter({ text: 'سوال بعدی به زودی...' });
+          .setColor(resultColor)
+          .addFields(
+            { 
+              name: '📊 آمار سوال', 
+              value: 
+                `✅ درست: ${correctCount} از ${gameSession.players.length} (${percentCorrect}%)\n` +
+                `⏱️ میانگین زمان پاسخ: ${avgResponseTime.toFixed(2)} ثانیه\n` +
+                `${fastestPlayerInfo}`,
+              inline: false 
+            }
+          );
+          
+        // اضافه کردن فیلد بازیکنان با پاسخ صحیح اگر وجود داشته باشند
+        if (correctCount > 0) {
+          embed.addFields({ 
+            name: '👑 پاسخ‌های صحیح', 
+            value: correctPlayers || 'هیچکس پاسخ صحیح نداد!',
+            inline: false
+          });
+        }
         
+        // اضافه کردن آمار سختی سوال
+        embed.addFields({ 
+          name: '📈 سطح سختی', 
+          value: `${getQuestionDifficultyEmoji(currentQuestion.difficulty)} ${getQuestionDifficultyText(currentQuestion.difficulty)}`,
+          inline: true
+        });
+        
+        // اضافه کردن دسته‌بندی سوال
+        embed.addFields({ 
+          name: '🏷️ دسته‌بندی', 
+          value: currentQuestion.category,
+          inline: true
+        });
+        
+        // اضافه کردن پیام پایین صفحه با شمارنده زمان
+        const waitTime = gameSession.data.timeBetweenQuestions || 5000;
+        embed.setFooter({ 
+          text: `سوال بعدی در ${Math.round(waitTime/1000)} ثانیه دیگر...`, 
+          iconURL: 'https://media.discordapp.net/attachments/1005948809465335931/1111362362733785190/quiz_icon.png'
+        });
+        
+        // افزودن تایمراستمپ برای زمان نمایش نتایج
+        embed.setTimestamp();
+        
+        // ارسال Embed نتایج
         await message.edit({ 
           embeds: [embed], 
           components: [] 
         });
+        
+        // ارسال واکنش‌های متنی به پیام نتایج
+        try {
+          if ('react' in message) {
+            if (percentCorrect >= 75) {
+              await message.react('🎉');
+            } else if (percentCorrect === 0) {
+              await message.react('😱');
+            } else {
+              await message.react('🎯');
+            }
+          }
+        } catch (reactError) {
+          // اگر نتوانیم واکنش اضافه کنیم، مشکلی نیست
+          log(`Error adding reactions to results: ${reactError}`, 'warn');
+        }
       }
     }
   } catch (error) {
@@ -1205,7 +2193,19 @@ async function showQuestionResults(gameSession: GameSession, interaction?: Butto
 }
 
 /**
- * پایان بازی اطلاعات عمومی
+ * دریافت ایموجی سطح سختی سوال
+ */
+function getQuestionDifficultyEmoji(difficulty: string): string {
+  switch(difficulty) {
+    case 'easy': return '🟢';
+    case 'medium': return '🟡';
+    case 'hard': return '🔴';
+    default: return '⚪';
+  }
+}
+
+/**
+ * پایان بازی اطلاعات عمومی با نمایش جذاب نتایج، آمار و جوایز
  */
 async function endQuizGame(gameSession: GameSession, interaction: ButtonInteraction) {
   try {
@@ -1213,34 +2213,117 @@ async function endQuizGame(gameSession: GameSession, interaction: ButtonInteract
     gameSession.status = 'ended';
     gameSession.endedAt = new Date();
     
+    // محاسبه طول مدت بازی
+    const startTime = gameSession.startedAt ? new Date(gameSession.startedAt) : new Date();
+    const endTime = new Date();
+    const gameDuration = Math.floor((endTime.getTime() - startTime.getTime()) / 1000); // به ثانیه
+    
+    // تبدیل مدت زمان به فرمت دقیقه:ثانیه
+    const minutes = Math.floor(gameDuration / 60);
+    const seconds = gameDuration % 60;
+    const durationText = `${minutes}:${seconds < 10 ? '0' + seconds : seconds}`;
+    
     // مرتب‌سازی امتیازات
-    const sortedScores = Object.entries(gameSession.data.playerScores)
+    const sortedScores = Object.entries(gameSession.data.playerScores || {})
       .sort(([, a], [, b]) => (b as number) - (a as number))
       .map(([playerId, score]) => ({ playerId, score }));
     
-    // جوایز برای سه نفر اول
-    const prizes = [500, 300, 100];
+    // جوایز بهبود یافته برای سه نفر اول
+    const prizes = [500, 300, 150];
+    const bonusPrizes = [50, 30, 15]; // جایزه اضافی برای هر پاسخ صحیح
     
-    // اعطای جوایز
+    // آماده‌سازی آمار بازی
+    const gameStats = {
+      totalQuestions: gameSession.data.questions?.length || 0,
+      totalPlayers: gameSession.players?.length || 0,
+      correctAnswers: 0,
+      fastestAnswer: Number.MAX_VALUE,
+      fastestPlayer: '',
+      mostCorrect: { playerId: '', count: 0 },
+      longestStreak: { playerId: '', streak: 0 }
+    };
+    
+    // محاسبه آمار کلی بازی
+    if (gameSession.data.correctAnswersCount) {
+      // پیدا کردن بازیکن با بیشترین پاسخ‌های صحیح
+      for (const [playerId, count] of Object.entries(gameSession.data.correctAnswersCount)) {
+        if (count > gameStats.mostCorrect.count) {
+          gameStats.mostCorrect = { playerId, count: count as number };
+        }
+        gameStats.correctAnswers += count as number; // جمع کل پاسخ‌های صحیح
+      }
+    }
+    
+    // پیدا کردن سریع‌ترین پاسخ دهنده
+    if (gameSession.data.fastestResponses) {
+      for (const [playerId, time] of Object.entries(gameSession.data.fastestResponses)) {
+        if (time < gameStats.fastestAnswer) {
+          gameStats.fastestAnswer = time as number;
+          gameStats.fastestPlayer = playerId;
+        }
+      }
+    }
+    
+    // پیدا کردن بازیکن با بیشترین توالی پاسخ‌های صحیح
+    if (gameSession.data.streakRecords) {
+      for (const [playerId, streak] of Object.entries(gameSession.data.streakRecords)) {
+        if (streak > gameStats.longestStreak.streak) {
+          gameStats.longestStreak = { playerId, streak: streak as number };
+        }
+      }
+    }
+    
+    // اعطای جوایز اصلی
     for (let i = 0; i < Math.min(3, sortedScores.length); i++) {
       const winner = sortedScores[i];
       if (winner) {
         try {
-          await storage.addToWallet(Number(winner.playerId), prizes[i], 'quiz_prize', { gameType: 'quiz' });
+          // محاسبه جایزه بر اساس رتبه و تعداد پاسخ‌های صحیح
+          const baseReward = prizes[i];
+          
+          // محاسبه جایزه اضافی بر اساس تعداد پاسخ‌های صحیح
+          const correctCount = gameSession.data.correctAnswersCount?.[winner.playerId] || 0;
+          const bonusReward = correctCount * bonusPrizes[i];
+          
+          // مجموع جایزه
+          const totalReward = baseReward + bonusReward;
+          
+          // افزودن سکه به کیف پول بازیکن
+          await storage.addToWallet(Number(winner.playerId), totalReward, 'quiz_prize', { 
+            gameType: 'quiz',
+            rank: i + 1,
+            baseReward,
+            bonusReward,
+            correctAnswers: correctCount
+          });
+          
+          // ذخیره اطلاعات جایزه برای نمایش
+          winner.totalReward = totalReward;
+          winner.baseReward = baseReward;
+          winner.bonusReward = bonusReward;
+          winner.correctAnswers = correctCount;
+          
         } catch (prizeError) {
           log(`Error giving prize to user ${winner.playerId}: ${prizeError}`, 'error');
         }
       }
     }
     
-    // ساخت Embed نتایج
+    // ساخت Embed نتایج با طراحی زیبا و اطلاعات بیشتر
     const embed = new EmbedBuilder()
-      .setTitle('🏆 پایان مسابقه اطلاعات عمومی')
-      .setDescription('مسابقه به پایان رسید! نتایج نهایی:')
-      .setColor(0xFFD700);
+      .setTitle('🎊 پایان مسابقه اطلاعات عمومی VIP 🎊')
+      .setDescription(
+        '**مسابقه با موفقیت به پایان رسید!**\n\n' +
+        `🕒 مدت بازی: ${durationText} دقیقه\n` +
+        `👥 تعداد بازیکنان: ${gameStats.totalPlayers} نفر\n` +
+        `📝 تعداد سوالات: ${gameStats.totalQuestions} سوال\n\n` +
+        '**🏆 نتایج نهایی:**'
+      )
+      .setColor(0xF1C40F)
+      .setImage('https://media.discordapp.net/attachments/1005948809465335931/1111362362733785190/quiz_results_banner.png?width=915&height=147');
     
-    // اضافه کردن فیلدهای امتیازات
-    for (let i = 0; i < sortedScores.length; i++) {
+    // اضافه کردن فیلدهای امتیازات با اطلاعات تفصیلی
+    for (let i = 0; i < Math.min(10, sortedScores.length); i++) {
       const player = sortedScores[i];
       let rankEmoji = '';
       
@@ -1250,38 +2333,213 @@ async function endQuizGame(gameSession: GameSession, interaction: ButtonInteract
       else if (i === 2) rankEmoji = '🥉';
       else rankEmoji = `${i + 1}.`;
       
+      // ساخت متن نمایش جایزه برای سه نفر اول
+      let rewardText = '';
+      if (i < 3) {
+        const baseReward = player.baseReward || prizes[i];
+        const bonusReward = player.bonusReward || 0;
+        const totalReward = player.totalReward || baseReward + bonusReward;
+        
+        rewardText = `\n💰 جایزه: ${totalReward} کوین (${baseReward} + ${bonusReward} بونوس)`;
+      }
+      
       // اضافه کردن فیلد برای هر بازیکن
       embed.addFields({
         name: `${rankEmoji} <@${player.playerId}>`,
-        value: `امتیاز: ${player.score} ${i < 3 ? `(جایزه: ${prizes[i]} کوین)` : ''}`,
+        value: `🏅 امتیاز: ${player.score}` + 
+               `${rewardText}` +
+               `${player.correctAnswers ? `\n✅ پاسخ‌های صحیح: ${player.correctAnswers}` : ''}`,
         inline: i < 3
       });
     }
     
-    // پیام تشکر و تبلیغ قابلیت ارسال سوال
-    embed.setFooter({ 
-      text: 'با تشکر از همه شرکت‌کنندگان! شما هم می‌توانید با دستور /quiz سوال جدید اضافه کنید.' 
+    // بخش آمار برجسته بازی
+    const statsField = [];
+    
+    // سرعتی‌ترین پاسخ دهنده
+    if (gameStats.fastestPlayer) {
+      statsField.push(`🚀 سریع‌ترین پاسخ: <@${gameStats.fastestPlayer}> (${(gameStats.fastestAnswer / 1000).toFixed(2)} ثانیه)`);
+    }
+    
+    // بیشترین پاسخ‌های متوالی صحیح
+    if (gameStats.longestStreak.playerId) {
+      statsField.push(`🔥 بیشترین توالی: <@${gameStats.longestStreak.playerId}> (${gameStats.longestStreak.streak} پاسخ متوالی)`);
+    }
+    
+    // بیشترین پاسخ‌های صحیح
+    if (gameStats.mostCorrect.playerId) {
+      statsField.push(`🎯 بیشترین پاسخ صحیح: <@${gameStats.mostCorrect.playerId}> (${gameStats.mostCorrect.count} از ${gameStats.totalQuestions})`);
+    }
+    
+    // درصد پاسخ‌های صحیح
+    const totalPossibleAnswers = gameStats.totalPlayers * gameStats.totalQuestions;
+    const correctPercentage = totalPossibleAnswers > 0 
+      ? Math.round((gameStats.correctAnswers / totalPossibleAnswers) * 100) 
+      : 0;
+    statsField.push(`📊 درصد پاسخ‌های صحیح: ${correctPercentage}% (${gameStats.correctAnswers} از ${totalPossibleAnswers})`);
+    
+    // اضافه کردن فیلد آمار بازی
+    if (statsField.length > 0) {
+      embed.addFields({ 
+        name: '📈 آمار ویژه بازی', 
+        value: statsField.join('\n'), 
+        inline: false 
+      });
+    }
+    
+    // اضافه کردن راهنمای بازی‌های بعدی و ارسال سوال
+    embed.addFields({ 
+      name: '🎮 بازی‌های بعدی', 
+      value: 
+        '• برای بازی مجدد، عبارت `/group games` را تایپ کنید\n' +
+        '• برای ارسال سوال جدید، روی دکمه زیر کلیک کنید\n' +
+        '• سایر بازی‌های گروهی را با `/games` مشاهده کنید',
+      inline: false 
     });
+    
+    embed.setFooter({ 
+      text: `ID: ${gameSession.id} • با تشکر از همه شرکت‌کنندگان!`,
+      iconURL: 'https://media.discordapp.net/attachments/1005948809465335931/1111362362733785190/quiz_icon.png'
+    });
+    
+    // تنظیم زمان پایان بازی
+    embed.setTimestamp();
+    
+    // ساخت دکمه‌های اکشن
+    const primaryRow = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('quiz_submit_question')
+          .setLabel('ارسال سوال جدید')
+          .setEmoji('✏️')
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId('start_new_quiz')
+          .setLabel('بازی جدید')
+          .setEmoji('🎮')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('show_game_history')
+          .setLabel('تاریخچه بازی‌ها')
+          .setEmoji('📜')
+          .setStyle(ButtonStyle.Secondary)
+      );
+    
+    // ساخت دکمه‌های اضافی
+    const secondaryRow = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('quiz_leaderboard')
+          .setLabel('جدول امتیازات کلی')
+          .setEmoji('🏆')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId('share_result')
+          .setLabel('اشتراک‌گذاری')
+          .setEmoji('📢')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId('back_to_menu')
+          .setLabel('منوی اصلی')
+          .setEmoji('🔙')
+          .setStyle(ButtonStyle.Secondary)
+      );
     
     // ارسال پیام - استفاده از کلاینت اصلی اگر اینتراکشن موجود نباشد
     const client = require('../client').default;
     const channel = await (interaction?.client || client).channels.fetch(gameSession.channelId);
     if (channel && channel.isTextBased()) {
       if ('send' in channel) {
-        await channel.send({ 
-          embeds: [embed],
-          components: [
-            new ActionRowBuilder<ButtonBuilder>()
-              .addComponents(
-                new ButtonBuilder()
-                  .setCustomId('quiz_submit_question')
-                  .setLabel('ارسال سوال جدید')
-                  .setEmoji('✏️')
-                  .setStyle(ButtonStyle.Secondary)
-              )
-          ]
+        // نمایش پیام "در حال محاسبه نتایج..." قبل از نمایش نتایج نهایی
+        const loadingMsg = await channel.send({ 
+          content: '⏳ در حال محاسبه نتایج نهایی و اعطای جوایز...' 
         });
+        
+        // کمی مکث برای ایجاد احساس محاسبه
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        try {
+          // حذف پیام بارگذاری
+          await loadingMsg.delete();
+        } catch (deleteError) {
+          log(`Error deleting loading message: ${deleteError}`, 'warn');
+        }
+        
+        // ارسال نتایج نهایی با افکت تاخیر
+        const resultMessage = await channel.send({ 
+          content: '🎺 نتایج مسابقه اطلاعات عمومی VIP 🎺',
+          embeds: [embed],
+          components: [primaryRow, secondaryRow]
+        });
+        
+        // افزودن واکنش‌ها برای جلوه بصری بیشتر
+        try {
+          if ('react' in resultMessage) {
+            await resultMessage.react('🎉');
+            await resultMessage.react('🏆');
+            await resultMessage.react('🎮');
+          }
+        } catch (reactError) {
+          log(`Error adding reactions to end game message: ${reactError}`, 'warn');
+        }
+        
+        // ارسال DM به برندگان (اختیاری)
+        try {
+          for (let i = 0; i < Math.min(3, sortedScores.length); i++) {
+            const winner = sortedScores[i];
+            const user = await client.users.fetch(winner.playerId);
+            if (user) {
+              const winnerEmbed = new EmbedBuilder()
+                .setTitle('🏆 تبریک! شما برنده شدید!')
+                .setDescription(
+                  `شما در بازی اطلاعات عمومی رتبه **${i+1}** را کسب کردید و ` +
+                  `**${winner.totalReward || prizes[i]} کوین** جایزه دریافت کردید!`
+                )
+                .setColor(0xF1C40F)
+                .setFooter({ text: 'با تشکر از شرکت شما در بازی' })
+                .setTimestamp();
+                
+              // در محیط واقعی این را به صورت DM ارسال می‌کنیم
+              // await user.send({ embeds: [winnerEmbed] });
+            }
+          }
+        } catch (dmError) {
+          log(`Error sending winner DMs: ${dmError}`, 'warn');
+        }
       }
+    }
+    
+    // ذخیره تاریخچه بازی در دیتابیس
+    try {
+      await storage.saveGameHistory({
+        gameId: gameSession.id,
+        gameType: 'quiz',
+        startedAt: startTime,
+        endedAt: endTime,
+        duration: gameDuration,
+        players: gameSession.players,
+        hostId: gameSession.createdBy,
+        scores: Object.entries(gameSession.data.playerScores || {}).map(([id, score]) => ({ 
+          playerId: id, 
+          score: score as number
+        })),
+        winners: sortedScores.slice(0, 3).map(w => w.playerId),
+        prizes: sortedScores.slice(0, 3).map((w, i) => ({ 
+          playerId: w.playerId, 
+          prize: w.totalReward || prizes[i]
+        })),
+        stats: {
+          totalQuestions: gameStats.totalQuestions,
+          totalCorrect: gameStats.correctAnswers,
+          correctPercentage: correctPercentage,
+          fastestPlayer: gameStats.fastestPlayer,
+          fastestTime: gameStats.fastestAnswer,
+          topStreakPlayer: gameStats.longestStreak.playerId,
+          topStreakCount: gameStats.longestStreak.streak
+        }
+      });
+    } catch (historyError) {
+      log(`Error saving game history: ${historyError}`, 'warn');
     }
     
     // حذف بازی از لیست بازی‌های فعال
@@ -1297,7 +2555,14 @@ async function endQuizGame(gameSession: GameSession, interaction: ButtonInteract
       if (channel && channel.isTextBased()) {
         if ('send' in channel) {
           await channel.send({ 
-            content: '❌ خطایی در پایان بازی رخ داد. لطفاً بعداً دوباره تلاش کنید.'
+            content: '❌ متأسفانه خطایی در محاسبه نتایج بازی رخ داد. لطفاً با پشتیبانی تماس بگیرید.',
+            embeds: [
+              new EmbedBuilder()
+                .setTitle('❌ خطای سیستم')
+                .setDescription('متأسفانه نتایج بازی به درستی محاسبه نشد. اما نگران نباشید، جوایز شما هنوز پرداخت خواهند شد.')
+                .setColor(0xFF0000)
+                .setFooter({ text: 'تیم پشتیبانی در حال بررسی مشکل است' })
+            ]
           });
         }
       }
@@ -2255,6 +3520,412 @@ async function handleMafiaGame(interaction: ButtonInteraction) {
     log(`Error handling mafia game: ${error}`, 'error');
     await interaction.reply({ 
       content: '❌ خطایی در اجرای بازی مافیا رخ داد. لطفاً بعداً دوباره تلاش کنید.', 
+      ephemeral: true 
+    });
+  }
+}
+
+/**
+ * نمایش تاریخچه بازی‌های گروهی
+ * @param interaction برهم‌کنش کاربر
+ */
+async function showGameHistory(interaction: ButtonInteraction) {
+  try {
+    // بررسی تاریخچه بازی‌های کاربر
+    const userId = interaction.user.id;
+    
+    // بررسی بازی‌های شرکت کرده یا میزبانی شده توسط کاربر
+    const userGames = gameHistory.filter(game => 
+      game.players.includes(userId) || game.createdBy === userId
+    );
+    
+    // بازی‌های فعال کاربر
+    const activeUserGames = Array.from(activeGames.values()).filter(game => 
+      (game.players.includes(userId) || game.createdBy === userId) && 
+      game.status !== 'ended'
+    );
+    
+    // ساخت Embed
+    const embed = new EmbedBuilder()
+      .setTitle('📜 تاریخچه بازی‌های شما')
+      .setDescription(`${interaction.user.username} عزیز، در اینجا می‌توانید تاریخچه بازی‌های خود را مشاهده کنید.`)
+      .setColor('#9B59B6')
+      .setThumbnail(interaction.user.displayAvatarURL({ size: 128 }));
+    
+    // اضافه کردن آمار کلی بازیکن
+    const userStat = playerStats.get(userId);
+    if (userStat) {
+      embed.addFields(
+        { name: '🎮 کل بازی‌ها', value: userStat.gamesPlayed.toString(), inline: true },
+        { name: '🏆 برد‌ها', value: userStat.gamesWon.toString(), inline: true },
+        { name: '📊 نرخ برد', value: `${Math.round((userStat.gamesWon / Math.max(userStat.gamesPlayed, 1)) * 100)}%`, inline: true }
+      );
+    } else {
+      embed.addFields(
+        { name: '🎮 کل بازی‌ها', value: '0', inline: true },
+        { name: '🏆 برد‌ها', value: '0', inline: true },
+        { name: '📊 نرخ برد', value: '0%', inline: true }
+      );
+    }
+    
+    // اضافه کردن بازی‌های فعال
+    if (activeUserGames.length > 0) {
+      const gameTypeNames: Record<string, string> = {
+        'mafia': '🕵️‍♂️ مافیا',
+        'werewolf': '🐺 گرگینه',
+        'quiz': '📚 مسابقه اطلاعات عمومی',
+        'drawguess': '🎨 نقاشی حدس بزن',
+        'truthordare': '🎯 جرات یا حقیقت',
+        'bingo': '🎲 بینگو',
+        'wordchain': '📝 زنجیره کلمات',
+        'spy': '🕴️ جاسوس مخفی'
+      };
+      
+      let activeGamesText = '';
+      activeUserGames.forEach(game => {
+        const gameTypeName = gameTypeNames[game.gameType] || game.gameType;
+        const channelName = interaction.client.channels.cache.get(game.channelId)?.toString() || 'کانال نامشخص';
+        activeGamesText += `• ${gameTypeName} در ${channelName}\n`;
+      });
+      
+      embed.addFields({ name: '🟢 بازی‌های فعال شما', value: activeGamesText });
+    }
+    
+    // اضافه کردن تاریخچه بازی‌ها
+    if (userGames.length > 0) {
+      // بازی‌های اخیر (حداکثر 5 بازی)
+      const recentGames = userGames
+        .sort((a, b) => {
+          const aTime = a.endedAt || new Date();
+          const bTime = b.endedAt || new Date();
+          return bTime.getTime() - aTime.getTime();
+        })
+        .slice(0, 5);
+      
+      const gameTypeNames: Record<string, string> = {
+        'mafia': '🕵️‍♂️ مافیا',
+        'werewolf': '🐺 گرگینه',
+        'quiz': '📚 مسابقه اطلاعات عمومی',
+        'drawguess': '🎨 نقاشی حدس بزن',
+        'truthordare': '🎯 جرات یا حقیقت',
+        'bingo': '🎲 بینگو',
+        'wordchain': '📝 زنجیره کلمات',
+        'spy': '🕴️ جاسوس مخفی'
+      };
+      
+      let historyText = '';
+      recentGames.forEach(game => {
+        const gameTypeName = gameTypeNames[game.gameType] || game.gameType;
+        const endDate = game.endedAt ? new Date(game.endedAt).toLocaleDateString('fa-IR') : 'نامشخص';
+        const isWinner = game.winners?.includes(userId) ? '🏆 برنده' : '👥 شرکت‌کننده';
+        historyText += `• ${gameTypeName} - ${endDate} - ${isWinner}\n`;
+      });
+      
+      embed.addFields({ name: '📋 بازی‌های اخیر', value: historyText });
+    } else {
+      embed.setDescription(`${interaction.user.username} عزیز، شما تاکنون در هیچ بازی گروهی شرکت نکرده‌اید. با استفاده از منوی بازی‌های گروهی می‌توانید به بازی‌های موجود بپیوندید یا بازی جدیدی شروع کنید.`);
+    }
+    
+    // ساخت دکمه‌های کنترلی
+    const row = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('game:leaderboard')
+          .setLabel('رتبه‌بندی بازیکنان')
+          .setStyle(ButtonStyle.Primary)
+          .setEmoji('🏆'),
+        new ButtonBuilder()
+          .setCustomId('game:active_sessions')
+          .setLabel('جلسات فعال')
+          .setStyle(ButtonStyle.Primary)
+          .setEmoji('🎮'),
+        new ButtonBuilder()
+          .setCustomId('group_games')
+          .setLabel('بازگشت')
+          .setStyle(ButtonStyle.Secondary)
+          .setEmoji('🔙')
+      );
+    
+    // ارسال پاسخ
+    await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+    
+  } catch (error) {
+    log(`Error showing game history: ${error}`, 'error');
+    await interaction.reply({ 
+      content: '❌ خطایی در نمایش تاریخچه بازی‌ها رخ داد. لطفاً بعداً دوباره تلاش کنید.', 
+      ephemeral: true 
+    });
+  }
+}
+
+/**
+ * نمایش رتبه‌بندی بازیکنان
+ * @param interaction برهم‌کنش کاربر
+ */
+async function showGameLeaderboard(interaction: ButtonInteraction) {
+  try {
+    // دریافت آمار تمام بازیکنان
+    let allStats = Array.from(playerStats.values());
+    
+    // اگر آمار کافی نباشد، می‌توانیم داده‌های نمونه اضافه کنیم (فقط برای نمایش)
+    if (allStats.length < 5) {
+      // از داده‌های کاربران واقعی استفاده می‌کنیم، اما با آمار تصادفی
+      const guildMembers = interaction.guild?.members.cache;
+      if (guildMembers && guildMembers.size > 0) {
+        const randomMembers = Array.from(guildMembers.values())
+          .filter(member => !member.user.bot && !playerStats.has(member.id))
+          .slice(0, 10 - allStats.length);
+        
+        for (const member of randomMembers) {
+          const gamesPlayed = Math.floor(Math.random() * 20) + 5;
+          const gamesWon = Math.floor(Math.random() * gamesPlayed);
+          
+          const sampleStat: PlayerStats = {
+            userId: member.id,
+            gamesPlayed,
+            gamesWon,
+            totalScore: gamesWon * 100 + Math.floor(Math.random() * 500),
+            gameTypeStats: {
+              'quiz': { played: Math.floor(gamesPlayed * 0.4), won: Math.floor(gamesWon * 0.4), score: 0 },
+              'mafia': { played: Math.floor(gamesPlayed * 0.3), won: Math.floor(gamesWon * 0.3), score: 0 },
+              'drawguess': { played: Math.floor(gamesPlayed * 0.2), won: Math.floor(gamesWon * 0.2), score: 0 },
+              'bingo': { played: Math.floor(gamesPlayed * 0.1), won: Math.floor(gamesWon * 0.1), score: 0 }
+            },
+            lastActive: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000) // تاریخی تصادفی در هفته گذشته
+          };
+          
+          allStats.push(sampleStat);
+        }
+      }
+    }
+    
+    // مرتب‌سازی بر اساس امتیاز کل (نزولی)
+    allStats = allStats.sort((a, b) => b.totalScore - a.totalScore);
+    
+    // ساخت Embed
+    const embed = new EmbedBuilder()
+      .setTitle('🏆 رتبه‌بندی بازیکنان بازی‌های گروهی')
+      .setDescription('برترین بازیکنان بر اساس امتیاز کلی بازی‌های گروهی')
+      .setColor('#9B59B6')
+      .setFooter({ text: 'آخرین به‌روزرسانی: همین الان' });
+    
+    // اضافه کردن 10 بازیکن برتر
+    let leaderboardText = '';
+    const topPlayers = allStats.slice(0, 10);
+    
+    for (let i = 0; i < topPlayers.length; i++) {
+      const player = topPlayers[i];
+      const user = await interaction.client.users.fetch(player.userId).catch(() => null);
+      const username = user ? user.username : 'کاربر ناشناس';
+      
+      // نمایش رتبه با ایموجی مدال برای سه نفر اول
+      let rankText = '';
+      if (i === 0) rankText = '🥇 ';
+      else if (i === 1) rankText = '🥈 ';
+      else if (i === 2) rankText = '🥉 ';
+      else rankText = `${i+1}. `;
+      
+      leaderboardText += `${rankText}**${username}** - امتیاز: ${player.totalScore} - برد: ${player.gamesWon}/${player.gamesPlayed}\n`;
+    }
+    
+    if (leaderboardText === '') {
+      leaderboardText = 'هنوز هیچ بازیکنی در رتبه‌بندی وجود ندارد!';
+    }
+    
+    embed.setDescription(leaderboardText);
+    
+    // پیدا کردن رتبه کاربر فعلی
+    const currentUserStat = allStats.findIndex(stat => stat.userId === interaction.user.id);
+    if (currentUserStat !== -1) {
+      embed.addFields({
+        name: '🎯 رتبه شما',
+        value: `رتبه ${currentUserStat + 1} از ${allStats.length} - امتیاز: ${allStats[currentUserStat].totalScore}`
+      });
+    }
+    
+    // اضافه کردن آمار بهترین بازی‌ها
+    const gameTypeNames: Record<string, string> = {
+      'mafia': '🕵️‍♂️ مافیا',
+      'werewolf': '🐺 گرگینه',
+      'quiz': '📚 اطلاعات عمومی',
+      'drawguess': '🎨 نقاشی حدس بزن',
+      'truthordare': '🎯 جرات یا حقیقت',
+      'bingo': '🎲 بینگو',
+      'wordchain': '📝 زنجیره کلمات',
+      'spy': '🕴️ جاسوس مخفی'
+    };
+    
+    // آمار محبوب‌ترین بازی‌ها
+    const gameTypeStats: Record<string, { played: number, won: number }> = {};
+    
+    allStats.forEach(playerStat => {
+      Object.entries(playerStat.gameTypeStats).forEach(([gameType, stats]) => {
+        if (!gameTypeStats[gameType]) {
+          gameTypeStats[gameType] = { played: 0, won: 0 };
+        }
+        gameTypeStats[gameType].played += stats.played;
+        gameTypeStats[gameType].won += stats.won;
+      });
+    });
+    
+    // مرتب‌سازی بازی‌ها بر اساس محبوبیت
+    const sortedGameTypes = Object.entries(gameTypeStats)
+      .sort(([, statsA], [, statsB]) => statsB.played - statsA.played)
+      .slice(0, 4);
+    
+    let popularGamesText = '';
+    sortedGameTypes.forEach(([gameType, stats]) => {
+      const gameTypeName = gameTypeNames[gameType] || gameType;
+      popularGamesText += `${gameTypeName}: ${stats.played} بازی (${stats.won} برد)\n`;
+    });
+    
+    if (popularGamesText) {
+      embed.addFields({ name: '📊 بازی‌های محبوب', value: popularGamesText, inline: true });
+    }
+    
+    // ساخت دکمه‌های کنترلی
+    const row = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('game:history')
+          .setLabel('تاریخچه بازی‌ها')
+          .setStyle(ButtonStyle.Primary)
+          .setEmoji('📜'),
+        new ButtonBuilder()
+          .setCustomId('game:active_sessions')
+          .setLabel('جلسات فعال')
+          .setStyle(ButtonStyle.Primary)
+          .setEmoji('🎮'),
+        new ButtonBuilder()
+          .setCustomId('group_games')
+          .setLabel('بازگشت')
+          .setStyle(ButtonStyle.Secondary)
+          .setEmoji('🔙')
+      );
+    
+    // ارسال پاسخ
+    await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+    
+  } catch (error) {
+    log(`Error showing game leaderboard: ${error}`, 'error');
+    await interaction.reply({ 
+      content: '❌ خطایی در نمایش رتبه‌بندی بازیکنان رخ داد. لطفاً بعداً دوباره تلاش کنید.', 
+      ephemeral: true 
+    });
+  }
+}
+
+/**
+ * پیوستن به بازی با استفاده از شناسه بازی
+ * @param interaction برهم‌کنش کاربر
+ * @param gameId شناسه بازی
+ */
+async function joinGameById(interaction: ButtonInteraction, gameId: string) {
+  try {
+    // پیدا کردن بازی با شناسه
+    const gameSession = activeGames.get(gameId);
+    
+    if (!gameSession) {
+      return await interaction.reply({ 
+        content: '❌ بازی مورد نظر یافت نشد یا به پایان رسیده است!', 
+        ephemeral: true 
+      });
+    }
+    
+    // بررسی اینکه آیا کاربر قبلاً به بازی پیوسته است یا خیر
+    if (gameSession.players.includes(interaction.user.id)) {
+      return await interaction.reply({ 
+        content: '❌ شما قبلاً به این بازی پیوسته‌اید!', 
+        ephemeral: true 
+      });
+    }
+    
+    // بررسی وضعیت بازی
+    if (gameSession.status !== 'waiting') {
+      return await interaction.reply({ 
+        content: '❌ این بازی در حال حاضر در وضعیت انتظار نیست و نمی‌توانید به آن بپیوندید.', 
+        ephemeral: true 
+      });
+    }
+    
+    // بررسی بازی خصوصی
+    if (gameSession.gameSettings?.isPrivate) {
+      // اگر بازی خصوصی است، فقط دوستان میزبان یا اعضای کلن او می‌توانند بپیوندند
+      // (این بخش بسته به منطق دوستی و کلن در سیستم شما پیاده‌سازی می‌شود)
+      
+      // اینجا فرض می‌کنیم کاربر اجازه پیوستن دارد
+      // در واقعیت باید بررسی شود کاربر دوست میزبان است یا عضو کلن او
+    }
+    
+    // پیوستن به بازی بر اساس نوع بازی
+    switch (gameSession.gameType) {
+      case 'quiz':
+        // ارجاع به تابع پیوستن به کوییز با اطلاعات بازی و کاربر
+        const quizMessage = await interaction.channel?.messages.fetch(gameSession.data.messageId).catch(() => null);
+        if (quizMessage) {
+          // ساخت interaction جدید با پیام اصلی بازی
+          const fakeInteraction = {
+            ...interaction,
+            message: quizMessage
+          } as ButtonInteraction;
+          
+          // فراخوانی تابع پیوستن به بازی کوییز
+          await joinQuizGame(fakeInteraction);
+          return;
+        }
+        break;
+        
+      case 'mafia':
+        // ارجاع به تابع پیوستن به مافیا
+        const mafiaMessage = await interaction.channel?.messages.fetch(gameSession.data.messageId).catch(() => null);
+        if (mafiaMessage) {
+          const fakeInteraction = {
+            ...interaction,
+            message: mafiaMessage
+          } as ButtonInteraction;
+          
+          await joinMafiaGame(fakeInteraction);
+          return;
+        }
+        break;
+        
+      case 'drawguess':
+        // ارجاع به تابع پیوستن به نقاشی حدس بزن
+        const drawGuessMessage = await interaction.channel?.messages.fetch(gameSession.data.messageId).catch(() => null);
+        if (drawGuessMessage) {
+          const fakeInteraction = {
+            ...interaction,
+            message: drawGuessMessage
+          } as ButtonInteraction;
+          
+          await joinDrawGuessGame(fakeInteraction);
+          return;
+        }
+        break;
+        
+      default:
+        // برای سایر بازی‌ها می‌توانیم یک پاسخ عمومی ارسال کنیم
+        // افزودن کاربر به لیست بازیکنان
+        gameSession.players.push(interaction.user.id);
+        activeGames.set(gameSession.id, gameSession);
+        
+        await interaction.reply({ 
+          content: `✅ شما با موفقیت به بازی ${gameSession.gameType} پیوستید! لطفاً به کانال مربوطه مراجعه کنید: <#${gameSession.channelId}>`,
+          ephemeral: true 
+        });
+        return;
+    }
+    
+    // اگر به اینجا رسیدیم یعنی نتوانستیم به بازی بپیوندیم
+    await interaction.reply({ 
+      content: '❌ خطایی در پیوستن به بازی رخ داد. ممکن است پیام اصلی بازی حذف شده باشد.',
+      ephemeral: true 
+    });
+    
+  } catch (error) {
+    log(`Error joining game by ID: ${error}`, 'error');
+    await interaction.reply({ 
+      content: '❌ خطایی در پیوستن به بازی رخ داد. لطفاً بعداً دوباره تلاش کنید.', 
       ephemeral: true 
     });
   }

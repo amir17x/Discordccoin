@@ -1,0 +1,1154 @@
+7. ❓ بازی جرات یا حقیقت (Truth or Dare)
+Embed مستندسازی
+json
+
+Collapse
+
+Wrap
+
+Copy
+{
+  "embeds": [
+    {
+      "title": "❓ بازی جرات یا حقیقت",
+      "description": "یه بازی کلاسیک و هیجان‌انگیز! جرات می‌کنی یا حقیقت رو می‌گی؟ 😏 آماده باش که با دوستات لحظات باحال و خنده‌داری رو تجربه کنی!",
+      "color": 15158332,
+      "fields": [
+        {
+          "name": "👥 تعداد بازیکنان",
+          "value": "0/10",
+          "inline": true
+        },
+        {
+          "name": "⏱️ زمان هر نوبت",
+          "value": "1 دقیقه",
+          "inline": true
+        },
+        {
+          "name": "👤 حداقل بازیکنان",
+          "value": "3 نفر",
+          "inline": true
+        },
+        {
+          "name": "💰 جایزه بازی",
+          "value": "برنده 100 کوین 🤑",
+          "inline": true
+        }
+      ],
+      "footer": {
+        "text": "برای شرکت تو بازی، روی دکمه ورود کلیک کن! 🎮"
+      }
+    }
+  ],
+  "components": [
+    {
+      "type": 1,
+      "components": [
+        {
+          "type": 2,
+          "style": 3,
+          "label": "ورود به بازی",
+          "custom_id": "join_truthdare"
+        },
+        {
+          "type": 2,
+          "style": 1,
+          "label": "شروع بازی",
+          "custom_id": "start_truthdare"
+        },
+        {
+          "type": 2,
+          "style": 2,
+          "label": "قوانین بازی 📜",
+          "custom_id": "truthdare_rules"
+        },
+        {
+          "type": 2,
+          "style": 2,
+          "label": "بازگشت 🔙",
+          "custom_id": "back_to_menu"
+        }
+      ]
+    }
+  ]
+}
+قوانین بازی جرات یا حقیقت (دکمه قوانین)
+json
+
+Collapse
+
+Wrap
+
+Copy
+{
+  "embeds": [
+    {
+      "title": "📜 قوانین بازی جرات یا حقیقت",
+      "description": "اینجا قوانین کامل بازی جرات یا حقیقت رو می‌تونی بخونی! ❓",
+      "color": 15158332,
+      "fields": [
+        {
+          "name": "👥 شروع بازی",
+          "value": "🔹 بازیکنا به نوبت تو کانال ویس جمع می‌شن و یکی از بازیکنا انتخاب می‌شه.\n🔹 بازیکن انتخاب‌شده باید بین **حقیقت** یا **جرات** یکی رو انتخاب کنه.",
+          "inline": false
+        },
+        {
+          "name": "🗣️ انتخاب حقیقت",
+          "value": "🔹 اگه بازیکن **حقیقت** رو انتخاب کنه، ربات یه سوال ازش می‌پرسه که باید صادقانه جواب بده.\n🔹 سوال‌ها می‌تونن خنده‌دار، شخصی یا چالش‌برانگیز باشن (مثلاً: آخرین باری که به یکی دروغ گفتی کی بود؟).\n🔹 بازیکن باید تو کانال ویس جوابش رو بگه تا بقیه بشنون.",
+          "inline": false
+        },
+        {
+          "name": "💪 انتخاب جرات",
+          "value": "🔹 اگه بازیکن **جرات** رو انتخاب کنه، ربات یه چالش بهش می‌ده که باید انجامش بده.\n🔹 چالش‌ها می‌تونن خنده‌دار یا هیجان‌انگیز باشن (مثلاً: یه آهنگ رو با صدای بلند بخون یا یه پیام خنده‌دار به یکی از دوستات بفرست).\n🔹 بازیکن باید تو کانال ویس یا با ارسال مدرک (مثلاً اسکرین‌شات) نشون بده که چالش رو انجام داده.",
+          "inline": false
+        },
+        {
+          "name": "⏳ زمان‌بندی",
+          "value": "🔹 هر بازیکن 1 دقیقه وقت داره تا جواب بده یا چالش رو انجام بده.\n🔹 اگه تو این زمان جواب نده یا چالش رو انجام نده، یه امتیاز منفی می‌گیره.",
+          "inline": false
+        },
+        {
+          "name": "🏁 پایان بازی",
+          "value": "🔹 بازی تا وقتی ادامه داره که بازیکنا خسته بشن یا بخوایین تمومش کنین.\n🔹 بازیکنی که بیشترین چالش‌ها رو انجام داده یا صادقانه‌ترین جواب‌ها رو داده، به عنوان برنده انتخاب می‌شه (با رای‌گیری).\n🔹 جایزه (100 کوین) به برنده داده می‌شه.",
+          "inline": false
+        }
+      ],
+      "footer": {
+        "text": "برای بازگشت به منوی بازی، روی دکمه بازگشت کلیک کن! 🔙"
+      }
+    }
+  ],
+  "components": [
+    {
+      "type": 1,
+      "components": [
+        {
+          "type": 2,
+          "style": 2,
+          "label": "بازگشت 🔙",
+          "custom_id": "back_to_truthdare_menu"
+        }
+      ]
+    }
+  ]
+}
+کد بازی جرات یا حقیقت
+javascript
+
+Collapse
+
+Wrap
+
+Copy
+const { Client, GatewayIntentBits, PermissionFlagsBits } = require('discord.js');
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildVoiceStates, GatewayIntentBits.MessageContent] });
+
+let truthDarePlayers = [];
+let currentPlayerIndex = 0;
+let truthDareMessage;
+let scores = {};
+
+const truthQuestions = [
+  "آخرین باری که به یکی دروغ گفتی کی بود؟ 🤥",
+  "بزرگ‌ترین رازت چیه که تا حالا به کسی نگفتی؟ 🕵️",
+  "خجالت‌آورترین لحظه زندگیت چی بوده؟ 😳",
+  "تا حالا عاشق کی شدی و بهش نگفتی؟ 💔",
+  "بامزه‌ترین کاری که تو بچگی کردی چی بوده؟ 🍼"
+];
+
+const dareChallenges = [
+  "یه آهنگ رو با صدای بلند تو کانال ویس بخون! 🎤",
+  "به یکی از دوستات یه پیام خنده‌دار بفرست و اسکرین‌شاتش رو بفرست! 📱",
+  "10 ثانیه با صدای یه شخصیت کارتونی حرف بزن! 🦁",
+  "یه شعر کوتاه درباره یکی از بازیکنا بگو! ✍️",
+  "یه رقص بامزه تو ویس انجام بده و صداشو ضبط کن! 💃"
+];
+
+client.once('ready', () => {
+  console.log('ربات جرات یا حقیقت آماده است!');
+});
+
+client.on('messageCreate', async message => {
+  if (message.content === '!start_truthdare_menu') {
+    const truthDareEmbed = {
+      embeds: [
+        {
+          title: "❓ بازی جرات یا حقیقت",
+          description: "یه بازی کلاسیک و هیجان‌انگیز! جرات می‌کنی یا حقیقت رو می‌گی؟ 😏 آماده باش که با دوستات لحظات باحال و خنده‌داری رو تجربه کنی!",
+          color: 15158332,
+          fields: [
+            { name: "👥 تعداد بازیکنان", value: `${truthDarePlayers.length}/10`, inline: true },
+            { name: "⏱️ زمان هر نوبت", value: "1 دقیقه", inline: true },
+            { name: "👤 حداقل بازیکنان", value: "3 نفر", inline: true },
+            { name: "💰 جایزه بازی", value: "برنده 100 کوین 🤑", inline: true }
+          ],
+          footer: { text: "برای شرکت تو بازی، روی دکمه ورود کلیک کن! 🎮" }
+        }
+      ],
+      components: [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 3, label: "ورود به بازی", custom_id: "join_truthdare" },
+            { type: 2, style: 1, label: "شروع بازی", custom_id: "start_truthdare" },
+            { type: 2, style: 2, label: "قوانین بازی 📜", custom_id: "truthdare_rules" },
+            { type: 2, style: 2, label: "بازگشت 🔙", custom_id: "back_to_menu" }
+          ]
+        }
+      ]
+    };
+    truthDareMessage = await message.channel.send(truthDareEmbed);
+  }
+});
+
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isButton()) return;
+
+  // ورود به بازی
+  if (interaction.customId === 'join_truthdare') {
+    if (truthDarePlayers.includes(interaction.user.id)) {
+      await interaction.reply({ content: 'تو قبلاً وارد بازی شدی! ⏳', ephemeral: true });
+      return;
+    }
+    if (truthDarePlayers.length >= 10) {
+      await interaction.reply({ content: 'ظرفیت بازی پر شده! 🚫', ephemeral: true });
+      return;
+    }
+    truthDarePlayers.push(interaction.user.id);
+    scores[interaction.user.id] = 0;
+    const updatedEmbed = {
+      embeds: [
+        {
+          title: "❓ بازی جرات یا حقیقت",
+          description: "یه بازی کلاسیک و هیجان‌انگیز! جرات می‌کنی یا حقیقت رو می‌گی؟ 😏 آماده باش که با دوستات لحظات باحال و خنده‌داری رو تجربه کنی!",
+          color: 15158332,
+          fields: [
+            { name: "👥 تعداد بازیکنان", value: `${truthDarePlayers.length}/10`, inline: true },
+            { name: "⏱️ زمان هر نوبت", value: "1 دقیقه", inline: true },
+            { name: "👤 حداقل بازیکنان", value: "3 نفر", inline: true },
+            { name: "💰 جایزه بازی", value: "برنده 100 کوین 🤑", inline: true }
+          ],
+          footer: { text: "برای شرکت تو بازی، روی دکمه ورود کلیک کن! 🎮" }
+        }
+      ],
+      components: [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 3, label: "ورود به بازی", custom_id: "join_truthdare" },
+            { type: 2, style: 1, label: "شروع بازی", custom_id: "start_truthdare" },
+            { type: 2, style: 2, label: "قوانین بازی 📜", custom_id: "truthdare_rules" },
+            { type: 2, style: 2, label: "بازگشت 🔙", custom_id: "back_to_menu" }
+          ]
+        }
+      ]
+    };
+    await truthDareMessage.edit(updatedEmbed);
+    await interaction.reply({ content: 'با موفقیت وارد بازی شدی! ✅', ephemeral: true });
+  }
+
+  // نمایش قوانین
+  if (interaction.customId === 'truthdare_rules') {
+    const rulesEmbed = {
+      embeds: [
+        {
+          title: "📜 قوانین بازی جرات یا حقیقت",
+          description: "اینجا قوانین کامل بازی جرات یا حقیقت رو می‌تونی بخونی! ❓",
+          color: 15158332,
+          fields: [
+            { name: "👥 شروع بازی", value: "🔹 بازیکنا به نوبت تو کانال ویس جمع می‌شن و یکی از بازیکنا انتخاب می‌شه.\n🔹 بازیکن انتخاب‌شده باید بین **حقیقت** یا **جرات** یکی رو انتخاب کنه.", inline: false },
+            { name: "🗣️ انتخاب حقیقت", value: "🔹 اگه بازیکن **حقیقت** رو انتخاب کنه، ربات یه سوال ازش می‌پرسه که باید صادقانه جواب بده.\n🔹 سوال‌ها می‌تونن خنده‌دار، شخصی یا چالش‌برانگیز باشن (مثلاً: آخرین باری که به یکی دروغ گفتی کی بود؟).\n🔹 بازیکن باید تو کانال ویس جوابش رو بگه تا بقیه بشنون.", inline: false },
+            { name: "💪 انتخاب جرات", value: "🔹 اگه بازیکن **جرات** رو انتخاب کنه، ربات یه چالش بهش می‌ده که باید انجامش بده.\n🔹 چالش‌ها می‌تونن خنده‌دار یا هیجان‌انگیز باشن (مثلاً: یه آهنگ رو با صدای بلند بخون یا یه پیام خنده‌دار به یکی از دوستات بفرست).\n🔹 بازیکن باید تو کانال ویس یا با ارسال مدرک (مثلاً اسکرین‌شات) نشون بده که چالش رو انجام داده.", inline: false },
+            { name: "⏳ زمان‌بندی", value: "🔹 هر بازیکن 1 دقیقه وقت داره تا جواب بده یا چالش رو انجام بده.\n🔹 اگه تو این زمان جواب نده یا چالش رو انجام نده، یه امتیاز منفی می‌گیره.", inline: false },
+            { name: "🏁 پایان بازی", value: "🔹 بازی تا وقتی ادامه داره که بازیکنا خسته بشن یا بخوایین تمومش کنین.\n🔹 بازیکنی که بیشترین چالش‌ها رو انجام داده یا صادقانه‌ترین جواب‌ها رو داده، به عنوان برنده انتخاب می‌شه (با رای‌گیری).\n🔹 جایزه (100 کوین) به برنده داده می‌شه.", inline: false }
+          ],
+          footer: { text: "برای بازگشت به منوی بازی، روی دکمه بازگشت کلیک کن! 🔙" }
+        }
+      ],
+      components: [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 2, label: "بازگشت 🔙", custom_id: "back_to_truthdare_menu" }
+          ]
+        }
+      ]
+    };
+    await interaction.reply({ ...rulesEmbed, ephemeral: true });
+  }
+
+  // بازگشت به منوی جرات یا حقیقت
+  if (interaction.customId === 'back_to_truthdare_menu') {
+    const truthDareEmbed = {
+      embeds: [
+        {
+          title: "❓ بازی جرات یا حقیقت",
+          description: "یه بازی کلاسیک و هیجان‌انگیز! جرات می‌کنی یا حقیقت رو می‌گی؟ 😏 آماده باش که با دوستات لحظات باحال و خنده‌داری رو تجربه کنی!",
+          color: 15158332,
+          fields: [
+            { name: "👥 تعداد بازیکنان", value: `${truthDarePlayers.length}/10`, inline: true },
+            { name: "⏱️ زمان هر نوبت", value: "1 دقیقه", inline: true },
+            { name: "👤 حداقل بازیکنان", value: "3 نفر", inline: true },
+            { name: "💰 جایزه بازی", value: "برنده 100 کوین 🤑", inline: true }
+          ],
+          footer: { text: "برای شرکت تو بازی، روی دکمه ورود کلیک کن! 🎮" }
+        }
+      ],
+      components: [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 3, label: "ورود به بازی", custom_id: "join_truthdare" },
+            { type: 2, style: 1, label: "شروع بازی", custom_id: "start_truthdare" },
+            { type: 2, style: 2, label: "قوانین بازی 📜", custom_id: "truthdare_rules" },
+            { type: 2, style: 2, label: "بازگشت 🔙", custom_id: "back_to_menu" }
+          ]
+        }
+      ]
+    };
+    await interaction.reply({ ...truthDareEmbed, ephemeral: true });
+  }
+
+  // شروع بازی
+  if (interaction.customId === 'start_truthdare') {
+    if (truthDarePlayers.length < 3) {
+      await interaction.reply({ content: 'حداقل 3 بازیکن برای شروع بازی نیازه! 🚫', ephemeral: true });
+      return;
+    }
+
+    // ایجاد نقش ویژه برای بازیکنان
+    const truthDareRole = await interaction.guild.roles.create({
+      name: 'TruthDare-Player',
+      color: 'PURPLE',
+      reason: 'نقش ویژه برای بازیکنان جرات یا حقیقت'
+    });
+
+    // اختصاص نقش به بازیکنان
+    for (const playerId of truthDarePlayers) {
+      const member = await interaction.guild.members.fetch(playerId);
+      await member.roles.add(truthDareRole);
+    }
+
+    // ایجاد کتگوری و کانال ویس
+    const category = await interaction.guild.channels.create({
+      name: 'جرات یا حقیقت',
+      type: 4 // کتگوری
+    });
+
+    const publicVoiceChannel = await interaction.guild.channels.create({
+      name: 'Room-1',
+      type: 2, // ویس چنل
+      parent: category.id,
+      permissionOverwrites: [
+        { id: interaction.guild.id, deny: [PermissionFlagsBits.ViewChannel] },
+        { id: truthDareRole.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.Connect, PermissionFlagsBits.Speak] }
+      ]
+    });
+
+    // شروع دور اول
+    currentPlayerIndex = 0;
+    const currentPlayer = interaction.guild.members.cache.get(truthDarePlayers[currentPlayerIndex]);
+    await interaction.channel.send({
+      embeds: [
+        {
+          title: "❓ دور اول - نوبت بازیکن",
+          description: `${currentPlayer}، نوبت توئه! لطفاً تو کانال ویس یکی از گزینه‌ها رو انتخاب کن: **حقیقت** یا **جرات**؟ ⏳`,
+          color: 15158332
+        }
+      ],
+      components: [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 1, label: "حقیقت 🗣️", custom_id: "truth" },
+            { type: 2, style: 1, label: "جرات 💪", custom_id: "dare" },
+            { type: 2, style: 4, label: "پایان بازی 🏁", custom_id: "end_truthdare" }
+          ]
+        }
+      ]
+    });
+
+    await interaction.reply({ content: 'بازی جرات یا حقیقت شروع شد! ✅', ephemeral: true });
+  }
+
+  // انتخاب حقیقت
+  if (interaction.customId === 'truth') {
+    if (interaction.user.id !== truthDarePlayers[currentPlayerIndex]) {
+      await interaction.reply({ content: 'الان نوبت تو نیست! ⏳', ephemeral: true });
+      return;
+    }
+
+    const question = truthQuestions[Math.floor(Math.random() * truthQuestions.length)];
+    await interaction.channel.send({
+      embeds: [
+        {
+          title: "🗣️ سوال حقیقت",
+          description: `${interaction.user}، این سوال توئه: **${question}**\nلطفاً تو کانال ویس جواب بده! ⏳`,
+          color: 15158332
+        }
+      ],
+      components: [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 3, label: "جواب دادم ✅", custom_id: "truth_answered" },
+            { type: 2, style: 4, label: "پایان بازی 🏁", custom_id: "end_truthdare" }
+          ]
+        }
+      ]
+    });
+
+    await interaction.reply({ content: 'سوال برات فرستاده شد! ✅', ephemeral: true });
+  }
+
+  // انتخاب جرات
+  if (interaction.customId === 'dare') {
+    if (interaction.user.id !== truthDarePlayers[currentPlayerIndex]) {
+      await interaction.reply({ content: 'الان نوبت تو نیست! ⏳', ephemeral: true });
+      return;
+    }
+
+    const challenge = dareChallenges[Math.floor(Math.random() * dareChallenges.length)];
+    await interaction.channel.send({
+      embeds: [
+        {
+          title: "💪 چالش جرات",
+          description: `${interaction.user}، این چالش توئه: **${challenge}**\nلطفاً تو کانال ویس یا با ارسال مدرک نشون بده که انجامش دادی! ⏳`,
+          color: 15158332
+        }
+      ],
+      components: [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 3, label: "چالش رو انجام دادم ✅", custom_id: "dare_completed" },
+            { type: 2, style: 4, label: "پایان بازی 🏁", custom_id: "end_truthdare" }
+          ]
+        }
+      ]
+    });
+
+    await interaction.reply({ content: 'چالش برات فرستاده شد! ✅', ephemeral: true });
+  }
+
+  // جواب دادن به حقیقت
+  if (interaction.customId === 'truth_answered') {
+    if (interaction.user.id !== truthDarePlayers[currentPlayerIndex]) {
+      await interaction.reply({ content: 'الان نوبت تو نیست! ⏳', ephemeral: true });
+      return;
+    }
+
+    scores[interaction.user.id] += 1;
+    currentPlayerIndex = (currentPlayerIndex + 1) % truthDarePlayers.length;
+    const nextPlayer = interaction.guild.members.cache.get(truthDarePlayers[currentPlayerIndex]);
+    await interaction.channel.send({
+      embeds: [
+        {
+          title: "❓ نوبت بازیکن بعدی",
+          description: `${nextPlayer}، نوبت توئه! لطفاً تو کانال ویس یکی از گزینه‌ها رو انتخاب کن: **حقیقت** یا **جرات**؟ ⏳`,
+          color: 15158332
+        }
+      ],
+      components: [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 1, label: "حقیقت 🗣️", custom_id: "truth" },
+            { type: 2, style: 1, label: "جرات 💪", custom_id: "dare" },
+            { type: 2, style: 4, label: "پایان بازی 🏁", custom_id: "end_truthdare" }
+          ]
+        }
+      ]
+    });
+
+    await interaction.reply({ content: 'جوابت ثبت شد! نوبت بازیکن بعدیه. ✅', ephemeral: true });
+  }
+
+  // انجام چالش جرات
+  if (interaction.customId === 'dare_completed') {
+    if (interaction.user.id !== truthDarePlayers[currentPlayerIndex]) {
+      await interaction.reply({ content: 'الان نوبت تو نیست! ⏳', ephemeral: true });
+      return;
+    }
+
+    scores[interaction.user.id] += 1;
+    currentPlayerIndex = (currentPlayerIndex + 1) % truthDarePlayers.length;
+    const nextPlayer = interaction.guild.members.cache.get(truthDarePlayers[currentPlayerIndex]);
+    await interaction.channel.send({
+      embeds: [
+        {
+          title: "❓ نوبت بازیکن بعدی",
+          description: `${nextPlayer}، نوبت توئه! لطفاً تو کانال ویس یکی از گزینه‌ها رو انتخاب کن: **حقیقت** یا **جرات**؟ ⏳`,
+          color: 15158332
+        }
+      ],
+      components: [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 1, label: "حقیقت 🗣️", custom_id: "truth" },
+            { type: 2, style: 1, label: "جرات 💪", custom_id: "dare" },
+            { type: 2, style: 4, label: "پایان بازی 🏁", custom_id: "end_truthdare" }
+          ]
+        }
+      ]
+    });
+
+    await interaction.reply({ content: 'چالشت ثبت شد! نوبت بازیکن بعدیه. ✅', ephemeral: true });
+  }
+
+  // پایان بازی
+  if (interaction.customId === 'end_truthdare') {
+    const winner = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
+    const winnerMember = interaction.guild.members.cache.get(winner);
+    await interaction.channel.send({
+      embeds: [
+        {
+          title: "🏁 پایان بازی جرات یا حقیقت",
+          description: `بازی تموم شد! 🎉\nبرنده این بازی: ${winnerMember} با ${scores[winner]} امتیاز! 🏆\nجایزه: **100 کوین** 🤑`,
+          color: 15158332
+        }
+      ]
+    });
+
+    // حذف نقش و کانال‌ها
+    const truthDareRole = interaction.guild.roles.cache.find(role => role.name === 'TruthDare-Player');
+    if (truthDareRole) await truthDareRole.delete();
+    const category = interaction.guild.channels.cache.find(channel => channel.name === 'جرات یا حقیقت' && channel.type === 4);
+    if (category) {
+      const channels = interaction.guild.channels.cache.filter(channel => channel.parentId === category.id);
+      for (const channel of channels.values()) {
+        await channel.delete();
+      }
+      await category.delete();
+    }
+
+    truthDarePlayers = [];
+    scores = {};
+    currentPlayerIndex = 0;
+    await truthDareMessage.edit({
+      embeds: [
+        {
+          title: "❓ بازی جرات یا حقیقت",
+          description: "یه بازی کلاسیک و هیجان‌انگیز! جرات می‌کنی یا حقیقت رو می‌گی؟ 😏 آماده باش که با دوستات لحظات باحال و خنده‌داری رو تجربه کنی!",
+          color: 15158332,
+          fields: [
+            { name: "👥 تعداد بازیکنان", value: `${truthDarePlayers.length}/10`, inline: true },
+            { name: "⏱️ زمان هر نوبت", value: "1 دقیقه", inline: true },
+            { name: "👤 حداقل بازیکنان", value: "3 نفر", inline: true },
+            { name: "💰 جایزه بازی", value: "برنده 100 کوین 🤑", inline: true }
+          ],
+          footer: { text: "برای شرکت تو بازی، روی دکمه ورود کلیک کن! 🎮" }
+        }
+      ],
+      components: [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 3, label: "ورود به بازی", custom_id: "join_truthdare" },
+            { type: 2, style: 1, label: "شروع بازی", custom_id: "start_truthdare" },
+            { type: 2, style: 2, label: "قوانین بازی 📜", custom_id: "truthdare_rules" },
+            { type: 2, style: 2, label: "بازگشت 🔙", custom_id: "back_to_menu" }
+          ]
+        }
+      ]
+    });
+
+    await interaction.reply({ content: 'بازی تموم شد! می‌تونی دوباره بازی رو شروع کنی. 🎮', ephemeral: true });
+  }
+});
+
+client.login('YOUR_BOT_TOKEN');
+توضیحات کد
+ایجاد نقش و کانال: یک نقش ویژه برای بازیکنان و یک کانال ویس با دسترسی محدود ایجاد می‌شه تا فقط بازیکنان بتونن وارد بشن.
+مدیریت بازی: بازی با دکمه‌ها کنترل می‌شه. هر بازیکن به نوبت بین حقیقت و جرات انتخاب می‌کنه و ربات سوال یا چالش رو ارائه می‌ده.
+امتیازدهی: هر بازیکنی که چالش رو انجام بده یا به سوال جواب بده، امتیاز می‌گیره.
+پایان بازی: بازی با دکمه "پایان بازی" تموم می‌شه و برنده با بیشترین امتیاز اعلام می‌شه. نقش و کانال‌ها هم حذف می‌شن.
+8. 🔡 بازی زنجیره کلمات (Word Chain)
+Embed مستندسازی
+json
+
+Collapse
+
+Wrap
+
+Copy
+{
+  "embeds": [
+    {
+      "title": "🔡 بازی زنجیره کلمات",
+      "description": "کلمه‌ها رو زنجیر کن! با حرف آخر کلمه قبلی، یه کلمه جدید بگو و ذهنت رو به چالش بکش! 🗣️",
+      "color": 3066993,
+      "fields": [
+        {
+          "name": "👥 تعداد بازیکنان",
+          "value": "0/10",
+          "inline": true
+        },
+        {
+          "name": "⏱️ زمان هر نوبت",
+          "value": "30 ثانیه",
+          "inline": true
+        },
+        {
+          "name": "👤 حداقل بازیکنان",
+          "value": "3 نفر",
+          "inline": true
+        },
+        {
+          "name": "💰 جایزه بازی",
+          "value": "برنده 100 کوین 🤑",
+          "inline": true
+        }
+      ],
+      "footer": {
+        "text": "برای شرکت تو بازی، روی دکمه ورود کلیک کن! 🎮"
+      }
+    }
+  ],
+  "components": [
+    {
+      "type": 1,
+      "components": [
+        {
+          "type": 2,
+          "style": 3,
+          "label": "ورود به بازی",
+          "custom_id": "join_wordchain"
+        },
+        {
+          "type": 2,
+          "style": 1,
+          "label": "شروع بازی",
+          "custom_id": "start_wordchain"
+        },
+        {
+          "type": 2,
+          "style": 2,
+          "label": "قوانین بازی 📜",
+          "custom_id": "wordchain_rules"
+        },
+        {
+          "type": 2,
+          "style": 2,
+          "label": "بازگشت 🔙",
+          "custom_id": "back_to_menu"
+        }
+      ]
+    }
+  ]
+}
+قوانین بازی زنجیره کلمات (دکمه قوانین)
+json
+
+Collapse
+
+Wrap
+
+Copy
+{
+  "embeds": [
+    {
+      "title": "📜 قوانین بازی زنجیره کلمات",
+      "description": "اینجا قوانین کامل بازی زنجیره کلمات رو می‌تونی بخونی! 🔡",
+      "color": 3066993,
+      "fields": [
+        {
+          "name": "👥 شروع بازی",
+          "value": "🔹 ربات یه کلمه اولیه می‌گه (مثلاً: **سیب**).\n🔹 بازیکنا به نوبت باید یه کلمه جدید بگن که با حرف آخر کلمه قبلی شروع بشه (مثلاً: **بهار**).",
+          "inline": false
+        },
+        {
+          "name": "📝 قوانین کلمات",
+          "value": "🔹 کلمه باید معنی‌دار و واقعی باشه (کلمات ساختگی یا بی‌معنی قبول نیست).\n🔹 کلمه نباید قبلاً تو بازی گفته شده باشه.\n🔹 فقط کلمات فارسی قبولن.",
+          "inline": false
+        },
+        {
+          "name": "⏳ زمان‌بندی",
+          "value": "🔹 هر بازیکن 30 ثانیه وقت داره تا کلمه جدید رو بگه.\n🔹 اگه تو این زمان کلمه نگه یا کلمه اشتباه بگه، از بازی حذف می‌شه.",
+          "inline": false
+        },
+        {
+          "name": "🏁 پایان بازی",
+          "value": "🔹 بازی تا وقتی ادامه داره که فقط یه بازیکن باقی بمونه.\n🔹 آخرین بازیکنی که تو بازی بمونه، برنده می‌شه.\n🔹 جایزه (100 کوین) به برنده داده می‌شه.",
+          "inline": false
+        }
+      ],
+      "footer": {
+        "text": "برای بازگشت به منوی بازی، روی دکمه بازگشت کلیک کن! 🔙"
+      }
+    }
+  ],
+  "components": [
+    {
+      "type": 1,
+      "components": [
+        {
+          "type": 2,
+          "style": 2,
+          "label": "بازگشت 🔙",
+          "custom_id": "back_to_wordchain_menu"
+        }
+      ]
+    }
+  ]
+}
+کد بازی زنجیره کلمات
+javascript
+
+Collapse
+
+Wrap
+
+Copy
+const { Client, GatewayIntentBits } = require('discord.js');
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
+
+let wordChainPlayers = [];
+let currentPlayerIndex = 0;
+let currentWord = '';
+let usedWords = [];
+let wordChainMessage;
+
+client.once('ready', () => {
+  console.log('ربات زنجیره کلمات آماده است!');
+});
+
+client.on('messageCreate', async message => {
+  if (message.content === '!start_wordchain_menu') {
+    const wordChainEmbed = {
+      embeds: [
+        {
+          title: "🔡 بازی زنجیره کلمات",
+          description: "کلمه‌ها رو زنجیر کن! با حرف آخر کلمه قبلی، یه کلمه جدید بگو و ذهنت رو به چالش بکش! 🗣️",
+          color: 3066993,
+          fields: [
+            { name: "👥 تعداد بازیکنان", value: `${wordChainPlayers.length}/10`, inline: true },
+            { name: "⏱️ زمان هر نوبت", value: "30 ثانیه", inline: true },
+            { name: "👤 حداقل بازیکنان", value: "3 نفر", inline: true },
+            { name: "💰 جایزه بازی", value: "برنده 100 کوین 🤑", inline: true }
+          ],
+          footer: { text: "برای شرکت تو بازی، روی دکمه ورود کلیک کن! 🎮" }
+        }
+      ],
+      components: [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 3, label: "ورود به بازی", custom_id: "join_wordchain" },
+            { type: 2, style: 1, label: "شروع بازی", custom_id: "start_wordchain" },
+            { type: 2, style: 2, label: "قوانین بازی 📜", custom_id: "wordchain_rules" },
+            { type: 2, style: 2, label: "بازگشت 🔙", custom_id: "back_to_menu" }
+          ]
+        }
+      ]
+    };
+    wordChainMessage = await message.channel.send(wordChainEmbed);
+  }
+});
+
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isButton()) return;
+
+  // ورود به بازی
+  if (interaction.customId === 'join_wordchain') {
+    if (wordChainPlayers.includes(interaction.user.id)) {
+      await interaction.reply({ content: 'تو قبلاً وارد بازی شدی! ⏳', ephemeral: true });
+      return;
+    }
+    if (wordChainPlayers.length >= 10) {
+      await interaction.reply({ content: 'ظرفیت بازی پر شده! 🚫', ephemeral: true });
+      return;
+    }
+    wordChainPlayers.push(interaction.user.id);
+    const updatedEmbed = {
+      embeds: [
+        {
+          title: "🔡 بازی زنجیره کلمات",
+          description: "کلمه‌ها رو زنجیر کن! با حرف آخر کلمه قبلی، یه کلمه جدید بگو و ذهنت رو به چالش بکش! 🗣️",
+          color: 3066993,
+          fields: [
+            { name: "👥 تعداد بازیکنان", value: `${wordChainPlayers.length}/10`, inline: true },
+            { name: "⏱️ زمان هر نوبت", value: "30 ثانیه", inline: true },
+            { name: "👤 حداقل بازیکنان", value: "3 نفر", inline: true },
+            { name: "💰 جایزه بازی", value: "برنده 100 کوین 🤑", inline: true }
+          ],
+          footer: { text: "برای شرکت تو بازی، روی دکمه ورود کلیک کن! 🎮" }
+        }
+      ],
+      components: [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 3, label: "ورود به بازی", custom_id: "join_wordchain" },
+            { type: 2, style: 1, label: "شروع بازی", custom_id: "start_wordchain" },
+            { type: 2, style: 2, label: "قوانین بازی 📜", custom_id: "wordchain_rules" },
+            { type: 2, style: 2, label: "بازگشت 🔙", custom_id: "back_to_menu" }
+          ]
+        }
+      ]
+    };
+    await wordChainMessage.edit(updatedEmbed);
+    await interaction.reply({ content: 'با موفقیت وارد بازی شدی! ✅', ephemeral: true });
+  }
+
+  // نمایش قوانین
+  if (interaction.customId === 'wordchain_rules') {
+    const rulesEmbed = {
+      embeds: [
+        {
+          title: "📜 قوانین بازی زنجیره کلمات",
+          description: "اینجا قوانین کامل بازی زنجیره کلمات رو می‌تونی بخونی! 🔡",
+          color: 3066993,
+          fields: [
+            { name: "👥 شروع بازی", value: "🔹 ربات یه کلمه اولیه می‌گه (مثلاً: **سیب**).\n🔹 بازیکنا به نوبت باید یه کلمه جدید بگن که با حرف آخر کلمه قبلی شروع بشه (مثلاً: **بهار**).", inline: false },
+            { name: "📝 قوانین کلمات", value: "🔹 کلمه باید معنی‌دار و واقعی باشه (کلمات ساختگی یا بی‌معنی قبول نیست).\n🔹 کلمه نباید قبلاً تو بازی گفته شده باشه.\n🔹 فقط کلمات فارسی قبولن.", inline: false },
+            { name: "⏳ زمان‌بندی", value: "🔹 هر بازیکن 30 ثانیه وقت داره تا کلمه جدید رو بگه.\n🔹 اگه تو این زمان کلمه نگه یا کلمه اشتباه بگه، از بازی حذف می‌شه.", inline: false },
+            { name: "🏁 پایان بازی", value: "🔹 بازی تا وقتی ادامه داره که فقط یه بازیکن باقی بمونه.\n🔹 آخرین بازیکنی که تو بازی بمونه، برنده می‌شه.\n🔹 جایزه (100 کوین) به برنده داده می‌شه.", inline: false }
+          ],
+          footer: { text: "برای بازگشت به منوی بازی، روی دکمه بازگشت کلیک کن! 🔙" }
+        }
+      ],
+      components: [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 2, label: "بازگشت 🔙", custom_id: "back_to_wordchain_menu" }
+          ]
+        }
+      ]
+    };
+    await interaction.reply({ ...rulesEmbed, ephemeral: true });
+  }
+
+  // بازگشت به منوی زنجیره کلمات
+  if (interaction.customId === 'back_to_wordchain_menu') {
+    const wordChainEmbed = {
+      embeds: [
+        {
+          title: "🔡 بازی زنجیره کلمات",
+          description: "کلمه‌ها رو زنجیر کن! با حرف آخر کلمه قبلی، یه کلمه جدید بگو و ذهنت رو به چالش بکش! 🗣️",
+          color: 3066993,
+          fields: [
+            { name: "👥 تعداد بازیکنان", value: `${wordChainPlayers.length}/10`, inline: true },
+            { name: "⏱️ زمان هر نوبت", value: "30 ثانیه", inline: true },
+            { name: "👤 حداقل بازیکنان", value: "3 نفر", inline: true },
+            { name: "💰 جایزه بازی", value: "برنده 100 کوین 🤑", inline: true }
+          ],
+          footer: { text: "برای شرکت تو بازی، روی دکمه ورود کلیک کن! 🎮" }
+        }
+      ],
+      components: [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 3, label: "ورود به بازی", custom_id: "join_wordchain" },
+            { type: 2, style: 1, label: "شروع بازی", custom_id: "start_wordchain" },
+            { type: 2, style: 2, label: "قوانین بازی 📜", custom_id: "wordchain_rules" },
+            { type: 2, style: 2, label: "بازگشت 🔙", custom_id: "back_to_menu" }
+          ]
+        }
+      ]
+    };
+    await interaction.reply({ ...wordChainEmbed, ephemeral: true });
+  }
+
+  // شروع بازی
+  if (interaction.customId === 'start_wordchain') {
+    if (wordChainPlayers.length < 3) {
+      await interaction.reply({ content: 'حداقل 3 بازیکن برای شروع بازی نیازه! 🚫', ephemeral: true });
+      return;
+    }
+
+    currentWord = 'سیب';
+    usedWords = [currentWord];
+    currentPlayerIndex = 0;
+    const currentPlayer = interaction.guild.members.cache.get(wordChainPlayers[currentPlayerIndex]);
+    await interaction.channel.send({
+      embeds: [
+        {
+          title: "🔡 دور اول - زنجیره کلمات",
+          description: `کلمه فعلی: **${currentWord}** 📝\n${currentPlayer}، نوبت توئه! یه کلمه بگو که با حرف **${currentWord[currentWord.length - 1]}** شروع بشه. ⏳`,
+          color: 3066993
+        }
+      ],
+      components: [
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 1, label: "کلمه رو وارد کن", custom_id: "submit_word" }
+          ]
+        }
+      ]
+    });
+
+    await interaction.reply({ content: 'بازی زنجیره کلمات شروع شد! ✅', ephemeral: true });
+  }
+
+  // ارسال کلمه
+  if (interaction.customId === 'submit_word') {
+    if (interaction.user.id !== wordChainPlayers[currentPlayerIndex]) {
+      await interaction.reply({ content: 'الان نوبت تو نیست! ⏳', ephemeral: true });
+      return;
+    }
+
+    await interaction.reply({
+      content: 'لطفاً کلمه خودت رو تو چت بنویس (فقط کلمه، بدون توضیح اضافی). ⏳',
+      ephemeral: true
+    });
+
+    const filter = m => m.author.id === interaction.user.id;
+    const collector = interaction.channel.createMessageCollector({ filter, time: 30000, max: 1 });
+
+    collector.on('collect', async m => {
+      const newWord = m.content.trim();
+      const lastChar = currentWord[currentWord.length - 1];
+      const firstChar = newWord[0];
+
+      if (firstChar !== lastChar) {
+        await interaction.channel.send({
+          embeds: [
+            {
+              title: "❌ حذف بازیکن",
+              description: `${interaction.user}، کلمه تو اشتباه بود! باید با حرف **${lastChar}** شروع می‌شد.\nتو از بازی حذف شدی! 😢`,
+              color: 3066993
+            }
+          ]
+        });
+        wordChainPlayers.splice(currentPlayerIndex, 1);
+        if (currentPlayerIndex >= wordChainPlayers.length) currentPlayerIndex = 0;
+      } else if (usedWords.includes(newWord)) {
+        await interaction.channel.send({
+          embeds: [
+            {
+              title: "❌ حذف بازیکن",
+              description: `${interaction.user}، این کلمه قبلاً گفته شده!\nتو از بازی حذف شدی! 😢`,
+              color: 3066993
+            }
+          ]
+        });
+        wordChainPlayers.splice(currentPlayerIndex, 1);
+        if (currentPlayerIndex >= wordChainPlayers.length) currentPlayerIndex = 0;
+      } else {
+        currentWord = newWord;
+        usedWords.push(newWord);
+        currentPlayerIndex = (currentPlayerIndex + 1) % wordChainPlayers.length;
+      }
+
+      if (wordChainPlayers.length === 1) {
+        const winner = interaction.guild.members.cache.get(wordChainPlayers[0]);
+        await interaction.channel.send({
+          embeds: [
+            {
+              title: "🏁 پایان بازی زنجیره کلمات",
+              description: `بازی تموم شد! 🎉\nبرنده این بازی: ${winner}! 🏆\nجایزه: **100 کوین** 🤑`,
+              color: 3066993
+            }
+          ]
+        });
+
+        wordChainPlayers = [];
+        usedWords = [];
+        currentWord = '';
+        currentPlayerIndex = 0;
+        await wordChainMessage.edit({
+          embeds: [
+            {
+              title: "🔡 بازی زنجیره کلمات",
+              description: "کلمه‌ها رو زنجیر کن! با حرف آخر کلمه قبلی، یه کلمه جدید بگو و ذهنت رو به چالش بکشರ
+
+        }
+      });
+    } else if (wordChainPlayers.length === 0) {
+        await interaction.channel.send({
+          embeds: [
+            {
+              title: "❌ بازی لغو شد",
+              description: "هیچ بازیکنی باقی نموند! بازی لغو شد. 😢",
+              color: 3066993
+            }
+          ]
+        });
+
+        wordChainPlayers = [];
+        usedWords = [];
+        currentWord = '';
+        currentPlayerIndex = 0;
+        await wordChainMessage.edit({
+          embeds: [
+            {
+              title: "🔡 بازی زنجیره کلمات",
+              description: "کلمه‌ها رو زنجیر کن! با حرف آخر کلمه قبلی، یه کلمه جدید بگو و ذهنت رو به چالش بکش! 🗣️",
+              color: 3066993,
+              fields: [
+                { name: "👥 تعداد بازیکنان", value: `${wordChainPlayers.length}/10`, inline: true },
+                { name: "⏱️ زمان هر نوبت", value: "30 ثانیه", inline: true },
+                { name: "👤 حداقل بازیکنان", value: "3 نفر", inline: true },
+                { name: "💰 جایزه بازی", value: "برنده 100 کوین 🤑", inline: true }
+              ],
+              footer: { text: "برای شرکت تو بازی، روی دکمه ورود کلیک کن! 🎮" }
+            }
+          ],
+          components: [
+            {
+              type: 1,
+              components: [
+                { type: 2, style: 3, label: "ورود به بازی", custom_id: "join_wordchain" },
+                { type: 2, style: 1, label: "شروع بازی", custom_id: "start_wordchain" },
+                { type: 2, style: 2, label: "قوانین بازی 📜", custom_id: "wordchain_rules" },
+                { type: 2, style: 2, label: "بازگشت 🔙", custom_id: "back_to_menu" }
+              ]
+            }
+          ]
+        });
+      } else {
+        const nextPlayer = interaction.guild.members.cache.get(wordChainPlayers[currentPlayerIndex]);
+        await interaction.channel.send({
+          embeds: [
+            {
+              title: "🔡 دور بعدی - زنجیره کلمات",
+              description: `کلمه فعلی: **${currentWord}** 📝\n${nextPlayer}، نوبت توئه! یه کلمه بگو که با حرف **${currentWord[currentWord.length - 1]}** شروع بشه. ⏳`,
+              color: 3066993
+            }
+          ],
+          components: [
+            {
+              type: 1,
+              components: [
+                { type: 2, style: 1, label: "کلمه رو وارد کن", custom_id: "submit_word" }
+              ]
+            }
+          ]
+        });
+      }
+    });
+
+    collector.on('end', collected => {
+      if (!collected.size) {
+        interaction.channel.send({
+          embeds: [
+            {
+              title: "❌ حذف بازیکن",
+              description: `${interaction.user}، وقتت تموم شد!\nتو از بازی حذف شدی! 😢`,
+              color: 3066993
+            }
+          ]
+        });
+        wordChainPlayers.splice(currentPlayerIndex, 1);
+        if (currentPlayerIndex >= wordChainPlayers.length) currentPlayerIndex = 0;
+
+        if (wordChainPlayers.length === 1) {
+          const winner = interaction.guild.members.cache.get(wordChainPlayers[0]);
+          interaction.channel.send({
+            embeds: [
+              {
+                title: "🏁 پایان بازی زنجیره کلمات",
+                description: `بازی تموم شد! 🎉\nبرنده این بازی: ${winner}! 🏆\nجایزه: **100 کوین** 🤑`,
+                color: 3066993
+              }
+            ]
+          });
+
+          wordChainPlayers = [];
+          usedWords = [];
+          currentWord = '';
+          currentPlayerIndex = 0;
+          wordChainMessage.edit({
+            embeds: [
+              {
+                title: "🔡 بازی زنجیره کلمات",
+                description: "کلمه‌ها رو زنجیر کن! با حرف آخر کلمه قبلی، یه کلمه جدید بگو و ذهنت رو به چالش بکش! 🗣️",
+                color: 3066993,
+                fields: [
+                  { name: "👥 تعداد بازیکنان", value: `${wordChainPlayers.length}/10`, inline: true },
+                  { name: "⏱️ زمان هر نوبت", value: "30 ثانیه", inline: true },
+                  { name: "👤 حداقل بازیکنان", value: "3 نفر", inline: true },
+                  { name: "💰 جایزه بازی", value: "برنده 100 کوین 🤑", inline: true }
+                ],
+                footer: { text: "برای شرکت تو بازی، روی دکمه ورود کلیک کن! 🎮" }
+              }
+            ],
+            components: [
+              {
+                type: 1,
+                components: [
+                  { type: 2, style: 3, label: "ورود به بازی", custom_id: "join_wordchain" },
+                  { type: 2, style: 1, label: "شروع بازی", custom_id: "start_wordchain" },
+                  { type: 2, style: 2, label: "قوانین بازی 📜", custom_id: "wordchain_rules" },
+                  { type: 2, style: 2, label: "بازگشت 🔙", custom_id: "back_to_menu" }
+                ]
+              }
+            ]
+          });
+        } else if (wordChainPlayers.length === 0) {
+          interaction.channel.send({
+            embeds: [
+              {
+                title: "❌ بازی لغو شد",
+                description: "هیچ بازیکنی باقی نموند! بازی لغو شد. 😢",
+                color: 3066993
+              }
+            ]
+          });
+
+          wordChainPlayers = [];
+          usedWords = [];
+          currentWord = '';
+          currentPlayerIndex = 0;
+          wordChainMessage.edit({
+            embeds: [
+              {
+                title: "🔡 بازی زنجیره کلمات",
+                description: "کلمه‌ها رو زنجیر کن! با حرف آخر کلمه قبلی، یه کلمه جدید بگو و ذهنت رو به چالش بکش! 🗣️",
+                color: 3066993,
+                fields: [
+                  { name: "👥 تعداد بازیکنان", value: `${wordChainPlayers.length}/10`, inline: true },
+                  { name: "⏱️ زمان هر نوبت", value: "30 ثانیه", inline: true },
+                  { name: "👤 حداقل بازیکنان", value: "3 نفر", inline: true },
+                  { name: "💰 جایزه بازی", value: "برنده 100 کوین 🤑", inline: true }
+                ],
+                footer: { text: "برای شرکت تو بازی، روی دکمه ورود کلیک کن! 🎮" }
+              }
+            ],
+            components: [
+              {
+                type: 1,
+                components: [
+                  { type: 2, style: 3, label: "ورود به بازی", custom_id: "join_wordchain" },
+                  { type: 2, style: 1, label: "شروع بازی", custom_id: "start_wordchain" },
+                  { type: 2, style: 2, label: "قوانین بازی 📜", custom_id: "wordchain_rules" },
+                  { type: 2, style: 2, label: "بازگشت 🔙", custom_id: "back_to_menu" }
+                ]
+              }
+            ]
+          });
+        } else {
+          const nextPlayer = interaction.guild.members.cache.get(wordChainPlayers[currentPlayerIndex]);
+          interaction.channel.send({
+            embeds: [
+              {
+                title: "🔡 دور بعدی - زنجیره کلمات",
+                description: `کلمه فعلی: **${currentWord}** 📝\n${nextPlayer}، نوبت توئه! یه کلمه بگو که با حرف **${currentWord[currentWord.length - 1]}** شروع بشه. ⏳`,
+                color: 3066993
+              }
+            ],
+            components: [
+              {
+                type: 1,
+                components: [
+                  { type: 2, style: 1, label: "کلمه رو وارد کن", custom_id: "submit_word" }
+                ]
+              }
+            ]
+          });
+        }
+      });
+    });
+  }
+});
+
+client.login('YOUR_BOT_TOKEN');
+توضیحات کد
+مدیریت بازی: بازی با دکمه‌ها کنترل می‌شه. بازیکنا باید کلمه جدید رو تو چت بنویسن و ربات بررسی می‌کنه که کلمه درست باشه یا نه.
+زمان‌بندی: هر بازیکن 30 ثانیه وقت داره تا کلمه بگه، وگرنه حذف می‌شه.
+پایان بازی: بازی تا وقتی ادامه داره که فقط یه بازیکن باقی بمونه، و برنده 100 کوین جایزه می‌گیره.

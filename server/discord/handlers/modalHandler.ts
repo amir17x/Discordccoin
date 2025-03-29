@@ -13,7 +13,7 @@ import { buyGiveawayTickets } from '../components/giveawayBridge';
 import { processTransfer } from '../components/economyMenu';
 import { handleRobbery } from '../components/robberyMenu';
 import { processBuyPet, processRenamePet } from '../components/petMenu';
-import { LogType, getLogger } from '../utils/logger';
+import { logger } from '../utils/logger';
 import { botConfig } from '../utils/config';
 import { adminMenu } from '../components/adminMenu';
 import { clansMenu } from '../components/clansMenu';
@@ -477,7 +477,7 @@ export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
     
     // Handle log channel setting modal
     if (customId.startsWith('set_log_channel_')) {
-      const logType = customId.replace('set_log_channel_', '') as LogType;
+      const logType = customId.replace('set_log_channel_', '');
       const channelId = interaction.fields.getTextInputValue('channelId');
       
       // Validate channel ID (basic check)
@@ -503,7 +503,6 @@ export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
       botConfig.setLogChannel(logType, channelId);
       
       // Update logger with new channel
-      const logger = getLogger(interaction.client);
       logger.setChannels({ [logType]: channelId });
       
       await interaction.reply({
@@ -541,7 +540,6 @@ export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
       botConfig.setDefaultLogChannel(channelId);
       
       // Update logger with new default channel
-      const logger = getLogger(interaction.client);
       logger.setDefaultChannel(channelId);
       
       await interaction.reply({
@@ -596,7 +594,6 @@ export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
       });
       
       // Log the action
-      const logger = getLogger(interaction.client);
       logger.logAdminAction(
         interaction.user.id,
         interaction.user.username,
@@ -667,7 +664,6 @@ export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
       });
       
       // Log the action
-      const logger = getLogger(interaction.client);
       logger.logAdminAction(
         interaction.user.id,
         interaction.user.username,
@@ -902,7 +898,6 @@ ${prompt}
       });
       
       // Log the action
-      const logger = getLogger(interaction.client);
       logger.logAdminAction(
         interaction.user.id,
         interaction.user.username,
@@ -951,7 +946,6 @@ ${prompt}
       });
       
       // Log the action
-      const logger = getLogger(interaction.client);
       logger.logAdminAction(
         interaction.user.id,
         interaction.user.username,
@@ -1000,7 +994,6 @@ ${prompt}
       });
       
       // Log the action
-      const logger = getLogger(interaction.client);
       logger.logAdminAction(
         interaction.user.id,
         interaction.user.username,
@@ -1315,7 +1308,6 @@ ${prompt}
       });
       
       // Log the action
-      const logger = getLogger(interaction.client);
       logger.logAdminAction(
         interaction.user.id,
         interaction.user.username,
@@ -1389,7 +1381,6 @@ ${prompt}
       });
       
       // Log the action
-      const logger = getLogger(interaction.client);
       logger.logAdminAction(
         interaction.user.id,
         interaction.user.username,

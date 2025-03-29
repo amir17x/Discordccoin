@@ -399,6 +399,29 @@ export interface IStorage {
   appointQuizReviewer(userId: string, username: string, appointedBy: string): Promise<QuizReviewer>;
   getQuizReviewerByUserId(userId: string): Promise<QuizReviewer | undefined>;
   
+  // Game Session operations
+  saveGameSession(session: {
+    gameId: string;
+    gameType: string;
+    guildId: string;
+    channelId: string;
+    hostId: string;
+    players: string[];
+    status: string;
+    settings: any;
+    sessionNumber: number;
+    startedAt?: Date;
+    endedAt?: Date;
+    scores: { playerId: string; score: number }[];
+  }): Promise<boolean>;
+  getGameSession(gameId: string): Promise<any>;
+  getActiveGameSessions(gameType: string): Promise<any[]>;
+  endGameSession(gameId: string): Promise<boolean>;
+  getActiveGameSessionsInGuild(guildId: string): Promise<any[]>;
+  getActiveGameSessionsInChannel(channelId: string): Promise<any[]>;
+  getMaxGameSessionNumber(guildId: string, gameType: string): Promise<number>;
+  getGameSessionsForUser(userId: string): Promise<any[]>;
+  
   // AI Assistant operations
   getUserAIAssistantDetails(userId: number): Promise<{subscription: boolean, subscriptionTier: string, subscriptionExpires: Date | null, questionsRemaining: number, totalQuestions: number} | undefined>;
   useAIAssistantQuestion(userId: number): Promise<boolean>;
@@ -417,6 +440,27 @@ export interface IStorage {
   addPlayerToGameSession(sessionId: string, playerId: string): Promise<GameSession | undefined>;
   removePlayerFromGameSession(sessionId: string, playerId: string): Promise<GameSession | undefined>;
   endGameSession(id: string): Promise<boolean>;
+  
+  // Truth or Dare and other game session operations
+  saveGameSession(session: {
+    gameId: string;
+    gameType: string;
+    guildId: string;
+    channelId: string;
+    hostId: string;
+    players: string[];
+    status: string;
+    settings: any;
+    sessionNumber: number;
+    startedAt?: Date;
+    endedAt?: Date;
+    scores: { playerId: string; score: number }[];
+  }): Promise<boolean>;
+  getActiveGameSessionsByType(gameType: string): Promise<any[]>;
+  getActiveGameSessionsInGuild(guildId: string): Promise<any[]>;
+  getActiveGameSessionsInChannel(channelId: string): Promise<any[]>;
+  getMaxGameSessionNumber(guildId: string, gameType: string): Promise<number>;
+  getGameSessionsForUser(userId: string): Promise<any[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -449,6 +493,8 @@ export class MemStorage implements IStorage {
   private quizQuestions: Map<string, QuizQuestion> = new Map(); // کلید: id
   private quizReviewers: Map<string, QuizReviewer> = new Map(); // کلید: userId
   private gameSessions: Map<string, GameSession> = new Map(); // کلید: id
+  // ذخیره سازی جلسات بازی فعال (برای truth or dare و بازی‌های دیگر)
+  private activeGameSessions: Map<string, any> = new Map(); // کلید: gameId
   
   private currentLoanId = 1;
   private currentJobId = 1;
@@ -6132,6 +6178,121 @@ export class MongoStorage implements IStorage {
     } catch (error) {
       console.error('Error updating job XP in MongoDB:', error);
       return memStorage.updateJobXP(userId, xpAmount);
+    }
+  }
+
+  // ======= مدیریت جلسات بازی =======
+
+  async saveGameSession(session: {
+    gameId: string;
+    gameType: string;
+    guildId: string;
+    channelId: string;
+    hostId: string;
+    players: string[];
+    status: string;
+    settings: any;
+    sessionNumber: number;
+    startedAt?: Date;
+    endedAt?: Date;
+    scores: { playerId: string; score: number }[];
+  }): Promise<boolean> {
+    try {
+      await GameSessionModel.findOneAndUpdate(
+        { gameId: session.gameId },
+        session,
+        { upsert: true, new: true }
+      );
+      return true;
+    } catch (error) {
+      console.error('Error saving game session to MongoDB:', error);
+      return false;
+    }
+  }
+
+  async getGameSession(gameId: string): Promise<any> {
+    try {
+      return await GameSessionModel.findOne({ gameId });
+    } catch (error) {
+      console.error('Error getting game session from MongoDB:', error);
+      return null;
+    }
+  }
+
+  async getActiveGameSessions(gameType: string): Promise<any[]> {
+    try {
+      return await GameSessionModel.find({
+        gameType,
+        status: { $in: ['waiting', 'active'] }
+      });
+    } catch (error) {
+      console.error('Error getting active game sessions from MongoDB:', error);
+      return [];
+    }
+  }
+
+  async endGameSession(gameId: string): Promise<boolean> {
+    try {
+      await GameSessionModel.findOneAndUpdate(
+        { gameId },
+        { 
+          status: 'ended',
+          endedAt: new Date()
+        }
+      );
+      return true;
+    } catch (error) {
+      console.error('Error ending game session in MongoDB:', error);
+      return false;
+    }
+  }
+
+  async getActiveGameSessionsInGuild(guildId: string): Promise<any[]> {
+    try {
+      return await GameSessionModel.find({
+        guildId,
+        status: { $in: ['waiting', 'active'] }
+      });
+    } catch (error) {
+      console.error('Error getting active game sessions from MongoDB:', error);
+      return [];
+    }
+  }
+
+  async getActiveGameSessionsInChannel(channelId: string): Promise<any[]> {
+    try {
+      return await GameSessionModel.find({
+        channelId,
+        status: { $in: ['waiting', 'active'] }
+      });
+    } catch (error) {
+      console.error('Error getting active game sessions from MongoDB:', error);
+      return [];
+    }
+  }
+
+  async getMaxGameSessionNumber(guildId: string, gameType: string): Promise<number> {
+    try {
+      const result = await GameSessionModel.findOne({
+        guildId,
+        gameType
+      }).sort({ sessionNumber: -1 }).limit(1);
+      
+      return result ? result.sessionNumber : 0;
+    } catch (error) {
+      console.error('Error getting max game session number from MongoDB:', error);
+      return 0;
+    }
+  }
+
+  async getGameSessionsForUser(userId: string): Promise<any[]> {
+    try {
+      return await GameSessionModel.find({
+        players: userId
+      });
+    } catch (error) {
+      console.error('Error getting user game sessions from MongoDB:', error);
+      return [];
     }
   }
 }
