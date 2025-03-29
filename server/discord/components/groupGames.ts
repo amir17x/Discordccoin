@@ -105,6 +105,116 @@ interface GameSession {
 const activeGames: Map<string, GameSession> = new Map();
 
 /**
+ * دریافت تعداد کل بازی‌های فعال
+ * @returns تعداد کل بازی‌های فعال
+ */
+export function getActiveGamesCount(): number {
+  return Array.from(activeGames.values()).filter(game => game.status !== 'ended').length;
+}
+
+/**
+ * دریافت لیست تمام بازیکنان فعال
+ * @returns آرایه‌ای از شناسه‌های کاربری بازیکنان فعال
+ */
+export function getActivePlayers(): string[] {
+  // استفاده از Set برای جلوگیری از تکرار کاربران
+  const players = new Set<string>();
+  
+  // جمع‌آوری تمام بازیکنان از تمام بازی‌های فعال
+  Array.from(activeGames.values())
+    .filter(game => game.status !== 'ended')
+    .forEach(game => {
+      game.players.forEach(playerId => players.add(playerId));
+    });
+  
+  return Array.from(players);
+}
+
+/**
+ * نمایش منوی جلسات فعال بازی‌های گروهی
+ * @param interaction برهم‌کنش کاربر
+ */
+export async function showActiveSessionsMenu(interaction: ButtonInteraction) {
+  try {
+    // دریافت بازی‌های فعال
+    const activeGamesList = Array.from(activeGames.values())
+      .filter(game => game.status !== 'ended')
+      .sort((a, b) => {
+        // مرتب‌سازی بر اساس زمان شروع (تازه‌ترین اول)
+        const aTime = a.startedAt || new Date();
+        const bTime = b.startedAt || new Date();
+        return bTime.getTime() - aTime.getTime();
+      });
+
+    // تعداد کل بازیکنان فعال
+    const totalActivePlayers = getActivePlayers().length;
+    
+    // ایجاد Embed
+    const embed = new EmbedBuilder()
+      .setTitle('🎮 جلسات فعال بازی‌های گروهی')
+      .setDescription('لیست تمام بازی‌های گروهی فعال در حال حاضر')
+      .setColor('#9B59B6')
+      .addFields(
+        { name: '🎲 کل جلسات فعال', value: `${activeGamesList.length} جلسه`, inline: true },
+        { name: '👥 کل بازیکنان حاضر', value: `${totalActivePlayers} بازیکن`, inline: true }
+      )
+      .setFooter({ text: 'برای پیوستن به یک بازی، روی نام آن کلیک کنید' })
+      .setTimestamp();
+    
+    // اضافه کردن اطلاعات هر بازی فعال به Embed
+    if (activeGamesList.length > 0) {
+      activeGamesList.forEach((game, index) => {
+        // تبدیل نوع بازی به نام فارسی
+        const gameTypeNames: Record<string, string> = {
+          'mafia': '🕵️‍♂️ مافیا',
+          'werewolf': '🐺 گرگینه',
+          'quiz': '📚 مسابقه اطلاعات عمومی',
+          'drawguess': '🎨 نقاشی حدس بزن',
+          'truthordare': '🎯 جرات یا حقیقت',
+          'bingo': '🎲 بینگو',
+          'wordchain': '📝 زنجیره کلمات',
+          'spy': '🕴️ جاسوس مخفی'
+        };
+        
+        const gameTypeName = gameTypeNames[game.gameType] || game.gameType;
+        const hostUser = client.users.cache.get(game.createdBy)?.username || 'کاربر ناشناس';
+        const startTime = game.startedAt ? new Date(game.startedAt).toLocaleTimeString('fa-IR') : 'در انتظار شروع';
+        
+        embed.addFields({
+          name: `${index + 1}. ${gameTypeName}`,
+          value: `👤 میزبان: ${hostUser}\n` +
+                 `👥 تعداد بازیکنان: ${game.players.length}\n` +
+                 `⏰ شروع: ${startTime}`,
+          inline: true
+        });
+      });
+    } else {
+      embed.setDescription('🔍 در حال حاضر هیچ بازی فعالی وجود ندارد!\n\n' +
+                          'می‌توانید با انتخاب یکی از بازی‌های گروهی، یک بازی جدید شروع کنید.');
+    }
+    
+    // ایجاد دکمه بازگشت
+    const row = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('group_games')
+          .setLabel('🔙 بازگشت به منوی بازی‌ها')
+          .setStyle(ButtonStyle.Secondary)
+      );
+    
+    // ارسال پاسخ
+    await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+    
+  } catch (error) {
+    log(`Error showing active sessions menu: ${error}`, 'error');
+    await interaction.reply({ 
+      content: '❌ خطایی در نمایش جلسات فعال رخ داد. لطفاً بعداً دوباره تلاش کنید.', 
+      ephemeral: true 
+    });
+  }
+}
+
+/**
  * ایجاد منوی اصلی بازی‌های گروهی
  */
 export async function handleGroupGamesMenu(interaction: ChatInputCommandInteraction) {

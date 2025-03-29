@@ -9,6 +9,7 @@ import {
   MessageComponentInteraction
 } from 'discord.js';
 import { storage } from '../../storage';
+import { getActiveGamesCount, getActivePlayers } from './groupGames';
 
 // Function to create and send the games menu
 export async function gamesMenu(
@@ -255,6 +256,10 @@ export async function gamesMenu(
       }
     } else if (state === 'group') {
       // Group games menu - با رنگ بنفش برای بازی‌های گروهی (دوستانه و جمعی)
+      // تعداد کل جلسات فعال بازی و بازیکنان حاضر
+      const activeSessions = getActiveGamesCount();
+      const activePlayerCount = getActivePlayers().length;
+      
       embed.setColor('#9B59B6') // رنگ بنفش برای بازی‌های گروهی
         .setTitle('👥 بازی‌های گروهی')
         .setDescription('🎮 سرگرمی دسته‌جمعی با دوستان و اعضای سرور! 🎉')
@@ -262,7 +267,8 @@ export async function gamesMenu(
         .setFields(
           { name: '📝 توضیحات', value: 'بازی‌های گروهی برای 3 تا 10 نفر طراحی شده‌اند. هیچ هزینه‌ای برای شرکت در این بازی‌ها نیاز نیست و هدف اصلی سرگرمی است.', inline: false },
           { name: '💰 موجودی', value: `${user.wallet} Ccoin`, inline: true },
-          { name: '👥 بازیکنان حاضر', value: 'در حال بارگذاری...', inline: true }
+          { name: '👥 بازیکنان حاضر', value: `${activePlayerCount} بازیکن`, inline: true },
+          { name: '🎲 کل جلسات فعال', value: `${activeSessions} جلسه`, inline: true }
         );
       
       // Create group games buttons - با منطق رنگی برای بازی‌های گروهی

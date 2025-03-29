@@ -176,6 +176,13 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
   
   // پشتیبانی از دکمه‌های بازی‌های جدید با فرمت game:gametype:action
   if (customId.startsWith('game:')) {
+    // دکمه نمایش جلسات فعال بازی
+    if (customId === 'game:active_sessions') {
+      const { showActiveSessionsMenu } = await import('../components/groupGames');
+      await showActiveSessionsMenu(interaction);
+      return;
+    }
+    
     await handleGroupGamesButton(interaction);
     return;
   }
