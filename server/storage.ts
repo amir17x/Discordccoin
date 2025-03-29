@@ -243,6 +243,11 @@ export interface IStorage {
   getUserCount(): Promise<number>;
   getUserTransactions(userId: number): Promise<Transaction[]>;
   
+  // Game statistics
+  incrementTotalGamesWon(userId: number): Promise<void>;
+  incrementTotalGamesPlayed(userId: number): Promise<void>;
+  getGameSession(gameId: string): Promise<GameSession | undefined>;
+  
   // Notification operations
   getUserNotificationSettings(userId: number): Promise<NotificationSettings | undefined>;
   updateUserNotificationSettings(userId: number, updates: Partial<NotificationSettings>): Promise<NotificationSettings | undefined>;
@@ -414,9 +419,7 @@ export interface IStorage {
     endedAt?: Date;
     scores: { playerId: string; score: number }[];
   }): Promise<boolean>;
-  getGameSession(gameId: string): Promise<any>;
   getActiveGameSessions(gameType: string): Promise<any[]>;
-  endGameSession(gameId: string): Promise<boolean>;
   getActiveGameSessionsInGuild(guildId: string): Promise<any[]>;
   getActiveGameSessionsInChannel(channelId: string): Promise<any[]>;
   getMaxGameSessionNumber(guildId: string, gameType: string): Promise<number>;
@@ -439,7 +442,6 @@ export interface IStorage {
   deleteGameSession(sessionId: string): Promise<boolean>;
   addPlayerToGameSession(sessionId: string, playerId: string): Promise<GameSession | undefined>;
   removePlayerFromGameSession(sessionId: string, playerId: string): Promise<GameSession | undefined>;
-  endGameSession(id: string): Promise<boolean>;
   
   // Truth or Dare and other game session operations
   saveGameSession(session: {
@@ -3704,6 +3706,26 @@ export class MemStorage implements IStorage {
     return this.gameSessions.get(id);
   }
   
+  async getGameSession(gameId: string): Promise<GameSession | undefined> {
+    return this.gameSessions.get(gameId) || this.activeGameSessions.get(gameId);
+  }
+  
+  async incrementTotalGamesWon(userId: number): Promise<void> {
+    const user = await this.getUser(userId);
+    if (user) {
+      user.totalGamesWon = (user.totalGamesWon || 0) + 1;
+      await this.updateUser(userId, { totalGamesWon: user.totalGamesWon });
+    }
+  }
+  
+  async incrementTotalGamesPlayed(userId: number): Promise<void> {
+    const user = await this.getUser(userId);
+    if (user) {
+      user.totalGamesPlayed = (user.totalGamesPlayed || 0) + 1;
+      await this.updateUser(userId, { totalGamesPlayed: user.totalGamesPlayed });
+    }
+  }
+  
   async getActiveGameSessions(channelId?: string): Promise<GameSession[]> {
     let activeSessions = Array.from(this.gameSessions.values())
       .filter(s => s.status === 'active' || s.status === 'waiting');
@@ -3753,6 +3775,40 @@ import ItemModel from './models/Item';
 import QuestModel from './models/Quest';
 
 export class MongoStorage implements IStorage {
+  async incrementTotalGamesWon(userId: number): Promise<void> {
+    try {
+      const user = await UserModel.findOne({ id: userId });
+      if (user) {
+        user.totalGamesWon = (user.totalGamesWon || 0) + 1;
+        await user.save();
+      }
+    } catch (error) {
+      console.error(`Error incrementing total games won for user ${userId}:`, error);
+    }
+  }
+  
+  async incrementTotalGamesPlayed(userId: number): Promise<void> {
+    try {
+      const user = await UserModel.findOne({ id: userId });
+      if (user) {
+        user.totalGamesPlayed = (user.totalGamesPlayed || 0) + 1;
+        await user.save();
+      }
+    } catch (error) {
+      console.error(`Error incrementing total games played for user ${userId}:`, error);
+    }
+  }
+  
+  async getGameSession(gameId: string): Promise<GameSession | undefined> {
+    try {
+      const gameSession = await GameSessionModel.findOne({ gameId });
+      if (!gameSession) return undefined;
+      return gameSession as unknown as GameSession;
+    } catch (error) {
+      console.error(`Error getting game session ${gameId} from MongoDB:`, error);
+      return undefined;
+    }
+  }
   async getAllStocks(): Promise<StockData[]> {
     // پیاده‌سازی متد getAllStocks برای MongoDB
     try {
@@ -5680,7 +5736,7 @@ export class MongoStorage implements IStorage {
 
   async endGameSession(id: string): Promise<boolean> {
     try {
-      const session = await GameSessionModel.findOne({ id });
+      const session = await GameSessionModel.findOne({ gameId: id });
       if (!session) return false;
       
       session.status = 'ended';
@@ -6349,10 +6405,10 @@ export class MongoStorage implements IStorage {
     }
   }
 
-  async endGameSession(gameId: string): Promise<boolean> {
+  async endGameSession(id: string): Promise<boolean> {
     try {
       await GameSessionModel.findOneAndUpdate(
-        { gameId },
+        { gameId: id },
         { 
           status: 'ended',
           endedAt: new Date()

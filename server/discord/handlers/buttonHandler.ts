@@ -41,8 +41,8 @@ import {
   backToWerewolfMenu,
   cancelWerewolfGame,
   startWerewolfGame,
-  dayVoting as werewolfVoting,
-  votePlayer as werewolfVotePlayer,
+  werewolfDayVoting,
+  werewolfVotePlayer,
   handleSeerCheck,
   handleDoctorSave,
   handleBodyguardProtect,
@@ -240,9 +240,9 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     // شروع بازی گرگینه
     await startWerewolfGame(interaction);
     return;
-  } else if (customId.startsWith('werewolf_day_voting_')) {
+  } else if (customId.startsWith('werewolf_vote_day_')) {
     // رأی‌گیری در فاز روز بازی گرگینه
-    await werewolfVoting(interaction);
+    await werewolfDayVoting(interaction);
     return;
   } else if (customId.startsWith('werewolf_vote_')) {
     // رأی دادن به بازیکن در بازی گرگینه

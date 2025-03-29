@@ -14,7 +14,10 @@ const GameSettingsSchema = new mongoose.Schema({
   maxPlayers: { type: Number, default: 10 },
   minPlayers: { type: Number, default: 3 },
   prizeCoin: { type: Number, default: 100 },
-  language: { type: String, enum: ['fa', 'en'], default: 'fa' }
+  language: { type: String, enum: ['fa', 'en'], default: 'fa' },
+  dayDuration: { type: Number }, // Added for werewolf game
+  nightDuration: { type: Number }, // Added for werewolf game
+  votingSystem: { type: String } // Added for voting system configuration
 }, { _id: false });
 
 // اسکیما جلسه بازی
@@ -23,7 +26,7 @@ const GameSessionSchema = new mongoose.Schema({
   gameType: { 
     type: String, 
     required: true, 
-    enum: ['quiz', 'truth_or_dare', 'wordchain', 'drawguess', 'bingo', 'mafia'] 
+    enum: ['quiz', 'truth_or_dare', 'wordchain', 'drawguess', 'bingo', 'mafia', 'werewolf'] 
   },
   guildId: { type: String, required: true },
   channelId: { type: String, required: true },
@@ -39,6 +42,7 @@ const GameSessionSchema = new mongoose.Schema({
     type: GameSettingsSchema, 
     default: () => ({}) 
   },
+  data: { type: mongoose.Schema.Types.Mixed }, // Added for game-specific data
   sessionNumber: { type: Number, default: 1 },
   startedAt: { type: Date },
   endedAt: { type: Date },
@@ -57,7 +61,7 @@ const GameSessionModel = mongoose.model('GameSession', GameSessionSchema);
 // Define type for a game session document
 export interface GameSession {
   gameId: string;
-  gameType: 'quiz' | 'truth_or_dare' | 'wordchain' | 'drawguess' | 'bingo' | 'mafia';
+  gameType: 'quiz' | 'truth_or_dare' | 'wordchain' | 'drawguess' | 'bingo' | 'mafia' | 'werewolf';
   guildId: string;
   channelId: string;
   hostId: string;
@@ -72,7 +76,11 @@ export interface GameSession {
     minPlayers: number;
     prizeCoin: number;
     language: 'fa' | 'en';
+    dayDuration?: number; // Added for werewolf game
+    nightDuration?: number; // Added for werewolf game
+    votingSystem?: string; // Added for voting system configuration
   };
+  data?: any; // Added for storing game-specific data
   sessionNumber?: number;
   startedAt?: Date;
   endedAt?: Date;

@@ -15,12 +15,15 @@ export interface GameSettings {
   minPlayers: number;
   prizeCoin: number;
   language: 'fa' | 'en';
+  dayDuration?: number; // Added for werewolf game
+  nightDuration?: number; // Added for werewolf game
+  votingSystem?: string; // Added for voting system configuration
 }
 
 // تعریف اینترفیس برای اسکیما جلسه بازی
 export interface GameSession extends Document {
   gameId: string;
-  gameType: 'quiz' | 'truth_or_dare' | 'wordchain' | 'drawguess' | 'bingo' | 'mafia';
+  gameType: 'quiz' | 'truth_or_dare' | 'wordchain' | 'drawguess' | 'bingo' | 'mafia' | 'werewolf';
   guildId: string;
   channelId: string;
   hostId: string;
@@ -28,6 +31,7 @@ export interface GameSession extends Document {
   scores: GameScore[];
   status: 'waiting' | 'active' | 'ended';
   settings: GameSettings;
+  data?: any; // Added for game-specific data
   sessionNumber: number;
   startedAt: Date;
   endedAt: Date;

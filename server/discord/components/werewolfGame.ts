@@ -155,22 +155,28 @@ export async function createWerewolfGame(interaction: ButtonInteraction) {
     
     // ایجاد جلسه بازی در دیتابیس
     const gameSession: GameSession = {
-      id: gameId,
+      gameId: gameId,
       gameType: 'werewolf',
+      guildId: interaction.guildId || "",
       channelId: channel.id,
-      createdBy: interaction.user.id,
+      hostId: interaction.user.id,
       players: [interaction.user.id],
+      scores: [],
       status: 'waiting',
       createdAt: new Date(),
       updatedAt: new Date(),
       data: werewolfGame,
       settings: {
+        timePerTurn: 60,
+        isPrivate: false,
+        allowSpectators: true,
         minPlayers: 6,
         maxPlayers: 12,
+        prizeCoin: 500,
+        language: 'fa',
         dayDuration: 300,
         nightDuration: 180,
-        votingSystem: 'majority',
-        prizeCoin: 500
+        votingSystem: 'majority'
       }
     };
     
@@ -237,7 +243,11 @@ export async function createWerewolfGame(interaction: ButtonInteraction) {
     activeWerewolfGames.set(gameId, werewolfGame);
     
     // ذخیره در دیتابیس
-    await storage.saveGameSession(gameSession);
+    try {
+      await storage.createGameSession(gameSession);
+    } catch (error) {
+      log(`Error creating game session: ${error}`, 'error');
+    }
     
     // پاسخ به تعامل
     await interaction.reply({ 
@@ -1571,10 +1581,10 @@ async function endGame(gameData: WerewolfGameData, winningTeam: 'village' | 'wer
  * مدیریت رای‌گیری در فاز روز
  * @param interaction برهم‌کنش دکمه
  */
-export async function dayVoting(interaction: ButtonInteraction) {
+export async function werewolfDayVoting(interaction: ButtonInteraction) {
   try {
     // استخراج شناسه بازی
-    const gameId = interaction.customId.replace('vote_day_', '');
+    const gameId = interaction.customId.replace('werewolf_vote_day_', '');
     
     // بررسی وجود بازی
     const gameData = activeWerewolfGames.get(gameId);
@@ -1631,7 +1641,7 @@ export async function dayVoting(interaction: ButtonInteraction) {
     const selectMenu = new ActionRowBuilder<StringSelectMenuBuilder>()
       .addComponents(
         new StringSelectMenuBuilder()
-          .setCustomId(`vote_player_${gameId}`)
+          .setCustomId(`werewolf_vote_player_${gameId}`)
           .setPlaceholder('به یک بازیکن رای دهید...')
           .addOptions(targetOptions)
       );
@@ -1655,10 +1665,10 @@ export async function dayVoting(interaction: ButtonInteraction) {
  * مدیریت رای به بازیکن در فاز روز
  * @param interaction برهم‌کنش منوی انتخاب
  */
-export async function votePlayer(interaction: StringSelectMenuInteraction) {
+export async function werewolfVotePlayer(interaction: StringSelectMenuInteraction) {
   try {
     // استخراج شناسه بازی و بازیکن هدف
-    const gameId = interaction.customId.replace('vote_player_', '');
+    const gameId = interaction.customId.replace('werewolf_vote_player_', '');
     const targetId = interaction.values[0];
     
     // بررسی وجود بازی
