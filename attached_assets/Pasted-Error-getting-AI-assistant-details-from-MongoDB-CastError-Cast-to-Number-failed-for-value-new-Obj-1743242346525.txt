@@ -1,0 +1,180 @@
+Error getting AI assistant details from MongoDB: CastError: Cast to Number failed for value "new ObjectId('67e69fb12f788d00cce28f7e')" (type ObjectId) at path "id" for model "User"
+    at SchemaNumber.cast (/home/runner/workspace/node_modules/mongoose/lib/schema/number.js:381:11)
+    at SchemaType.applySetters (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1255:12)
+    at SchemaNumber.castForQuery (/home/runner/workspace/node_modules/mongoose/lib/schema/number.js:435:16)
+    at cast (/home/runner/workspace/node_modules/mongoose/lib/cast.js:390:32)
+    at Query.cast (/home/runner/workspace/node_modules/mongoose/lib/query.js:4907:12)
+    at Query._castConditions (/home/runner/workspace/node_modules/mongoose/lib/query.js:2325:10)
+    at model.Query._findOne (/home/runner/workspace/node_modules/mongoose/lib/query.js:2648:8)
+    at model.Query.exec (/home/runner/workspace/node_modules/mongoose/lib/query.js:4456:80)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async MongoStorage.getUserAIAssistantDetails (/home/runner/workspace/server/storage.ts:5722:20) {
+  stringValue: `"new ObjectId('67e69fb12f788d00cce28f7e')"`,
+  messageFormat: undefined,
+  kind: 'Number',
+  value: new ObjectId('67e69fb12f788d00cce28f7e'),
+  path: 'id',
+  reason: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(!isNaN(val))
+  
+      at castNumber (/home/runner/workspace/node_modules/mongoose/lib/cast/number.js:27:10)
+      at SchemaNumber.cast (/home/runner/workspace/node_modules/mongoose/lib/schema/number.js:379:12)
+      at SchemaType.applySetters (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1255:12)
+      at SchemaNumber.castForQuery (/home/runner/workspace/node_modules/mongoose/lib/schema/number.js:435:16)
+      at cast (/home/runner/workspace/node_modules/mongoose/lib/cast.js:390:32)
+      at Query.cast (/home/runner/workspace/node_modules/mongoose/lib/query.js:4907:12)
+      at Query._castConditions (/home/runner/workspace/node_modules/mongoose/lib/query.js:2325:10)
+      at model.Query._findOne (/home/runner/workspace/node_modules/mongoose/lib/query.js:2648:8)
+      at model.Query.exec (/home/runner/workspace/node_modules/mongoose/lib/query.js:4456:80)
+      at process.processTicksAndRejections (node:internal/process/task_queues:95:5) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '=='
+  },
+  valueType: 'ObjectId'
+}
+Adding -25000 to wallet of user whysiks (700031045231182005)
+Error adding to wallet in MongoDB: Error: User validation failed: id: Path `id` is required.
+    at ValidationError.inspect (/home/runner/workspace/node_modules/mongoose/lib/error/validation.js:52:26)
+    at formatValue (node:internal/util/inspect:809:19)
+    at inspect (node:internal/util/inspect:368:10)
+    at formatWithOptionsInternal (node:internal/util/inspect:2307:40)
+    at formatWithOptions (node:internal/util/inspect:2169:10)
+    at console.value (node:internal/console/constructor:350:14)
+    at console.warn (node:internal/console/constructor:383:61)
+    at MongoStorage.addToWallet (/home/runner/workspace/server/storage.ts:4655:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async handleButtonInteraction (/home/runner/workspace/server/discord/handlers/buttonHandler.ts:345:9) {
+  errors: {
+    id: ValidatorError: Path `id` is required.
+        at validate (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1404:13)
+        at SchemaType.doValidate (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1388:7)
+        at /home/runner/workspace/node_modules/mongoose/lib/document.js:3082:18
+        at process.processTicksAndRejections (node:internal/process/task_queues:77:11) {
+      properties: [Object],
+      kind: 'required',
+      path: 'id',
+      value: undefined,
+      reason: undefined,
+      [Symbol(mongoose#validatorError)]: true
+    }
+  },
+  _message: 'User validation failed'
+}
+Error subscribing to AI assistant in MongoDB: CastError: Cast to Number failed for value "new ObjectId('67e69fb12f788d00cce28f7e')" (type ObjectId) at path "id" for model "User"
+    at SchemaNumber.cast (/home/runner/workspace/node_modules/mongoose/lib/schema/number.js:381:11)
+    at SchemaType.applySetters (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1255:12)
+    at SchemaNumber.castForQuery (/home/runner/workspace/node_modules/mongoose/lib/schema/number.js:435:16)
+    at cast (/home/runner/workspace/node_modules/mongoose/lib/cast.js:390:32)
+    at Query.cast (/home/runner/workspace/node_modules/mongoose/lib/query.js:4907:12)
+    at Query._castConditions (/home/runner/workspace/node_modules/mongoose/lib/query.js:2325:10)
+    at model.Query._findOne (/home/runner/workspace/node_modules/mongoose/lib/query.js:2648:8)
+    at model.Query.exec (/home/runner/workspace/node_modules/mongoose/lib/query.js:4456:80)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async MongoStorage.subscribeToAIAssistant (/home/runner/workspace/server/storage.ts:5798:20) {
+  stringValue: `"new ObjectId('67e69fb12f788d00cce28f7e')"`,
+  messageFormat: undefined,
+  kind: 'Number',
+  value: new ObjectId('67e69fb12f788d00cce28f7e'),
+  path: 'id',
+  reason: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(!isNaN(val))
+  
+      at castNumber (/home/runner/workspace/node_modules/mongoose/lib/cast/number.js:27:10)
+      at SchemaNumber.cast (/home/runner/workspace/node_modules/mongoose/lib/schema/number.js:379:12)
+      at SchemaType.applySetters (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1255:12)
+      at SchemaNumber.castForQuery (/home/runner/workspace/node_modules/mongoose/lib/schema/number.js:435:16)
+      at cast (/home/runner/workspace/node_modules/mongoose/lib/cast.js:390:32)
+      at Query.cast (/home/runner/workspace/node_modules/mongoose/lib/query.js:4907:12)
+      at Query._castConditions (/home/runner/workspace/node_modules/mongoose/lib/query.js:2325:10)
+      at model.Query._findOne (/home/runner/workspace/node_modules/mongoose/lib/query.js:2648:8)
+      at model.Query.exec (/home/runner/workspace/node_modules/mongoose/lib/query.js:4456:80)
+      at process.processTicksAndRejections (node:internal/process/task_queues:95:5) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '=='
+  },
+  valueType: 'ObjectId'
+}
+Error getting AI assistant details from MongoDB: CastError: Cast to Number failed for value "new ObjectId('67e69fb12f788d00cce28f7e')" (type ObjectId) at path "id" for model "User"
+    at SchemaNumber.cast (/home/runner/workspace/node_modules/mongoose/lib/schema/number.js:381:11)
+    at SchemaType.applySetters (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1255:12)
+    at SchemaNumber.castForQuery (/home/runner/workspace/node_modules/mongoose/lib/schema/number.js:435:16)
+    at cast (/home/runner/workspace/node_modules/mongoose/lib/cast.js:390:32)
+    at Query.cast (/home/runner/workspace/node_modules/mongoose/lib/query.js:4907:12)
+    at Query._castConditions (/home/runner/workspace/node_modules/mongoose/lib/query.js:2325:10)
+    at model.Query._findOne (/home/runner/workspace/node_modules/mongoose/lib/query.js:2648:8)
+    at model.Query.exec (/home/runner/workspace/node_modules/mongoose/lib/query.js:4456:80)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async MongoStorage.getUserAIAssistantDetails (/home/runner/workspace/server/storage.ts:5722:20) {
+  stringValue: `"new ObjectId('67e69fb12f788d00cce28f7e')"`,
+  messageFormat: undefined,
+  kind: 'Number',
+  value: new ObjectId('67e69fb12f788d00cce28f7e'),
+  path: 'id',
+  reason: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(!isNaN(val))
+  
+      at castNumber (/home/runner/workspace/node_modules/mongoose/lib/cast/number.js:27:10)
+      at SchemaNumber.cast (/home/runner/workspace/node_modules/mongoose/lib/schema/number.js:379:12)
+      at SchemaType.applySetters (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1255:12)
+      at SchemaNumber.castForQuery (/home/runner/workspace/node_modules/mongoose/lib/schema/number.js:435:16)
+      at cast (/home/runner/workspace/node_modules/mongoose/lib/cast.js:390:32)
+      at Query.cast (/home/runner/workspace/node_modules/mongoose/lib/query.js:4907:12)
+      at Query._castConditions (/home/runner/workspace/node_modules/mongoose/lib/query.js:2325:10)
+      at model.Query._findOne (/home/runner/workspace/node_modules/mongoose/lib/query.js:2648:8)
+      at model.Query.exec (/home/runner/workspace/node_modules/mongoose/lib/query.js:4456:80)
+      at process.processTicksAndRejections (node:internal/process/task_queues:95:5) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '=='
+  },
+  valueType: 'ObjectId'
+}
+9:58:27 AM [info] استفاده از اعلانات ذخیره شده در دیتابیس برای کاربر 700031045231182005
+Error getting AI assistant details from MongoDB: CastError: Cast to Number failed for value "new ObjectId('67e69fb12f788d00cce28f7e')" (type ObjectId) at path "id" for model "User"
+    at SchemaNumber.cast (/home/runner/workspace/node_modules/mongoose/lib/schema/number.js:381:11)
+    at SchemaType.applySetters (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1255:12)
+    at SchemaNumber.castForQuery (/home/runner/workspace/node_modules/mongoose/lib/schema/number.js:435:16)
+    at cast (/home/runner/workspace/node_modules/mongoose/lib/cast.js:390:32)
+    at Query.cast (/home/runner/workspace/node_modules/mongoose/lib/query.js:4907:12)
+    at Query._castConditions (/home/runner/workspace/node_modules/mongoose/lib/query.js:2325:10)
+    at model.Query._findOne (/home/runner/workspace/node_modules/mongoose/lib/query.js:2648:8)
+    at model.Query.exec (/home/runner/workspace/node_modules/mongoose/lib/query.js:4456:80)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async MongoStorage.getUserAIAssistantDetails (/home/runner/workspace/server/storage.ts:5722:20) {
+  stringValue: `"new ObjectId('67e69fb12f788d00cce28f7e')"`,
+  messageFormat: undefined,
+  kind: 'Number',
+  value: new ObjectId('67e69fb12f788d00cce28f7e'),
+  path: 'id',
+  reason: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(!isNaN(val))
+  
+      at castNumber (/home/runner/workspace/node_modules/mongoose/lib/cast/number.js:27:10)
+      at SchemaNumber.cast (/home/runner/workspace/node_modules/mongoose/lib/schema/number.js:379:12)
+      at SchemaType.applySetters (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1255:12)
+      at SchemaNumber.castForQuery (/home/runner/workspace/node_modules/mongoose/lib/schema/number.js:435:16)
+      at cast (/home/runner/workspace/node_modules/mongoose/lib/cast.js:390:32)
+      at Query.cast (/home/runner/workspace/node_modules/mongoose/lib/query.js:4907:12)
+      at Query._castConditions (/home/runner/workspace/node_modules/mongoose/lib/query.js:2325:10)
+      at model.Query._findOne (/home/runner/workspace/node_modules/mongoose/lib/query.js:2648:8)
+      at model.Query.exec (/home/runner/workspace/node_modules/mongoose/lib/query.js:4456:80)
+      at process.processTicksAndRejections (node:internal/process/task_queues:95:5) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '=='
+  },
+  valueType: 'ObjectId'

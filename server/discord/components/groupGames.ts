@@ -24,7 +24,8 @@ import { log } from '../../vite';
 import { IUser as User } from '../../models/User';
 import { v4 as uuidv4 } from 'uuid';
 import GameSessionModel from '../../models/GameSession';
-import type { GameSession } from '../../models/GameSession';
+import type { GameSession as DBGameSession } from '../../models/GameSession';
+import QuizQuestionModel from '../../models/QuizQuestion';
 
 // تعریف client برای دسترسی به Discord API
 // این متغیر باید از فایل اصلی bot.ts به این ماژول پاس داده شود
@@ -74,18 +75,8 @@ const shuffle = <T>(array: T[]): T[] => {
 /**
  * مدل سوال برای بازی اطلاعات عمومی
  */
-export interface QuizQuestion {
-  id: string;
-  question: string;
-  options: string[];
-  correctAnswer: number;
-  category: string;
-  difficulty: 'easy' | 'medium' | 'hard';
-  addedBy?: string; // شناسه کاربر اضافه‌کننده
-  approved: boolean; // وضعیت تأیید سوال
-  approvedBy?: string; // شناسه کاربر تأیید‌کننده
-  createdAt: Date;
-}
+// وارد کردن تایپ QuizQuestion از مدل اصلی
+import { QuizQuestion } from '../../models/QuizQuestion';
 
 /**
  * مدل اطلاعات بازی گروهی
@@ -115,7 +106,7 @@ interface GameSession {
 }
 
 // لیست موقت بازی‌های فعال (بعداً به دیتابیس منتقل می‌شود)
-const activeGames: Map<string, GameSession> = new Map();
+export const activeGames: Map<string, GameSession> = new Map();
 
 // تاریخچه بازی‌های گذشته (بعداً به دیتابیس منتقل خواهد شد)
 const gameHistory: GameSession[] = [];
@@ -1154,113 +1145,58 @@ async function joinQuizGame(interaction: ButtonInteraction) {
  */
 async function loadQuestionsForQuiz(gameSession: GameSession) {
   try {
-    // فرض می‌کنیم تابعی برای دریافت سوالات از دیتابیس داریم
-    let questions = await storage.getApprovedQuizQuestions();
+    // دریافت سوالات تأیید شده از دیتابیس
+    let questions: QuizQuestion[] = await storage.getApprovedQuizQuestions(
+      undefined, // همه دسته‌بندی‌ها
+      undefined, // همه سطوح سختی
+      gameSession.data.maxQuestions // حداکثر تعداد سوالات لازم
+    );
     
-    // اگر سوالات به اندازه کافی موجود نبود، از سوالات پیش‌فرض استفاده می‌کنیم
+    // اگر سوالات به اندازه کافی موجود نبود، لاگ بگیریم
     if (!questions || questions.length < gameSession.data.maxQuestions) {
-      questions = [
-        {
-          id: '1',
+      log(`Not enough quiz questions available: ${questions?.length || 0}/${gameSession.data.maxQuestions}`, 'warning');
+      
+      if (questions.length === 0) {
+        // اگر هیچ سوالی در دیتابیس نبود، یک سوال پیش‌فرض اضافه می‌کنیم
+        const defaultQuestion = {
+          id: uuidv4(),
           question: 'پایتخت ایران کدام شهر است؟',
           options: ['تهران', 'اصفهان', 'شیراز', 'تبریز'],
           correctAnswer: 0,
           category: 'جغرافیا',
-          difficulty: 'easy',
+          difficulty: 'easy' as 'easy',
           approved: true,
           createdAt: new Date()
-        },
-        {
-          id: '2',
-          question: 'بلندترین قله ایران کدام است؟',
-          options: ['دماوند', 'سبلان', 'علم کوه', 'تفتان'],
-          correctAnswer: 0,
-          category: 'جغرافیا',
-          difficulty: 'medium',
-          approved: true,
-          createdAt: new Date()
-        },
-        {
-          id: '3',
-          question: 'دریاچه ارومیه در کدام استان قرار دارد؟',
-          options: ['آذربایجان غربی', 'آذربایجان شرقی', 'اردبیل', 'زنجان'],
-          correctAnswer: 0,
-          category: 'جغرافیا',
-          difficulty: 'easy',
-          approved: true,
-          createdAt: new Date()
-        },
-        {
-          id: '4',
-          question: 'کدام رود طولانی‌ترین رود ایران است؟',
-          options: ['کارون', 'زاینده‌رود', 'سفیدرود', 'هیرمند'],
-          correctAnswer: 0,
-          category: 'جغرافیا',
-          difficulty: 'medium',
-          approved: true,
-          createdAt: new Date()
-        },
-        {
-          id: '5',
-          question: 'جمعیت ایران حدوداً چند میلیون نفر است؟',
-          options: ['85 میلیون', '70 میلیون', '100 میلیون', '60 میلیون'],
-          correctAnswer: 0,
-          category: 'جغرافیا',
-          difficulty: 'medium',
-          approved: true,
-          createdAt: new Date()
-        },
-        {
-          id: '6',
-          question: 'فردوسی شاعر کدام کتاب معروف است؟',
-          options: ['شاهنامه', 'بوستان', 'دیوان حافظ', 'مثنوی'],
-          correctAnswer: 0,
-          category: 'ادبیات',
-          difficulty: 'easy',
-          approved: true,
-          createdAt: new Date()
-        },
-        {
-          id: '7',
-          question: 'صائب تبریزی از شاعران کدام سبک ادبی است؟',
-          options: ['سبک هندی', 'سبک خراسانی', 'سبک عراقی', 'سبک نو'],
-          correctAnswer: 0,
-          category: 'ادبیات',
-          difficulty: 'hard',
-          approved: true,
-          createdAt: new Date()
-        },
-        {
-          id: '8',
-          question: 'نام اثر معروف مولانا چیست؟',
-          options: ['مثنوی معنوی', 'بوستان', 'گلستان', 'دیوان شمس'],
-          correctAnswer: 0,
-          category: 'ادبیات',
-          difficulty: 'easy',
-          approved: true,
-          createdAt: new Date()
-        },
-        {
-          id: '9',
-          question: 'کدام شهر به عنوان پایتخت فرهنگی ایران شناخته می‌شود؟',
-          options: ['اصفهان', 'شیراز', 'تبریز', 'مشهد'],
-          correctAnswer: 0,
-          category: 'فرهنگ',
-          difficulty: 'medium',
-          approved: true,
-          createdAt: new Date()
-        },
-        {
-          id: '10',
+        } as QuizQuestion;
+        
+        // ذخیره سوال در دیتابیس با استفاده از storage
+        await storage.addQuizQuestion(defaultQuestion.question, defaultQuestion.options, 
+          defaultQuestion.correctAnswer, defaultQuestion.category, 
+          defaultQuestion.difficulty, 'system', true);
+        
+        // استفاده از سوال در بازی
+        questions = [defaultQuestion];
+      } else {
+        // اگر سوالات کافی نیستند اما صفر نیستند، با همان تعداد موجود ادامه می‌دهیم
+        log(`Using ${questions.length} available questions for the quiz.`, 'info');
+      }
+      
+      // اضافه کردن سوالات نمونه اگر به اندازه کافی سوال نداریم
+      if (questions.length < gameSession.data.maxQuestions) {
+        const sampleQuestion = {
+          id: uuidv4(),
           question: 'پاسارگاد مقبره کدام پادشاه است؟',
           options: ['کوروش', 'داریوش', 'خشایارشاه', 'اردشیر'],
           correctAnswer: 0,
           category: 'تاریخ',
-          difficulty: 'easy',
+          difficulty: 'easy' as 'easy',
           approved: true,
           createdAt: new Date()
-        }
-      ];
+        } as QuizQuestion;
+        
+        // ذخیره سوال به صورت محلی (بدون ذخیره در دیتابیس)
+        questions.push(sampleQuestion);
+      }
     }
     
     // انتخاب تصادفی تعداد مشخصی سوال

@@ -1,1260 +1,1435 @@
+/**
+ * بازی بینگو
+ * 
+ * در این بازی، هر بازیکن یک کارت ۵×۵ با اعداد تصادفی دریافت می‌کند
+ * و ربات به صورت متناوب اعداد را اعلام می‌کند. اولین بازیکنی که بتواند
+ * یک خط کامل (افقی، عمودی یا مورب) از اعداد را علامت بزند، برنده است.
+ * 
+ * @module bingoGame
+ * @requires discord.js
+ * @requires ../storage
+ */
+
 import { 
+  ButtonInteraction, 
+  ChatInputCommandInteraction, 
   ActionRowBuilder, 
   ButtonBuilder, 
-  ButtonInteraction, 
   ButtonStyle, 
-  EmbedBuilder, 
-  GuildMember, 
-  MessageActionRowComponentBuilder,
-  PermissionFlagsBits,
-  StringSelectMenuBuilder,
-  StringSelectMenuOptionBuilder,
-  TextChannel,
+  EmbedBuilder,
   User,
-  VoiceChannel
+  ChannelType,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  ModalSubmitInteraction,
+  TextChannel,
+  APIButtonComponent
 } from 'discord.js';
+import { Client } from 'discord.js';
+import { log } from '../utils/logger';
 import { storage } from '../../storage';
 import { v4 as uuidv4 } from 'uuid';
-import { bold, inlineCode } from '@discordjs/builders';
-import type { GameSession } from '../../models/GameSession';
-
-// بینگو کارت‌های بازیکنان
-interface BingoCard {
-  card: Array<Array<string | number>>;
-  marks: boolean[][];
-}
-
-// وضعیت بازی بینگو
-interface BingoGameState {
-  gameId: string;
-  channelId: string;
-  hostId: string;
-  players: string[];
-  cards: Map<string, BingoCard>;
-  calledNumbers: Set<number>;
-  currentNumber: number | null;
-  status: 'waiting' | 'active' | 'ended';
-  lastUpdate: number;
-  winners: string[];
-  messageId: string | null;
-  roundInterval: NodeJS.Timeout | null;
-}
-
-// مخزن بازی‌های فعال
-const activeGames = new Map<string, BingoGameState>();
+import { GameSession } from '../../models/GameSession';
+import { activeGames } from './groupGames';
 
 /**
- * ایجاد یک کارت بینگو جدید برای بازیکن
- * @returns کارت بینگو تولید شده
+ * تنظیم کلاینت دیسکورد
+ * @param discordClient نمونه کلاینت دیسکورد
+ */
+let client: Client;
+export function setClient(discordClient: Client) {
+  client = discordClient;
+}
+
+/**
+ * تعریف ساختار کارت بینگو
+ */
+interface BingoCard {
+  cardNumbers: number[][];
+  markedNumbers: boolean[][];
+}
+
+/**
+ * داده‌های اختصاصی بازی بینگو
+ */
+interface BingoGameData {
+  cards: { [userId: string]: BingoCard };
+  calledNumbers: number[];
+  availableNumbers: number[];
+  currentRound: number;
+  maxRounds: number;
+  timePerRound: number; // زمان هر دور به ثانیه
+  winners: string[];
+  lastNumberCalled?: number;
+  lastNumberTime?: Date;
+  timerInterval?: NodeJS.Timeout;
+  waitingForNextNumber: boolean;
+  bingoMessages: { messageId: string, channelId: string }[];
+  reward: number;
+  inProgress: boolean;
+}
+
+/**
+ * تنظیمات پیش‌فرض بازی بینگو
+ */
+const DEFAULT_BINGO_SETTINGS = {
+  timePerRound: 30, // ۳۰ ثانیه برای هر دور
+  maxRounds: 25,    // حداکثر ۲۵ دور بازی
+  reward: 200       // ۲۰۰ کوین جایزه
+};
+
+/**
+ * رنگ‌های مورد استفاده در بازی بینگو
+ */
+const BINGO_COLORS = {
+  primary: 0x9B59B6,      // بنفش برای رنگ اصلی
+  success: 0x2ECC71,      // سبز برای موفقیت
+  warning: 0xF1C40F,      // زرد برای هشدار
+  danger: 0xE74C3C,       // قرمز برای خطر
+  info: 0x3498DB,         // آبی برای اطلاعات
+  waiting: 0xE67E22       // نارنجی برای حالت انتظار
+};
+
+/**
+ * ساخت کارت بینگو با اعداد تصادفی
+ * @returns کارت بینگو جدید
  */
 function generateBingoCard(): BingoCard {
-  // ایجاد یک آرایه از اعداد 1 تا 25
+  // ایجاد آرایه‌ای از اعداد ۱ تا ۲۵
   const numbers = Array.from({ length: 25 }, (_, i) => i + 1);
   
-  // مخلوط کردن ترتیب اعداد به صورت تصادفی
+  // تصادفی کردن اعداد
   for (let i = numbers.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
   }
   
-  // ایجاد یک ماتریس 5×5 برای کارت بینگو
-  const card: Array<Array<string | number>> = [];
+  // ایجاد کارت ۵×۵
+  const cardNumbers: number[][] = [];
   for (let i = 0; i < 5; i++) {
-    const row: Array<string | number> = [];
-    for (let j = 0; j < 5; j++) {
-      const index = i * 5 + j;
-      // ستاره در وسط کارت (خانه رایگان)
-      if (i === 2 && j === 2) {
-        row.push('⭐');
-      } else {
-        row.push(numbers[index]);
-      }
-    }
-    card.push(row);
+    cardNumbers.push(numbers.slice(i * 5, (i + 1) * 5));
   }
   
-  // ایجاد ماتریس برای ثبت علامت‌ها
-  const marks = Array(5).fill(null).map(() => Array(5).fill(false));
+  // مرکز کارت به عنوان خانه رایگان (علامت‌زده شده) در نظر گرفته می‌شود
+  const markedNumbers: boolean[][] = Array(5).fill(null).map(() => Array(5).fill(false));
+  markedNumbers[2][2] = true; // مرکز کارت را علامت می‌زنیم
   
-  // علامت‌گذاری خانه وسط به عنوان رایگان
-  marks[2][2] = true;
-  
-  return { card, marks };
+  return {
+    cardNumbers,
+    markedNumbers
+  };
 }
 
 /**
- * تولید نمایش متنی از کارت بینگو برای ارسال به کاربر
+ * بررسی وضعیت بینگو در کارت
  * @param card کارت بینگو
- * @param marks ماتریس علامت‌گذاری‌ها
- * @returns متن قالب‌بندی شده کارت
+ * @returns آیا بازیکن بینگو دارد
  */
-function displayBingoCard(card: Array<Array<string | number>>, marks: boolean[][]): string {
-  let display = '```\n';
+function checkForBingo(card: BingoCard): boolean {
+  const { markedNumbers } = card;
   
-  // نمایش سربرگ کارت
-  display += '  B    I    N    G    O  \n';
-  display += '-------------------------\n';
-  
-  // نمایش سطرهای کارت
-  for (let i = 0; i < 5; i++) {
-    for (let j = 0; j < 5; j++) {
-      // نمایش عدد یا ستاره 
-      let cell = card[i][j].toString().padStart(2, ' ');
-      
-      // اضافه کردن نشانگر برای خانه‌های علامت‌گذاری شده
-      if (marks[i][j]) {
-        cell = 'XX';
-      }
-      
-      display += `|${cell}| `;
-    }
-    display += '\n';
-  }
-  
-  display += '-------------------------\n';
-  display += '```';
-  
-  return display;
-}
-
-/**
- * بررسی اینکه آیا کارت برنده است یا نه
- * یک کارت زمانی برنده است که یک سطر، ستون یا قطر کامل علامت‌گذاری شده باشد
- * @param marks ماتریس علامت‌گذاری‌ها
- * @returns آیا کارت برنده است؟
- */
-function checkForBingo(marks: boolean[][]): boolean {
   // بررسی سطرها
-  for (let i = 0; i < 5; i++) {
-    if (marks[i].every(marked => marked)) {
+  for (let row = 0; row < 5; row++) {
+    if (markedNumbers[row].every(marked => marked)) {
       return true;
     }
   }
   
   // بررسی ستون‌ها
-  for (let j = 0; j < 5; j++) {
-    if (marks.every(row => row[j])) {
+  for (let col = 0; col < 5; col++) {
+    let columnComplete = true;
+    for (let row = 0; row < 5; row++) {
+      if (!markedNumbers[row][col]) {
+        columnComplete = false;
+        break;
+      }
+    }
+    if (columnComplete) {
       return true;
     }
   }
   
-  // بررسی قطر اصلی (بالا-چپ به پایین-راست)
-  if (marks[0][0] && marks[1][1] && marks[2][2] && marks[3][3] && marks[4][4]) {
-    return true;
-  }
-  
-  // بررسی قطر فرعی (بالا-راست به پایین-چپ)
-  if (marks[0][4] && marks[1][3] && marks[2][2] && marks[3][1] && marks[4][0]) {
-    return true;
-  }
-  
-  return false;
-}
-
-/**
- * علامت‌گذاری عدد در کارت بازیکن (اگر وجود داشته باشد)
- * @param card کارت بینگو
- * @param number عدد اعلام شده
- * @returns ماتریس به‌روزرسانی شده علامت‌گذاری‌ها
- */
-function markNumberOnCard(bingoCard: BingoCard, number: number): BingoCard {
-  const { card, marks } = bingoCard;
-  const updatedMarks = [...marks.map(row => [...row])];
-  
-  // جستجو برای عدد در کارت
+  // بررسی قطر اصلی
+  let mainDiagonalComplete = true;
   for (let i = 0; i < 5; i++) {
-    for (let j = 0; j < 5; j++) {
-      if (card[i][j] === number) {
-        updatedMarks[i][j] = true;
-      }
+    if (!markedNumbers[i][i]) {
+      mainDiagonalComplete = false;
+      break;
     }
   }
-  
-  return { card, marks: updatedMarks };
-}
-
-/**
- * ارسال کارت بینگو به بازیکن
- * @param user کاربر بازیکن
- * @param card کارت بینگو
- * @param gameId شناسه بازی
- * @returns موفقیت یا عدم موفقیت در ارسال
- */
-async function sendBingoCardToPlayer(user: User, bingoCard: BingoCard, gameId: string): Promise<boolean> {
-  try {
-    const { card, marks } = bingoCard;
-    
-    // ساخت امبد برای نمایش کارت
-    const embed = new EmbedBuilder()
-      .setTitle('🎮 کارت بینگو شما')
-      .setDescription(
-        'اعداد اعلام شده در بازی به صورت خودکار روی کارت شما علامت‌گذاری می‌شوند.\n' +
-        'وقتی یک سطر، ستون یا قطر کامل علامت‌گذاری شد، می‌توانید برنده شوید!'
-      )
-      .setColor('#00BCD4')
-      .addFields(
-        { name: '📋 کارت شما', value: displayBingoCard(card, marks), inline: false },
-        { name: '🆔 شناسه بازی', value: gameId, inline: true }
-      )
-      .setFooter({ text: 'اعداد اعلام شده با XX مشخص می‌شوند' });
-    
-    // دکمه اعلام بینگو
-    const row = new ActionRowBuilder<ButtonBuilder>()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId(`bingo_claim_${gameId}`)
-          .setLabel('اعلام بینگو!')
-          .setStyle(ButtonStyle.Success)
-          .setEmoji('🎯')
-      );
-    
-    // ارسال پیام خصوصی به بازیکن
-    await user.send({ embeds: [embed], components: [row] });
+  if (mainDiagonalComplete) {
     return true;
-  } catch (error) {
-    console.error(`Error sending bingo card to player ${user.id}:`, error);
-    return false;
   }
+  
+  // بررسی قطر فرعی
+  let secondaryDiagonalComplete = true;
+  for (let i = 0; i < 5; i++) {
+    if (!markedNumbers[i][4 - i]) {
+      secondaryDiagonalComplete = false;
+      break;
+    }
+  }
+  return secondaryDiagonalComplete;
 }
 
 /**
- * به‌روزرسانی کارت بینگو برای بازیکن
- * @param user کاربر بازیکن
- * @param bingoCard کارت بینگو
- * @param gameId شناسه بازی
- * @param calledNumbers اعداد اعلام شده
- * @returns 
+ * به‌روزرسانی کارت بینگو با عدد جدید
+ * @param card کارت بینگو
+ * @param calledNumber عدد اعلام‌شده
+ * @returns کارت به‌روزرسانی شده
  */
-async function updatePlayerCard(user: User, bingoCard: BingoCard, gameId: string, calledNumbers: Set<number>): Promise<void> {
-  try {
-    const { card, marks } = bingoCard;
-    
-    // ساخت امبد برای نمایش کارت
-    const embed = new EmbedBuilder()
-      .setTitle('🎮 کارت بینگو شما')
-      .setDescription(
-        'اعداد اعلام شده در بازی به صورت خودکار روی کارت شما علامت‌گذاری می‌شوند.\n' +
-        'وقتی یک سطر، ستون یا قطر کامل علامت‌گذاری شد، می‌توانید برنده شوید!'
-      )
-      .setColor('#00BCD4')
-      .addFields(
-        { name: '📋 کارت شما', value: displayBingoCard(card, marks), inline: false },
-        { name: '🔢 اعداد اعلام شده', value: Array.from(calledNumbers).sort((a, b) => a - b).join(', ') || 'هنوز عددی اعلام نشده', inline: false },
-        { name: '🆔 شناسه بازی', value: gameId, inline: true }
-      )
-      .setFooter({ text: 'اعداد اعلام شده با XX مشخص می‌شوند' });
-    
-    // دکمه اعلام بینگو
-    const row = new ActionRowBuilder<ButtonBuilder>()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId(`bingo_claim_${gameId}`)
-          .setLabel('اعلام بینگو!')
-          .setStyle(ButtonStyle.Success)
-          .setEmoji('🎯')
-      );
-    
-    try {
-      // ارسال پیام جدید به بازیکن
-      await user.send({ embeds: [embed], components: [row] });
-    } catch (error) {
-      console.error(`Could not send updated card to player ${user.id}:`, error);
-    }
-  } catch (error) {
-    console.error(`Error updating bingo card for player ${user.id}:`, error);
-  }
-}
-
-/**
- * به‌روزرسانی وضعیت بازی در کانال
- * @param gameState وضعیت بازی
- * @param channel کانال بازی
- */
-async function updateGameStatus(gameState: BingoGameState, channel: TextChannel): Promise<void> {
-  try {
-    const {
-      gameId,
-      players,
-      calledNumbers,
-      currentNumber,
-      status,
-      winners
-    } = gameState;
-    
-    // ساخت امبد برای نمایش وضعیت بازی
-    const embed = new EmbedBuilder()
-      .setTitle('🎲 بازی بینگو')
-      .setColor('#9B59B6');
-    
-    if (status === 'waiting') {
-      // وضعیت انتظار برای شروع بازی
-      embed.setDescription(
-        'منتظر پیوستن بازیکنان هستیم!\n' +
-        'برای شرکت در بازی روی دکمه "ورود به بازی" کلیک کنید.\n' +
-        'میزبان می‌تواند بازی را شروع کند.'
-      )
-      .addFields(
-        { name: '👥 تعداد بازیکنان', value: `${players.length}/10`, inline: true },
-        { name: '👤 حداقل بازیکنان', value: '3 نفر', inline: true },
-        { name: '💰 جایزه بازی', value: 'برنده: 200 کوین', inline: true }
-      )
-      .setFooter({ text: `شناسه بازی: ${gameId} | برای شروع بازی حداقل 3 بازیکن نیاز است` });
-      
-      // دکمه‌های بازی
-      const row = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId(`bingo_join_${gameId}`)
-            .setLabel('ورود به بازی')
-            .setStyle(ButtonStyle.Success)
-            .setEmoji('👤'),
-          new ButtonBuilder()
-            .setCustomId(`bingo_start_${gameId}`)
-            .setLabel('شروع بازی')
-            .setStyle(ButtonStyle.Primary)
-            .setEmoji('▶️'),
-          new ButtonBuilder()
-            .setCustomId(`bingo_rules_${gameId}`)
-            .setLabel('قوانین بازی')
-            .setStyle(ButtonStyle.Secondary)
-            .setEmoji('📜'),
-          new ButtonBuilder()
-            .setCustomId(`bingo_cancel_${gameId}`)
-            .setLabel('لغو بازی')
-            .setStyle(ButtonStyle.Danger)
-            .setEmoji('❌')
-        );
-      
-      if (gameState.messageId) {
-        try {
-          const message = await channel.messages.fetch(gameState.messageId);
-          await message.edit({ embeds: [embed], components: [row] });
-        } catch (error) {
-          // پیام قبلی یافت نشد، پیام جدید ارسال می‌کنیم
-          const message = await channel.send({ embeds: [embed], components: [row] });
-          gameState.messageId = message.id;
-        }
-      } else {
-        // اولین ارسال پیام
-        const message = await channel.send({ embeds: [embed], components: [row] });
-        gameState.messageId = message.id;
-      }
-      
-    } else if (status === 'active') {
-      // وضعیت بازی فعال
-      embed.setDescription(
-        '🎮 بازی بینگو در حال انجام است!\n' +
-        'هر 30 ثانیه یک عدد جدید اعلام می‌شود.\n' +
-        'وقتی یک خط کامل در کارت خود داشتید، روی دکمه "اعلام بینگو" در پیام خصوصی خود کلیک کنید.'
-      )
-      .addFields(
-        { name: '👥 بازیکنان', value: `${players.length} نفر`, inline: true },
-        { name: '🔢 عدد فعلی', value: currentNumber ? currentNumber.toString() : 'در حال قرعه‌کشی...', inline: true },
-        { name: '📊 تعداد اعداد اعلام شده', value: calledNumbers.size.toString(), inline: true },
-        { name: '📋 اعداد اعلام شده', value: Array.from(calledNumbers).sort((a, b) => a - b).join(', ') || 'هنوز عددی اعلام نشده', inline: false }
-      )
-      .setFooter({ text: `شناسه بازی: ${gameId} | هر 30 ثانیه یک عدد جدید اعلام می‌شود` });
-      
-      // دکمه‌های بازی
-      const row = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId(`bingo_rules_${gameId}`)
-            .setLabel('قوانین بازی')
-            .setStyle(ButtonStyle.Secondary)
-            .setEmoji('📜'),
-          new ButtonBuilder()
-            .setCustomId(`bingo_end_${gameId}`)
-            .setLabel('پایان بازی')
-            .setStyle(ButtonStyle.Danger)
-            .setEmoji('🛑')
-        );
-      
-      if (gameState.messageId) {
-        try {
-          const message = await channel.messages.fetch(gameState.messageId);
-          await message.edit({ embeds: [embed], components: [row] });
-        } catch (error) {
-          // پیام قبلی یافت نشد، پیام جدید ارسال می‌کنیم
-          const message = await channel.send({ embeds: [embed], components: [row] });
-          gameState.messageId = message.id;
-        }
-      } else {
-        // اولین ارسال پیام
-        const message = await channel.send({ embeds: [embed], components: [row] });
-        gameState.messageId = message.id;
-      }
-      
-    } else if (status === 'ended') {
-      // وضعیت پایان بازی
-      embed.setDescription(
-        '🏁 بازی بینگو به پایان رسید!\n' +
-        (winners.length > 0 ? `🏆 برنده: <@${winners.join('>, <@')}>` : 'هیچ برنده‌ای نداشتیم!')
-      )
-      .addFields(
-        { name: '👥 تعداد بازیکنان', value: `${players.length} نفر`, inline: true },
-        { name: '🔢 تعداد اعداد اعلام شده', value: calledNumbers.size.toString(), inline: true },
-        { name: '💰 جایزه', value: winners.length > 0 ? `هر برنده: ${Math.floor(200 / winners.length)} کوین` : 'بدون جایزه', inline: true },
-        { name: '📋 اعداد اعلام شده', value: Array.from(calledNumbers).sort((a, b) => a - b).join(', '), inline: false }
-      )
-      .setFooter({ text: `شناسه بازی: ${gameId} | بازی به پایان رسید` });
-      
-      // دکمه بازی جدید
-      const row = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId('bingo')
-            .setLabel('بازی جدید')
-            .setStyle(ButtonStyle.Success)
-            .setEmoji('🎮')
-        );
-      
-      if (gameState.messageId) {
-        try {
-          const message = await channel.messages.fetch(gameState.messageId);
-          await message.edit({ embeds: [embed], components: [row] });
-        } catch (error) {
-          // پیام قبلی یافت نشد، پیام جدید ارسال می‌کنیم
-          await channel.send({ embeds: [embed], components: [row] });
-        }
-      } else {
-        // اولین ارسال پیام
-        await channel.send({ embeds: [embed], components: [row] });
-      }
-      
-      // پاک کردن بازی از لیست بازی‌های فعال
-      setTimeout(() => {
-        activeGames.delete(gameId);
-      }, 60000); // یک دقیقه بعد پاک می‌شود
-    }
-    
-  } catch (error) {
-    console.error(`Error updating bingo game status:`, error);
-  }
-}
-
-/**
- * انتخاب یک عدد تصادفی جدید که قبلاً اعلام نشده باشد
- * @param gameState وضعیت بازی
- * @returns عدد تصادفی جدید
- */
-function drawNewNumber(gameState: BingoGameState): number {
-  const { calledNumbers } = gameState;
+function updateCard(card: BingoCard, calledNumber: number): BingoCard {
+  const updatedCard = { ...card };
   
-  // یافتن اعدادی که هنوز اعلام نشده‌اند
-  const availableNumbers = [];
-  for (let i = 1; i <= 25; i++) {
-    if (!calledNumbers.has(i)) {
-      availableNumbers.push(i);
-    }
-  }
-  
-  // اگر همه اعداد اعلام شده باشند، بازی را به پایان می‌رسانیم
-  if (availableNumbers.length === 0) {
-    endBingoGame(gameState.gameId, "all_numbers_called");
-    return 0;
-  }
-  
-  // انتخاب یک عدد تصادفی
-  const randomIndex = Math.floor(Math.random() * availableNumbers.length);
-  return availableNumbers[randomIndex];
-}
-
-/**
- * اعلام یک عدد جدید در بازی بینگو
- * @param gameId شناسه بازی
- */
-async function callNumber(gameId: string): Promise<void> {
-  const gameState = activeGames.get(gameId);
-  if (!gameState || gameState.status !== 'active') {
-    return;
-  }
-  
-  // انتخاب یک عدد تصادفی
-  const newNumber = drawNewNumber(gameState);
-  
-  if (newNumber === 0) {
-    return; // بازی به پایان رسیده (همه اعداد اعلام شده)
-  }
-  
-  // به‌روزرسانی وضعیت بازی
-  gameState.currentNumber = newNumber;
-  gameState.calledNumbers.add(newNumber);
-  gameState.lastUpdate = Date.now();
-  
-  try {
-    // یافتن کانال
-    const channel = await (await storage.discord.client.channels.fetch(gameState.channelId)) as TextChannel;
-    if (!channel) {
-      console.error(`Channel for game ${gameId} not found.`);
-      return;
-    }
-    
-    // اعلام عدد جدید در کانال
-    await channel.send(`🔢 **عدد جدید اعلام شد: ${newNumber}**\nلطفاً کارت‌های خود را بررسی کنید!`);
-    
-    // به‌روزرسانی وضعیت بازی در کانال
-    await updateGameStatus(gameState, channel);
-    
-    // به‌روزرسانی کارت‌های بازیکنان
-    for (const playerId of gameState.players) {
-      try {
-        const player = await storage.discord.client.users.fetch(playerId);
-        const playerCard = gameState.cards.get(playerId);
-        
-        if (player && playerCard) {
-          // علامت‌گذاری عدد جدید روی کارت بازیکن
-          const updatedCard = markNumberOnCard(playerCard, newNumber);
-          gameState.cards.set(playerId, updatedCard);
-          
-          // ارسال کارت به‌روزرسانی شده به بازیکن
-          await updatePlayerCard(player, updatedCard, gameId, gameState.calledNumbers);
-          
-          // بررسی برنده شدن بازیکن
-          if (checkForBingo(updatedCard.marks)) {
-            // بازیکن برنده شده است!
-            await handleBingoClaim(player, gameId);
-          }
-        }
-      } catch (error) {
-        console.error(`Error updating card for player ${playerId}:`, error);
+  for (let row = 0; row < 5; row++) {
+    for (let col = 0; col < 5; col++) {
+      if (updatedCard.cardNumbers[row][col] === calledNumber) {
+        updatedCard.markedNumbers[row][col] = true;
       }
     }
-  } catch (error) {
-    console.error(`Error calling number for game ${gameId}:`, error);
   }
+  
+  return updatedCard;
 }
 
 /**
- * تابع اصلی برای اجرای راند بعدی بازی
- * @param gameId شناسه بازی
+ * تبدیل کارت بینگو به متن قابل نمایش
+ * @param card کارت بینگو
+ * @returns متن کارت بینگو برای نمایش
  */
-async function runBingoRound(gameId: string): Promise<void> {
-  const gameState = activeGames.get(gameId);
-  if (!gameState || gameState.status !== 'active') {
-    return;
-  }
+function renderBingoCard(card: BingoCard): string {
+  let cardText = '```\n';
+  cardText += '┌─────┬─────┬─────┬─────┬─────┐\n';
   
-  // اعلام عدد جدید
-  await callNumber(gameId);
-  
-  // تنظیم تایمر برای راند بعدی (هر 30 ثانیه)
-  gameState.roundInterval = setTimeout(() => runBingoRound(gameId), 30000);
-}
-
-/**
- * شروع بازی بینگو
- * @param gameId شناسه بازی
- */
-async function startBingoGame(gameId: string): Promise<void> {
-  const gameState = activeGames.get(gameId);
-  if (!gameState || gameState.status !== 'waiting') {
-    return;
-  }
-  
-  // تغییر وضعیت بازی به فعال
-  gameState.status = 'active';
-  gameState.lastUpdate = Date.now();
-  
-  try {
-    // یافتن کانال
-    const channel = await (await storage.discord.client.channels.fetch(gameState.channelId)) as TextChannel;
-    if (!channel) {
-      console.error(`Channel for game ${gameId} not found.`);
-      return;
+  for (let row = 0; row < 5; row++) {
+    cardText += '│';
+    for (let col = 0; col < 5; col++) {
+      const number = card.cardNumbers[row][col];
+      const isMarked = card.markedNumbers[row][col];
+      
+      // نمایش اعداد علامت‌زده شده با ⭐ و بقیه با عدد
+      const displayValue = isMarked ? 
+        (row === 2 && col === 2 ? ' ⭐ ' : ' ✓' + number.toString().padStart(2, ' ')) : 
+        ' ' + number.toString().padStart(3, ' ');
+      
+      cardText += displayValue + '│';
     }
     
-    // اعلام شروع بازی
-    await channel.send({
-      content: `🎮 **بازی بینگو شروع شد!**\n👥 تعداد بازیکنان: ${gameState.players.length}\n⏱️ هر 30 ثانیه یک عدد جدید اعلام می‌شود.\n📩 کارت بینگو برای هر بازیکن به صورت خصوصی ارسال شده است.`,
-      allowedMentions: { parse: ['everyone'] }
-    });
-    
-    // به‌روزرسانی وضعیت بازی در کانال
-    await updateGameStatus(gameState, channel);
-    
-    // ثبت یک گزارش از بازی در پایگاه داده
-    await storage.createGameSession({
-      gameId,
-      gameType: 'bingo',
-      guildId: channel.guildId,
-      channelId: channel.id,
-      hostId: gameState.hostId,
-      players: gameState.players,
-      scores: [],
-      status: 'active',
-      settings: {
-        timePerTurn: 30,
-        isPrivate: false,
-        allowSpectators: true,
-        maxPlayers: 10,
-        minPlayers: 3,
-        prizeCoin: 200,
-        language: 'fa'
-      },
-      createdAt: new Date(),
-      updatedAt: new Date()
-    });
-    
-    // شروع بازی با اعلام اولین عدد
-    runBingoRound(gameId);
-    
-  } catch (error) {
-    console.error(`Error starting bingo game ${gameId}:`, error);
-  }
-}
-
-/**
- * پایان دادن به بازی بینگو
- * @param gameId شناسه بازی
- * @param reason دلیل پایان بازی (برنده، لغو، زمان)
- */
-async function endBingoGame(gameId: string, reason: 'winner' | 'cancelled' | 'timeout' | 'all_numbers_called'): Promise<void> {
-  const gameState = activeGames.get(gameId);
-  if (!gameState) {
-    return;
-  }
-  
-  // توقف تایمر راند
-  if (gameState.roundInterval) {
-    clearTimeout(gameState.roundInterval);
-    gameState.roundInterval = null;
-  }
-  
-  // تغییر وضعیت بازی به پایان یافته
-  gameState.status = 'ended';
-  gameState.lastUpdate = Date.now();
-  
-  try {
-    // یافتن کانال
-    const channel = await (await storage.discord.client.channels.fetch(gameState.channelId)) as TextChannel;
-    if (!channel) {
-      console.error(`Channel for game ${gameId} not found.`);
-      return;
-    }
-    
-    // پرداخت جایزه به برندگان
-    if (gameState.winners.length > 0 && reason === 'winner') {
-      const prizePerWinner = Math.floor(200 / gameState.winners.length);
-      
-      for (const winnerId of gameState.winners) {
-        try {
-          // افزایش موجودی برنده
-          await storage.updateUserWallet(winnerId, prizePerWinner);
-          
-          // ثبت تراکنش
-          await storage.createTransaction({
-            userId: parseInt(winnerId),
-            amount: prizePerWinner,
-            type: 'game_win',
-            description: `جایزه برنده شدن در بازی بینگو (شناسه بازی: ${gameId})`,
-            createdAt: new Date()
-          });
-          
-          // افزایش آمار بازی کاربر
-          const user = await storage.getUserByDiscordId(winnerId);
-          if (user) {
-            await storage.updateUserById(user.id, {
-              totalGamesPlayed: user.totalGamesPlayed + 1,
-              totalGamesWon: user.totalGamesWon + 1
-            });
-          }
-        } catch (error) {
-          console.error(`Error awarding prize to winner ${winnerId}:`, error);
-        }
-      }
-      
-      // اعلام برندگان در کانال
-      const winnersMention = gameState.winners.map(id => `<@${id}>`).join(', ');
-      await channel.send({
-        content: `🏆 **بازی بینگو به پایان رسید!**\n🎉 برندگان: ${winnersMention}\n💰 جایزه هر برنده: ${prizePerWinner} کوین`,
-        allowedMentions: { users: gameState.winners }
-      });
+    if (row < 4) {
+      cardText += '\n├─────┼─────┼─────┼─────┼─────┤\n';
     } else {
-      // پیام پایان بازی بدون برنده
-      let endMessage = '';
-      
-      switch (reason) {
-        case 'cancelled':
-          endMessage = '❌ **بازی بینگو لغو شد!**';
-          break;
-        case 'timeout':
-          endMessage = '⏱️ **بازی بینگو به دلیل عدم فعالیت به پایان رسید!**';
-          break;
-        case 'all_numbers_called':
-          endMessage = '🔢 **تمام اعداد بینگو اعلام شدند و بازی به پایان رسید!**';
-          break;
-        default:
-          endMessage = '🏁 **بازی بینگو به پایان رسید!**';
-          break;
-      }
-      
-      await channel.send(endMessage);
+      cardText += '\n└─────┴─────┴─────┴─────┴─────┘\n';
     }
-    
-    // به‌روزرسانی وضعیت نهایی بازی در کانال
-    await updateGameStatus(gameState, channel);
-    
-    // به‌روزرسانی رکورد بازی در پایگاه داده
-    await storage.endGameSession(gameId, {
-      status: 'ended',
-      endedAt: new Date()
-    });
-    
-    // افزایش آمار بازی برای همه بازیکنان
-    for (const playerId of gameState.players) {
-      if (!gameState.winners.includes(playerId)) {
-        try {
-          const user = await storage.getUserByDiscordId(playerId);
-          if (user) {
-            await storage.updateUserById(user.id, {
-              totalGamesPlayed: user.totalGamesPlayed + 1
-            });
-          }
-        } catch (error) {
-          console.error(`Error updating stats for player ${playerId}:`, error);
-        }
-      }
-    }
-    
-  } catch (error) {
-    console.error(`Error ending bingo game ${gameId}:`, error);
   }
+  
+  cardText += '```';
+  return cardText;
 }
 
 /**
- * رسیدگی به اعلام بینگو توسط بازیکن
- * @param user کاربر بازیکن
- * @param gameId شناسه بازی
+ * ایجاد بازی بینگو جدید
+ * @param interaction برهم‌کنش کاربر
  */
-async function handleBingoClaim(user: User, gameId: string): Promise<void> {
-  const gameState = activeGames.get(gameId);
-  if (!gameState || gameState.status !== 'active') {
-    await user.send('❌ این بازی دیگر فعال نیست!');
-    return;
-  }
-  
-  // بررسی اینکه آیا بازیکن در این بازی شرکت دارد
-  if (!gameState.players.includes(user.id)) {
-    await user.send('❌ شما در این بازی شرکت ندارید!');
-    return;
-  }
-  
-  // بررسی اینکه آیا بازیکن قبلاً برنده شده است
-  if (gameState.winners.includes(user.id)) {
-    await user.send('✅ شما قبلاً در این بازی برنده شده‌اید!');
-    return;
-  }
-  
-  // دریافت کارت بازیکن
-  const playerCard = gameState.cards.get(user.id);
-  if (!playerCard) {
-    await user.send('❌ کارت بینگو شما یافت نشد!');
-    return;
-  }
-  
-  // بررسی اعتبار بینگو
-  const isValidBingo = checkForBingo(playerCard.marks);
-  
-  if (isValidBingo) {
-    // اضافه کردن بازیکن به لیست برندگان
-    gameState.winners.push(user.id);
-    
-    // ارسال پیام تبریک به بازیکن
-    await user.send({
-      content: '🎉 **تبریک! بینگوی شما تأیید شد!**\n💰 جایزه شما به زودی واریز می‌شود.',
-      embeds: [
-        new EmbedBuilder()
-          .setTitle('🏆 کارت برنده بینگو')
-          .setDescription(displayBingoCard(playerCard.card, playerCard.marks))
-          .setColor('#FFD700')
-      ]
-    });
-    
-    try {
-      // یافتن کانال
-      const channel = await (await storage.discord.client.channels.fetch(gameState.channelId)) as TextChannel;
-      if (channel) {
-        // اعلام برنده جدید در کانال
-        await channel.send({
-          content: `🏆 **بینگو!** <@${user.id}> برنده شد!`,
-          allowedMentions: { users: [user.id] }
-        });
-        
-        // پایان دادن به بازی اگر این اولین برنده است
-        if (gameState.winners.length === 1) {
-          await endBingoGame(gameId, 'winner');
-        } else {
-          // به‌روزرسانی وضعیت بازی در کانال
-          await updateGameStatus(gameState, channel);
-        }
-      }
-    } catch (error) {
-      console.error(`Error announcing bingo winner in channel:`, error);
-    }
-  } else {
-    // بینگو نامعتبر بود
-    await user.send({
-      content: '❌ **بینگوی شما تأیید نشد!**\nشما هنوز یک خط کامل (سطر، ستون یا قطر) ندارید.',
-      embeds: [
-        new EmbedBuilder()
-          .setTitle('❌ کارت بینگو')
-          .setDescription(displayBingoCard(playerCard.card, playerCard.marks))
-          .setColor('#FF0000')
-      ]
-    });
-  }
-}
-
-/**
- * ایجاد یک بازی بینگو جدید
- * @param interaction تعامل دکمه
- */
-export async function createBingoGame(interaction: ButtonInteraction): Promise<void> {
+export async function createBingoGame(interaction: ButtonInteraction | ChatInputCommandInteraction) {
   try {
-    await interaction.deferReply({ ephemeral: true });
+    // بررسی وجود بازی فعال در کانال
+    const existingGame = Array.from(activeGames.values()).find(
+      game => game.channelId === interaction.channelId && 
+      (game.status === 'waiting' || game.status === 'active') &&
+      game.gameType === 'bingo'
+    );
     
-    // بررسی اینکه کاربر ثبت‌نام کرده باشد
-    const user = await storage.getUserByDiscordId(interaction.user.id);
-    if (!user) {
-      await interaction.editReply('❌ شما باید ابتدا ثبت‌نام کنید! از دستور `/menu` استفاده کنید.');
-      return;
-    }
-    
-    // بررسی اینکه آیا کانال متنی است
-    if (!interaction.channel || interaction.channel.type !== 0) {
-      await interaction.editReply('❌ این دستور فقط در کانال‌های متنی قابل استفاده است!');
-      return;
-    }
-    
-    // بررسی اینکه آیا بازی فعالی در این کانال وجود دارد
-    const existingGames = Array.from(activeGames.values())
-      .filter(game => game.channelId === interaction.channelId && game.status !== 'ended');
-    
-    if (existingGames.length > 0) {
-      await interaction.editReply('❌ یک بازی در حال انجام در این کانال وجود دارد! لطفاً منتظر پایان آن باشید یا از کانال دیگری استفاده کنید.');
+    if (existingGame) {
+      const errorEmbed = new EmbedBuilder()
+        .setTitle('❌ یک بازی بینگو در حال حاضر فعال است!')
+        .setDescription('لطفاً صبر کنید تا بازی فعلی به پایان برسد یا به آن بپیوندید.')
+        .setColor(BINGO_COLORS.danger);
+      
+      if (interaction.replied || interaction.deferred) {
+        await interaction.followUp({ embeds: [errorEmbed], ephemeral: true });
+      } else {
+        await interaction.reply({ embeds: [errorEmbed], ephemeral: true });
+      }
       return;
     }
     
     // ایجاد شناسه منحصر به فرد برای بازی
-    const gameId = uuidv4().substring(0, 8);
+    const gameId = uuidv4();
     
-    // ایجاد وضعیت بازی جدید
-    const gameState: BingoGameState = {
-      gameId,
-      channelId: interaction.channelId,
-      hostId: interaction.user.id,
-      players: [interaction.user.id], // میزبان به طور خودکار به عنوان بازیکن اضافه می‌شود
-      cards: new Map(),
-      calledNumbers: new Set(),
-      currentNumber: null,
-      status: 'waiting',
-      lastUpdate: Date.now(),
+    // آماده‌سازی داده‌های بازی بینگو
+    const gameData: BingoGameData = {
+      cards: {},
+      calledNumbers: [],
+      availableNumbers: Array.from({ length: 25 }, (_, i) => i + 1),
+      currentRound: 0,
+      maxRounds: DEFAULT_BINGO_SETTINGS.maxRounds,
+      timePerRound: DEFAULT_BINGO_SETTINGS.timePerRound,
       winners: [],
-      messageId: null,
-      roundInterval: null
+      waitingForNextNumber: false,
+      bingoMessages: [],
+      reward: DEFAULT_BINGO_SETTINGS.reward,
+      inProgress: false
     };
     
-    // ایجاد کارت بینگو برای میزبان
-    const hostCard = generateBingoCard();
-    gameState.cards.set(interaction.user.id, hostCard);
-    
-    // ذخیره بازی در مخزن بازی‌های فعال
-    activeGames.set(gameId, gameState);
-    
-    // ارسال کارت بینگو به میزبان
-    await sendBingoCardToPlayer(interaction.user, hostCard, gameId);
-    
-    // به‌روزرسانی وضعیت بازی در کانال
-    await updateGameStatus(gameState, interaction.channel as TextChannel);
-    
-    // اعلام موفقیت
-    await interaction.editReply('✅ بازی بینگو جدید ایجاد شد! کارت بینگو برای شما ارسال شده است.');
-    
-    // تنظیم تایمر برای بررسی غیرفعال بودن بازی
-    setTimeout(() => {
-      const game = activeGames.get(gameId);
-      if (game && game.status === 'waiting' && Date.now() - game.lastUpdate > 10 * 60 * 1000) {
-        // اگر بازی 10 دقیقه در وضعیت انتظار باشد، آن را لغو می‌کنیم
-        endBingoGame(gameId, 'timeout');
+    // ایجاد جلسه بازی
+    const newGame: GameSession = {
+      id: gameId,
+      gameType: 'bingo',
+      channelId: interaction.channelId,
+      createdBy: interaction.user.id,
+      players: [interaction.user.id],
+      status: 'waiting',
+      startedAt: undefined,
+      endedAt: undefined,
+      data: gameData,
+      winners: undefined,
+      rated: false,
+      gameSettings: {
+        isPrivate: false,
+        allowSpectators: true,
+        customRules: [],
       }
-    }, 10 * 60 * 1000);
+    };
     
-  } catch (error) {
-    console.error('Error creating bingo game:', error);
+    // ایجاد کارت برای کاربر ایجادکننده بازی
+    gameData.cards[interaction.user.id] = generateBingoCard();
     
-    if (interaction.deferred && !interaction.replied) {
-      await interaction.editReply('❌ متأسفانه در ایجاد بازی خطایی رخ داد! لطفاً دوباره تلاش کنید.');
-    }
-  }
-}
-
-/**
- * پیوستن به یک بازی بینگو
- * @param interaction تعامل دکمه
- * @param gameId شناسه بازی
- */
-export async function joinBingoGame(interaction: ButtonInteraction, gameId: string): Promise<void> {
-  try {
-    await interaction.deferReply({ ephemeral: true });
+    // ذخیره بازی در لیست بازی‌های فعال
+    activeGames.set(gameId, newGame);
     
-    // بررسی اینکه کاربر ثبت‌نام کرده باشد
-    const user = await storage.getUserByDiscordId(interaction.user.id);
-    if (!user) {
-      await interaction.editReply('❌ شما باید ابتدا ثبت‌نام کنید! از دستور `/menu` استفاده کنید.');
-      return;
-    }
-    
-    // بررسی اینکه بازی وجود داشته باشد
-    const gameState = activeGames.get(gameId);
-    if (!gameState) {
-      await interaction.editReply('❌ این بازی وجود ندارد یا به پایان رسیده است!');
-      return;
-    }
-    
-    // بررسی اینکه بازی در حالت انتظار باشد
-    if (gameState.status !== 'waiting') {
-      await interaction.editReply('❌ این بازی قبلاً شروع شده است و نمی‌توانید به آن بپیوندید!');
-      return;
-    }
-    
-    // بررسی اینکه بازیکن قبلاً در بازی شرکت نکرده باشد
-    if (gameState.players.includes(interaction.user.id)) {
-      await interaction.editReply('✅ شما قبلاً به این بازی پیوسته‌اید! کارت بینگو در پیام‌های خصوصی شما ارسال شده است.');
-      return;
-    }
-    
-    // بررسی اینکه ظرفیت بازی تکمیل نشده باشد
-    if (gameState.players.length >= 10) {
-      await interaction.editReply('❌ ظرفیت این بازی تکمیل شده است!');
-      return;
-    }
-    
-    // اضافه کردن بازیکن به بازی
-    gameState.players.push(interaction.user.id);
-    
-    // ایجاد کارت بینگو برای بازیکن
-    const playerCard = generateBingoCard();
-    gameState.cards.set(interaction.user.id, playerCard);
-    
-    // به‌روزرسانی زمان آخرین تغییر
-    gameState.lastUpdate = Date.now();
-    
-    // ارسال کارت بینگو به بازیکن
-    const cardSent = await sendBingoCardToPlayer(interaction.user, playerCard, gameId);
-    
-    if (!cardSent) {
-      // اگر ارسال کارت ناموفق بود، بازیکن را از بازی حذف می‌کنیم
-      gameState.players = gameState.players.filter(id => id !== interaction.user.id);
-      gameState.cards.delete(interaction.user.id);
+    try {
+      // ارسال کارت به کاربر ایجادکننده به صورت خصوصی
+      const cardEmbed = new EmbedBuilder()
+        .setTitle('🎲 کارت بینگو شما')
+        .setDescription('این کارت بینگو شماست! اعداد اعلام‌شده را با کارت خود مطابقت دهید.')
+        .setColor(BINGO_COLORS.primary)
+        .addFields(
+          { name: 'کارت شما', value: renderBingoCard(gameData.cards[interaction.user.id]) },
+          { name: 'راهنما', value: '✓ = عدد علامت‌زده شده | ⭐ = خانه رایگان (مرکز کارت)' }
+        )
+        .setFooter({ text: `Game ID: ${gameId}` });
       
-      await interaction.editReply('❌ به دلیل محدودیت‌های پیام خصوصی، امکان ارسال کارت بینگو برای شما وجود ندارد! لطفاً تنظیمات پیام خصوصی خود را بررسی کنید.');
-      return;
+      await interaction.user.send({ embeds: [cardEmbed] });
+    } catch (dmError) {
+      log(`Failed to send bingo card DM to player ${interaction.user.id}: ${dmError}`, 'error');
+      // در صورت خطا در ارسال پیام خصوصی، ادامه می‌دهیم اما پیام خطا ثبت می‌شود
     }
     
-    // به‌روزرسانی وضعیت بازی در کانال
-    const channel = interaction.channel as TextChannel;
-    await updateGameStatus(gameState, channel);
+    // ایجاد اعلان بازی در کانال
+    const gameEmbed = new EmbedBuilder()
+      .setTitle('🎲 بازی بینگو')
+      .setDescription('شانس خود را امتحان کنید! کارت خود را پر کنید و بینگو را ببرید! 🎉\nدر این بازی باید اعداد کارت خود را با اعداد اعلام‌شده تطبیق دهید و یک خط کامل ایجاد کنید!')
+      .setColor(BINGO_COLORS.primary)
+      .addFields(
+        { name: '👥 تعداد بازیکنان', value: `${newGame.players.length}/10`, inline: true },
+        { name: '⏱️ زمان هر دور', value: `${gameData.timePerRound} ثانیه`, inline: true },
+        { name: '👤 حداقل بازیکنان', value: '2 نفر', inline: true },
+        { name: '💰 جایزه بازی', value: `برنده ${gameData.reward} کوین 🤑`, inline: true }
+      )
+      .setFooter({ text: 'برای شرکت در بازی، روی دکمه ورود به بازی کلیک کنید! 🎮' });
+      
+    // ایجاد دکمه‌های بازی
+    const gameButtons = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId(`join_bingo_${gameId}`)
+          .setLabel('ورود به بازی')
+          .setStyle(ButtonStyle.Success)
+          .setEmoji('🎮'),
+        new ButtonBuilder()
+          .setCustomId(`start_bingo_${gameId}`)
+          .setLabel('شروع بازی')
+          .setStyle(ButtonStyle.Primary)
+          .setEmoji('▶️'),
+        new ButtonBuilder()
+          .setCustomId(`rules_bingo_${gameId}`)
+          .setLabel('قوانین بازی')
+          .setStyle(ButtonStyle.Secondary)
+          .setEmoji('📜'),
+        new ButtonBuilder()
+          .setCustomId(`cancel_bingo_${gameId}`)
+          .setLabel('لغو بازی')
+          .setStyle(ButtonStyle.Danger)
+          .setEmoji('❌')
+      );
     
-    // اعلام موفقیت
-    await interaction.editReply('✅ شما با موفقیت به بازی بینگو پیوستید! کارت بینگو برای شما ارسال شده است.');
+    // ارسال پیام به کانال
+    const reply = await interaction.reply({ 
+      embeds: [gameEmbed], 
+      components: [gameButtons],
+      fetchReply: true
+    });
     
-    // اعلام پیوستن بازیکن جدید
-    await channel.send(`👤 <@${interaction.user.id}> به بازی بینگو پیوست! (${gameState.players.length}/10)`);
+    // ذخیره شناسه پیام برای به‌روزرسانی‌های آینده
+    if ('id' in reply) {
+      gameData.bingoMessages.push({ 
+        messageId: reply.id, 
+        channelId: interaction.channelId 
+      });
+    }
     
+    log(`Bingo game created with ID ${gameId} by ${interaction.user.tag}`, 'info');
+    return gameId;
   } catch (error) {
-    console.error(`Error joining bingo game ${gameId}:`, error);
+    log(`Error creating bingo game: ${error}`, 'error');
+    const errorEmbed = new EmbedBuilder()
+      .setTitle('❌ خطا در ایجاد بازی')
+      .setDescription('متأسفانه خطایی در ایجاد بازی بینگو رخ داد. لطفاً دوباره تلاش کنید.')
+      .setColor(BINGO_COLORS.danger);
     
-    if (interaction.deferred && !interaction.replied) {
-      await interaction.editReply('❌ متأسفانه در پیوستن به بازی خطایی رخ داد! لطفاً دوباره تلاش کنید.');
+    if (interaction.replied || interaction.deferred) {
+      await interaction.followUp({ embeds: [errorEmbed], ephemeral: true });
+    } else {
+      await interaction.reply({ embeds: [errorEmbed], ephemeral: true });
     }
   }
 }
 
 /**
- * شروع یک بازی بینگو
- * @param interaction تعامل دکمه
+ * پیوستن به بازی بینگو
+ * @param interaction برهم‌کنش کاربر
  * @param gameId شناسه بازی
  */
-export async function startBingoGameCommand(interaction: ButtonInteraction, gameId: string): Promise<void> {
+export async function joinBingoGame(interaction: ButtonInteraction) {
   try {
-    await interaction.deferReply({ ephemeral: true });
+    const gameId = interaction.customId.split('_')[2];
+    const game = activeGames.get(gameId);
     
-    // بررسی اینکه بازی وجود داشته باشد
-    const gameState = activeGames.get(gameId);
-    if (!gameState) {
-      await interaction.editReply('❌ این بازی وجود ندارد یا به پایان رسیده است!');
+    if (!game || game.gameType !== 'bingo') {
+      await interaction.reply({ 
+        content: '❌ بازی مورد نظر یافت نشد یا به پایان رسیده است.', 
+        ephemeral: true 
+      });
       return;
     }
     
-    // بررسی اینکه بازی در حالت انتظار باشد
-    if (gameState.status !== 'waiting') {
-      await interaction.editReply('❌ این بازی قبلاً شروع شده است!');
+    // بررسی وضعیت بازی
+    if (game.status === 'active') {
+      await interaction.reply({
+        content: '⏱️ این بازی در حال اجراست و امکان پیوستن به آن وجود ندارد.',
+        ephemeral: true
+      });
       return;
     }
     
-    // بررسی اینکه کاربر میزبان بازی باشد
-    if (interaction.user.id !== gameState.hostId) {
-      await interaction.editReply('❌ فقط میزبان بازی می‌تواند بازی را شروع کند!');
+    if (game.status === 'ended') {
+      await interaction.reply({
+        content: '🏁 این بازی به پایان رسیده است.',
+        ephemeral: true
+      });
       return;
     }
     
-    // بررسی اینکه حداقل تعداد بازیکنان لازم وجود داشته باشد
-    if (gameState.players.length < 3) {
-      await interaction.editReply(`❌ برای شروع بازی حداقل به 3 بازیکن نیاز است! (${gameState.players.length}/3)`);
+    // بررسی این که آیا کاربر قبلاً در بازی شرکت کرده است
+    if (game.players.includes(interaction.user.id)) {
+      await interaction.reply({
+        content: '✅ شما قبلاً به این بازی پیوسته‌اید!',
+        ephemeral: true
+      });
       return;
     }
     
-    // شروع بازی
-    await startBingoGame(gameId);
+    // بررسی ظرفیت بازی
+    if (game.players.length >= 10) {
+      await interaction.reply({
+        content: '❌ ظرفیت این بازی تکمیل شده است.',
+        ephemeral: true
+      });
+      return;
+    }
     
-    // اعلام موفقیت
-    await interaction.editReply('✅ بازی بینگو با موفقیت شروع شد!');
+    // افزودن کاربر به لیست بازیکنان
+    game.players.push(interaction.user.id);
     
+    // ایجاد کارت بینگو برای کاربر جدید
+    const bingoData = game.data as BingoGameData;
+    bingoData.cards[interaction.user.id] = generateBingoCard();
+    
+    // ارسال کارت به کاربر
+    try {
+      const cardEmbed = new EmbedBuilder()
+        .setTitle('🎲 کارت بینگو شما')
+        .setDescription('این کارت بینگو شماست! اعداد اعلام‌شده را با کارت خود مطابقت دهید.')
+        .setColor(BINGO_COLORS.primary)
+        .addFields(
+          { name: 'کارت شما', value: renderBingoCard(bingoData.cards[interaction.user.id]) },
+          { name: 'راهنما', value: '✓ = عدد علامت‌زده شده | ⭐ = خانه رایگان (مرکز کارت)' }
+        )
+        .setFooter({ text: `Game ID: ${gameId}` });
+      
+      await interaction.user.send({ embeds: [cardEmbed] });
+    } catch (dmError) {
+      log(`Failed to send bingo card DM to player ${interaction.user.id}: ${dmError}`, 'error');
+      // در صورت خطا در ارسال پیام خصوصی، کاربر را از بازی حذف می‌کنیم
+      game.players = game.players.filter(id => id !== interaction.user.id);
+      delete bingoData.cards[interaction.user.id];
+      
+      await interaction.reply({
+        content: '❌ ما نمی‌توانیم برای شما پیام خصوصی ارسال کنیم. لطفاً امکان دریافت پیام از اعضای سرور را فعال کنید و دوباره تلاش کنید.',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // به‌روزرسانی پیام بازی
+    await updateBingoGameMessage(game);
+    
+    // پاسخ به کاربر
+    await interaction.reply({
+      content: '✅ شما با موفقیت به بازی بینگو پیوستید! کارت بینگو شما از طریق پیام خصوصی ارسال شد.',
+      ephemeral: true
+    });
+    
+    log(`Player ${interaction.user.tag} joined bingo game ${gameId}`, 'info');
   } catch (error) {
-    console.error(`Error starting bingo game ${gameId}:`, error);
+    log(`Error joining bingo game: ${error}`, 'error');
+    await interaction.reply({
+      content: '❌ خطایی در پیوستن به بازی رخ داد. لطفاً دوباره تلاش کنید.',
+      ephemeral: true
+    });
+  }
+}
+
+/**
+ * به‌روزرسانی پیام بازی بینگو در کانال
+ * @param game جلسه بازی
+ */
+async function updateBingoGameMessage(game: GameSession) {
+  try {
+    if (!client) return;
     
-    if (interaction.deferred && !interaction.replied) {
-      await interaction.editReply('❌ متأسفانه در شروع بازی خطایی رخ داد! لطفاً دوباره تلاش کنید.');
+    const bingoData = game.data as BingoGameData;
+    
+    // ایجاد پیام به‌روز شده
+    const updatedEmbed = new EmbedBuilder()
+      .setTitle(game.status === 'active' ? '🎲 بازی بینگو در حال اجرا' : '🎲 بازی بینگو')
+      .setDescription(
+        game.status === 'active'
+          ? `بازی بینگو در حال اجراست! اعداد اعلام‌شده تا کنون: ${bingoData.calledNumbers.join(', ') || 'هنوز عددی اعلام نشده'}`
+          : 'شانس خود را امتحان کنید! کارت خود را پر کنید و بینگو را ببرید! 🎉\nدر این بازی باید اعداد کارت خود را با اعداد اعلام‌شده تطبیق دهید و یک خط کامل ایجاد کنید!'
+      )
+      .setColor(game.status === 'active' ? BINGO_COLORS.info : BINGO_COLORS.primary)
+      .addFields(
+        { name: '👥 تعداد بازیکنان', value: `${game.players.length}/10`, inline: true },
+        { name: '⏱️ زمان هر دور', value: `${bingoData.timePerRound} ثانیه`, inline: true },
+        { name: '👤 حداقل بازیکنان', value: '2 نفر', inline: true },
+        { name: '💰 جایزه بازی', value: `برنده ${bingoData.reward} کوین 🤑`, inline: true }
+      );
+      
+    // اضافه کردن اعداد اعلام‌شده در صورت وجود
+    if (game.status === 'active' && bingoData.calledNumbers.length > 0) {
+      updatedEmbed.addFields({
+        name: '🔢 آخرین عدد اعلام‌شده',
+        value: bingoData.lastNumberCalled ? `${bingoData.lastNumberCalled}` : 'هنوز عددی اعلام نشده',
+        inline: true
+      });
+      
+      updatedEmbed.addFields({
+        name: '📊 پیشرفت بازی',
+        value: `دور ${bingoData.currentRound}/${bingoData.maxRounds}`,
+        inline: true
+      });
     }
+    
+    // اضافه کردن لیست بازیکنان
+    const playersList = game.players.map((playerId, index) => {
+      return `${index + 1}. <@${playerId}>`;
+    }).join('\n');
+    
+    updatedEmbed.addFields({
+      name: '👥 بازیکنان',
+      value: playersList || 'هنوز بازیکنی به بازی نپیوسته است.',
+      inline: false
+    });
+    
+    if (game.status === 'waiting') {
+      updatedEmbed.setFooter({ text: 'برای شرکت در بازی، روی دکمه ورود به بازی کلیک کنید! 🎮' });
+    }
+    
+    // به‌روزرسانی دکمه‌های بازی بر اساس وضعیت
+    const gameButtons = new ActionRowBuilder<ButtonBuilder>();
+    
+    if (game.status === 'waiting') {
+      gameButtons.addComponents(
+        new ButtonBuilder()
+          .setCustomId(`join_bingo_${game.id}`)
+          .setLabel('ورود به بازی')
+          .setStyle(ButtonStyle.Success)
+          .setEmoji('🎮'),
+        new ButtonBuilder()
+          .setCustomId(`start_bingo_${game.id}`)
+          .setLabel('شروع بازی')
+          .setStyle(ButtonStyle.Primary)
+          .setEmoji('▶️'),
+        new ButtonBuilder()
+          .setCustomId(`rules_bingo_${game.id}`)
+          .setLabel('قوانین بازی')
+          .setStyle(ButtonStyle.Secondary)
+          .setEmoji('📜'),
+        new ButtonBuilder()
+          .setCustomId(`cancel_bingo_${game.id}`)
+          .setLabel('لغو بازی')
+          .setStyle(ButtonStyle.Danger)
+          .setEmoji('❌')
+      );
+    } else if (game.status === 'active') {
+      gameButtons.addComponents(
+        new ButtonBuilder()
+          .setCustomId(`claim_bingo_${game.id}`)
+          .setLabel('اعلام بینگو!')
+          .setStyle(ButtonStyle.Primary)
+          .setEmoji('🎉'),
+        new ButtonBuilder()
+          .setCustomId(`view_card_bingo_${game.id}`)
+          .setLabel('مشاهده کارت من')
+          .setStyle(ButtonStyle.Secondary)
+          .setEmoji('🎲'),
+        new ButtonBuilder()
+          .setCustomId(`rules_bingo_${game.id}`)
+          .setLabel('قوانین بازی')
+          .setStyle(ButtonStyle.Secondary)
+          .setEmoji('📜')
+      );
+    }
+    
+    // به‌روزرسانی تمام پیام‌های بازی در کانال
+    for (const messageInfo of bingoData.bingoMessages) {
+      try {
+        const channel = await client.channels.fetch(messageInfo.channelId);
+        if (channel && channel.type === ChannelType.GuildText) {
+          const message = await channel.messages.fetch(messageInfo.messageId);
+          if (message) {
+            await message.edit({
+              embeds: [updatedEmbed],
+              components: gameButtons.components.length > 0 ? [gameButtons] : []
+            });
+          }
+        }
+      } catch (error) {
+        log(`Failed to update bingo game message ${messageInfo.messageId}: ${error}`, 'error');
+        // اگر به‌روزرسانی پیام با خطا مواجه شد، آن را از لیست حذف می‌کنیم
+        bingoData.bingoMessages = bingoData.bingoMessages.filter(
+          msg => msg.messageId !== messageInfo.messageId
+        );
+      }
+    }
+  } catch (error) {
+    log(`Error updating bingo game message: ${error}`, 'error');
+  }
+}
+
+/**
+ * شروع بازی بینگو
+ * @param interaction برهم‌کنش کاربر
+ */
+export async function startBingoGame(interaction: ButtonInteraction) {
+  try {
+    const gameId = interaction.customId.split('_')[2];
+    const game = activeGames.get(gameId);
+    
+    if (!game || game.gameType !== 'bingo') {
+      await interaction.reply({ 
+        content: '❌ بازی مورد نظر یافت نشد یا به پایان رسیده است.', 
+        ephemeral: true 
+      });
+      return;
+    }
+    
+    // بررسی اینکه آیا کاربر سازنده بازی است
+    if (game.createdBy !== interaction.user.id) {
+      await interaction.reply({
+        content: '⛔ فقط سازنده بازی می‌تواند بازی را شروع کند!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // بررسی وضعیت بازی
+    if (game.status !== 'waiting') {
+      await interaction.reply({
+        content: '⏱️ این بازی قبلاً شروع شده یا به پایان رسیده است.',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // بررسی تعداد بازیکنان
+    if (game.players.length < 2) {
+      await interaction.reply({
+        content: '❌ برای شروع بازی به حداقل 2 بازیکن نیاز است!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // به‌روزرسانی وضعیت بازی
+    game.status = 'active';
+    game.startedAt = new Date();
+    const bingoData = game.data as BingoGameData;
+    bingoData.inProgress = true;
+    
+    await interaction.reply({
+      content: '🎲 بازی بینگو با موفقیت شروع شد! هر 30 ثانیه یک عدد جدید اعلام می‌شود.',
+      ephemeral: true
+    });
+    
+    // به‌روزرسانی پیام بازی
+    await updateBingoGameMessage(game);
+    
+    // اعلام شروع بازی در کانال
+    const startEmbed = new EmbedBuilder()
+      .setTitle('🎮 بازی بینگو شروع شد!')
+      .setDescription('بازی بینگو با موفقیت آغاز شد! 🎉\n\nهر 30 ثانیه یک عدد جدید اعلام می‌شود.\nکارت خود را بررسی کنید و اگر یک خط کامل داشتید، "اعلام بینگو" را بزنید!')
+      .setColor(BINGO_COLORS.success)
+      .setFooter({ text: `Game ID: ${gameId}` });
+    
+    const channel = await client.channels.fetch(game.channelId);
+    if (channel && channel.type === ChannelType.GuildText) {
+      await channel.send({ embeds: [startEmbed] });
+    }
+    
+    // شروع روند اعلام اعداد
+    runBingoNumberCaller(game);
+    
+    log(`Bingo game ${gameId} started by ${interaction.user.tag}`, 'info');
+  } catch (error) {
+    log(`Error starting bingo game: ${error}`, 'error');
+    await interaction.reply({
+      content: '❌ خطایی در شروع بازی رخ داد. لطفاً دوباره تلاش کنید.',
+      ephemeral: true
+    });
+  }
+}
+
+/**
+ * اجرای روند اعلام اعداد بینگو
+ * @param game جلسه بازی
+ */
+function runBingoNumberCaller(game: GameSession) {
+  try {
+    const bingoData = game.data as BingoGameData;
+    
+    // تنظیم تایمر برای اعلام عدد جدید
+    const announceNumber = async () => {
+      try {
+        // بررسی اینکه آیا بازی هنوز فعال است
+        if (game.status !== 'active' || !bingoData.inProgress) {
+          if (bingoData.timerInterval) {
+            clearTimeout(bingoData.timerInterval);
+          }
+          return;
+        }
+        
+        // افزایش شماره دور فعلی
+        bingoData.currentRound++;
+        
+        // بررسی پایان بازی بر اساس تعداد دورها
+        if (bingoData.currentRound > bingoData.maxRounds || bingoData.availableNumbers.length === 0) {
+          await endBingoGameWithoutWinner(game);
+          return;
+        }
+        
+        // انتخاب یک عدد تصادفی که قبلاً اعلام نشده است
+        const randomIndex = Math.floor(Math.random() * bingoData.availableNumbers.length);
+        const calledNumber = bingoData.availableNumbers[randomIndex];
+        
+        // حذف عدد از لیست اعداد موجود
+        bingoData.availableNumbers.splice(randomIndex, 1);
+        
+        // افزودن عدد به لیست اعداد اعلام‌شده
+        bingoData.calledNumbers.push(calledNumber);
+        bingoData.lastNumberCalled = calledNumber;
+        bingoData.lastNumberTime = new Date();
+        
+        // به‌روزرسانی کارت‌های بازیکنان
+        for (const playerId of game.players) {
+          if (playerId in bingoData.cards) {
+            bingoData.cards[playerId] = updateCard(bingoData.cards[playerId], calledNumber);
+            
+            // بررسی وضعیت بینگو برای هر بازیکن
+            // توجه: ما این بررسی را اینجا انجام نمی‌دهیم، بلکه منتظر می‌مانیم تا بازیکن خودش اعلام کند
+          }
+        }
+        
+        // اعلام عدد جدید در کانال
+        const channel = await client.channels.fetch(game.channelId);
+        if (channel && channel.type === ChannelType.GuildText) {
+          const numberEmbed = new EmbedBuilder()
+            .setTitle('🔢 عدد جدید اعلام شد!')
+            .setDescription(`**${calledNumber}**`)
+            .setColor(BINGO_COLORS.info)
+            .addFields(
+              { 
+                name: '🔢 اعداد اعلام‌شده', 
+                value: bingoData.calledNumbers.join(', '), 
+                inline: false 
+              },
+              { 
+                name: '📊 پیشرفت بازی', 
+                value: `دور ${bingoData.currentRound}/${bingoData.maxRounds}`, 
+                inline: true 
+              },
+              { 
+                name: '⏱️ عدد بعدی', 
+                value: `${bingoData.timePerRound} ثانیه دیگر`, 
+                inline: true 
+              }
+            )
+            .setFooter({ text: 'کارت خود را بررسی کنید!' });
+
+          // ارسال پیام اعلان عدد جدید
+          const newMessage = await channel.send({ 
+            embeds: [numberEmbed],
+            components: [
+              new ActionRowBuilder<ButtonBuilder>()
+                .addComponents(
+                  new ButtonBuilder()
+                    .setCustomId(`claim_bingo_${game.id}`)
+                    .setLabel('اعلام بینگو!')
+                    .setStyle(ButtonStyle.Primary)
+                    .setEmoji('🎉'),
+                  new ButtonBuilder()
+                    .setCustomId(`view_card_bingo_${game.id}`)
+                    .setLabel('مشاهده کارت من')
+                    .setStyle(ButtonStyle.Secondary)
+                    .setEmoji('🎲')
+                )
+            ]
+          });
+          
+          // به‌روزرسانی پیام اصلی بازی نیز
+          await updateBingoGameMessage(game);
+          
+          // به‌روزرسانی کارت‌ها برای بازیکنان
+          await updatePlayerCards(game);
+        }
+        
+        // تنظیم تایمر برای دور بعدی
+        bingoData.timerInterval = setTimeout(announceNumber, bingoData.timePerRound * 1000);
+      } catch (error) {
+        log(`Error in bingo number caller: ${error}`, 'error');
+        
+        // در صورت خطا، سعی می‌کنیم دور بعدی را اجرا کنیم
+        if (game.status === 'active' && bingoData.inProgress) {
+          bingoData.timerInterval = setTimeout(announceNumber, bingoData.timePerRound * 1000);
+        }
+      }
+    };
+    
+    // اعلام اولین عدد با یک تأخیر کوتاه
+    bingoData.timerInterval = setTimeout(announceNumber, 5000);
+  } catch (error) {
+    log(`Error running bingo number caller: ${error}`, 'error');
+  }
+}
+
+/**
+ * به‌روزرسانی کارت‌های بازیکنان از طریق پیام خصوصی
+ * @param game جلسه بازی
+ */
+async function updatePlayerCards(game: GameSession) {
+  try {
+    const bingoData = game.data as BingoGameData;
+    
+    for (const playerId of game.players) {
+      try {
+        const user = await client.users.fetch(playerId);
+        if (!user) continue;
+        
+        // ایجاد Embed جدید برای کارت به‌روز شده
+        const cardEmbed = new EmbedBuilder()
+          .setTitle('🎲 کارت بینگو شما - به‌روز شده')
+          .setDescription(`آخرین عدد اعلام‌شده: **${bingoData.lastNumberCalled}**\nکارت خود را بررسی کنید!`)
+          .setColor(BINGO_COLORS.primary)
+          .addFields(
+            { name: 'کارت شما', value: renderBingoCard(bingoData.cards[playerId]) },
+            { name: 'راهنما', value: '✓ = عدد علامت‌زده شده | ⭐ = خانه رایگان (مرکز کارت)' },
+            { 
+              name: '🔢 اعداد اعلام‌شده', 
+              value: bingoData.calledNumbers.join(', ') || 'هنوز عددی اعلام نشده', 
+              inline: false 
+            }
+          )
+          .setFooter({ text: `Game ID: ${game.id}` });
+        
+        // افزودن دکمه اعلام بینگو
+        const cardButtons = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId(`claim_bingo_${game.id}`)
+              .setLabel('اعلام بینگو!')
+              .setStyle(ButtonStyle.Primary)
+              .setEmoji('🎉')
+          );
+        
+        // ارسال پیام به کاربر - به جای ارسال پیام جدید، می‌توان از ویرایش آخرین پیام استفاده کرد
+        // اما برای سادگی، فعلاً پیام جدید ارسال می‌کنیم
+        await user.send({ embeds: [cardEmbed], components: [cardButtons] });
+      } catch (dmError) {
+        // لاگ خطا و ادامه با کاربر بعدی
+        log(`Failed to update bingo card for player ${playerId}: ${dmError}`, 'warn');
+      }
+    }
+  } catch (error) {
+    log(`Error updating player cards: ${error}`, 'error');
   }
 }
 
 /**
  * نمایش قوانین بازی بینگو
- * @param interaction تعامل دکمه
- * @param gameId شناسه بازی
+ * @param interaction برهم‌کنش کاربر
  */
-export async function showBingoRules(interaction: ButtonInteraction, gameId: string): Promise<void> {
+export async function showBingoRules(interaction: ButtonInteraction) {
   try {
-    // ساخت امبد برای نمایش قوانین بازی
-    const embed = new EmbedBuilder()
+    const gameId = interaction.customId.split('_')[2];
+    
+    const rulesEmbed = new EmbedBuilder()
       .setTitle('📜 قوانین بازی بینگو')
-      .setDescription('اینجا قوانین کامل بازی بینگو رو می‌تونی بخونی! 🔢')
-      .setColor('#9B59B6')
+      .setDescription('اینجا قوانین کامل بازی بینگو را می‌توانید بخوانید! 🔢')
+      .setColor(BINGO_COLORS.primary)
       .addFields(
         { 
-          name: '👥 شروع بازی و دریافت کارت',
-          value: '🔹 هر بازیکن یک کارت 5×5 با اعداد تصادفی از 1 تا 25 دریافت می‌کند.\n' +
-                '🔹 وسط کارت (موقعیت 3×3) یک ستاره ⭐ به عنوان خانه رایگان دارد.\n' +
-                '🔹 کارت هر بازیکن به صورت خصوصی برایش ارسال می‌شود.',
+          name: '👥 شروع بازی و دریافت کارت', 
+          value: '🔹 هر بازیکن یک کارت ۵×۵ با اعداد تصادفی از ۱ تا ۲۵ دریافت می‌کند.\n' + 
+                 '🔹 وسط کارت (موقعیت ۳×۳) یک ستاره ⭐ به عنوان خانه رایگان دارد.\n' + 
+                 '🔹 کارت هر بازیکن به صورت خصوصی برایش ارسال می‌شود.', 
           inline: false 
         },
         { 
-          name: '🎲 اعلام اعداد',
-          value: '🔹 ربات هر 30 ثانیه یک عدد تصادفی از 1 تا 25 اعلام می‌کند.\n' +
-                '🔹 بازیکنان باید اعداد اعلام‌شده را با کارت خود چک کنند.\n' +
-                '🔹 اگر عدد اعلام‌شده در کارت بازیکن باشد، به طور خودکار علامت‌گذاری می‌شود.',
+          name: '🎲 اعلام اعداد', 
+          value: '🔹 ربات هر ۳۰ ثانیه یک عدد تصادفی از ۱ تا ۲۵ اعلام می‌کند.\n' + 
+                 '🔹 بازیکنان باید اعداد اعلام‌شده را با کارت خود چک کنند.\n' + 
+                 '🔹 اگر عدد اعلام‌شده در کارت شما بود، آن به صورت خودکار علامت زده می‌شود.', 
           inline: false 
         },
         { 
-          name: '✅ اعلام بینگو',
-          value: '🔹 برای برنده شدن، باید یک خط کامل (افقی، عمودی یا قطری) از اعداد علامت‌گذاری شده داشته باشید.\n' +
-                '🔹 وقتی یک خط کامل کردید، دکمه "اعلام بینگو" را بزنید.\n' +
-                '🔹 ربات کارت شما را بررسی می‌کند و اگر درست باشد، شما برنده می‌شوید! 🏆',
+          name: '✅ اعلام بینگو', 
+          value: '🔹 برای برنده شدن، باید یک خط کامل (افقی، عمودی یا قطری) از اعداد علامت‌دار داشته باشید.\n' + 
+                 '🔹 وقتی یک خط کامل کردید، دکمه «اعلام بینگو» را بزنید.\n' + 
+                 '🔹 ربات کارت شما را بررسی می‌کند و اگر درست باشد، شما برنده می‌شوید! 🏆', 
           inline: false 
         },
         { 
-          name: '🏁 پایان بازی',
-          value: '🔹 بازی وقتی تمام می‌شود که یک بازیکن بینگو را اعلام کند و ربات تأیید کند.\n' +
-                '🔹 اگر چند نفر همزمان بینگو کنند، جایزه بینشان تقسیم می‌شود.\n' +
-                '🔹 جایزه (200 کوین) به برنده یا برندگان داده می‌شود. 🤑',
+          name: '🏁 پایان بازی', 
+          value: '🔹 بازی وقتی تمام می‌شود که یک بازیکن بینگو را اعلام کند و ربات تأیید کند.\n' + 
+                 '🔹 اگر چند نفر همزمان بینگو کنند، جایزه بینشان تقسیم می‌شود.\n' + 
+                 '🔹 جایزه (۲۰۰ کوین) به برنده یا برندگان داده می‌شود. 🤑', 
           inline: false 
         }
       )
-      .setFooter({ text: 'برای بازگشت به منوی بازی، دکمه بازگشت را بزنید!' });
+      .setFooter({ text: 'برای بازگشت به منوی بازی، روی دکمه بازگشت کلیک کنید! 🔙' });
     
-    // دکمه بازگشت
-    const row = new ActionRowBuilder<ButtonBuilder>()
+    // ایجاد دکمه بازگشت
+    const backButton = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
-          .setCustomId(`bingo_back_${gameId}`)
+          .setCustomId(`back_bingo_${gameId}`)
           .setLabel('بازگشت 🔙')
           .setStyle(ButtonStyle.Secondary)
       );
     
-    // ارسال پاسخ
-    await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
-    
+    await interaction.reply({ embeds: [rulesEmbed], components: [backButton], ephemeral: true });
   } catch (error) {
-    console.error(`Error showing bingo rules:`, error);
-    await interaction.reply({ content: '❌ متأسفانه در نمایش قوانین خطایی رخ داد!', ephemeral: true });
+    log(`Error showing bingo rules: ${error}`, 'error');
+    await interaction.reply({
+      content: '❌ خطایی در نمایش قوانین بازی رخ داد. لطفاً دوباره تلاش کنید.',
+      ephemeral: true
+    });
   }
 }
 
 /**
- * لغو یک بازی بینگو
- * @param interaction تعامل دکمه
- * @param gameId شناسه بازی
+ * بازگشت به منوی بازی بینگو
+ * @param interaction برهم‌کنش کاربر
  */
-export async function cancelBingoGame(interaction: ButtonInteraction, gameId: string): Promise<void> {
+export async function backToBingoMenu(interaction: ButtonInteraction) {
   try {
-    await interaction.deferReply({ ephemeral: true });
-    
-    // بررسی اینکه بازی وجود داشته باشد
-    const gameState = activeGames.get(gameId);
-    if (!gameState) {
-      await interaction.editReply('❌ این بازی وجود ندارد یا به پایان رسیده است!');
-      return;
-    }
-    
-    // بررسی اینکه کاربر میزبان بازی یا ادمین باشد
-    const member = interaction.member as GuildMember;
-    const hasAdminPermission = member.permissions.has(PermissionFlagsBits.Administrator);
-    
-    if (interaction.user.id !== gameState.hostId && !hasAdminPermission) {
-      await interaction.editReply('❌ فقط میزبان بازی یا ادمین سرور می‌تواند بازی را لغو کند!');
-      return;
-    }
-    
-    // لغو بازی
-    await endBingoGame(gameId, 'cancelled');
-    
-    // اعلام موفقیت
-    await interaction.editReply('✅ بازی بینگو با موفقیت لغو شد!');
-    
+    await interaction.deferUpdate();
+    await interaction.deleteReply();
   } catch (error) {
-    console.error(`Error cancelling bingo game ${gameId}:`, error);
-    
-    if (interaction.deferred && !interaction.replied) {
-      await interaction.editReply('❌ متأسفانه در لغو بازی خطایی رخ داد! لطفاً دوباره تلاش کنید.');
-    }
+    log(`Error going back to bingo menu: ${error}`, 'error');
+    await interaction.reply({
+      content: '❌ خطایی در بازگشت به منوی بازی رخ داد.',
+      ephemeral: true
+    });
   }
 }
 
 /**
- * پایان دادن به یک بازی بینگو فعال
- * @param interaction تعامل دکمه
- * @param gameId شناسه بازی
+ * لغو بازی بینگو
+ * @param interaction برهم‌کنش کاربر
  */
-export async function endBingoGameCommand(interaction: ButtonInteraction, gameId: string): Promise<void> {
+export async function cancelBingoGame(interaction: ButtonInteraction) {
   try {
-    await interaction.deferReply({ ephemeral: true });
+    const gameId = interaction.customId.split('_')[2];
+    const game = activeGames.get(gameId);
     
-    // بررسی اینکه بازی وجود داشته باشد
-    const gameState = activeGames.get(gameId);
-    if (!gameState) {
-      await interaction.editReply('❌ این بازی وجود ندارد یا به پایان رسیده است!');
+    if (!game || game.gameType !== 'bingo') {
+      await interaction.reply({ 
+        content: '❌ بازی مورد نظر یافت نشد یا به پایان رسیده است.', 
+        ephemeral: true 
+      });
       return;
     }
     
-    // بررسی اینکه بازی در حالت فعال باشد
-    if (gameState.status !== 'active') {
-      await interaction.editReply('❌ این بازی هنوز شروع نشده است!');
+    // بررسی اینکه آیا کاربر سازنده بازی است
+    if (game.createdBy !== interaction.user.id) {
+      await interaction.reply({
+        content: '⛔ فقط سازنده بازی می‌تواند بازی را لغو کند!',
+        ephemeral: true
+      });
       return;
     }
     
-    // بررسی اینکه کاربر میزبان بازی یا ادمین باشد
-    const member = interaction.member as GuildMember;
-    const hasAdminPermission = member.permissions.has(PermissionFlagsBits.Administrator);
-    
-    if (interaction.user.id !== gameState.hostId && !hasAdminPermission) {
-      await interaction.editReply('❌ فقط میزبان بازی یا ادمین سرور می‌تواند بازی را پایان دهد!');
-      return;
+    // لغو تایمرها
+    const bingoData = game.data as BingoGameData;
+    if (bingoData.timerInterval) {
+      clearTimeout(bingoData.timerInterval);
     }
     
-    // پایان دادن به بازی
-    await endBingoGame(gameId, gameState.winners.length > 0 ? 'winner' : 'cancelled');
+    // به‌روزرسانی وضعیت بازی
+    game.status = 'ended';
+    game.endedAt = new Date();
+    bingoData.inProgress = false;
     
-    // اعلام موفقیت
-    await interaction.editReply('✅ بازی بینگو با موفقیت به پایان رسید!');
+    // به‌روزرسانی پیام بازی
+    for (const messageInfo of bingoData.bingoMessages) {
+      try {
+        const channel = await client.channels.fetch(messageInfo.channelId);
+        if (channel && channel.type === ChannelType.GuildText) {
+          const message = await channel.messages.fetch(messageInfo.messageId);
+          if (message) {
+            const cancelEmbed = new EmbedBuilder()
+              .setTitle('❌ بازی بینگو لغو شد')
+              .setDescription(`این بازی توسط <@${interaction.user.id}> لغو شد.`)
+              .setColor(BINGO_COLORS.danger)
+              .setFooter({ text: `Game ID: ${gameId}` });
+            
+            await message.edit({ embeds: [cancelEmbed], components: [] });
+          }
+        }
+      } catch (editError) {
+        log(`Failed to update bingo game message on cancel: ${editError}`, 'error');
+      }
+    }
     
+    // اعلام لغو بازی در کانال
+    const channel = await client.channels.fetch(game.channelId);
+    if (channel && channel.type === ChannelType.GuildText) {
+      await channel.send({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle('❌ بازی بینگو لغو شد')
+            .setDescription(`بازی بینگو توسط <@${interaction.user.id}> لغو شد.`)
+            .setColor(BINGO_COLORS.danger)
+        ]
+      });
+    }
+    
+    // حذف بازی از لیست بازی‌های فعال
+    activeGames.delete(gameId);
+    
+    await interaction.reply({
+      content: '✅ بازی بینگو با موفقیت لغو شد.',
+      ephemeral: true
+    });
+    
+    log(`Bingo game ${gameId} cancelled by ${interaction.user.tag}`, 'info');
   } catch (error) {
-    console.error(`Error ending bingo game ${gameId}:`, error);
-    
-    if (interaction.deferred && !interaction.replied) {
-      await interaction.editReply('❌ متأسفانه در پایان دادن به بازی خطایی رخ داد! لطفاً دوباره تلاش کنید.');
-    }
+    log(`Error cancelling bingo game: ${error}`, 'error');
+    await interaction.reply({
+      content: '❌ خطایی در لغو بازی رخ داد. لطفاً دوباره تلاش کنید.',
+      ephemeral: true
+    });
   }
 }
 
 /**
- * بررسی و ادعای بینگو
- * @param interaction تعامل دکمه
- * @param gameId شناسه بازی
+ * مشاهده کارت بینگو
+ * @param interaction برهم‌کنش کاربر
  */
-export async function claimBingo(interaction: ButtonInteraction, gameId: string): Promise<void> {
+export async function viewBingoCard(interaction: ButtonInteraction) {
   try {
-    await interaction.deferReply({ ephemeral: true });
+    const gameId = interaction.customId.split('_')[3];
+    const game = activeGames.get(gameId);
     
-    // رسیدگی به ادعای بینگو
-    await handleBingoClaim(interaction.user, gameId);
-    
-    // پاسخ به تعامل (اصل پاسخ در تابع handleBingoClaim انجام می‌شود)
-    await interaction.editReply('✅ درخواست اعلام بینگو شما ثبت شد و در حال بررسی است...');
-    
-  } catch (error) {
-    console.error(`Error claiming bingo for ${interaction.user.id} in game ${gameId}:`, error);
-    
-    if (interaction.deferred && !interaction.replied) {
-      await interaction.editReply('❌ متأسفانه در بررسی ادعای بینگو خطایی رخ داد! لطفاً دوباره تلاش کنید.');
+    if (!game || game.gameType !== 'bingo') {
+      await interaction.reply({ 
+        content: '❌ بازی مورد نظر یافت نشد یا به پایان رسیده است.', 
+        ephemeral: true 
+      });
+      return;
     }
+    
+    // بررسی اینکه آیا کاربر در بازی شرکت دارد
+    if (!game.players.includes(interaction.user.id)) {
+      await interaction.reply({
+        content: '⛔ شما در این بازی شرکت ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    const bingoData = game.data as BingoGameData;
+    
+    if (!bingoData.cards[interaction.user.id]) {
+      await interaction.reply({
+        content: '❌ کارت بینگو شما یافت نشد!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // نمایش کارت بینگو کاربر
+    const cardEmbed = new EmbedBuilder()
+      .setTitle('🎲 کارت بینگو شما')
+      .setDescription('این کارت بینگو شماست! اعداد اعلام‌شده را با کارت خود مطابقت دهید.')
+      .setColor(BINGO_COLORS.primary)
+      .addFields(
+        { name: 'کارت شما', value: renderBingoCard(bingoData.cards[interaction.user.id]) },
+        { name: 'راهنما', value: '✓ = عدد علامت‌زده شده | ⭐ = خانه رایگان (مرکز کارت)' },
+        { 
+          name: '🔢 اعداد اعلام‌شده', 
+          value: bingoData.calledNumbers.join(', ') || 'هنوز عددی اعلام نشده', 
+          inline: false 
+        }
+      )
+      .setFooter({ text: `Game ID: ${gameId}` });
+    
+    // افزودن دکمه اعلام بینگو اگر بازی فعال است
+    const cardButtons = new ActionRowBuilder<ButtonBuilder>();
+    
+    if (game.status === 'active') {
+      cardButtons.addComponents(
+        new ButtonBuilder()
+          .setCustomId(`claim_bingo_${gameId}`)
+          .setLabel('اعلام بینگو!')
+          .setStyle(ButtonStyle.Primary)
+          .setEmoji('🎉')
+      );
+    }
+    
+    await interaction.reply({
+      embeds: [cardEmbed],
+      components: cardButtons.components.length > 0 ? [cardButtons] : [],
+      ephemeral: true
+    });
+  } catch (error) {
+    log(`Error viewing bingo card: ${error}`, 'error');
+    await interaction.reply({
+      content: '❌ خطایی در نمایش کارت بینگو رخ داد. لطفاً دوباره تلاش کنید.',
+      ephemeral: true
+    });
   }
 }
 
 /**
- * مدیریت همه تعاملات بینگو
- * @param interaction تعامل دکمه
- * @returns آیا تعامل توسط این ماژول مدیریت شد؟
+ * اعلام بینگو توسط بازیکن
+ * @param interaction برهم‌کنش کاربر
+ */
+export async function claimBingo(interaction: ButtonInteraction) {
+  try {
+    const gameId = interaction.customId.split('_')[2];
+    const game = activeGames.get(gameId);
+    
+    if (!game || game.gameType !== 'bingo') {
+      await interaction.reply({ 
+        content: '❌ بازی مورد نظر یافت نشد یا به پایان رسیده است.', 
+        ephemeral: true 
+      });
+      return;
+    }
+    
+    // بررسی اینکه آیا بازی فعال است
+    if (game.status !== 'active') {
+      await interaction.reply({
+        content: '⏱️ این بازی فعال نیست یا به پایان رسیده است.',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // بررسی اینکه آیا کاربر در بازی شرکت دارد
+    if (!game.players.includes(interaction.user.id)) {
+      await interaction.reply({
+        content: '⛔ شما در این بازی شرکت ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    const bingoData = game.data as BingoGameData;
+    
+    if (!bingoData.cards[interaction.user.id]) {
+      await interaction.reply({
+        content: '❌ کارت بینگو شما یافت نشد!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // بررسی اینکه آیا کاربر واقعاً بینگو دارد
+    const hasBingo = checkForBingo(bingoData.cards[interaction.user.id]);
+    
+    if (!hasBingo) {
+      await interaction.reply({
+        content: '❌ شما هنوز بینگو ندارید! باید یک خط کامل (افقی، عمودی یا قطری) از اعداد علامت‌زده شده داشته باشید.',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // پایان بازی با برنده
+    await endBingoGameWithWinner(game, interaction.user.id, interaction);
+    
+  } catch (error) {
+    log(`Error claiming bingo: ${error}`, 'error');
+    await interaction.reply({
+      content: '❌ خطایی در اعلام بینگو رخ داد. لطفاً دوباره تلاش کنید.',
+      ephemeral: true
+    });
+  }
+}
+
+/**
+ * پایان بازی بینگو با برنده
+ * @param game جلسه بازی
+ * @param winnerId شناسه برنده
+ * @param interaction برهم‌کنش کاربر (اختیاری)
+ */
+async function endBingoGameWithWinner(game: GameSession, winnerId: string, interaction?: ButtonInteraction) {
+  try {
+    const bingoData = game.data as BingoGameData;
+    
+    // لغو تایمرها
+    if (bingoData.timerInterval) {
+      clearTimeout(bingoData.timerInterval);
+    }
+    
+    // به‌روزرسانی وضعیت بازی
+    game.status = 'ended';
+    game.endedAt = new Date();
+    bingoData.inProgress = false;
+    bingoData.winners = [winnerId];
+    game.winners = [winnerId];
+    
+    // ارسال پیام به کاربر برنده
+    if (interaction) {
+      const winnerEmbed = new EmbedBuilder()
+        .setTitle('🎉 تبریک! شما برنده بازی بینگو شدید!')
+        .setDescription(`شما با موفقیت یک خط کامل ایجاد کردید و برنده بازی بینگو شدید!\nجایزه شما: ${bingoData.reward} کوین 🪙`)
+        .setColor(BINGO_COLORS.success)
+        .addFields(
+          { name: 'کارت برنده شما', value: renderBingoCard(bingoData.cards[winnerId]) }
+        )
+        .setFooter({ text: `Game ID: ${game.id}` });
+      
+      await interaction.reply({ embeds: [winnerEmbed], ephemeral: true });
+    }
+    
+    // اعلام برنده در کانال
+    const channel = await client.channels.fetch(game.channelId);
+    if (channel && channel.type === ChannelType.GuildText) {
+      const winnerAnnounceEmbed = new EmbedBuilder()
+        .setTitle('🏆 برنده بازی بینگو!')
+        .setDescription(`🎉 <@${winnerId}> برنده بازی بینگو شد! 🎉\n\nیک خط کامل ایجاد کرد و ${bingoData.reward} کوین جایزه گرفت! 🪙`)
+        .setColor(BINGO_COLORS.success)
+        .setImage('https://i.imgur.com/LPSH97T.gif')
+        .setFooter({ text: `Game ID: ${game.id}` });
+      
+      await channel.send({ embeds: [winnerAnnounceEmbed] });
+      
+      // مشاهده کارت برنده
+      const winnerCardEmbed = new EmbedBuilder()
+        .setTitle('🎲 کارت برنده')
+        .setDescription(`کارت برنده <@${winnerId}>:`)
+        .setColor(BINGO_COLORS.success)
+        .addFields(
+          { name: 'کارت برنده', value: renderBingoCard(bingoData.cards[winnerId]) }
+        )
+        .setFooter({ text: `Game ID: ${game.id}` });
+      
+      await channel.send({ embeds: [winnerCardEmbed] });
+    }
+    
+    // به‌روزرسانی پیام‌های بازی
+    for (const messageInfo of bingoData.bingoMessages) {
+      try {
+        const channel = await client.channels.fetch(messageInfo.channelId);
+        if (channel && channel.type === ChannelType.GuildText) {
+          const message = await channel.messages.fetch(messageInfo.messageId);
+          if (message) {
+            const endGameEmbed = new EmbedBuilder()
+              .setTitle('🏁 بازی بینگو به پایان رسید')
+              .setDescription(`🎉 <@${winnerId}> برنده بازی بینگو شد! 🎉\n\nیک خط کامل ایجاد کرد و ${bingoData.reward} کوین جایزه گرفت! 🪙`)
+              .setColor(BINGO_COLORS.success)
+              .addFields(
+                { name: '👥 تعداد بازیکنان', value: `${game.players.length}`, inline: true },
+                { name: '🔢 اعداد اعلام‌شده', value: bingoData.calledNumbers.join(', '), inline: false }
+              )
+              .setFooter({ text: `Game ID: ${game.id}` });
+            
+            await message.edit({ embeds: [endGameEmbed], components: [] });
+          }
+        }
+      } catch (editError) {
+        log(`Failed to update bingo game message on end: ${editError}`, 'error');
+      }
+    }
+    
+    // پرداخت جایزه به برنده
+    try {
+      await storage.addCoins(winnerId, bingoData.reward, 'game_win');
+      log(`Rewarded ${bingoData.reward} coins to ${winnerId} for winning bingo game ${game.id}`, 'info');
+    } catch (rewardError) {
+      log(`Error rewarding winner: ${rewardError}`, 'error');
+    }
+    
+    // ثبت تاریخچه بازی
+    try {
+      if ('saveGameHistory' in storage) {
+        await storage.saveGameHistory(game);
+      }
+    } catch (historyError) {
+      log(`Error saving game history: ${historyError}`, 'warn');
+    }
+    
+    // حذف بازی از لیست بازی‌های فعال
+    setTimeout(() => {
+      activeGames.delete(game.id);
+    }, 30000); // حذف بازی بعد از 30 ثانیه
+    
+    log(`Bingo game ${game.id} ended with winner ${winnerId}`, 'info');
+  } catch (error) {
+    log(`Error ending bingo game with winner: ${error}`, 'error');
+  }
+}
+
+/**
+ * پایان بازی بینگو بدون برنده
+ * @param game جلسه بازی
+ */
+async function endBingoGameWithoutWinner(game: GameSession) {
+  try {
+    const bingoData = game.data as BingoGameData;
+    
+    // لغو تایمرها
+    if (bingoData.timerInterval) {
+      clearTimeout(bingoData.timerInterval);
+    }
+    
+    // به‌روزرسانی وضعیت بازی
+    game.status = 'ended';
+    game.endedAt = new Date();
+    bingoData.inProgress = false;
+    
+    // اعلام پایان بازی در کانال
+    const channel = await client.channels.fetch(game.channelId);
+    if (channel && channel.type === ChannelType.GuildText) {
+      const endGameEmbed = new EmbedBuilder()
+        .setTitle('🏁 بازی بینگو به پایان رسید')
+        .setDescription('همه اعداد اعلام شدند و هیچ‌کس بینگو نکرد! بازی بدون برنده تمام شد. 😔')
+        .setColor(BINGO_COLORS.danger)
+        .addFields(
+          { name: '👥 تعداد بازیکنان', value: `${game.players.length}`, inline: true },
+          { name: '🔢 اعداد اعلام‌شده', value: bingoData.calledNumbers.join(', '), inline: false }
+        )
+        .setFooter({ text: `Game ID: ${game.id}` });
+      
+      await channel.send({ embeds: [endGameEmbed] });
+    }
+    
+    // به‌روزرسانی پیام‌های بازی
+    for (const messageInfo of bingoData.bingoMessages) {
+      try {
+        const channel = await client.channels.fetch(messageInfo.channelId);
+        if (channel && channel.type === ChannelType.GuildText) {
+          const message = await channel.messages.fetch(messageInfo.messageId);
+          if (message) {
+            const endGameEmbed = new EmbedBuilder()
+              .setTitle('🏁 بازی بینگو به پایان رسید')
+              .setDescription('همه اعداد اعلام شدند و هیچ‌کس بینگو نکرد! بازی بدون برنده تمام شد. 😔')
+              .setColor(BINGO_COLORS.danger)
+              .addFields(
+                { name: '👥 تعداد بازیکنان', value: `${game.players.length}`, inline: true },
+                { name: '🔢 اعداد اعلام‌شده', value: bingoData.calledNumbers.join(', '), inline: false }
+              )
+              .setFooter({ text: `Game ID: ${game.id}` });
+            
+            await message.edit({ embeds: [endGameEmbed], components: [] });
+          }
+        }
+      } catch (editError) {
+        log(`Failed to update bingo game message on end: ${editError}`, 'error');
+      }
+    }
+    
+    // ثبت تاریخچه بازی
+    try {
+      if ('saveGameHistory' in storage) {
+        await storage.saveGameHistory(game);
+      }
+    } catch (historyError) {
+      log(`Error saving game history: ${historyError}`, 'warn');
+    }
+    
+    // حذف بازی از لیست بازی‌های فعال
+    setTimeout(() => {
+      activeGames.delete(game.id);
+    }, 30000); // حذف بازی بعد از 30 ثانیه
+    
+    log(`Bingo game ${game.id} ended without winner`, 'info');
+  } catch (error) {
+    log(`Error ending bingo game without winner: ${error}`, 'error');
+  }
+}
+
+/**
+ * پردازش برهم‌کنش‌های دکمه برای بازی بینگو
+ * @param interaction برهم‌کنش دکمه
+ * @returns آیا برهم‌کنش پردازش شد
+ */
+export async function handleBingoButtonInteraction(interaction: ButtonInteraction): Promise<boolean> {
+  try {
+    const customId = interaction.customId;
+    
+    // پردازش برهم‌کنش‌های مختلف بازی بینگو
+    if (customId.startsWith('join_bingo_')) {
+      await joinBingoGame(interaction);
+      return true;
+    } else if (customId.startsWith('start_bingo_')) {
+      await startBingoGame(interaction);
+      return true;
+    } else if (customId.startsWith('rules_bingo_')) {
+      await showBingoRules(interaction);
+      return true;
+    } else if (customId.startsWith('back_bingo_')) {
+      await backToBingoMenu(interaction);
+      return true;
+    } else if (customId.startsWith('cancel_bingo_')) {
+      await cancelBingoGame(interaction);
+      return true;
+    } else if (customId.startsWith('view_card_bingo_')) {
+      await viewBingoCard(interaction);
+      return true;
+    } else if (customId.startsWith('claim_bingo_')) {
+      await claimBingo(interaction);
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    log(`Error handling bingo button interaction: ${error}`, 'error');
+    return false;
+  }
+}
+
+/**
+ * برای استفاده در buttonHandler.ts
+ * @param interaction برهم‌کنش دکمه
+ * @returns آیا برهم‌کنش پردازش شد
  */
 export async function handleBingoInteraction(interaction: ButtonInteraction): Promise<boolean> {
-  if (!interaction.isButton()) return false;
-  
-  const customId = interaction.customId;
-  
-  // بررسی دکمه ایجاد بازی جدید
-  if (customId === 'bingo') {
-    await createBingoGame(interaction);
-    return true;
-  }
-  
-  // دکمه‌های مرتبط با بازی‌های موجود
-  // فرمت: bingo_action_gameId
-  if (customId.startsWith('bingo_')) {
-    const parts = customId.split('_');
-    
-    if (parts.length < 3) return false;
-    
-    const action = parts[1];
-    const gameId = parts[2];
-    
-    switch (action) {
-      case 'join':
-        await joinBingoGame(interaction, gameId);
-        return true;
-      case 'start':
-        await startBingoGameCommand(interaction, gameId);
-        return true;
-      case 'rules':
-        await showBingoRules(interaction, gameId);
-        return true;
-      case 'cancel':
-        await cancelBingoGame(interaction, gameId);
-        return true;
-      case 'end':
-        await endBingoGameCommand(interaction, gameId);
-        return true;
-      case 'claim':
-        await claimBingo(interaction, gameId);
-        return true;
-      case 'back':
-        try {
-          const gameState = activeGames.get(gameId);
-          if (gameState && interaction.channelId === gameState.channelId) {
-            // به‌روزرسانی وضعیت بازی در کانال
-            const channel = await (await storage.discord.client.channels.fetch(gameState.channelId)) as TextChannel;
-            await updateGameStatus(gameState, channel);
-            await interaction.reply({ content: '✅ بازگشت به منوی بازی!', ephemeral: true });
-          } else {
-            await interaction.reply({ content: '✅ بازگشت به منوی بازی!', ephemeral: true });
-          }
-        } catch (error) {
-          console.error(`Error handling back button:`, error);
-          await interaction.reply({ content: '❌ خطا در بازگشت به منوی بازی!', ephemeral: true });
-        }
-        return true;
-    }
-  }
-  
-  return false;
+  return handleBingoButtonInteraction(interaction);
 }
