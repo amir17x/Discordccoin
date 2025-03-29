@@ -36,7 +36,7 @@ export async function aiSettingsMenu(interaction: ButtonInteraction | ChatInputC
     let serviceDisplay = '';
     switch (aiService) {
       case 'googleai':
-        serviceDisplay = '**Google AI (Free)** - مدل استاندارد گوگل';
+        serviceDisplay = '**CCOIN AI (Free)** - مدل استاندارد CCOIN';
         break;
       case 'vertexai':
         serviceDisplay = '**Vertex AI (Google Cloud)** - مدل حرفه‌ای با API کلید';
@@ -58,7 +58,7 @@ export async function aiSettingsMenu(interaction: ButtonInteraction | ChatInputC
       { 
         name: '📊 مقایسه سرویس‌ها', 
         value: 
-        `**Google AI (Free)**:\n` +
+        `**CCOIN AI (Free)**:\n` +
         `✅ دسترسی رایگان و آسان\n` +
         `✅ بدون نیاز به اعتبارسنجی پیچیده\n` +
         `⚠️ محدودیت در تعداد درخواست‌ها (سهمیه روزانه)\n` +
@@ -74,7 +74,7 @@ export async function aiSettingsMenu(interaction: ButtonInteraction | ChatInputC
         `✅ دسترسی مستقیم به API و بدون واسطه\n` +
         `✅ کنترل بیشتر بر روی پارامترها\n` +
         `⚠️ نیاز به کلید API معتبر\n` +
-        `⚠️ محدودیت‌های سهمیه مشابه Google AI`,
+        `⚠️ محدودیت‌های سهمیه مشابه CCOIN AI`,
         
         inline: false 
       }
@@ -85,7 +85,7 @@ export async function aiSettingsMenu(interaction: ButtonInteraction | ChatInputC
       .addComponents(
         new ButtonBuilder()
           .setCustomId('admin_switch_to_googleai')
-          .setLabel('Google AI (Free)')
+          .setLabel('CCOIN AI (Free)')
           .setEmoji('🔄')
           .setStyle(aiService === 'googleai' ? ButtonStyle.Success : ButtonStyle.Primary)
           .setDisabled(aiService === 'googleai'),

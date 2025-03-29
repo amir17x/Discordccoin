@@ -6,6 +6,7 @@ import { setupTipSystem, addTipChannel, removeTipChannel, toggleTipChannel, upda
 import { handleGroupGamesMenu } from './components/groupGames';
 import { botConfig } from './utils/config';
 import { pingCurrentAIService, generateAIResponse } from './services/aiService';
+import { setFeedbackChannelCommand, executeSetFeedbackChannel } from './commands/admin/setFeedbackChannel';
 
 // Command to display the main menu
 const menu = {
@@ -1008,6 +1009,13 @@ export async function loadCommands(client: Client) {
   client.commands.set(unTipChannel.data.name, unTipChannel);
   // کامند بازی‌های گروهی حذف شد و با منوی بازی‌ها یکپارچه شد
   client.commands.set(hf.data.name, hf); // Add the CCOIN AI command
+  
+  // تنظیم کانال بازخورد
+  const setFeedbackChannel = {
+    data: setFeedbackChannelCommand,
+    execute: executeSetFeedbackChannel
+  };
+  client.commands.set(setFeedbackChannelCommand.name, setFeedbackChannel);
 }
 
 export const commands = [
@@ -1020,5 +1028,6 @@ export const commands = [
   tipChannel.data.toJSON(),
   unTipChannel.data.toJSON(),
   // کامند بازی‌های گروهی حذف شد و با منوی بازی‌ها یکپارچه شد
-  hf.data.toJSON() // Add the CCOIN AI command to slash commands
+  hf.data.toJSON(), // Add the CCOIN AI command to slash commands
+  setFeedbackChannelCommand.toJSON() // کامند تنظیم کانال بازخورد
 ];

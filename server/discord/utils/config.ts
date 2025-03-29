@@ -7,6 +7,14 @@ export interface BotConfig {
   // URI دیتابیس مونگو
   mongodbUri?: string;
   
+  // تنظیمات کانال‌های سیستمی
+  channels?: {
+    feedback?: string;  // کانال بازخورد کاربران
+    announcement?: string;  // کانال اطلاع‌رسانی
+    welcome?: string;  // کانال خوش‌آمدگویی
+    tips?: string;  // کانال نکات
+  };
+  
   // تنظیمات لاگ‌ها
   logChannels: {
     transaction?: string;
@@ -76,7 +84,7 @@ export interface BotConfig {
   // تنظیمات هوش مصنوعی
   ai?: {
     service?: 'openai' | 'googleai' | 'vertexai' | 'ccoinai'; // سرویس فعال هوش مصنوعی
-    googleModel?: string; // مدل Google AI - برای سازگاری با کد قبلی حفظ شده
+    googleModel?: string; // مدل CCOIN AI - برای سازگاری با کد قبلی حفظ شده
     responseStyle?: string; // سبک پاسخگویی (متعادل، خلاقانه، دقیق، طنزآمیز)
   };
 }
@@ -194,6 +202,7 @@ export class BotConfigManager {
     
     return {
       mongodbUri: loadedConfig.mongodbUri || defaultConfig.mongodbUri,
+      channels: { ...defaultConfig.channels, ...loadedConfig.channels },
       logChannels: { ...defaultConfig.logChannels, ...loadedConfig.logChannels },
       economy: { ...defaultConfig.economy, ...loadedConfig.economy },
       general: { ...defaultConfig.general, ...loadedConfig.general },
@@ -362,6 +371,78 @@ export class BotConfigManager {
    */
   public getActiveAIService(): string {
     return this.config.ai?.service || 'ccoinai';
+  }
+  
+  /**
+   * تنظیم کانال بازخورد
+   */
+  public setFeedbackChannel(channelId: string): void {
+    if (!this.config.channels) {
+      this.config.channels = {};
+    }
+    this.config.channels.feedback = channelId;
+    this.saveConfig(this.config);
+  }
+  
+  /**
+   * دریافت کانال بازخورد
+   */
+  public getFeedbackChannel(): string | undefined {
+    return this.config.channels?.feedback;
+  }
+  
+  /**
+   * تنظیم کانال اطلاع‌رسانی
+   */
+  public setAnnouncementChannel(channelId: string): void {
+    if (!this.config.channels) {
+      this.config.channels = {};
+    }
+    this.config.channels.announcement = channelId;
+    this.saveConfig(this.config);
+  }
+  
+  /**
+   * دریافت کانال اطلاع‌رسانی
+   */
+  public getAnnouncementChannel(): string | undefined {
+    return this.config.channels?.announcement;
+  }
+  
+  /**
+   * تنظیم کانال خوش‌آمدگویی
+   */
+  public setWelcomeChannel(channelId: string): void {
+    if (!this.config.channels) {
+      this.config.channels = {};
+    }
+    this.config.channels.welcome = channelId;
+    this.saveConfig(this.config);
+  }
+  
+  /**
+   * دریافت کانال خوش‌آمدگویی
+   */
+  public getWelcomeChannel(): string | undefined {
+    return this.config.channels?.welcome;
+  }
+  
+  /**
+   * تنظیم کانال نکات
+   */
+  public setTipsChannel(channelId: string): void {
+    if (!this.config.channels) {
+      this.config.channels = {};
+    }
+    this.config.channels.tips = channelId;
+    this.saveConfig(this.config);
+  }
+  
+  /**
+   * دریافت کانال نکات
+   */
+  public getTipsChannel(): string | undefined {
+    return this.config.channels?.tips;
   }
 }
 

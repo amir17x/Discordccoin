@@ -22,7 +22,7 @@ const CCOIN_AI_API_KEY = process.env.GOOGLE_AI_API_KEY;
  * این سرویس از کتابخانه رسمی @google/generative-ai استفاده می‌کند
  * با امکانات پیشرفته و تنظیمات مخصوص برای پاسخگویی هوشمندانه
  */
-export class GeminiSdkService {
+export class CCOINAISDKService {
   private apiKey: string;
   private genAI: GoogleGenerativeAI | null = null;
   private model: GenerativeModel | null = null;
@@ -264,5 +264,5 @@ export class GeminiSdkService {
 }
 
 // ایجاد نمونه واحد از سرویس هوش مصنوعی CCOIN AI
-const geminiSdkService = new GeminiSdkService();
-export default geminiSdkService;
+const ccoinAISDKService = new CCOINAISDKService();
+export default ccoinAISDKService;

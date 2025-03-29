@@ -59,18 +59,18 @@ function addToCache(prompt: string, response: string): void {
  * @param prompt متن پرامپت
  * @returns پاسخ تولید شده
  */
-export async function generateGoogleAIResponse(prompt: string, customStyle?: string): Promise<string> {
+export async function generateCCOINAIResponse(prompt: string, customStyle?: string): Promise<string> {
   try {
     // ابتدا کش را بررسی می‌کنیم
     const cachedResponse = getCachedResponse(prompt);
     if (cachedResponse) {
-      console.log('Using cached Google AI response');
+      console.log('Using cached CCOIN AI response');
       return cachedResponse;
     }
     
     // اگر کلید API موجود نیست، خطا ایجاد می‌کنیم
     if (!GOOGLE_AI_API_KEY) {
-      throw new Error('کلید API برای Google AI تنظیم نشده است.');
+      throw new Error('کلید API برای CCOIN AI تنظیم نشده است.');
     }
 
     // مدل پیش‌فرض یا مدل تنظیم شده در تنظیمات
@@ -171,27 +171,27 @@ export async function generateGoogleAIResponse(prompt: string, customStyle?: str
     } catch (fetchError: any) {
       clearTimeout(timeoutId);
       if (fetchError && fetchError.name === 'AbortError') {
-        throw new Error('درخواست به Google AI به دلیل تایم‌اوت لغو شد.');
+        throw new Error('درخواست به CCOIN AI به دلیل تایم‌اوت لغو شد.');
       }
       throw fetchError;
     }
   } catch (error) {
-    console.error('Error in Google AI API call:', error);
+    console.error('Error in CCOIN AI API call:', error);
     
     // اگر خطا مربوط به عدم وجود کلید API است، پیام مناسب را برگردانیم
     if ((error as Error).message.includes('API')) {
-      throw new Error('کلید API برای Google AI تنظیم نشده است. لطفاً با مدیر سیستم تماس بگیرید.');
+      throw new Error('کلید API برای CCOIN AI تنظیم نشده است. لطفاً با مدیر سیستم تماس بگیرید.');
     }
     
     // در صورت خطا، یک پیام مناسب برمی‌گردانیم
-    throw new Error(`خطا در ارتباط با Google AI: ${(error as Error).message}`);
+    throw new Error(`خطا در ارتباط با CCOIN AI: ${(error as Error).message}`);
   }
 }
 
 /**
  * کلاس سرویس CCOIN AI
  */
-export class GoogleAIService {
+export class CCOINAIService {
   /**
    * تولید پاسخ با استفاده از مدل CCOIN AI
    * @param prompt متن پرامپت
@@ -208,14 +208,14 @@ export class GoogleAIService {
     const cleanPrompt = prompt.trim();
     
     console.log(`Generating AI response with style: ${responseStyle || 'default'}`);
-    return generateGoogleAIResponse(cleanPrompt, responseStyle);
+    return generateCCOINAIResponse(cleanPrompt, responseStyle);
   }
   
   /**
    * تست سرعت پاسخگویی سرویس CCOIN AI با تایم‌اوت و بهینه‌سازی سرعت
    * @returns زمان پاسخگویی به میلی‌ثانیه یا کد خطا (مقدار منفی)
    */
-  async pingGoogleAI(): Promise<number> {
+  async pingCCOINAI(): Promise<number> {
     try {
       if (!GOOGLE_AI_API_KEY) {
         return -401; // خطای احراز هویت
@@ -286,4 +286,4 @@ export class GoogleAIService {
 }
 
 // ایجاد نمونه از سرویس CCOIN AI برای استفاده در سراسر برنامه
-export const googleAIService = new GoogleAIService();
+export const ccoinAIService = new CCOINAIService();

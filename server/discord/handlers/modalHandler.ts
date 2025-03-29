@@ -57,6 +57,70 @@ export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
   try {
     const customId = interaction.customId;
     
+    // پردازش فرم بازخورد
+    if (customId === 'feedback_modal') {
+      try {
+        // دریافت مقادیر فیلدهای فرم
+        const feedbackTitle = interaction.fields.getTextInputValue('feedback_title');
+        const feedbackDescription = interaction.fields.getTextInputValue('feedback_description');
+        const feedbackContact = interaction.fields.getTextInputValue('feedback_contact') || 'ارائه نشده';
+        
+        // اعلام دریافت به کاربر
+        await interaction.reply({
+          content: '✅ بازخورد شما با موفقیت دریافت شد. از مشارکت شما در بهبود ربات سپاسگزاریم!',
+          ephemeral: true
+        });
+        
+        // بررسی وجود کانال بازخورد
+        const feedbackChannelId = botConfig.getFeedbackChannel();
+        
+        // اگر کانال بازخورد تنظیم شده باشد، ارسال بازخورد به آن کانال
+        if (feedbackChannelId) {
+          const feedbackChannel = await interaction.client.channels.fetch(feedbackChannelId);
+          
+          if (feedbackChannel && feedbackChannel.isTextBased()) {
+            // ایجاد امبد بازخورد
+            const feedbackEmbed = new EmbedBuilder()
+              .setColor('#4B0082')  // رنگ بنفش تیره
+              .setTitle(`📨 بازخورد جدید: ${feedbackTitle}`)
+              .setDescription(feedbackDescription)
+              .addFields(
+                { name: '👤 کاربر', value: `${interaction.user.username} (${interaction.user.id})`, inline: true },
+                { name: '📅 تاریخ', value: new Date().toLocaleDateString('fa-IR'), inline: true },
+                { name: '📞 اطلاعات تماس', value: feedbackContact, inline: true }
+              )
+              .setFooter({ text: 'سیستم بازخورد Ccoin' })
+              .setTimestamp();
+            
+            // بررسی اینکه آیا کانال متد send دارد
+            if ('send' in feedbackChannel) {
+              // ارسال بازخورد به کانال
+              await feedbackChannel.send({ embeds: [feedbackEmbed] });
+            } else {
+              console.error(`Channel ${feedbackChannelId} does not support send method`);
+            }
+          } else {
+            // لاگ کردن خطا اگر کانال معتبر نباشد
+            console.error(`Invalid feedback channel: ${feedbackChannelId}`);
+          }
+        } else {
+          // اگر کانال بازخورد تنظیم نشده باشد، لاگ کردن برای مدیران
+          console.log(`Feedback received but no channel configured for sending: ${feedbackTitle} - ${feedbackDescription}`);
+        }
+      } catch (error) {
+        console.error('Error processing feedback form:', error);
+        
+        // ارسال پیام خطا به کاربر
+        if (!interaction.replied) {
+          await interaction.reply({
+            content: '❌ متأسفانه در ثبت بازخورد شما خطایی رخ داد. لطفاً بعداً دوباره تلاش کنید.',
+            ephemeral: true
+          });
+        }
+      }
+      return;
+    }
+    
     // Handle quiz question submission
     if (customId.startsWith('submit_quiz_question')) {
       await handleQuizQuestionModalSubmit(interaction);
@@ -806,7 +870,7 @@ ${prompt}
           .setTitle('🧠 دستیار هوشمند Ccoin')
           .setDescription(trimmedResponse)
           .setFooter({ 
-            text: `${footerText} | ${interaction.user.username} | پاسخ با Google AI (Gemini)`,
+            text: `${footerText} | ${interaction.user.username} | پاسخ با CCOIN AI`,
             iconURL: interaction.client.user?.displayAvatarURL()
           })
           .setTimestamp();

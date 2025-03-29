@@ -91,6 +91,65 @@ import { showMatchmakingMenu, startRandomMatchmaking, showInviteOpponentMenu, ca
 import { log } from '../utils/logger';
 import { botConfig } from '../utils/config';
 
+/**
+ * نمایش مودال فرم بازخورد
+ * @param interaction تعامل دکمه 
+ */
+async function showFeedbackModal(interaction: ButtonInteraction) {
+  try {
+    // ایجاد مودال فرم بازخورد
+    const modal = new ModalBuilder()
+      .setCustomId('feedback_modal')
+      .setTitle('💬 ارسال بازخورد به توسعه‌دهندگان');
+    
+    // ورودی متنی عنوان بازخورد
+    const titleInput = new TextInputBuilder()
+      .setCustomId('feedback_title')
+      .setLabel('موضوع بازخورد')
+      .setPlaceholder('مثال: پیشنهاد برای بهبود بازی سنگ کاغذ قیچی')
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true)
+      .setMinLength(3)
+      .setMaxLength(50);
+    
+    // ورودی متنی توضیحات بازخورد
+    const descriptionInput = new TextInputBuilder()
+      .setCustomId('feedback_description')
+      .setLabel('توضیحات بازخورد')
+      .setPlaceholder('لطفاً بازخورد، پیشنهاد یا گزارش مشکل خود را با جزئیات وارد کنید')
+      .setStyle(TextInputStyle.Paragraph)
+      .setRequired(true)
+      .setMinLength(10)
+      .setMaxLength(1000);
+    
+    // ورودی متنی اطلاعات تماس (اختیاری)
+    const contactInput = new TextInputBuilder()
+      .setCustomId('feedback_contact')
+      .setLabel('اطلاعات تماس (اختیاری)')
+      .setPlaceholder('ایمیل یا هر راه ارتباطی دیگر برای پیگیری')
+      .setStyle(TextInputStyle.Short)
+      .setRequired(false)
+      .setMaxLength(100);
+    
+    // اضافه کردن فیلدها به مودال
+    const titleRow = new ActionRowBuilder<TextInputBuilder>().addComponents(titleInput);
+    const descriptionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(descriptionInput);
+    const contactRow = new ActionRowBuilder<TextInputBuilder>().addComponents(contactInput);
+    
+    modal.addComponents(titleRow, descriptionRow, contactRow);
+    
+    // نمایش مودال به کاربر
+    await interaction.showModal(modal);
+    
+  } catch (error) {
+    console.error('Error showing feedback modal:', error);
+    await interaction.reply({
+      content: '❌ متأسفانه در نمایش فرم بازخورد خطایی رخ داد!',
+      ephemeral: true
+    });
+  }
+}
+
 // زمان انتظار دزدی - تعریف شده در robberyMenu.ts
 const ROB_COOLDOWN = 4 * 60 * 60 * 1000; // 4 ساعت
 
@@ -685,6 +744,12 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     
     if (action === 'robbery') {
       await robberyMenu(interaction);
+      return;
+    }
+    
+    if (action === 'feedback') {
+      // نمایش مودال فرم بازخورد
+      await showFeedbackModal(interaction);
       return;
     }
     
@@ -2100,7 +2165,7 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
         return;
       }
       
-      // تغییر سرویس هوش مصنوعی به Google AI
+      // تغییر سرویس هوش مصنوعی به CCOIN AI
       if (action === 'admin_switch_to_googleai') {
         await handleSwitchAIService(interaction, 'googleai');
         return;

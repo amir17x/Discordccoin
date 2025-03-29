@@ -38,7 +38,7 @@ export const tipTopics = [
 /**
  * سرویس نکات CCOIN AI
  */
-export class CcoinAiTipService {
+export class CcoinAITipService {
   /**
    * تولید یک نکته اتفاقی با استفاده از CCOIN AI
    * @returns قول برای دریافت یک نکته تولید شده توسط هوش مصنوعی
@@ -147,6 +147,6 @@ export class CcoinAiTipService {
 }
 
 // ایجاد نمونه از سرویس CCOIN AI برای استفاده در سراسر برنامه
-export const ccoinAiTipService = new CcoinAiTipService();
+export const ccoinAITipService = new CcoinAITipService();
 
-export default ccoinAiTipService;
+export default ccoinAITipService;
