@@ -1,27 +1,24 @@
 /**
- * اسکریپت تست سرویس OpenAI
+ * اسکریپت تست سرویس Gemini (جایگزین OpenAI)
  */
 
 import 'dotenv/config';
-import { OpenAIService } from './server/discord/services/openaiService.js';
+import geminiAltService from './server/discord/services/geminiAltService.js';
 
-async function testOpenAI() {
+async function testGeminiAlt() {
   // خروجی کلید API
-  console.log('API Key status:', process.env.OPENAI_API_KEY ? 'Available' : 'Not available');
+  console.log('API Key status:', process.env.GOOGLE_AI_API_KEY ? 'Available' : 'Not available');
 
-  // ایجاد نمونه از سرویس
-  const openai = new OpenAIService();
-  
   // تست اتصال
   console.log('\n--- Testing Connection ---');
   try {
-    const connectionResult = await openai.testConnection();
+    const connectionResult = await geminiAltService.testConnection();
     console.log('Connection test:', connectionResult ? 'Success' : 'Failed');
   } catch (error) {
     console.error('Connection error:', error.message);
     // بررسی عدم وجود API Key
     if (error.message.includes('API key')) {
-      console.error('\nERROR: OpenAI API key is missing. Please add OPENAI_API_KEY to your .env file');
+      console.error('\nERROR: Google AI API key is missing. Please add GOOGLE_AI_API_KEY to your .env file');
       return;
     }
   }
@@ -36,7 +33,7 @@ async function testOpenAI() {
     console.log('Generating response...');
     
     const start = Date.now();
-    const response = await openai.generateContent(prompt, 100, 0.7);
+    const response = await geminiAltService.generateContent(prompt, 100, 0.7);
     const duration = Date.now() - start;
     
     console.log('\nResponse:');
@@ -48,4 +45,4 @@ async function testOpenAI() {
 }
 
 // اجرای تست
-testOpenAI().catch(console.error);
+testGeminiAlt().catch(console.error);

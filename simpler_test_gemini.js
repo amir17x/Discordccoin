@@ -4,7 +4,7 @@ import axios from 'axios';
 dotenv.config();
 
 // کلید API
-const API_KEY = process.env.VORTEX_AI_API_KEY;
+const API_KEY = process.env.GOOGLE_AI_API_KEY;
 console.log(`API Key length: ${API_KEY ? API_KEY.length : 0}`);
 console.log(`API Key starts with: ${API_KEY ? API_KEY.substring(0, 5) + '...' : 'undefined'}`);
 

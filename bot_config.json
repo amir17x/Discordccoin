@@ -30,7 +30,7 @@
     "maxStealPerDay": 5
   },
   "ai": {
-    "service": "googleai",
+    "service": "geminialt",
     "googleModel": "gemini-1.5-pro"
   }
 }

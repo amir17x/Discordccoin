@@ -7,7 +7,7 @@ dotenv.config();
 class GeminiService {
   constructor(apiKey) {
     this.apiKey = apiKey;
-    this.apiUrl = 'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent';
+    this.apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent';
     
     console.log(`API Key initialization: ${this.apiKey ? 'OK' : 'FAILED'}`);
     if (this.apiKey) {

@@ -1,13 +1,14 @@
 import path from 'path';
 import fs from 'fs';
 import { botConfig } from '../utils/config';
-import openaiService from './openaiService';
+import geminiAltService from './geminiAltService';
+import { log } from '../../vite';
 
 // مسیر فایل آمار هوش مصنوعی
 const AI_STATS_FILE = path.resolve(process.cwd(), 'ai_stats.json');
 
 // تعریف انواع سرویس‌های هوش مصنوعی
-export type AIService = 'openai' | 'googleai' | 'vertexai' | 'geminialt';
+export type AIService = 'geminialt' | 'googleai' | 'vertexai';
 
 // ساختار داده آمار هوش مصنوعی
 interface AIStats {
@@ -18,7 +19,6 @@ interface AIStats {
     googleai: number;
     vertexai: number;
     geminialt?: number;
-    openai?: number;
   };
   usageCounts: {
     statusMessages: number;
@@ -33,12 +33,13 @@ interface AIStats {
 
 // مقدار پیش‌فرض برای آمار
 const defaultStats: AIStats = {
-  service: 'openai',
+  service: 'geminialt',
   lastUsed: null,
   requestCount: 0,
   providerStats: {
     googleai: 0,
-    vertexai: 0
+    vertexai: 0,
+    geminialt: 0
   },
   usageCounts: {
     statusMessages: 0,
@@ -113,7 +114,7 @@ function saveAIStats(stats: AIStats): void {
 function updateAIStats(
   usageType: 'statusMessages' | 'marketAnalysis' | 'questStories' | 'aiAssistant' | 'other',
   latency: number,
-  provider: AIService = 'openai'
+  provider: AIService = 'geminialt'
 ): void {
   try {
     const stats = loadAIStats();
@@ -123,12 +124,7 @@ function updateAIStats(
     stats.lastUsed = new Date().toISOString();
     
     // بروزرسانی آمار سرویس‌ها
-    if (provider === 'openai') {
-      if (!stats.providerStats.openai) {
-        stats.providerStats.openai = 0;
-      }
-      stats.providerStats.openai++;
-    } else if (provider === 'googleai') {
+    if (provider === 'googleai') {
       stats.providerStats.googleai++;
     } else if (provider === 'vertexai') {
       if (!stats.providerStats.vertexai) {
@@ -178,23 +174,28 @@ export async function generateAIResponse(
   try {
     const startTime = Date.now();
     
-    // بررسی سرویس فعال - در این نسخه تنها OpenAI پشتیبانی می‌شود
-    const response = await openaiService.generateContent(prompt, 1000, responseStyle ? 
+    log(`ارسال درخواست به Google Gemini: ${prompt.substring(0, 50)}...`, 'info');
+    
+    // تبدیل سبک پاسخگویی به میزان خلاقیت مناسب
+    const temperature = responseStyle ? 
       (responseStyle === 'خلاقانه' ? 0.9 : 
        responseStyle === 'دقیق' ? 0.3 : 
-       responseStyle === 'طنزآمیز' ? 1.0 : 0.7) : 0.7);
+       responseStyle === 'طنزآمیز' ? 1.0 : 0.7) : 0.7;
+    
+    // استفاده از سرویس Gemini
+    const response = await geminiAltService.generateContent(prompt, 1000, temperature);
     
     // محاسبه زمان پاسخگویی
     const latency = Date.now() - startTime;
     
     // بروزرسانی آمار - فقط برای درخواست‌های جدید (غیرکش شده)
     if (latency > 50) {
-      updateAIStats(usageType, latency, 'openai');
+      updateAIStats(usageType, latency, 'geminialt');
     }
     
     return response;
   } catch (error) {
-    console.error('Error generating AI response:', error);
+    log(`Error generating AI response: ${error}`, 'error');
     return 'متأسفانه در تولید پاسخ هوش مصنوعی خطایی رخ داد.';
   }
 }
@@ -223,13 +224,13 @@ export async function testAIService(
     const aiSettings = botConfig.getAISettings();
     const style = responseStyle || aiSettings.responseStyle || 'متعادل';
     
-    // تبدیل سبک پاسخگویی به میزان خلاقیت مناسب OpenAI
+    // تبدیل سبک پاسخگویی به میزان خلاقیت مناسب
     const temperature = style === 'خلاقانه' ? 0.9 : 
                          style === 'دقیق' ? 0.3 : 
                          style === 'طنزآمیز' ? 1.0 : 0.7;
     
-    // استفاده از OpenAI
-    const response = await openaiService.generateContent(prompt, 200, temperature);
+    // استفاده از سرویس Gemini
+    const response = await geminiAltService.generateContent(prompt, 200, temperature);
     
     // محاسبه زمان پاسخگویی
     const latency = Date.now() - startTime;
@@ -239,7 +240,7 @@ export async function testAIService(
       response,
       latency,
       style,
-      service: 'openai'
+      service: 'geminialt'
     };
   } catch (error) {
     const latency = 0; // در صورت خطا، زمان پاسخگویی معنایی ندارد
@@ -283,8 +284,8 @@ export async function pingCurrentAIService(): Promise<number> {
       });
     };
     
-    // پینگ سرویس OpenAI
-    return await pingWithTimeout(() => openaiService.testConnection(), 'openai');
+    // پینگ سرویس Gemini
+    return await pingWithTimeout(() => geminiAltService.testConnection(), 'geminialt');
   } catch (error) {
     console.error('Error pinging AI services:', error);
     return -1; // خطای نامشخص

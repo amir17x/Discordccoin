@@ -491,7 +491,12 @@ const ping = {
       await interaction.deferReply({ flags: 64 }); // 64 معادل Ephemeral flag است
       
       // بررسی سرعت اتصال دیسکورد
-      const discordPing = interaction.client.ws.ping;
+      let discordPing = interaction.client.ws.ping;
+      
+      // اطمینان از معتبر بودن مقدار پینگ
+      if (discordPing < 0 || isNaN(discordPing)) {
+        discordPing = 0; // مقدار پیش‌فرض در صورت نامعتبر بودن
+      }
       
       // زمان آنلاین ربات به ساعت و دقیقه
       const uptime = interaction.client.uptime;
@@ -500,7 +505,8 @@ const ping = {
       const minutes = Math.floor((uptime % 3600000) / 60000);
       
       // وضعیت پینگ دیسکورد با آستانه‌های بهینه‌سازی شده
-      const discordStatus = discordPing < 120 ? '🟢 عالی' : 
+      const discordStatus = discordPing === 0 ? '⚫ نامشخص' :
+                        discordPing < 120 ? '🟢 عالی' : 
                         discordPing < 250 ? '🟡 متوسط' : 
                         discordPing < 750 ? '🟠 ضعیف' : 
                         '⚫ ناپایدار';
@@ -604,7 +610,7 @@ const ping = {
         .addFields([
           { 
             name: '🚀 پینگ دیسکورد', 
-            value: `\`${discordPing}ms\` ${discordStatus}`, 
+            value: discordPing > 0 ? `\`${discordPing}ms\` ${discordStatus}` : `\`نامشخص\` ${discordStatus}`, 
             inline: true 
           },
           { 

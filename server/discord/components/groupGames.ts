@@ -96,6 +96,7 @@ interface GameSession {
   gameSettings?: {
     isPrivate: boolean; // آیا بازی خصوصی است (فقط با دعوت)
     allowSpectators: boolean; // آیا تماشاگران می‌توانند شرکت کنند
+    maxPlayers?: number; // حداکثر تعداد بازیکنان
     customRules?: string[]; // قوانین سفارشی اضافه شده توسط سازنده بازی
     timerSettings?: { // تنظیمات زمان‌بندی
       dayTime?: number; // زمان روز (به ثانیه)
@@ -201,13 +202,20 @@ export function getActivePlayersCount(): number {
  * نمایش منوی جلسات فعال بازی‌های گروهی با امکانات پیشرفته، جزئیات بیشتر، و دسته‌بندی بر اساس نوع بازی
  * @param interaction برهم‌کنش کاربر
  */
+/**
+ * نمایش منوی جلسات فعال بازی‌های گروهی با جزئیات بیشتر، امکانات پیشرفته و دسته‌بندی بر اساس نوع
+ * @param interaction برهم‌کنش کاربر
+ */
 export async function showActiveSessionsMenu(interaction: ButtonInteraction) {
   try {
     // دریافت بازی‌های فعال
     const activeGamesList = Array.from(activeGames.values())
       .filter(game => game.status !== 'ended')
       .sort((a, b) => {
-        // مرتب‌سازی بر اساس زمان شروع (تازه‌ترین اول)
+        // مرتب‌سازی بر اساس وضعیت (در انتظار اول، سپس در حال انجام)
+        if (a.status === 'waiting' && b.status !== 'waiting') return -1;
+        if (a.status !== 'waiting' && b.status === 'waiting') return 1;
+        // سپس مرتب‌سازی بر اساس زمان شروع (تازه‌ترین اول)
         const aTime = a.startedAt || new Date();
         const bTime = b.startedAt || new Date();
         return bTime.getTime() - aTime.getTime();
@@ -216,6 +224,40 @@ export async function showActiveSessionsMenu(interaction: ButtonInteraction) {
     // دریافت تعداد کل بازیکنان فعال و آمار بازی‌ها
     const totalActivePlayers = getActivePlayersCount();
     const gameTypeStats = getActiveGamesByType();
+    
+    // بررسی اینکه آیا بازی فعالی وجود دارد
+    if (activeGamesList.length === 0) {
+      // حالتی که هیچ بازی فعالی وجود ندارد
+      const emptyEmbed = new EmbedBuilder()
+        .setTitle('🎮 جلسات فعال بازی‌های گروهی')
+        .setDescription('🔍 در حال حاضر هیچ بازی فعالی وجود ندارد!\n\n' +
+                       'می‌توانید با انتخاب یکی از بازی‌های گروهی، یک بازی جدید شروع کنید.')
+        .setColor('#9B59B6')
+        .setFooter({ text: 'برای ایجاد بازی جدید، به منوی بازی‌های گروهی بازگردید' });
+                          
+      // دکمه‌های کنترلی
+      const controlRow = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('game:history')
+            .setLabel('تاریخچه بازی‌ها')
+            .setStyle(ButtonStyle.Primary)
+            .setEmoji('📜'),
+          new ButtonBuilder()
+            .setCustomId('game:leaderboard')
+            .setLabel('رتبه‌بندی')
+            .setStyle(ButtonStyle.Primary)
+            .setEmoji('🏆'),
+          new ButtonBuilder()
+            .setCustomId('group_games')
+            .setLabel('بازگشت')
+            .setStyle(ButtonStyle.Secondary)
+            .setEmoji('🔙')
+        );
+          
+      await interaction.reply({ embeds: [emptyEmbed], components: [controlRow], ephemeral: true });
+      return;
+    }
     
     // گروه‌بندی بازی‌ها بر اساس نوع
     const gamesByType: Record<string, GameSession[]> = {};
@@ -235,7 +277,7 @@ export async function showActiveSessionsMenu(interaction: ButtonInteraction) {
     // ایجاد Embed
     const embed = new EmbedBuilder()
       .setTitle('🎮 جلسات فعال بازی‌های گروهی')
-      .setDescription('لیست تمام بازی‌های گروهی فعال در حال حاضر')
+      .setDescription('لیست بازی‌های گروهی فعال در حال حاضر')
       .setColor('#9B59B6')
       .addFields(
         { name: '🎲 کل جلسات فعال', value: `${gameTypeStats.total} جلسه`, inline: true },
@@ -263,150 +305,178 @@ export async function showActiveSessionsMenu(interaction: ButtonInteraction) {
       'ended': '🔴 پایان یافته'
     };
     
-    // اضافه کردن آمار بازی‌ها به تفکیک نوع
+    // اضافه کردن آمار بازی‌های فعال به تفکیک نوع
     if (Object.keys(gameTypeCounts).length > 0) {
       let statsText = '';
       Object.keys(gameTypeCounts).forEach(type => {
-        const typeName = gameTypeNames[type] || type;
-        statsText += `${typeName}: **${gameTypeCounts[type]}** جلسه\n`;
+        if (gameTypeCounts[type] > 0) {
+          const typeName = gameTypeNames[type] || type;
+          statsText += `${typeName}: **${gameTypeCounts[type]}** جلسه\n`;
+        }
       });
       
-      embed.addFields({
-        name: '📊 آمار بازی‌ها به تفکیک نوع',
-        value: statsText
-      });
+      if (statsText.length > 0) {
+        embed.addFields({
+          name: '📊 آمار بازی‌ها به تفکیک نوع',
+          value: statsText
+        });
+      }
     }
     
-    // اضافه کردن اطلاعات هر بازی فعال به Embed
-    if (activeGamesList.length > 0) {
-      // نمایش فقط 8 بازی اول (برای جلوگیری از طولانی شدن امبد)
-      const displayGames = activeGamesList.slice(0, 8);
+    // اضافه کردن بخش‌بندی جلسات در انتظار و جلسات فعال
+    const waitingGames = activeGamesList.filter(game => game.status === 'waiting');
+    const activeGamesRunning = activeGamesList.filter(game => game.status === 'active');
+    
+    // اضافه کردن بخش جلسات در انتظار بازیکن
+    if (waitingGames.length > 0) {
+      let waitingGamesText = '';
       
-      displayGames.forEach((game, index) => {
+      waitingGames.slice(0, 5).forEach((game, index) => {
         const gameTypeName = gameTypeNames[game.gameType] || game.gameType;
         const hostUser = client.users.cache.get(game.createdBy)?.username || 'کاربر ناشناس';
-        const startTime = game.startedAt ? new Date(game.startedAt).toLocaleTimeString('fa-IR') : 'در انتظار شروع';
-        
-        // ساخت تگ برای بازی خصوصی و نمایش کانال
-        const privateTag = game.gameSettings?.isPrivate ? ' 🔒' : '';
         const channel = client.channels.cache.get(game.channelId) as TextChannel;
-        const channelTag = channel ? ` - ${channel.name}` : '';
+        const channelName = channel ? `در #${channel.name}` : '';
         
-        embed.addFields({
-          name: `${index + 1}. ${gameTypeName}${privateTag}${channelTag}`,
-          value: `👤 میزبان: ${hostUser}\n` +
-                 `👥 بازیکنان: ${game.players.length} نفر\n` +
-                 `⏰ شروع: ${startTime}\n` +
-                 `🔹 وضعیت: ${gameStatusText[game.status] || 'نامشخص'}`,
-          inline: true
-        });
+        // بررسی تنظیمات بازی برای دریافت حداکثر تعداد بازیکنان
+        let maxPlayers = '؟';
+        if (game.gameSettings && game.gameSettings.maxPlayers) {
+          maxPlayers = game.gameSettings.maxPlayers.toString();
+        }
+        
+        waitingGamesText += `**${index + 1}.** ${gameTypeName} ${channelName}\n` +
+                            `👤 میزبان: **${hostUser}** | 👥 بازیکنان: **${game.players.length}**/${maxPlayers}\n\n`;
       });
       
-      // اگر تعداد بازی‌ها بیشتر از 8 بود، اطلاع رسانی
-      if (activeGamesList.length > 8) {
-        embed.addFields({
-          name: '⚠️ توجه',
-          value: `${activeGamesList.length - 8} بازی دیگر نیز در حال اجراست. برای دیدن همه بازی‌ها از دستور \`/games list\` استفاده کنید.`,
-          inline: false
-        });
+      if (waitingGames.length > 5) {
+        waitingGamesText += `...و ${waitingGames.length - 5} جلسه دیگر\n`;
       }
       
-      // ساخت دکمه‌های پیوستن به بازی
-      const joinButtons = [];
-      
-      for (let i = 0; i < Math.min(displayGames.length, 5); i++) {
-        const game = displayGames[i];
-        const gameType = game.gameType;
-        const gameTypeNames: Record<string, string> = {
-          'mafia': '🕵️‍♂️ مافیا',
-          'werewolf': '🐺 گرگینه',
-          'quiz': '📚 اطلاعات عمومی',
-          'drawguess': '🎨 نقاشی حدس بزن',
-          'truthordare': '🎯 جرات یا حقیقت',
-          'bingo': '🎲 بینگو',
-          'wordchain': '📝 زنجیره کلمات',
-          'spy': '🕴️ جاسوس مخفی'
-        };
-        
-        joinButtons.push(
-          new ButtonBuilder()
-            .setCustomId(`join_game:${game.id}`)
-            .setLabel(`پیوستن به ${gameTypeNames[gameType] || gameType}`)
-            .setStyle(ButtonStyle.Success)
-        );
-      }
-      
-      // ساخت صف دکمه‌ها
-      const joinButtonsRow = new ActionRowBuilder<ButtonBuilder>().addComponents(...joinButtons);
-      
-      // دکمه‌های کنترلی
-      const controlRow = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId('game:history')
-            .setLabel('تاریخچه بازی‌ها')
-            .setStyle(ButtonStyle.Primary)
-            .setEmoji('📜'),
-          new ButtonBuilder()
-            .setCustomId('game:leaderboard')
-            .setLabel('رتبه‌بندی')
-            .setStyle(ButtonStyle.Primary)
-            .setEmoji('🏆'),
-          new ButtonBuilder()
-            .setCustomId('group_games')
-            .setLabel('بازگشت')
-            .setStyle(ButtonStyle.Secondary)
-            .setEmoji('🔙')
-        );
-    
-      // ارسال پاسخ با دکمه‌های اضافی
-      if (joinButtons.length > 0) {
-        await interaction.reply({ 
-          embeds: [embed], 
-          components: [joinButtonsRow, controlRow], 
-          ephemeral: true 
-        });
-      } else {
-        await interaction.reply({ 
-          embeds: [embed], 
-          components: [controlRow], 
-          ephemeral: true 
-        });
-      }
-    } else {
-      embed.setDescription('🔍 در حال حاضر هیچ بازی فعالی وجود ندارد!\n\n' +
-                          'می‌توانید با انتخاب یکی از بازی‌های گروهی، یک بازی جدید شروع کنید.');
-                          
-      // دکمه‌های کنترلی
-      const controlRow = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId('game:history')
-            .setLabel('تاریخچه بازی‌ها')
-            .setStyle(ButtonStyle.Primary)
-            .setEmoji('📜'),
-          new ButtonBuilder()
-            .setCustomId('game:leaderboard')
-            .setLabel('رتبه‌بندی')
-            .setStyle(ButtonStyle.Primary)
-            .setEmoji('🏆'),
-          new ButtonBuilder()
-            .setCustomId('group_games')
-            .setLabel('بازگشت')
-            .setStyle(ButtonStyle.Secondary)
-            .setEmoji('🔙')
-        );
-        
-      // ارسال پاسخ
-      await interaction.reply({ embeds: [embed], components: [controlRow], ephemeral: true });
+      embed.addFields({
+        name: '⏳ جلسات در انتظار بازیکن',
+        value: waitingGamesText || 'هیچ جلسه‌ای در انتظار بازیکن نیست.',
+        inline: false
+      });
     }
     
+    // اضافه کردن بخش جلسات در حال اجرا
+    if (activeGamesRunning.length > 0) {
+      let activeGamesText = '';
+      
+      activeGamesRunning.slice(0, 5).forEach((game, index) => {
+        const gameTypeName = gameTypeNames[game.gameType] || game.gameType;
+        const hostUser = client.users.cache.get(game.createdBy)?.username || 'کاربر ناشناس';
+        const startTime = game.startedAt ? new Date(game.startedAt).toLocaleTimeString('fa-IR') : 'نامشخص';
+        const channel = client.channels.cache.get(game.channelId) as TextChannel;
+        const channelName = channel ? `در #${channel.name}` : '';
+        
+        activeGamesText += `**${index + 1}.** ${gameTypeName} ${channelName}\n` +
+                           `👤 میزبان: **${hostUser}** | 👥 بازیکنان: **${game.players.length}** | ⏰ شروع: **${startTime}**\n\n`;
+      });
+      
+      if (activeGamesRunning.length > 5) {
+        activeGamesText += `...و ${activeGamesRunning.length - 5} جلسه دیگر\n`;
+      }
+      
+      embed.addFields({
+        name: '🟢 جلسات در حال اجرا',
+        value: activeGamesText || 'هیچ جلسه‌ای در حال اجرا نیست.',
+        inline: false
+      });
+    }
+    
+    // دکمه‌های پیوستن به بازی
+    const joinButtons: ButtonBuilder[] = [];
+  
+    // دکمه‌های پیوستن به جلسات در انتظار بازیکن (حداکثر 3 دکمه)
+    let waitingGamesButtons = 0;
+    for (const game of waitingGames.slice(0, 3)) {
+      const gameType = game.gameType;
+      
+      joinButtons.push(
+        new ButtonBuilder()
+          .setCustomId(`join_game:${game.id}`)
+          .setLabel(`پیوستن به ${gameTypeNames[gameType] || gameType}`)
+          .setStyle(ButtonStyle.Success)
+          .setEmoji('👥')
+      );
+      waitingGamesButtons++;
+    }
+    
+    // چک می‌کنیم آیا فضای کافی برای دکمه‌های دیگر داریم
+    if (waitingGamesButtons < 5) {
+      let availableSlots = 5 - waitingGamesButtons;
+      if (availableSlots > 0) {
+        // اضافه کردن دکمه ایجاد بازی مافیا
+        joinButtons.push(
+          new ButtonBuilder()
+            .setCustomId('create_mafia')
+            .setLabel('ایجاد بازی مافیا')
+            .setStyle(ButtonStyle.Primary)
+            .setEmoji('🕵️‍♂️')
+        );
+        availableSlots--;
+      }
+      
+      if (availableSlots > 0) {
+        // اضافه کردن دکمه ایجاد بازی گرگینه
+        joinButtons.push(
+          new ButtonBuilder()
+            .setCustomId('game:werewolf:create')
+            .setLabel('ایجاد بازی گرگینه')
+            .setStyle(ButtonStyle.Primary)
+            .setEmoji('🐺')
+        );
+      }
+    }
+    
+    // ساخت صف دکمه‌های پیوستن
+    const joinButtonsRow = new ActionRowBuilder<ButtonBuilder>().addComponents(...joinButtons);
+    
+    // دکمه‌های کنترلی
+    const controlRow = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('group_games')
+          .setLabel('منوی بازی‌های گروهی')
+          .setStyle(ButtonStyle.Secondary)
+          .setEmoji('🎮'),
+        new ButtonBuilder()
+          .setCustomId('game:leaderboard')
+          .setLabel('رتبه‌بندی')
+          .setStyle(ButtonStyle.Primary)
+          .setEmoji('🏆'),
+        new ButtonBuilder()
+          .setCustomId('menu')
+          .setLabel('منوی اصلی')
+          .setStyle(ButtonStyle.Secondary)
+          .setEmoji('🔙')
+      );
+  
+    // ارسال پاسخ با دکمه‌های اضافی
+    if (joinButtons.length > 0) {
+      await interaction.reply({ 
+        embeds: [embed], 
+        components: [joinButtonsRow, controlRow], 
+        ephemeral: true 
+      });
+    } else {
+      await interaction.reply({ 
+        embeds: [embed], 
+        components: [controlRow], 
+        ephemeral: true 
+      });
+    }
   } catch (error) {
     log(`Error showing active sessions menu: ${error}`, 'error');
-    await interaction.reply({ 
-      content: '❌ خطایی در نمایش جلسات فعال رخ داد. لطفاً بعداً دوباره تلاش کنید.', 
-      ephemeral: true 
-    });
+    
+    try {
+      await interaction.reply({ 
+        content: '❌ خطایی در نمایش جلسات فعال رخ داد. لطفاً بعداً دوباره تلاش کنید.', 
+        ephemeral: true 
+      });
+    } catch (replyError) {
+      log(`Failed to send error message: ${replyError}`, 'error');
+    }
   }
 }
 

@@ -1,9 +1,9 @@
 import axios from 'axios';
-import { logger } from '../utils/logger';
-import config from '../utils/config';
+import { log } from '../../vite';
+import { botConfig } from '../utils/config';
 
 const GEMINI_API_KEY = process.env.GOOGLE_AI_API_KEY;
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent';
 
 /**
  * سرویس جایگزین برای Gemini API که به طور مستقیم با REST API کار می‌کند
@@ -18,9 +18,9 @@ export class GeminiAltService {
     this.apiUrl = GEMINI_API_URL;
     
     if (!this.apiKey) {
-      logger.warn('سرویس Gemini جایگزین: کلید API تنظیم نشده است');
+      log('سرویس Gemini جایگزین: کلید API تنظیم نشده است', 'warn');
     } else {
-      logger.info('سرویس Gemini جایگزین با موفقیت راه‌اندازی شد');
+      log('سرویس Gemini جایگزین با موفقیت راه‌اندازی شد', 'info');
     }
   }
   
@@ -37,7 +37,7 @@ export class GeminiAltService {
     }
     
     try {
-      logger.info(`ارسال درخواست به سرویس Gemini جایگزین: ${prompt.substring(0, 50)}...`);
+      log(`ارسال درخواست به سرویس Gemini جایگزین: ${prompt.substring(0, 50)}...`, 'info');
       
       const response = await axios.post(
         `${this.apiUrl}?key=${this.apiKey}`,
@@ -59,14 +59,14 @@ export class GeminiAltService {
       
       if (response.data && response.data.candidates && response.data.candidates[0]) {
         const generatedText = response.data.candidates[0].content.parts[0].text;
-        logger.info(`پاسخ از سرویس Gemini جایگزین دریافت شد (${generatedText.length} کاراکتر)`);
+        log(`پاسخ از سرویس Gemini جایگزین دریافت شد (${generatedText.length} کاراکتر)`, 'info');
         return generatedText;
       } else {
-        logger.error('ساختار پاسخ سرویس Gemini جایگزین غیرمنتظره است', response.data);
+        log('ساختار پاسخ سرویس Gemini جایگزین غیرمنتظره است: ' + JSON.stringify(response.data), 'error');
         throw new Error('ساختار پاسخ API غیرمنتظره');
       }
     } catch (error) {
-      logger.error('خطا در فراخوانی سرویس Gemini جایگزین:', error);
+      log('خطا در فراخوانی سرویس Gemini جایگزین: ' + error, 'error');
       
       // پردازش خطاهای خاص
       if (axios.isAxiosError(error) && error.response) {
@@ -104,7 +104,7 @@ export class GeminiAltService {
       await this.generateContent('سلام، لطفاً پاسخ خیلی کوتاهی بده: 1+1 چند می‌شود؟', 10, 0.1);
       return true;
     } catch (error) {
-      logger.error('تست اتصال سرویس Gemini جایگزین با شکست مواجه شد:', error);
+      log('تست اتصال سرویس Gemini جایگزین با شکست مواجه شد: ' + error, 'error');
       return false;
     }
   }

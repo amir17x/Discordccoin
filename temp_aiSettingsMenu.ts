@@ -2,6 +2,10 @@
  * منوی مدیریت هوش مصنوعی
  * @param interaction تعامل کاربر
  */
+import { botConfig } from './server/discord/utils/config';
+import { ButtonInteraction, ChatInputCommandInteraction, PermissionFlagsBits, 
+  EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+
 export async function aiSettingsMenu(interaction: ButtonInteraction | ChatInputCommandInteraction) {
   try {
     // بررسی دسترسی ادمین
@@ -26,7 +30,7 @@ export async function aiSettingsMenu(interaction: ButtonInteraction | ChatInputC
       .setTimestamp();
     
     // تنظیمات هوش مصنوعی فعلی
-    const aiService = config.ai?.service || 'googleai';
+    const aiService = config.ai?.service || 'geminialt';
     
     // تعیین نام سرویس
     let serviceDisplay = '';
@@ -41,7 +45,7 @@ export async function aiSettingsMenu(interaction: ButtonInteraction | ChatInputC
         serviceDisplay = '**Gemini API (مستقیم)** - دسترسی مستقیم به API جمینای';
         break;
       default:
-        serviceDisplay = '**Google AI** - سرویس پیش‌فرض';
+        serviceDisplay = '**Gemini API** - سرویس پیش‌فرض';
     }
     
     // افزودن فیلدها به Embed
