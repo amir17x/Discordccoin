@@ -28,27 +28,50 @@ export async function profileMenu(
     // Get user's clan if they're in one
     const userClan = user.clanId ? await storage.getClan(user.clanId) : null;
     
-    // Get user's achievements
-    const userAchievements = await storage.getUserAchievements(user.id);
-    const completedAchievements = userAchievements.filter(a => a.userAchievement.completed);
+    // موقتا دستاوردها غیرفعال شده‌اند
+    const userAchievements: {achievement: any, userAchievement: any}[] = [];
+    const completedAchievements: {achievement: any, userAchievement: any}[] = [];
     
-    // Get user's games stats
-    const userGames = await storage.getUserGames(user.id);
-    const gamesWon = userGames.filter(game => game.won).length;
+    // بدست آوردن آمار بازی‌ها - موقتاً با مقادیر پیش‌فرض
+    let userGames: any[] = [];
+    try {
+      // @ts-ignore - این تابع ممکن است در برخی پیاده‌سازی‌های storage موجود نباشد
+      userGames = await storage.getUserGames?.(user.id) || [];
+    } catch (error) {
+      console.error('Error fetching user games:', error);
+      userGames = [];
+    }
+    
+    const gamesWon = userGames.filter((game: any) => game.won).length;
     const winRate = userGames.length > 0 ? Math.round((gamesWon / userGames.length) * 100) : 0;
     
     // Get active items
-    const inventory = await storage.getInventoryItems(user.id);
+    let inventory: any[] = [];
+    try {
+      inventory = await storage.getInventoryItems(user.id);
+    } catch (error) {
+      console.error('Error fetching inventory items:', error);
+      inventory = [];
+    }
+    
     const now = new Date();
-    const activeRoles = inventory.filter(({ item, inventoryItem }) => {
-      return inventoryItem.active && 
-             inventoryItem.expires && 
-             new Date(inventoryItem.expires) > now && 
-             item.type === 'role';
+    const activeRoles = inventory.filter((item: any) => {
+      if (!item || !item.inventoryItem) return false;
+      
+      return item.inventoryItem?.active && 
+             item.inventoryItem?.expires && 
+             new Date(item.inventoryItem.expires) > now && 
+             item.item?.type === 'role';
     });
     
     // بررسی وضعیت اشتراک دستیار هوشمند
-    const aiDetails = await storage.getUserAIAssistantDetails(user.id);
+    let aiDetails;
+    try {
+      aiDetails = await storage.getUserAIAssistantDetails(user.id);
+    } catch (error) {
+      console.error('Error fetching AI assistant details:', error);
+      aiDetails = null;
+    }
     
     // Create the profile embed
     const embed = new EmbedBuilder()
@@ -70,13 +93,22 @@ export async function profileMenu(
     
     // Add active roles if any
     if (activeRoles.length > 0) {
-      const rolesText = activeRoles.map(({ item, inventoryItem }) => {
-        const expires = new Date(inventoryItem.expires!);
-        const hoursLeft = Math.ceil((expires.getTime() - now.getTime()) / (1000 * 60 * 60));
-        return `${item.emoji} **${item.name}** - ${hoursLeft} ساعت باقیمانده`;
-      }).join('\n');
-      
-      embed.addFields({ name: '🎭 نقش‌های فعال', value: rolesText, inline: false });
+      try {
+        const rolesText = activeRoles.map((role: any) => {
+          if (!role.item || !role.inventoryItem || !role.inventoryItem.expires) {
+            return 'آیتم نامشخص';
+          }
+          
+          const expires = new Date(role.inventoryItem.expires);
+          const hoursLeft = Math.ceil((expires.getTime() - now.getTime()) / (1000 * 60 * 60));
+          return `${role.item.emoji || '🎭'} **${role.item.name || 'آیتم'}** - ${hoursLeft} ساعت باقیمانده`;
+        }).join('\n');
+        
+        embed.addFields({ name: '🎭 نقش‌های فعال', value: rolesText || 'خطا در نمایش آیتم‌های فعال', inline: false });
+      } catch (error) {
+        console.error('Error displaying active roles:', error);
+        embed.addFields({ name: '🎭 نقش‌های فعال', value: 'خطا در نمایش آیتم‌های فعال', inline: false });
+      }
     }
     
     // Add achievements info
@@ -175,7 +207,9 @@ export async function profileMenu(
         // Count games by type
         const gameTypes: Record<string, { played: number, won: number }> = {};
         
-        userGames.forEach(game => {
+        userGames.forEach((game: any) => {
+          if (!game || !game.type) return;
+          
           if (!gameTypes[game.type]) {
             gameTypes[game.type] = { played: 0, won: 0 };
           }
@@ -218,22 +252,15 @@ export async function profileMenu(
         const achievementsEmbed = new EmbedBuilder()
           .setColor('#5865F2')
           .setTitle('🎖️ دستاوردهای شما')
-          .setDescription(`**${interaction.user.username}**\n\n${completedAchievements.length} دستاورد از ${userAchievements.length} دستاورد تکمیل شده است.`)
+          .setDescription(`**${interaction.user.username}**\n\nسیستم دستاوردها در حال حاضر در دست توسعه است و به زودی فعال خواهد شد.`)
           .setFooter({ text: `ID: ${interaction.user.id}` })
           .setTimestamp();
         
-        // Add all achievements with progress
-        userAchievements.forEach(({ achievement, userAchievement }) => {
-          const progress = `${userAchievement.progress}/${achievement.targetAmount}`;
-          const percentage = Math.min(100, Math.round((userAchievement.progress / achievement.targetAmount) * 100));
-          const progressBar = getProgressBar(percentage);
-          const status = userAchievement.completed ? '✅ تکمیل شده' : '⏳ در حال پیشرفت';
-          
-          achievementsEmbed.addFields({
-            name: `${userAchievement.completed ? '🎖️' : '🔹'} ${achievement.title}`,
-            value: `${achievement.description}\n**جایزه:** ${achievement.reward} Ccoin\n**پیشرفت:** ${progress} (${percentage}%)\n${progressBar}\n**وضعیت:** ${status}`,
-            inline: false
-          });
+        // این بخش به صورت موقت غیرفعال شده است
+        achievementsEmbed.addFields({
+          name: '🔄 در حال توسعه',
+          value: 'سیستم دستاوردها در حال بروزرسانی است و به زودی با امکانات جدید در دسترس قرار خواهد گرفت.',
+          inline: false
         });
         
         // Back button with color

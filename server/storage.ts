@@ -3765,6 +3765,7 @@ export class MemStorage implements IStorage {
 }
 
 // مدل‌های MongoDB
+import mongoose from 'mongoose';
 import UserModel from './models/User';
 import ClanModel from './models/Clan';
 import TipChannelModel from './models/TipChannel';

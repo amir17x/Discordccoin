@@ -2,6 +2,8 @@ import path from 'path';
 import fs from 'fs';
 import { botConfig } from '../utils/config';
 import geminiAltService from './geminiAltService';
+import geminiService from './geminiService';
+import geminiSdkService from './geminiSdkService';
 import { log } from '../../vite';
 
 // مسیر فایل آمار هوش مصنوعی
@@ -182,8 +184,21 @@ export async function generateAIResponse(
        responseStyle === 'دقیق' ? 0.3 : 
        responseStyle === 'طنزآمیز' ? 1.0 : 0.7) : 0.7;
     
-    // استفاده از سرویس Gemini
-    const response = await geminiAltService.generateContent(prompt, 1000, temperature);
+    let response: string;
+    
+    // سعی می‌کنیم ابتدا از سرویس SDK استفاده کنیم
+    try {
+      if (geminiSdkService.isAvailable()) {
+        response = await geminiSdkService.generateContent(prompt, 1000, temperature);
+      } else {
+        // اگر SDK در دسترس نبود، از سرویس جایگزین استفاده می‌کنیم
+        response = await geminiAltService.generateContent(prompt, 1000, temperature);
+      }
+    } catch (e) {
+      // در صورت خطا در SDK به سرویس جایگزین می‌رویم
+      log(`خطا در سرویس SDK: ${e}. استفاده از سرویس جایگزین...`, 'warn');
+      response = await geminiAltService.generateContent(prompt, 1000, temperature);
+    }
     
     // محاسبه زمان پاسخگویی
     const latency = Date.now() - startTime;
@@ -229,8 +244,23 @@ export async function testAIService(
                          style === 'دقیق' ? 0.3 : 
                          style === 'طنزآمیز' ? 1.0 : 0.7;
     
-    // استفاده از سرویس Gemini
-    const response = await geminiAltService.generateContent(prompt, 200, temperature);
+    let response: string;
+    let serviceUsed: AIService = 'geminialt';
+
+    // سعی می‌کنیم ابتدا از سرویس SDK استفاده کنیم
+    try {
+      if (geminiSdkService.isAvailable()) {
+        response = await geminiSdkService.generateContent(prompt, 200, temperature);
+        serviceUsed = 'googleai'; // SDK را به عنوان googleai در آمار نشان می‌دهیم
+      } else {
+        // اگر SDK در دسترس نبود، از سرویس جایگزین استفاده می‌کنیم
+        response = await geminiAltService.generateContent(prompt, 200, temperature);
+      }
+    } catch (e) {
+      // در صورت خطا در SDK به سرویس جایگزین می‌رویم
+      log(`خطا در سرویس SDK: ${e}. استفاده از سرویس جایگزین...`, 'warn');
+      response = await geminiAltService.generateContent(prompt, 200, temperature);
+    }
     
     // محاسبه زمان پاسخگویی
     const latency = Date.now() - startTime;
@@ -240,7 +270,7 @@ export async function testAIService(
       response,
       latency,
       style,
-      service: 'geminialt'
+      service: serviceUsed
     };
   } catch (error) {
     const latency = 0; // در صورت خطا، زمان پاسخگویی معنایی ندارد
@@ -284,7 +314,17 @@ export async function pingCurrentAIService(): Promise<number> {
       });
     };
     
-    // پینگ سرویس Gemini
+    // ابتدا سرویس SDK را تست می‌کنیم
+    if (geminiSdkService.isAvailable()) {
+      const sdkResult = await pingWithTimeout(() => geminiSdkService.testConnection(), 'geminiSdk');
+      
+      // اگر SDK با موفقیت پاسخ داد، نتیجه را برمی‌گردانیم
+      if (sdkResult > 0) {
+        return sdkResult;
+      }
+    }
+    
+    // اگر SDK در دسترس نبود یا با خطا مواجه شد، از سرویس جایگزین استفاده می‌کنیم
     return await pingWithTimeout(() => geminiAltService.testConnection(), 'geminialt');
   } catch (error) {
     console.error('Error pinging AI services:', error);

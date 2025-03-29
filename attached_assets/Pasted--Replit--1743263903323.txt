@@ -1,0 +1,183 @@
+برای مستندسازی کامل دو لینک ارائه‌شده و آماده‌سازی آن برای استفاده در ربات هوش مصنوعی شما در Replit، ابتدا باید توضیح دهم که هر دو URL که ارائه کرده‌اید یکسان هستند (`https://ai.google.dev/api?lang=node`) و به صفحه مستندات API Gemini در سایت Google AI for Developers اشاره دارند که برای زبان برنامه‌نویسی Node.js تنظیم شده است. بنابراین، من بر اساس این صفحه و اطلاعات موجود، یک مستند جامع و دقیق برای استفاده از Gemini API در Node.js تهیه می‌کنم. این مستند شامل مراحل نصب، پیکربندی، مثال‌های کد، و نکات مهم برای جلوگیری از خطاها خواهد بود تا ربات شما به بهترین شکل عمل کند.
+
+---
+
+### مستندات کامل Gemini API برای Node.js
+
+#### 1. **معرفی**
+Gemini API یک رابط برنامه‌نویسی قدرتمند از گوگل است که به شما امکان می‌دهد از مدل‌های مولد هوش مصنوعی چندوجهی (multimodal) مانند Gemini 1.5 Flash و Gemini 1.5 Pro استفاده کنید. این API در Node.js از طریق بسته رسمی `@google/generative-ai` قابل استفاده است و قابلیت‌هایی مانند تولید متن، تحلیل تصاویر، و پردازش چندوجهی را فراهم می‌کند.
+
+#### 2. **پیش‌نیازها**
+برای استفاده از Gemini API در Node.js، محیط توسعه شما باید شرایط زیر را داشته باشد:
+- **Node.js**: نسخه فعال و پشتیبانی‌شده (LTS توصیه می‌شود، مثلاً نسخه 18 یا 20).
+- **npm**: ابزار مدیریت بسته برای نصب وابستگی‌ها.
+- **کلید API**: یک کلید API از Google AI Studio.
+
+#### 3. **نصب و راه‌اندازی**
+##### 3.1. نصب بسته Gemini API
+ابتدا بسته موردنیاز را با دستور زیر نصب کنید:
+```bash
+npm install @google/generative-ai
+```
+این بسته شامل SDK رسمی گوگل برای تعامل با Gemini API است.
+
+##### 3.2. دریافت کلید API
+1. به [Google AI Studio](https://aistudio.google.com/) بروید.
+2. با حساب گوگل خود وارد شوید.
+3. یک کلید API جدید ایجاد کنید (گزینه "Get API Key").
+4. کلید را کپی کنید و در یک متغیر محیطی ذخیره کنید (برای امنیت بیشتر، از ذخیره مستقیم در کد اجتناب کنید).
+
+##### 3.3. تنظیم کلید API
+کلید API را به صورت متغیر محیطی تنظیم کنید:
+- در ترمینال:
+  ```bash
+  export GOOGLE_API_KEY="YOUR_API_KEY"
+  ```
+- یا در فایل `.env` (با نصب بسته `dotenv`):
+  ```bash
+  npm install dotenv
+  ```
+  سپس در فایل `.env`:
+  ```
+  GOOGLE_API_KEY=YOUR_API_KEY
+  ```
+  و در کد خود:
+  ```javascript
+  require('dotenv').config();
+  const apiKey = process.env.GOOGLE_API_KEY;
+  ```
+
+#### 4. **استفاده از Gemini API**
+##### 4.1. مقداردهی اولیه
+ابتدا مدل را با استفاده از کلید API مقداردهی کنید:
+```javascript
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+```
+
+##### 4.2. انتخاب مدل
+مدل‌های موجود شامل `gemini-1.5-flash` (سریع و سبک) و `gemini-1.5-pro` (قدرتمندتر) هستند. برای مثال:
+```javascript
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+```
+
+##### 4.3. تولید محتوا (متن ساده)
+برای تولید متن از یک پرامپت:
+```javascript
+async function generateText() {
+  const prompt = "توضیح بده که هوش مصنوعی چطور کار می‌کنه؟";
+  const result = await model.generateContent(prompt);
+  const response = await result.response;
+  console.log(response.text());
+}
+
+generateText().catch(console.error);
+```
+
+##### 4.4. کار با داده‌های چندوجهی (مثلاً تصویر)
+برای استفاده از تصاویر، باید آنها را به صورت Base64 کدگذاری کنید:
+```javascript
+const fs = require("fs").promises;
+
+async function generateWithImage() {
+  const imageData = await fs.readFile("image.jpg");
+  const imageBase64 = Buffer.from(imageData).toString("base64");
+
+  const prompt = [
+    "این تصویر چی رو نشون می‌ده؟",
+    {
+      inlineData: {
+        data: imageBase64,
+        mimeType: "image/jpeg",
+      },
+    },
+  ];
+
+  const result = await model.generateContent(prompt);
+  const response = await result.response;
+  console.log(response.text());
+}
+
+generateWithImage().catch(console.error);
+```
+
+#### 5. **نکات مهم برای جلوگیری از خطاها**
+1. **مدیریت کلید API**:
+   - کلید را در کد مستقیم وارد نکنید تا از نشت آن جلوگیری شود.
+   - از متغیرهای محیطی یا ابزارهایی مثل `dotenv` استفاده کنید.
+2. **بررسی اتصال اینترنت**:
+   - API به اتصال اینترنت نیاز دارد. مطمئن شوید که سرور یا محیط Replit شما آنلاین است.
+3. **محدودیت‌های نرخ (Rate Limits)**:
+   - در نسخه رایگان، محدودیت‌هایی وجود دارد. درخواست‌ها را بیش از حد ارسال نکنید تا از خطای 429 (Too Many Requests) جلوگیری شود.
+4. **مدیریت خطاها**:
+   - از `try/catch` استفاده کنید:
+     ```javascript
+     async function safeGenerate() {
+       try {
+         const result = await model.generateContent("سلام دنیا");
+         console.log((await result.response).text());
+       } catch (error) {
+         console.error("خطا:", error.message);
+       }
+     }
+     safeGenerate();
+     ```
+5. **انتخاب مدل مناسب**:
+   - برای کارهای ساده از `gemini-1.5-flash` و برای کارهای پیچیده‌تر از `gemini-1.5-pro` استفاده کنید.
+
+#### 6. **مثال کامل برای ربات در Replit**
+این کد یک ربات ساده است که به ورودی کاربر پاسخ می‌دهد:
+```javascript
+require('dotenv').config();
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const readline = require("readline");
+
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
+
+async function chat() {
+  rl.question("سوال خود را بپرس: ", async (input) => {
+    if (input.toLowerCase() === "خروج") {
+      rl.close();
+      return;
+    }
+
+    try {
+      const result = await model.generateContent(input);
+      const response = await result.response;
+      console.log("پاسخ:", response.text());
+    } catch (error) {
+      console.error("خطا:", error.message);
+    }
+    chat(); // ادامه چت
+  });
+}
+
+console.log("ربات آماده است! برای خروج بنویس 'خروج'");
+chat();
+```
+
+#### 7. **استقرار در Replit**
+1. یک پروژه جدید Node.js در Replit ایجاد کنید.
+2. بسته‌ها را نصب کنید:
+   ```bash
+   npm install @google/generative-ai dotenv
+   ```
+3. فایل `.env` را با کلید API خود ایجاد کنید.
+4. کد بالا را در `index.js` کپی کنید.
+5. پروژه را اجرا کنید و با ربات تعامل کنید.
+
+#### 8. **منابع اضافی**
+- مستندات رسمی: [Gemini API Reference](https://ai.google.dev/api?lang=node)
+- گالری پرامپت: [Prompt Gallery](https://ai.google.dev/prompt-gallery)
+- مخزن GitHub: [google/generative-ai-js](https://github.com/google/generative-ai-js)
+
+---
+
+### نتیجه‌گیری
+این مستند شامل تمام مراحل لازم برای استفاده از Gemini API در Node.js است و به شکلی طراحی شده که ربات شما در Replit بدون خطا کار کند. کافی است کد را در Replit بارگذاری کنید، متغیرهای محیطی را تنظیم کنید، و از قابلیت‌های چندوجهی Gemini لذت ببرید! اگر سوالی دارید، بپرسید تا بیشتر راهنمایی کنم.
