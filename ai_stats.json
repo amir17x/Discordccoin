@@ -1,23 +1,23 @@
 {
   "service": "huggingface",
-  "lastUsed": "2025-03-29T11:30:05.657Z",
-  "requestCount": 71,
+  "lastUsed": "2025-03-29T12:22:56.959Z",
+  "requestCount": 80,
   "providerStats": {
     "openai": 0,
     "huggingface": 6,
-    "googleai": 65,
+    "googleai": 74,
     "grok": 0,
     "openrouter": 0
   },
   "usageCounts": {
-    "statusMessages": 42,
+    "statusMessages": 46,
     "marketAnalysis": 0,
     "questStories": 0,
-    "aiAssistant": 6,
-    "other": 5,
+    "aiAssistant": 9,
+    "other": 7,
     "statusMessage": 4,
     "notifications": 12
   },
-  "averageLatency": 1919,
-  "totalLatency": 136221
+  "averageLatency": 1949,
+  "totalLatency": 155944
 }

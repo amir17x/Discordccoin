@@ -805,7 +805,7 @@ export class MemStorage implements IStorage {
     return user;
   }
 
-  async transferToWallet(userId: number, amount: number): Promise<User | undefined> {
+  async transferToWallet(userId: number, amount: number, metadata: any = {}): Promise<User | undefined> {
     const user = this.users.get(userId);
     // امنیت بیشتر: بررسی اینکه مقدار معتبر است
     if (!user || user.bank < amount || amount <= 0 || isNaN(amount)) return undefined;
@@ -820,7 +820,8 @@ export class MemStorage implements IStorage {
       type: 'withdraw',
       amount: amount,
       fee: 0, // برداشت از بانک کارمزد ندارد
-      timestamp: new Date()
+      timestamp: new Date(),
+      ...metadata
     });
     
     return user;
@@ -4681,12 +4682,26 @@ export class MongoStorage implements IStorage {
     return memStorage.getUserTransactions(userId);
   }
 
-  async addToWallet(userId: number, amount: number): Promise<User | undefined> {
+  async addToWallet(userId: number, amount: number, transactionType: string = 'deposit', metadata: any = {}): Promise<User | undefined> {
     try {
-      // سعی کنید با _id پیدا کنید
-      let user = await UserModel.findOne({ _id: userId });
+      // سعی کنید با discordId پیدا کنید (اگر userId یک شناسه دیسکورد است)
+      let user = null;
       
-      // اگر پیدا نشد، با id عددی امتحان کنید
+      // اگر userId یک رشته است، احتمالاً یک شناسه دیسکورد است
+      if (typeof userId === 'string') {
+        user = await UserModel.findOne({ discordId: userId });
+      }
+      
+      // اگر هنوز کاربر پیدا نشده، با _id تلاش کنید
+      if (!user) {
+        try {
+          user = await UserModel.findOne({ _id: userId });
+        } catch (e) {
+          // خطا را نادیده بگیرید
+        }
+      }
+      
+      // اگر هنوز پیدا نشد، با id عددی امتحان کنید
       if (!user) {
         user = await UserModel.findOne({ id: userId });
       }
@@ -4703,27 +4718,95 @@ export class MongoStorage implements IStorage {
       
       if (!user) {
         console.log(`No user found with id ${userId} in MongoDB`);
-        return memStorage.addToWallet(userId, amount);
+        return memStorage.addToWallet(userId, amount, transactionType, metadata);
+      }
+      
+      // مطمئن شویم که فیلد id دارای مقدار است
+      if (!user.id) {
+        // اگر id تنظیم نشده، از _id استفاده کنیم
+        if (user._id) {
+          user.id = user._id.toString();
+          console.log(`Setting missing id field for user ${user.username} to ${user.id}`);
+        } else {
+          // اگر هیچ شناسه‌ای موجود نیست، از شناسه دیسکورد استفاده کنیم
+          user.id = parseInt(user.discordId) || Date.now();
+          console.log(`Using fallback ID for user ${user.username}: ${user.id}`);
+        }
       }
       
       user.wallet += amount;
       
-      console.log(`Adding ${amount} to wallet of user ${user.username} (${user.discordId})`);
+      // ثبت تراکنش
+      if (!user.transactions) user.transactions = [];
+      user.transactions.push({
+        type: transactionType,
+        amount: amount,
+        fee: 0,
+        timestamp: new Date(),
+        ...metadata
+      });
       
-      await user.save();
-      return this.convertMongoUserToUser(user);
+      console.log(`Adding ${amount} to wallet of user ${user.username} (${user.discordId}), wallet now: ${user.wallet}`);
+      
+      try {
+        await user.save();
+        console.log(`Successfully saved user ${user.username} after adding to wallet`);
+        return this.convertMongoUserToUser(user);
+      } catch (saveError) {
+        console.error('Error saving user after adding to wallet:', saveError);
+        
+        // در صورت خطای اعتبارسنجی، تلاش کنیم با findOneAndUpdate عملیات را انجام دهیم
+        console.log('Trying alternative update method...');
+        const updatedUser = await UserModel.findOneAndUpdate(
+          { discordId: user.discordId },
+          { 
+            $inc: { wallet: amount },
+            $push: { 
+              transactions: {
+                type: transactionType,
+                amount: amount,
+                fee: 0,
+                timestamp: new Date(),
+                ...metadata
+              }
+            }
+          },
+          { new: true }
+        );
+        
+        if (updatedUser) {
+          console.log(`Alternative method succeeded for user ${updatedUser.username}`);
+          return this.convertMongoUserToUser(updatedUser);
+        } else {
+          throw saveError; // رها کردن خطای اصلی اگر روش جایگزین هم شکست خورد
+        }
+      }
     } catch (error) {
       console.error('Error adding to wallet in MongoDB:', error);
-      return memStorage.addToWallet(userId, amount);
+      return memStorage.addToWallet(userId, amount, transactionType, metadata);
     }
   }
 
-  async addToBank(userId: number, amount: number): Promise<User | undefined> {
+  async addToBank(userId: number, amount: number, transactionType: string = 'deposit', metadata: any = {}): Promise<User | undefined> {
     try {
-      // سعی کنید با _id پیدا کنید
-      let user = await UserModel.findOne({ _id: userId });
+      // سعی کنید با discordId پیدا کنید (اگر userId یک شناسه دیسکورد است)
+      let user = null;
       
-      // اگر پیدا نشد، با id عددی امتحان کنید
+      // اگر userId یک رشته است، احتمالاً یک شناسه دیسکورد است
+      if (typeof userId === 'string') {
+        user = await UserModel.findOne({ discordId: userId });
+      }
+      
+      // اگر هنوز کاربر پیدا نشده، با _id تلاش کنید
+      if (!user) {
+        try {
+          user = await UserModel.findOne({ _id: userId });
+        } catch (e) {
+          // خطا را نادیده بگیرید
+        }
+      }
+      
+      // اگر هنوز پیدا نشد، با id عددی امتحان کنید
       if (!user) {
         user = await UserModel.findOne({ id: userId });
       }
@@ -4733,33 +4816,102 @@ export class MongoStorage implements IStorage {
         try {
           user = await UserModel.findById(userId);
         } catch (e) {
+          console.log('Error in findById:', e);
           // خطا را نادیده بگیرید و ادامه دهید
         }
       }
       
       if (!user) {
         console.log(`No user found with id ${userId} in MongoDB`);
-        return memStorage.addToBank(userId, amount);
+        return memStorage.addToBank(userId, amount, transactionType, metadata);
+      }
+      
+      // مطمئن شویم که فیلد id دارای مقدار است
+      if (!user.id) {
+        // اگر id تنظیم نشده، از _id استفاده کنیم
+        if (user._id) {
+          user.id = user._id.toString();
+          console.log(`Setting missing id field for user ${user.username} to ${user.id}`);
+        } else {
+          // اگر هیچ شناسه‌ای موجود نیست، از شناسه دیسکورد استفاده کنیم
+          user.id = parseInt(user.discordId) || Date.now();
+          console.log(`Using fallback ID for user ${user.username}: ${user.id}`);
+        }
       }
       
       user.bank += amount;
       
-      console.log(`Adding ${amount} to bank of user ${user.username} (${user.discordId})`);
+      // ثبت تراکنش
+      if (!user.transactions) user.transactions = [];
+      user.transactions.push({
+        type: transactionType,
+        amount: amount,
+        fee: 0,
+        timestamp: new Date(),
+        ...metadata
+      });
       
-      await user.save();
-      return this.convertMongoUserToUser(user);
+      console.log(`Adding ${amount} to bank of user ${user.username} (${user.discordId}), bank now: ${user.bank}`);
+      
+      try {
+        await user.save();
+        console.log(`Successfully saved user ${user.username} after adding to bank`);
+        return this.convertMongoUserToUser(user);
+      } catch (saveError) {
+        console.error('Error saving user after adding to bank:', saveError);
+        
+        // در صورت خطای اعتبارسنجی، تلاش کنیم با findOneAndUpdate عملیات را انجام دهیم
+        console.log('Trying alternative update method...');
+        const updatedUser = await UserModel.findOneAndUpdate(
+          { discordId: user.discordId },
+          { 
+            $inc: { bank: amount },
+            $push: { 
+              transactions: {
+                type: transactionType,
+                amount: amount,
+                fee: 0,
+                timestamp: new Date(),
+                ...metadata
+              }
+            }
+          },
+          { new: true }
+        );
+        
+        if (updatedUser) {
+          console.log(`Alternative method succeeded for user ${updatedUser.username}`);
+          return this.convertMongoUserToUser(updatedUser);
+        } else {
+          throw saveError; // رها کردن خطای اصلی اگر روش جایگزین هم شکست خورد
+        }
+      }
     } catch (error) {
       console.error('Error adding to bank in MongoDB:', error);
-      return memStorage.addToBank(userId, amount);
+      return memStorage.addToBank(userId, amount, transactionType, metadata);
     }
   }
 
-  async transferToBank(userId: number, amount: number): Promise<User | undefined> {
+  async transferToBank(userId: number, amount: number, metadata: any = {}): Promise<User | undefined> {
     try {
-      // سعی کنید با _id پیدا کنید
-      let user = await UserModel.findOne({ _id: userId });
+      // سعی کنید با discordId پیدا کنید (اگر userId یک شناسه دیسکورد است)
+      let user = null;
       
-      // اگر پیدا نشد، با id عددی امتحان کنید
+      // اگر userId یک رشته است، احتمالاً یک شناسه دیسکورد است
+      if (typeof userId === 'string') {
+        user = await UserModel.findOne({ discordId: userId });
+      }
+      
+      // اگر هنوز کاربر پیدا نشده، با _id تلاش کنید
+      if (!user) {
+        try {
+          user = await UserModel.findOne({ _id: userId });
+        } catch (e) {
+          // خطا را نادیده بگیرید
+        }
+      }
+      
+      // اگر هنوز پیدا نشد، با id عددی امتحان کنید
       if (!user) {
         user = await UserModel.findOne({ id: userId });
       }
@@ -4769,17 +4921,31 @@ export class MongoStorage implements IStorage {
         try {
           user = await UserModel.findById(userId);
         } catch (e) {
+          console.log('Error in findById:', e);
           // خطا را نادیده بگیرید و ادامه دهید
         }
       }
       
       if (!user) {
         console.log(`No user found with id ${userId} in MongoDB`);
-        return memStorage.transferToBank(userId, amount);
+        return memStorage.transferToBank(userId, amount, metadata);
+      }
+      
+      // مطمئن شویم که فیلد id دارای مقدار است
+      if (!user.id) {
+        // اگر id تنظیم نشده، از _id استفاده کنیم
+        if (user._id) {
+          user.id = user._id.toString();
+          console.log(`Setting missing id field for user ${user.username} to ${user.id}`);
+        } else {
+          // اگر هیچ شناسه‌ای موجود نیست، از شناسه دیسکورد استفاده کنیم
+          user.id = parseInt(user.discordId) || Date.now();
+          console.log(`Using fallback ID for user ${user.username}: ${user.id}`);
+        }
       }
       
       if (user.wallet < amount) {
-        return memStorage.transferToBank(userId, amount);
+        return memStorage.transferToBank(userId, amount, metadata);
       }
       
       // محاسبه کارمزد
@@ -4795,25 +4961,74 @@ export class MongoStorage implements IStorage {
         type: 'deposit',
         amount: depositAmount,
         fee: fee,
-        timestamp: new Date()
+        timestamp: new Date(),
+        ...metadata
       });
       
       console.log(`Transferred ${depositAmount} from wallet to bank for user ${user.username} (${user.discordId}) with fee ${fee}`);
       
-      await user.save();
-      return this.convertMongoUserToUser(user);
+      try {
+        await user.save();
+        console.log(`Successfully saved user ${user.username} after transferring to bank`);
+        return this.convertMongoUserToUser(user);
+      } catch (saveError) {
+        console.error('Error saving user after transferring to bank:', saveError);
+        
+        // در صورت خطای اعتبارسنجی، تلاش کنیم با findOneAndUpdate عملیات را انجام دهیم
+        console.log('Trying alternative update method...');
+        const updatedUser = await UserModel.findOneAndUpdate(
+          { discordId: user.discordId },
+          { 
+            $inc: { 
+              wallet: -amount,
+              bank: depositAmount 
+            },
+            $push: { 
+              transactions: {
+                type: 'deposit',
+                amount: depositAmount,
+                fee: fee,
+                timestamp: new Date(),
+                ...metadata
+              }
+            }
+          },
+          { new: true }
+        );
+        
+        if (updatedUser) {
+          console.log(`Alternative method succeeded for user ${updatedUser.username}`);
+          return this.convertMongoUserToUser(updatedUser);
+        } else {
+          throw saveError; // رها کردن خطای اصلی اگر روش جایگزین هم شکست خورد
+        }
+      }
     } catch (error) {
       console.error('Error transferring to bank in MongoDB:', error);
-      return memStorage.transferToBank(userId, amount);
+      return memStorage.transferToBank(userId, amount, metadata);
     }
   }
 
-  async transferToWallet(userId: number, amount: number): Promise<User | undefined> {
+  async transferToWallet(userId: number, amount: number, metadata: any = {}): Promise<User | undefined> {
     try {
-      // سعی کنید با _id پیدا کنید
-      let user = await UserModel.findOne({ _id: userId });
+      // سعی کنید با discordId پیدا کنید (اگر userId یک شناسه دیسکورد است)
+      let user = null;
       
-      // اگر پیدا نشد، با id عددی امتحان کنید
+      // اگر userId یک رشته است، احتمالاً یک شناسه دیسکورد است
+      if (typeof userId === 'string') {
+        user = await UserModel.findOne({ discordId: userId });
+      }
+      
+      // اگر هنوز کاربر پیدا نشده، با _id تلاش کنید
+      if (!user) {
+        try {
+          user = await UserModel.findOne({ _id: userId });
+        } catch (e) {
+          // خطا را نادیده بگیرید
+        }
+      }
+      
+      // اگر هنوز پیدا نشد، با id عددی امتحان کنید
       if (!user) {
         user = await UserModel.findOne({ id: userId });
       }
@@ -4823,17 +5038,31 @@ export class MongoStorage implements IStorage {
         try {
           user = await UserModel.findById(userId);
         } catch (e) {
+          console.log('Error in findById:', e);
           // خطا را نادیده بگیرید و ادامه دهید
         }
       }
       
       if (!user) {
         console.log(`No user found with id ${userId} in MongoDB`);
-        return memStorage.transferToWallet(userId, amount);
+        return memStorage.transferToWallet(userId, amount, metadata);
+      }
+      
+      // مطمئن شویم که فیلد id دارای مقدار است
+      if (!user.id) {
+        // اگر id تنظیم نشده، از _id استفاده کنیم
+        if (user._id) {
+          user.id = user._id.toString();
+          console.log(`Setting missing id field for user ${user.username} to ${user.id}`);
+        } else {
+          // اگر هیچ شناسه‌ای موجود نیست، از شناسه دیسکورد استفاده کنیم
+          user.id = parseInt(user.discordId) || Date.now();
+          console.log(`Using fallback ID for user ${user.username}: ${user.id}`);
+        }
       }
       
       if (user.bank < amount) {
-        return memStorage.transferToWallet(userId, amount);
+        return memStorage.transferToWallet(userId, amount, metadata);
       }
       
       user.bank -= amount;
@@ -4845,16 +5074,51 @@ export class MongoStorage implements IStorage {
         type: 'withdraw',
         amount: amount,
         fee: 0, // برداشت از بانک کارمزد ندارد
-        timestamp: new Date()
+        timestamp: new Date(),
+        ...metadata
       });
       
       console.log(`Transferred ${amount} from bank to wallet for user ${user.username} (${user.discordId})`);
       
-      await user.save();
-      return this.convertMongoUserToUser(user);
+      try {
+        await user.save();
+        console.log(`Successfully saved user ${user.username} after transferring to wallet`);
+        return this.convertMongoUserToUser(user);
+      } catch (saveError) {
+        console.error('Error saving user after transferring to wallet:', saveError);
+        
+        // در صورت خطای اعتبارسنجی، تلاش کنیم با findOneAndUpdate عملیات را انجام دهیم
+        console.log('Trying alternative update method...');
+        const updatedUser = await UserModel.findOneAndUpdate(
+          { discordId: user.discordId },
+          { 
+            $inc: { 
+              bank: -amount,
+              wallet: amount 
+            },
+            $push: { 
+              transactions: {
+                type: 'withdraw',
+                amount: amount,
+                fee: 0,
+                timestamp: new Date(),
+                ...metadata
+              }
+            }
+          },
+          { new: true }
+        );
+        
+        if (updatedUser) {
+          console.log(`Alternative method succeeded for user ${updatedUser.username}`);
+          return this.convertMongoUserToUser(updatedUser);
+        } else {
+          throw saveError; // رها کردن خطای اصلی اگر روش جایگزین هم شکست خورد
+        }
+      }
     } catch (error) {
       console.error('Error transferring to wallet in MongoDB:', error);
-      return memStorage.transferToWallet(userId, amount);
+      return memStorage.transferToWallet(userId, amount, metadata);
     }
   }
 
