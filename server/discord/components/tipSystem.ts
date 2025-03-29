@@ -186,7 +186,7 @@ async function sendTip(client: Client, settings: TipChannelSettings) {
         
         tipText = await generateAITip();
         category = 'ai';
-        console.log(`🤖 نکته هوشمند با استفاده از Hugging Face تولید شد.`);
+        console.log(`🤖 نکته هوشمند با استفاده از CCOIN AI تولید شد.`);
       } catch (aiError) {
         console.error(`❌ خطا در تولید نکته هوشمند: ${aiError}. استفاده از نکات معمولی.`);
         // در صورت خطا، استفاده از نکات معمولی
@@ -219,7 +219,7 @@ async function sendTip(client: Client, settings: TipChannelSettings) {
         },
         {
           name: '🤖 منبع',
-          value: 'هوش مصنوعی پیشرفته',
+          value: 'CCOIN AI',
           inline: true
         }
       ]);
@@ -227,7 +227,7 @@ async function sendTip(client: Client, settings: TipChannelSettings) {
     
     // اضافه کردن پاورقی
     embed.setFooter({ 
-      text: `دسته: ${getCategoryDisplayName(category)} | ${useAI ? 'با قدرت هوش مصنوعی پیشرفته' : ''} | دستور /admin برای تنظیمات` 
+      text: `دسته: ${getCategoryDisplayName(category)} | ${useAI ? 'با قدرت CCOIN AI' : ''} | دستور /admin برای تنظیمات` 
     })
     .setTimestamp();
 

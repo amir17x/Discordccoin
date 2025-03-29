@@ -26,7 +26,7 @@ export async function handleSwitchAIService(
     const serviceDisplayName = 
       serviceName === 'googleai' ? 'CCOIN AI' :
       serviceName === 'vertexai' ? 'CCOIN AI (Cloud)' :
-      serviceName === 'geminialt' ? 'CCOIN AI (Backup)' :
+      serviceName === 'ccoinai' ? 'CCOIN AI' :
       'نامشخص';
     
     // اگر سرویس از قبل فعال بود، پیام دهیم و برگردیم
@@ -106,7 +106,7 @@ export async function handleTestAIService(interaction: ButtonInteraction) {
     const aiSettings = botConfig.getAISettings();
     const serviceName = aiSettings.service === 'googleai' ? 'CCOIN AI' :
                    aiSettings.service === 'vertexai' ? 'CCOIN AI (Cloud)' :
-                   aiSettings.service === 'geminialt' ? 'CCOIN AI (Backup)' :
+                   aiSettings.service === 'ccoinai' ? 'CCOIN AI' :
                    'نامشخص';
     
     // ساخت امبد نتیجه
@@ -152,7 +152,7 @@ export async function handleViewAIStatus(interaction: ButtonInteraction) {
           name: '🤖 سرویس فعلی', 
           value: aiStatus.service === 'googleai' ? 'CCOIN AI' :
                  aiStatus.service === 'vertexai' ? 'CCOIN AI (Cloud)' :
-                 aiStatus.service === 'geminialt' ? 'CCOIN AI (Backup)' :
+                 aiStatus.service === 'ccoinai' ? 'CCOIN AI' :
                  'نامشخص', 
           inline: true 
         },
@@ -177,8 +177,8 @@ export async function handleViewAIStatus(interaction: ButtonInteraction) {
           inline: true 
         },
         { 
-          name: '📊 درخواست‌های CCOIN AI (Backup)', 
-          value: aiStatus.providerStats.geminialt ? aiStatus.providerStats.geminialt.toLocaleString() : '0', 
+          name: '📊 درخواست‌های CCOIN AI (نسخه پایه)', 
+          value: aiStatus.providerStats.ccoinai ? aiStatus.providerStats.ccoinai.toLocaleString() : '0', 
           inline: true 
         },
         { 
