@@ -1,11 +1,11 @@
 {
   "service": "huggingface",
-  "lastUsed": "2025-03-29T07:22:23.227Z",
-  "requestCount": 45,
+  "lastUsed": "2025-03-29T07:29:20.488Z",
+  "requestCount": 48,
   "providerStats": {
     "openai": 0,
     "huggingface": 6,
-    "googleai": 39,
+    "googleai": 42,
     "grok": 0,
     "openrouter": 0
   },
@@ -16,8 +16,8 @@
     "aiAssistant": 6,
     "other": 2,
     "statusMessage": 4,
-    "notifications": 9
+    "notifications": 12
   },
-  "averageLatency": 2242,
-  "totalLatency": 100911
+  "averageLatency": 2268,
+  "totalLatency": 108870
 }
