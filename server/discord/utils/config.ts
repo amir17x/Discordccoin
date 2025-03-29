@@ -75,8 +75,8 @@ export interface BotConfig {
   
   // تنظیمات هوش مصنوعی
   ai?: {
-    service?: 'googleai' | 'vertexai' | 'geminialt'; // سرویس فعال هوش مصنوعی
-    googleModel?: string; // مدل Google AI
+    service?: 'openai' | 'googleai' | 'vertexai' | 'geminialt'; // سرویس فعال هوش مصنوعی
+    googleModel?: string; // مدل Google AI - برای سازگاری با کد قبلی حفظ شده
     responseStyle?: string; // سبک پاسخگویی (متعادل، خلاقانه، دقیق، طنزآمیز)
   };
 }
@@ -133,8 +133,8 @@ const defaultConfig: BotConfig = {
     giveaways: true
   },
   ai: {
-    service: 'googleai',
-    googleModel: 'gemini-1.5-pro',
+    service: 'openai',
+    googleModel: 'gpt-3.5-turbo',
     responseStyle: 'متعادل'
   }
 };
@@ -227,8 +227,8 @@ export class BotConfigManager {
    */
   public getAISettings(): NonNullable<BotConfig['ai']> {
     const defaultAISettings: NonNullable<BotConfig['ai']> = {
-      service: 'googleai',
-      googleModel: 'gemini-1.5-pro',
+      service: 'openai',
+      googleModel: 'gpt-3.5-turbo',
       responseStyle: 'متعادل'
     };
     
@@ -361,7 +361,7 @@ export class BotConfigManager {
    * @returns نام سرویس فعال یا مقدار پیش‌فرض
    */
   public getActiveAIService(): string {
-    return this.config.ai?.service || 'googleai';
+    return this.config.ai?.service || 'openai';
   }
 }
 
