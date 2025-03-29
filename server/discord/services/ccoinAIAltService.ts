@@ -2,6 +2,7 @@ import axios from 'axios';
 import { log } from '../../vite';
 import { botConfig } from '../utils/config';
 
+// Using GOOGLE_AI_API_KEY but referred to as CCOIN_AI_API_KEY in our codebase
 const CCOIN_AI_API_KEY = process.env.GOOGLE_AI_API_KEY;
 const CCOIN_AI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent';
 

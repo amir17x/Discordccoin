@@ -14,7 +14,8 @@ interface ExtendedRequestOptions {
   apiVersion?: string;
 }
 
-const GEMINI_API_KEY = process.env.GOOGLE_AI_API_KEY;
+// Using GOOGLE_AI_API_KEY but referred to as CCOIN_AI_API_KEY in our codebase
+const CCOIN_AI_API_KEY = process.env.GOOGLE_AI_API_KEY;
 
 /**
  * سرویس CCOIN AI - موتور هوش مصنوعی اختصاصی ربات
@@ -27,7 +28,7 @@ export class GeminiSdkService {
   private model: GenerativeModel | null = null;
   
   constructor() {
-    this.apiKey = GEMINI_API_KEY || '';
+    this.apiKey = CCOIN_AI_API_KEY || '';
     
     if (!this.apiKey) {
       log('سرویس CCOIN AI: کلید API تنظیم نشده است', 'warn');
@@ -49,7 +50,7 @@ export class GeminiSdkService {
   }
   
   /**
-   * ارسال درخواست به Gemini API
+   * ارسال درخواست به CCOIN AI API
    * @param prompt متن ورودی
    * @param maxTokens حداکثر تعداد توکن‌های خروجی
    * @param temperature دمای تولید پاسخ (0.0 تا 1.0)
@@ -169,7 +170,7 @@ export class GeminiSdkService {
   }
   
   /**
-   * ارسال درخواست به Gemini API با استفاده از تصویر
+   * ارسال درخواست به CCOIN AI API با استفاده از تصویر
    * @param prompt متن ورودی
    * @param imageBase64 تصویر به صورت Base64
    * @param maxTokens حداکثر تعداد توکن‌های خروجی

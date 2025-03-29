@@ -2,10 +2,11 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { log } from '../../vite';
 import { botConfig } from '../utils/config';
 
-const GEMINI_API_KEY = process.env.GOOGLE_AI_API_KEY;
+// Using GOOGLE_AI_API_KEY but referred to as CCOIN_AI_API_KEY in our codebase
+const CCOIN_AI_API_KEY = process.env.GOOGLE_AI_API_KEY;
 
 /**
- * سرویس رسمی Gemini با استفاده از SDK گوگل
+ * سرویس CCOIN AI با استفاده از SDK گوگل
  * این سرویس از کتابخانه رسمی @google/generative-ai استفاده می‌کند
  */
 export class GeminiService {
@@ -14,20 +15,20 @@ export class GeminiService {
   private model: any;
   
   constructor() {
-    this.apiKey = GEMINI_API_KEY || '';
+    this.apiKey = CCOIN_AI_API_KEY || '';
     
     // مقداردهی اولیه
     if (this.apiKey) {
       this.genAI = new GoogleGenerativeAI(this.apiKey);
       this.model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      log('سرویس Gemini با موفقیت راه‌اندازی شد', 'info');
+      log('سرویس CCOIN AI با موفقیت راه‌اندازی شد', 'info');
     } else {
-      log('سرویس Gemini: کلید API تنظیم نشده است', 'warn');
+      log('سرویس CCOIN AI: کلید API تنظیم نشده است', 'warn');
     }
   }
   
   /**
-   * ارسال درخواست به Gemini API با استفاده از SDK
+   * ارسال درخواست به CCOIN AI با استفاده از SDK
    * @param prompt متن ورودی
    * @param maxTokens حداکثر تعداد توکن‌های خروجی
    * @param temperature دمای تولید پاسخ (0.0 تا 1.0)
@@ -35,11 +36,11 @@ export class GeminiService {
    */
   async generateContent(prompt: string, maxTokens: number = 1000, temperature: number = 0.7): Promise<string> {
     if (!this.apiKey || !this.model) {
-      throw new Error('سرویس Gemini به درستی راه‌اندازی نشده است');
+      throw new Error('سرویس CCOIN AI به درستی راه‌اندازی نشده است');
     }
     
     try {
-      log(`ارسال درخواست به Google Gemini: ${prompt.substring(0, 50)}...`, 'info');
+      log(`ارسال درخواست به CCOIN AI: ${prompt.substring(0, 50)}...`, 'info');
       
       // تنظیم پارامترهای تولید محتوا
       // با توجه به خطاها، از نوع any برای جلوگیری از خطاهای تایپ استفاده می‌کنیم
@@ -53,27 +54,27 @@ export class GeminiService {
       const response = await result.response;
       const generatedText = response.text();
       
-      log(`پاسخ از Google Gemini دریافت شد (${generatedText.length} کاراکتر)`, 'info');
+      log(`پاسخ از CCOIN AI دریافت شد (${generatedText.length} کاراکتر)`, 'info');
       return generatedText;
       
     } catch (error: any) {
-      log('خطا در فراخوانی سرویس Gemini: ' + error, 'error');
+      log('خطا در فراخوانی سرویس CCOIN AI: ' + error, 'error');
       
       // پردازش خطاهای خاص
       if (error.message.includes('API key')) {
-        throw new Error('خطای احراز هویت در سرویس Gemini: کلید API نامعتبر است');
+        throw new Error('خطای احراز هویت در سرویس CCOIN AI: کلید API نامعتبر است');
       } else if (error.message.includes('429') || error.message.includes('quota')) {
-        throw new Error('محدودیت نرخ سرویس Gemini: تعداد درخواست‌ها بیش از حد مجاز است');
+        throw new Error('محدودیت نرخ سرویس CCOIN AI: تعداد درخواست‌ها بیش از حد مجاز است');
       } else if (error.message.includes('500') || error.message.includes('server')) {
-        throw new Error(`خطای سرور سرویس Gemini: ${error.message}`);
+        throw new Error(`خطای سرور سرویس CCOIN AI: ${error.message}`);
       }
       
-      throw new Error(`خطا در سرویس Gemini: ${error instanceof Error ? error.message : 'خطای ناشناخته'}`);
+      throw new Error(`خطا در سرویس CCOIN AI: ${error instanceof Error ? error.message : 'خطای ناشناخته'}`);
     }
   }
   
   /**
-   * ارسال درخواست متنی و تصویری به Gemini (multimodal)
+   * ارسال درخواست متنی و تصویری به CCOIN AI (multimodal)
    * @param textPrompt متن ورودی
    * @param imageBase64 تصویر به صورت رشته base64
    * @param mimeType نوع فایل تصویر (مثلاً 'image/jpeg')
@@ -89,11 +90,11 @@ export class GeminiService {
     temperature: number = 0.7
   ): Promise<string> {
     if (!this.apiKey || !this.model) {
-      throw new Error('سرویس Gemini به درستی راه‌اندازی نشده است');
+      throw new Error('سرویس CCOIN AI به درستی راه‌اندازی نشده است');
     }
     
     try {
-      log(`ارسال درخواست چندرسانه‌ای به Google Gemini: ${textPrompt.substring(0, 50)}...`, 'info');
+      log(`ارسال درخواست چندرسانه‌ای به CCOIN AI: ${textPrompt.substring(0, 50)}...`, 'info');
       
       // سرویس مدل چندوجهی - از مدل Pro استفاده می‌کنیم که برای تصاویر بهتر است
       const visionModel = this.genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
@@ -118,12 +119,12 @@ export class GeminiService {
       const response = await result.response;
       const generatedText = response.text();
       
-      log(`پاسخ چندرسانه‌ای از Google Gemini دریافت شد (${generatedText.length} کاراکتر)`, 'info');
+      log(`پاسخ چندرسانه‌ای از CCOIN AI دریافت شد (${generatedText.length} کاراکتر)`, 'info');
       return generatedText;
       
     } catch (error: any) {
-      log('خطا در فراخوانی چندرسانه‌ای سرویس Gemini: ' + error, 'error');
-      throw new Error(`خطا در سرویس چندرسانه‌ای Gemini: ${error instanceof Error ? error.message : 'خطای ناشناخته'}`);
+      log('خطا در فراخوانی چندرسانه‌ای سرویس CCOIN AI: ' + error, 'error');
+      throw new Error(`خطا در سرویس چندرسانه‌ای CCOIN AI: ${error instanceof Error ? error.message : 'خطای ناشناخته'}`);
     }
   }
   
@@ -133,7 +134,7 @@ export class GeminiService {
    */
   createChat() {
     if (!this.apiKey || !this.model) {
-      throw new Error('سرویس Gemini به درستی راه‌اندازی نشده است');
+      throw new Error('سرویس CCOIN AI به درستی راه‌اندازی نشده است');
     }
     
     try {
@@ -149,8 +150,8 @@ export class GeminiService {
       
       return chat;
     } catch (error) {
-      log('خطا در ایجاد چت Gemini: ' + error, 'error');
-      throw new Error(`خطا در ایجاد چت Gemini: ${error instanceof Error ? (error as Error).message : 'خطای ناشناخته'}`);
+      log('خطا در ایجاد چت CCOIN AI: ' + error, 'error');
+      throw new Error(`خطا در ایجاد چت CCOIN AI: ${error instanceof Error ? (error as Error).message : 'خطای ناشناخته'}`);
     }
   }
   
@@ -170,7 +171,7 @@ export class GeminiService {
       await this.generateContent('سلام، لطفاً پاسخ خیلی کوتاهی بده: 1+1 چند می‌شود؟', 10, 0.1);
       return true;
     } catch (error) {
-      log('تست اتصال سرویس Gemini با شکست مواجه شد: ' + error, 'error');
+      log('تست اتصال سرویس CCOIN AI با شکست مواجه شد: ' + error, 'error');
       return false;
     }
   }
