@@ -3719,6 +3719,11 @@ export class MemStorage implements IStorage {
     const session = this.gameSessions.get(id);
     if (!session) return undefined;
     
+    // اضافه کردن updatedAt به روزرسانی اگر ارائه نشده باشد
+    if (!updates.updatedAt) {
+      updates.updatedAt = new Date();
+    }
+    
     const updatedSession = { ...session, ...updates };
     this.gameSessions.set(id, updatedSession);
     
@@ -5569,8 +5574,13 @@ export class MongoStorage implements IStorage {
 
   async updateGameSession(sessionId: string, updates: Partial<GameSession>): Promise<GameSession | undefined> {
     try {
+      // اضافه کردن updatedAt به روزرسانی اگر ارائه نشده باشد
+      if (!updates.updatedAt) {
+        updates.updatedAt = new Date();
+      }
+      
       const session = await GameSessionModel.findOneAndUpdate(
-        { id: sessionId },
+        { gameId: sessionId },
         updates,
         { new: true }
       );

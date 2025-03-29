@@ -18,6 +18,36 @@ import {
   handleQuizAnswer 
 } from '../components/groupGames';
 import { handleBingoInteraction } from '../components/bingoGame';
+import { 
+  createMafiaGame, 
+  joinMafiaGame, 
+  showMafiaRules, 
+  backToMafiaMenu, 
+  cancelMafiaGame, 
+  startMafiaGame, 
+  dayVoting as mafiaVoting, 
+  votePlayer as mafiaVotePlayer, 
+  mafiaKill, 
+  killTarget, 
+  detectiveCheck, 
+  checkTarget, 
+  doctorSave, 
+  saveTarget 
+} from '../components/mafiaGame';
+import {
+  createWerewolfGame,
+  joinWerewolfGame,
+  showWerewolfRules,
+  backToWerewolfMenu,
+  cancelWerewolfGame,
+  startWerewolfGame,
+  dayVoting as werewolfVoting,
+  votePlayer as werewolfVotePlayer,
+  handleSeerCheck,
+  handleDoctorSave,
+  handleBodyguardProtect,
+  handleWerewolfKill
+} from '../components/werewolfGame';
 import { handleSwitchAIService, handleTestAIService, handleViewAIStatus } from './aiHandlers';
 import { showAISettingsMenu, handleModelSelect, handleStyleSelect, handleTestAI, handleResetAI, handleAIHelp } from '../components/aiSettingsMenu';
 import { 
@@ -184,6 +214,99 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     await handleGroupGamesButton(interaction);
     return;
   }
+  
+  // پردازش دکمه‌های بازی مافیا
+  if (customId === 'werewolf') {
+    // ایجاد بازی گرگینه جدید
+    await createWerewolfGame(interaction);
+    return;
+  } else if (customId.startsWith('join_werewolf_')) {
+    // پیوستن به بازی گرگینه
+    await joinWerewolfGame(interaction);
+    return;
+  } else if (customId.startsWith('rules_werewolf_')) {
+    // نمایش قوانین بازی گرگینه
+    await showWerewolfRules(interaction);
+    return;
+  } else if (customId.startsWith('back_to_werewolf_')) {
+    // بازگشت به منوی اصلی گرگینه
+    await backToWerewolfMenu(interaction);
+    return;
+  } else if (customId.startsWith('cancel_werewolf_')) {
+    // لغو بازی گرگینه
+    await cancelWerewolfGame(interaction);
+    return;
+  } else if (customId.startsWith('start_werewolf_')) {
+    // شروع بازی گرگینه
+    await startWerewolfGame(interaction);
+    return;
+  } else if (customId.startsWith('werewolf_day_voting_')) {
+    // رأی‌گیری در فاز روز بازی گرگینه
+    await werewolfVoting(interaction);
+    return;
+  } else if (customId.startsWith('werewolf_vote_')) {
+    // رأی دادن به بازیکن در بازی گرگینه
+    await werewolfVotePlayer(interaction as unknown as StringSelectMenuInteraction);
+    return;
+  } else if (customId === 'mafia') {
+    // ایجاد بازی مافیا جدید
+    await createMafiaGame(interaction);
+    return;
+  } else if (customId.startsWith('join_mafia_')) {
+    // پیوستن به بازی مافیا
+    await joinMafiaGame(interaction);
+    return;
+  } else if (customId.startsWith('rules_mafia_')) {
+    // نمایش قوانین بازی مافیا
+    await showMafiaRules(interaction);
+    return;
+  } else if (customId.startsWith('back_to_mafia_')) {
+    // بازگشت به منوی اصلی مافیا
+    await backToMafiaMenu(interaction);
+    return;
+  } else if (customId.startsWith('cancel_mafia_')) {
+    // لغو بازی مافیا
+    await cancelMafiaGame(interaction);
+    return;
+  } else if (customId.startsWith('start_mafia_')) {
+    // شروع بازی مافیا
+    await startMafiaGame(interaction);
+    return;
+  } else if (customId.startsWith('vote_day_')) {
+    // رأی‌گیری در فاز روز
+    await mafiaVoting(interaction);
+    return;
+  } else if (customId.startsWith('vote_player_')) {
+    // رأی به یک بازیکن
+    await mafiaVotePlayer(interaction);
+    return;
+  } else if (customId.startsWith('mafia_kill_')) {
+    // انتخاب قربانی توسط مافیا
+    await mafiaKill(interaction);
+    return;
+  } else if (customId.startsWith('kill_target_')) {
+    // انتخاب هدف برای کشتن
+    await killTarget(interaction);
+    return;
+  } else if (customId.startsWith('detective_check_')) {
+    // بررسی هویت توسط کارآگاه
+    await detectiveCheck(interaction);
+    return;
+  } else if (customId.startsWith('check_target_')) {
+    // انتخاب هدف برای بررسی هویت
+    await checkTarget(interaction);
+    return;
+  } else if (customId.startsWith('doctor_save_')) {
+    // محافظت توسط دکتر
+    await doctorSave(interaction);
+    return;
+  } else if (customId.startsWith('save_target_')) {
+    // انتخاب هدف برای محافظت
+    await saveTarget(interaction);
+    return;
+  }
+  
+
     
   // اجرای منوی بازی‌های گروهی
   if (customId.startsWith('group_') || customId.startsWith('quiz_') || customId.startsWith('drawguess_')) {

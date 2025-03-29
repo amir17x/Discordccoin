@@ -275,7 +275,7 @@ export async function gamesMenu(
       const groupGameRow1 = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
           new ButtonBuilder()
-            .setCustomId('game:mafia:create')
+            .setCustomId('mafia')
             .setLabel('🕵️‍♂️ مافیا')
             .setStyle(ButtonStyle.Danger), // قرمز برای بازی‌های مبارزه‌ای
           new ButtonBuilder()

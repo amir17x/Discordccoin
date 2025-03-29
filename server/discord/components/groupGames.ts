@@ -3590,11 +3590,10 @@ interface MafiaGameData {
 async function handleMafiaGame(interaction: ButtonInteraction) {
   try {
     // بررسی اینکه آیا بازی در کانال فعلی در حال اجراست
-    const existingGame = Array.from(activeGames.values()).find(
-      game => game.gameType === 'mafia' && 
-      game.channelId === interaction.channelId && 
-      game.status === 'waiting'
-    );
+    const existingGame = await MafiaGame.findOne({
+      channelId: interaction.channelId,
+      state: 'waiting'
+    });
     
     if (existingGame) {
       return await interaction.reply({ 
@@ -3603,14 +3602,22 @@ async function handleMafiaGame(interaction: ButtonInteraction) {
       });
     }
     
-    // ایجاد بازی جدید
+    // Create new Mafia game
     const gameId = `mafia_${Date.now()}`;
-    const gameData: MafiaGameData = {
-      players: {},
-      state: MafiaGameState.WAITING_FOR_PLAYERS,
-      day: 0,
-      messages: []
-    };
+    const mafiaGame = new MafiaGame({
+      gameId,
+      channelId: interaction.channelId,
+      hostId: interaction.user.id,
+      players: [],
+      state: 'waiting',
+      settings: {
+        dayDuration: 300,
+        nightDuration: 180,
+        minPlayers: 6,
+        maxPlayers: 12,
+        prizeCoin: 500
+      }
+    });
     
     const newGame: GameSession = {
       id: gameId,
@@ -3619,7 +3626,7 @@ async function handleMafiaGame(interaction: ButtonInteraction) {
       createdBy: interaction.user.id,
       players: [],
       status: 'waiting',
-      data: gameData
+      data: mafiaGame
     };
     
     // ذخیره در لیست بازی‌ها
@@ -4724,12 +4731,40 @@ async function sendMafiaNightAction(gameSession: GameSession, user: User, player
  */
 async function handleWerewolfGame(interaction: ButtonInteraction) {
   try {
-    const embed = new EmbedBuilder()
-      .setTitle('🐺 گرگینه')
-      .setDescription('این بازی به زودی در دسترس قرار خواهد گرفت. لطفاً صبور باشید!')
-      .setColor(0xAA5555);
+    // بررسی آیا قبلاً بازی فعالی در این کانال وجود دارد یا خیر
+    if (!interaction.channel) {
+      await interaction.reply({ content: '❌ این دستور فقط در کانال‌های متنی قابل استفاده است.', ephemeral: true });
+      return;
+    }
     
-    await interaction.reply({ embeds: [embed], ephemeral: true });
+    // بازی گرگینه را شروع می‌کنیم
+    const embed = new EmbedBuilder()
+      .setTitle('🐺 بازی گرگینه')
+      .setDescription('بازی گرگینه یک بازی جذاب و استراتژیک است که در آن بازیکنان باید گرگینه‌ها را شناسایی کنند یا اگر گرگینه هستند، خود را مخفی نگه دارند!')
+      .setColor(0x9B59B6)
+      .addFields(
+        { name: '👥 تعداد بازیکنان', value: 'حداقل 6 نفر، حداکثر 12 نفر', inline: true },
+        { name: '⏱️ زمان بازی', value: 'حدود 20-30 دقیقه', inline: true },
+        { name: '💰 جایزه', value: '500 کوین برای تیم برنده', inline: true },
+        { name: '🎮 شروع بازی', value: 'برای شروع بازی جدید، روی دکمه زیر کلیک کنید.', inline: false }
+      )
+      .setFooter({ text: 'برای کسب اطلاعات بیشتر درباره نحوه بازی، روی دکمه "قوانین" کلیک کنید.' });
+    
+    const row = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('werewolf')
+          .setLabel('ایجاد بازی جدید')
+          .setEmoji('🎮')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('group_games')
+          .setLabel('بازگشت به منوی بازی‌ها')
+          .setEmoji('🔙')
+          .setStyle(ButtonStyle.Secondary)
+      );
+    
+    await interaction.reply({ embeds: [embed], components: [row], ephemeral: false });
   } catch (error) {
     log(`Error handling werewolf game: ${error}`, 'error');
     await interaction.reply({ content: '❌ خطایی در اجرای بازی رخ داد. لطفاً بعداً دوباره تلاش کنید.', ephemeral: true });

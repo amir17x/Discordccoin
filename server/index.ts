@@ -69,6 +69,24 @@ app.use((req, res, next) => {
       log(`Error initializing group games client: ${groupGamesError}`, "error");
     }
     
+    // تنظیم client برای ماژول بازی گرگینه
+    try {
+      const { setWerewolfClient } = await import("./discord/components/werewolfGame");
+      setWerewolfClient(client);
+      log("Werewolf game client initialized successfully", "success");
+    } catch (werewolfError) {
+      log(`Error initializing werewolf game client: ${werewolfError}`, "error");
+    }
+    
+    // تنظیم client برای بازی مافیا
+    try {
+      const { setClient: setMafiaClient } = await import("./discord/components/mafiaGame");
+      setMafiaClient(client);
+      log("Mafia game client initialized successfully", "success");
+    } catch (mafiaGameError) {
+      log(`Error initializing mafia game client: ${mafiaGameError}`, "error");
+    }
+    
     // سیستم نکات در رویداد ready بات دیسکورد راه‌اندازی می‌شود
     log("Tip system will be initialized when Discord bot is ready", "success");
   } catch (error) {
