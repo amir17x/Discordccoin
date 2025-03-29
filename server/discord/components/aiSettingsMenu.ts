@@ -14,7 +14,7 @@ import {
 } from 'discord.js';
 import { botConfig } from '../utils/config';
 import { googleAIService } from '../services/googleai';
-import { createGeminiPrompt } from '../utils/botGeminiPrompt';
+import { createBotAIPrompt } from '../utils/botGeminiPrompt';
 
 /**
  * ایجاد منوی تنظیمات AI

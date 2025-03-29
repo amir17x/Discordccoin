@@ -296,7 +296,7 @@ ${AI_ASSISTANT_SYSTEM}
  * @param responseStyle سبک پاسخگویی (متعادل، خلاقانه، دقیق، طنزآمیز)
  * @returns پرامپت نهایی با راهنما
  */
-export function createGeminiPrompt(userPrompt: string, responseStyle?: string): string {
+export function createBotAIPrompt(userPrompt: string, responseStyle?: string): string {
   // راهنمایی برای سبک پاسخگویی بر اساس تنظیمات
   let styleInstruction = '';
   
@@ -320,7 +320,7 @@ export function createGeminiPrompt(userPrompt: string, responseStyle?: string): 
  * @param responseStyle سبک پاسخگویی (متعادل، خلاقانه، دقیق، طنزآمیز)
  * @returns پرامپت نهایی با راهنمای خلاصه
  */
-export function createShortGeminiPrompt(userPrompt: string, responseStyle?: string): string {
+export function createShortBotAIPrompt(userPrompt: string, responseStyle?: string): string {
   // راهنمایی برای سبک پاسخگویی بر اساس تنظیمات
   let styleInstruction = '';
   
@@ -339,8 +339,8 @@ export function createShortGeminiPrompt(userPrompt: string, responseStyle?: stri
 }
 
 export default {
-  createGeminiPrompt,
-  createShortGeminiPrompt,
+  createBotAIPrompt,
+  createShortBotAIPrompt,
   COMPLETE_BOT_GUIDE,
   BOT_INTRODUCTION
 };

@@ -1,5 +1,5 @@
 import { botConfig } from '../utils/config';
-import { createGeminiPrompt, createShortGeminiPrompt } from '../utils/botGeminiPrompt';
+import { createBotAIPrompt, createShortBotAIPrompt } from '../utils/botGeminiPrompt';
 
 // کلید Google AI API
 const GOOGLE_AI_API_KEY = process.env.GOOGLE_AI_API_KEY || process.env.VORTEX_AI_API_KEY || '';
@@ -104,7 +104,7 @@ export async function generateGoogleAIResponse(prompt: string, customStyle?: str
         {
           parts: [
             {
-              text: createGeminiPrompt(prompt, responseStyle)
+              text: createBotAIPrompt(prompt, responseStyle)
             }
           ]
         }

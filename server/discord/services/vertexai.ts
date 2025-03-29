@@ -4,7 +4,7 @@
 
 import { VertexAI } from '@google-cloud/vertexai';
 import { botConfig } from '../utils/config';
-import { createGeminiPrompt, createShortGeminiPrompt } from '../utils/botGeminiPrompt';
+import { createBotAIPrompt, createShortBotAIPrompt } from '../utils/botGeminiPrompt';
 import axios from 'axios';
 
 // تنظیمات پیش‌فرض
@@ -126,7 +126,7 @@ export async function generateVertexAIResponse(prompt: string, customStyle?: str
     console.log(`Sending direct API request to Gemini API (model: ${modelName})`);
     
     // تنظیم محتوای درخواست
-    const formattedPrompt = createGeminiPrompt(prompt, responseStyle);
+    const formattedPrompt = createBotAIPrompt(prompt, responseStyle);
     
     // استفاده از Gemini API به جای Vertex AI
     const geminiURL = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${API_KEY}`;
