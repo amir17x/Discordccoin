@@ -4704,48 +4704,57 @@ export class MongoStorage implements IStorage {
    */
   async safeAddToWallet(userId: any, amount: number, transactionType: string = 'deposit', metadata: any = {}): Promise<User | undefined> {
     try {
-      // سعی کنید با discordId پیدا کنید (اگر userId یک شناسه دیسکورد است)
+      // سعی کنید با شناسه‌های مختلف پیدا کنید
       let user = null;
       
       // اول با شناسه دیسکورد جستجو کنیم
-      if (typeof userId === 'string') {
+      if (typeof userId === 'string' && userId.length < 30) { // شناسه دیسکورد معمولاً بین 15 تا 20 کاراکتر است
         user = await UserModel.findOne({ discordId: userId });
+        if (user) {
+          console.log(`User found by discordId: ${userId}`);
+        }
       }
       
-      // اگر نتیجه نداد، با شناسه عددی جستجو کنیم
-      if (!user && typeof userId === 'number') {
+      // اگر نتیجه نداد، با شناسه عددی یا رشته‌ای جستجو کنیم
+      if (!user) {
         user = await UserModel.findOne({ id: userId });
+        if (user) {
+          console.log(`User found by id: ${userId}`);
+        }
       }
       
       // اگر هنوز پیدا نشده، سعی کنیم با _id پیدا کنیم
       if (!user) {
         try {
           user = await UserModel.findById(userId);
+          if (user) {
+            console.log(`User found by _id: ${userId}`);
+          }
         } catch (e) {
-          // خطا را نادیده می‌گیریم
+          // خطا را نادیده می‌گیریم - اگر شناسه معتبر MongoDB نباشد
         }
       }
       
       // اگر کاربر پیدا نشد، عملیات را روی حافظه انجام دهیم
       if (!user) {
         console.log(`No user found with id ${userId} in MongoDB, using memory storage`);
-        return await memStorage.addToWallet(typeof userId === 'number' ? userId : parseInt(userId) || Date.now(), amount, transactionType, metadata);
+        const numericId = typeof userId === 'number' ? userId : parseInt(userId) || Date.now();
+        return await memStorage.addToWallet(numericId, amount, transactionType, metadata);
       }
       
-      // برای جلوگیری از خطای اعتبارسنجی مطمئن شویم که فیلد id از نوع عدد است
-      if (!user.id || typeof user.id === 'string') {
-        // یک شناسه عددی معتبر ایجاد کنیم
-        const newId = parseInt(user.discordId) || Date.now();
+      // با Schema.Types.Mixed، نیازی به تبدیل نوع نداریم
+      // اما اگر id خالی است، آن را با مقداری پر کنیم
+      if (!user.id) {
+        const newId = user._id?.toString() || user.discordId || Date.now().toString();
         
         try {
-          // به جای تغییر مستقیم مدل، از updateOne استفاده کنیم
           await UserModel.updateOne(
             { _id: user._id },
             { $set: { id: newId } }
           );
           
           user.id = newId;
-          console.log(`Updated user ${user.username} with new numeric id: ${newId}`);
+          console.log(`Updated user ${user.username} with id: ${newId}`);
         } catch (e) {
           console.warn(`Could not update user id for ${user.username}:`, e);
           // ادامه می‌دهیم حتی اگر به‌روزرسانی شناسه با مشکل مواجه شد

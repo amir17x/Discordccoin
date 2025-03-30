@@ -6,7 +6,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IUser extends Document {
-  id: number;
+  id: string | number; // اجازه می‌دهیم هم رشته و هم عدد قابل استفاده باشد (برای سازگاری با کد فعلی)
   discordId: string;
   username: string;
   displayName: string | null;
@@ -92,7 +92,11 @@ export interface IUser extends Document {
 }
 
 const userSchema = new Schema<IUser>({
-  id: { type: Number, required: true, unique: true },
+  id: { 
+    type: mongoose.Schema.Types.Mixed, // اجازه می‌دهیم هم رشته و هم عدد قابل استفاده باشد
+    required: true, 
+    unique: true 
+  },
   discordId: { type: String, required: true, unique: true },
   username: { type: String, required: true },
   displayName: { type: String, default: null },
@@ -111,8 +115,8 @@ const userSchema = new Schema<IUser>({
   lastWheelSpin: { type: Date, default: null },
   inventory: { type: Map, of: Number, default: {} },
   dailyStreak: { type: Number, default: 0 },
-  achievements: { type: Array, default: [] },
-  itemsEquipped: { type: Array, default: [] },
+  achievements: { type: [mongoose.Schema.Types.Mixed], default: [] },
+  itemsEquipped: { type: [mongoose.Schema.Types.Mixed], default: [] },
   isBot: { type: Boolean, default: false },
   isBanned: { type: Boolean, default: false },
   isMuted: { type: Boolean, default: false },
@@ -142,8 +146,8 @@ const userSchema = new Schema<IUser>({
   roles: { type: [String], default: [] },
   badges: { type: [String], default: [] },
   skillPoints: { type: Number, default: 0 },
-  marketplaceListings: { type: Array, default: [] },
-  claimedRewards: { type: Array, default: [] },
+  marketplaceListings: { type: [mongoose.Schema.Types.Mixed], default: [] },
+  claimedRewards: { type: [mongoose.Schema.Types.Mixed], default: [] },
   dailyGifts: {
     type: Object,
     default: {
@@ -151,7 +155,7 @@ const userSchema = new Schema<IUser>({
       giftsReceived: {}
     }
   },
-  friendshipActivities: { type: Array, default: [] },
+  friendshipActivities: { type: [mongoose.Schema.Types.Mixed], default: [] },
   isVIP: { type: Boolean, default: false },
   premiumUntil: { type: Date, default: null },
   vipTier: { type: Number, default: 0 },
@@ -165,31 +169,54 @@ const userSchema = new Schema<IUser>({
       totalQuestions: 5
     }
   },
-  stockPortfolio: { type: Array, default: [] },
+  stockPortfolio: { type: [mongoose.Schema.Types.Mixed], default: [] },
   clanId: { type: Number, default: null },
   clanRole: { type: String, default: null },
   messages: { type: Number, default: 0 },
   commands: { type: Number, default: 0 },
-  warnings: { type: Array, default: [] },
+  warnings: { type: [mongoose.Schema.Types.Mixed], default: [] },
   notes: { type: String, default: null },
   totalGamesPlayed: { type: Number, default: 0 },
   totalGamesWon: { type: Number, default: 0 },
-  transactions: { type: Array, default: [] },
+  transactions: { type: [mongoose.Schema.Types.Mixed], default: [] },
   transferStats: {
-    type: Object,
-    default: {
+    type: {
+      dailyAmount: {
+        type: Number,
+        default: 0
+      },
+      lastReset: {
+        type: Date,
+        default: Date.now
+      },
+      recipients: {
+        type: Map,
+        of: Number,
+        default: () => new Map()
+      }
+    },
+    default: () => ({
       dailyAmount: 0,
-      lastReset: Date.now,
-      recipients: {}
-    }
+      lastReset: new Date(),
+      recipients: new Map()
+    })
   },
-  games: { type: Array, default: [] },
+  games: { type: [mongoose.Schema.Types.Mixed], default: [] },
   personalNotifications: {
-    type: Object,
-    default: {
+    type: {
+      notifications: {
+        type: [String],
+        default: []
+      },
+      lastUpdated: {
+        type: Date,
+        default: Date.now
+      }
+    },
+    default: () => ({
       notifications: [],
-      lastUpdated: Date.now
-    }
+      lastUpdated: new Date()
+    })
   },
   createdAt: { type: Date, default: Date.now }
 });

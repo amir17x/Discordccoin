@@ -5,6 +5,7 @@ import { initDiscordBot } from "./discord/client";
 // سیستم نکات از client.ts اجرا می‌شود
 import { connectToDatabase } from "./database";
 import 'dotenv/config';
+import session from 'express-session';
 
 // حذف موقت ارتباط با پنل ادمین
 // import { setupAdminPanel } from "./admin";
@@ -12,6 +13,17 @@ import 'dotenv/config';
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// تنظیم session برای میدلور احراز هویت
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'ccoin-secret-key',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 ساعت
+  }
+}));
 
 app.use((req, res, next) => {
   const start = Date.now();

@@ -8,6 +8,10 @@ import * as userService from './services/userService';
 import * as transactionService from './services/transactionService';
 import * as clanService from './services/clanService';
 
+// ماژول‌های جدید برای مدیریت وضعیت ربات
+import statusRoutes from './routes/statusRoutes';
+import adminRoutes from './routes/adminRoutes';
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes prefix
   const apiPrefix = "/api";
@@ -252,6 +256,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // });
   
   /**
+   * مسیرهای API مدیریت وضعیت ربات
+   */
+  app.use(`${apiPrefix}/status`, statusRoutes);
+
+  /**
+   * مسیرهای API مدیریت ادمین
+   */
+  app.use(`${apiPrefix}/admin`, adminRoutes);
+
+  /**
    * MongoDB API routes - These routes use the new MongoDB models
    */
 
@@ -365,6 +379,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'Failed to create clan' });
     }
   });
+
+  // ثبت مسیرهای API ادمین
+  app.use(`${apiPrefix}/admin`, adminRoutes);
+
+  // ثبت مسیرهای مدیریت وضعیت ربات
+  app.use(`${apiPrefix}/status`, statusRoutes);
 
   // API routes end here
 
