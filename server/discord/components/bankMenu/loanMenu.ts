@@ -143,7 +143,7 @@ export async function loanMenu(
           .setLabel('📜 تاریخچه وام‌ها')
           .setStyle(ButtonStyle.Secondary),
         new ButtonBuilder()
-          .setCustomId('bank')
+          .setCustomId('bank_menu')
           .setLabel('🏦 بازگشت به بانک')
           .setStyle(ButtonStyle.Danger)
       );
@@ -494,7 +494,7 @@ export async function handleLoanApproval(
     const row = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
-          .setCustomId('bank')
+          .setCustomId('bank_menu')
           .setLabel('🏦 بازگشت به بانک')
           .setStyle(ButtonStyle.Primary),
         new ButtonBuilder()
@@ -898,7 +898,7 @@ export async function handleLoanRepaymentConfirmation(
           .setLabel('🏦 بازگشت به منوی وام')
           .setStyle(ButtonStyle.Primary),
         new ButtonBuilder()
-          .setCustomId('bank')
+          .setCustomId('bank_menu')
           .setLabel('🏦 بازگشت به بانک')
           .setStyle(ButtonStyle.Secondary)
       );

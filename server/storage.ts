@@ -355,7 +355,8 @@ export interface IStorage {
   // Blocked users operations
   getBlockedUsers(userId: number): Promise<BlockedUser[]>;
   blockUser(userId: number, blockedUserId: number, reason?: string): Promise<boolean>;
-  unblockUser(userId: number, blockedUserId: number): Promise<boolean>;
+  unblockUser(userId: number, blockedUserId: string | number): Promise<boolean>;
+  unblockAllUsers(userId: number): Promise<boolean>;
   isUserBlocked(userId: number, blockedUserId: number): Promise<boolean>;
   
   // User interests operations
@@ -2685,16 +2686,34 @@ export class MemStorage implements IStorage {
     return true;
   }
 
-  async unblockUser(userId: number, blockedUserId: number): Promise<boolean> {
+  async unblockUser(userId: number, blockedUserId: string | number): Promise<boolean> {
     const user = this.users.get(userId);
-    const blockedUser = this.users.get(blockedUserId);
+    if (!user || !user.blockedUsers) return false;
     
-    if (!user || !blockedUser || !user.blockedUsers) return false;
+    // اگر شناسه به صورت عددی باشد، کاربر را پیدا کن
+    if (typeof blockedUserId === 'number') {
+      const blockedUser = this.users.get(blockedUserId);
+      if (!blockedUser) return false;
+      blockedUserId = blockedUser.discordId;
+    }
     
-    const index = user.blockedUsers.findIndex(b => b.userId === blockedUser.discordId);
+    // حالا که شناسه دیسکورد را داریم، رفع مسدودیت را انجام می‌دهیم
+    const index = user.blockedUsers.findIndex(b => b.userId === blockedUserId);
     if (index < 0) return false;
     
     user.blockedUsers.splice(index, 1);
+    return true;
+  }
+  
+  async unblockAllUsers(userId: number): Promise<boolean> {
+    const user = this.users.get(userId);
+    if (!user) return false;
+    
+    // بررسی می‌کنیم آیا کاربر لیست مسدودی دارد
+    if (!user.blockedUsers || user.blockedUsers.length === 0) return true;
+    
+    // همه کاربران مسدود شده را حذف می‌کنیم
+    user.blockedUsers = [];
     return true;
   }
 

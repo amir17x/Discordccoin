@@ -389,6 +389,19 @@ export class AnonymousChatMenu {
     try {
       const userId = interaction.user.id;
       
+      // برای جلوگیری از خطاهای زمان پاسخ‌دهی
+      let needsUpdate = !interaction.replied && !interaction.deferred;
+      if (needsUpdate) {
+        try {
+          await interaction.deferUpdate().catch(() => {
+            needsUpdate = false;
+          });
+        } catch (deferError) {
+          console.error("Error deferring update in cancelChatSearch:", deferError);
+          needsUpdate = false;
+        }
+      }
+      
       // حذف کاربر از صف انتظار
       if (this.waitingUsers.has(userId)) {
         this.waitingUsers.delete(userId);
@@ -411,16 +424,73 @@ export class AnonymousChatMenu {
               .setStyle(ButtonStyle.Secondary)
           );
         
-        await interaction.update({
-          embeds: [cancelEmbed],
-          components: [row]
-        });
+        // ارسال پاسخ با توجه به وضعیت interaction
+        try {
+          await interaction.editReply({
+            embeds: [cancelEmbed],
+            components: [row]
+          });
+        } catch (responseError) {
+          console.error("Error responding in cancelChatSearch:", responseError);
+          try {
+            if (!interaction.replied) {
+              await interaction.reply({
+                embeds: [cancelEmbed],
+                components: [row],
+                ephemeral: true
+              });
+            } else {
+              await interaction.followUp({
+                embeds: [cancelEmbed],
+                components: [row],
+                ephemeral: true
+              });
+            }
+          } catch (finalError) {
+            console.error("Final error responding in cancelChatSearch:", finalError);
+          }
+        }
       } else {
         // کاربر در صف نیست
-        await interaction.update({
-          content: "⚠️ شما در صف انتظار نیستید!",
-          components: []
-        });
+        const notWaitingEmbed = new EmbedBuilder()
+          .setColor('#FFA500')
+          .setTitle('⚠️ خطا')
+          .setDescription('شما در صف انتظار برای چت ناشناس نیستید!')
+          .setFooter({ text: 'در حال بازگشت به منوی اصلی...' });
+        
+        const row = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('anonymous_chat_menu')
+              .setLabel('🔙 بازگشت به منوی چت ناشناس')
+              .setStyle(ButtonStyle.Primary)
+          );
+        
+        try {
+          await interaction.editReply({
+            embeds: [notWaitingEmbed],
+            components: [row]
+          });
+        } catch (responseError) {
+          console.error("Error responding to not-waiting in cancelChatSearch:", responseError);
+          try {
+            if (!interaction.replied) {
+              await interaction.reply({
+                embeds: [notWaitingEmbed],
+                components: [row],
+                ephemeral: true
+              });
+            } else {
+              await interaction.followUp({
+                embeds: [notWaitingEmbed],
+                components: [row],
+                ephemeral: true
+              });
+            }
+          } catch (finalError) {
+            console.error("Final error responding to not-waiting in cancelChatSearch:", finalError);
+          }
+        }
         
         // بازگشت به منوی اصلی بعد از مدتی
         setTimeout(() => {
@@ -429,10 +499,18 @@ export class AnonymousChatMenu {
       }
     } catch (error) {
       console.error("Error in AnonymousChatMenu.cancelChatSearch:", error);
-      await interaction.reply({
-        content: "❌ خطایی در لغو جستجو رخ داد! لطفاً دوباره تلاش کنید.",
-        ephemeral: true
-      });
+      // اگر هنوز پاسخی داده نشده، یک پاسخ جدید می‌دهیم
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({
+          content: "❌ خطایی در لغو جستجو رخ داد! لطفاً دوباره تلاش کنید.",
+          ephemeral: true
+        }).catch(console.error);
+      } else {
+        // در غیر این صورت سعی می‌کنیم پاسخ را ویرایش کنیم
+        await interaction.editReply({
+          content: "❌ خطایی در لغو جستجو رخ داد! لطفاً دوباره تلاش کنید."
+        }).catch(console.error);
+      }
     }
   }
   
@@ -956,6 +1034,21 @@ export class AnonymousChatMenu {
     try {
       const customId = interaction.customId;
       
+      // برای اطمینان از اینکه به پاسخ‌های defer شده به درستی پاسخ داده می‌شود
+      let needsDeferUpdate = !interaction.replied && !interaction.deferred;
+      
+      // برای جلوگیری از خطاهای زمان پاسخ‌دهی در برخی حالت‌ها
+      if (needsDeferUpdate) {
+        try {
+          await interaction.deferUpdate().catch(() => {
+            needsDeferUpdate = false;
+          });
+        } catch (deferError) {
+          console.error("Error deferring update in handleInteraction:", deferError);
+          needsDeferUpdate = false;
+        }
+      }
+      
       switch (customId) {
         case 'anonymous_chat_menu':
           await this.showMainMenu(interaction);
@@ -993,15 +1086,34 @@ export class AnonymousChatMenu {
           // برای سایر تعاملات، می‌توانیم به منوی اصلی برگردیم
           if (customId.startsWith('anonymous_')) {
             await this.showMainMenu(interaction);
+          } else {
+            // اگر یک دکمه منو مورد نیاز نیست، به کاربر اطلاع می‌دهیم
+            await interaction.followUp({
+              content: "⚠️ دکمه مورد نظر شما پشتیبانی نمی‌شود!",
+              ephemeral: true
+            }).catch(console.error);
           }
           break;
       }
     } catch (error) {
       console.error("Error in AnonymousChatMenu.handleInteraction:", error);
-      await interaction.reply({
-        content: "❌ خطایی در پردازش تعامل رخ داد! لطفاً دوباره تلاش کنید.",
-        ephemeral: true
-      });
+      
+      // بررسی وضعیت interaction برای جلوگیری از خطا
+      try {
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: "❌ خطایی در پردازش تعامل رخ داد! لطفاً دوباره تلاش کنید.",
+            ephemeral: true
+          });
+        } else {
+          await interaction.followUp({
+            content: "❌ خطایی در پردازش تعامل رخ داد! لطفاً دوباره تلاش کنید.",
+            ephemeral: true
+          });
+        }
+      } catch (finalError) {
+        console.error("Fatal error in handleInteraction:", finalError);
+      }
     }
   }
   
