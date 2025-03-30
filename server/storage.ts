@@ -39,9 +39,10 @@ export interface Friend {
   status: 'active' | 'blocked' | 'pending';
   createdAt: Date;
   lastInteraction: Date;
-  level: number;
-  xp: number;
-  isBestFriend: boolean;
+  friendshipLevel: number;
+  friendshipXP: number;
+  favoriteStatus: boolean;
+  addedAt: Date;
 }
 
 export interface FriendRequest {
@@ -330,8 +331,11 @@ export interface IStorage {
   
   // Friends operations
   getFriends(userId: number): Promise<Friend[]>;
+  getFriendship(userId: number, friendId: number): Promise<Friend | undefined>;
   getFriendRequests(userId: number): Promise<FriendRequest[]>;
+  getPendingFriendRequest(fromUserId: number, toUserId: number): Promise<FriendRequest | undefined>;
   sendFriendRequest(fromUserId: number, toUserId: number, message?: string): Promise<boolean>;
+  createFriendRequest(fromUserId: number, toUserId: number, message?: string): Promise<boolean>;
   acceptFriendRequest(requestId: string): Promise<boolean>;
   rejectFriendRequest(requestId: string): Promise<boolean>;
   removeFriend(userId: number, friendId: number): Promise<boolean>;
@@ -2253,6 +2257,19 @@ export class MemStorage implements IStorage {
     if (!user || !user.friends) return [];
     return user.friends;
   }
+  
+  async getFriendship(userId: number, friendId: number): Promise<Friend | undefined> {
+    const user = this.users.get(userId);
+    if (!user || !user.friends) return undefined;
+    
+    // Find the friendship either by friendId as number or string (handles Discord IDs)
+    return user.friends.find(f => 
+      f.userId === friendId || 
+      f.friendId === friendId || 
+      f.friendId === String(friendId) || 
+      Number(f.friendId) === friendId
+    );
+  }
 
   async getFriendRequests(userId: number): Promise<FriendRequest[]> {
     const user = this.users.get(userId);
@@ -2261,6 +2278,20 @@ export class MemStorage implements IStorage {
     // فیلتر کردن درخواست‌های مربوط به کاربر (دریافتی یا ارسالی)
     return user.friendRequests.filter(req => 
       req.toUserId === user.discordId || req.fromUserId === user.discordId
+    );
+  }
+  
+  async getPendingFriendRequest(fromUserId: number, toUserId: number): Promise<FriendRequest | undefined> {
+    const fromUser = this.users.get(fromUserId);
+    const toUser = this.users.get(toUserId);
+    
+    if (!fromUser || !toUser || !toUser.friendRequests) return undefined;
+    
+    // Find pending request between these two users
+    return toUser.friendRequests.find(req => 
+      req.fromUserId === fromUser.discordId && 
+      req.toUserId === toUser.discordId && 
+      req.status === 'pending'
     );
   }
 
@@ -2304,6 +2335,11 @@ export class MemStorage implements IStorage {
     fromUser.friendRequests.push(newRequest);
     
     return true;
+  }
+  
+  async createFriendRequest(fromUserId: number, toUserId: number, message?: string): Promise<boolean> {
+    // This is essentially the same as sendFriendRequest
+    return this.sendFriendRequest(fromUserId, toUserId, message);
   }
 
   async acceptFriendRequest(requestId: string): Promise<boolean> {
@@ -2354,7 +2390,8 @@ export class MemStorage implements IStorage {
       friendshipXP: 0,
       addedAt: now,
       lastInteraction: now,
-      favoriteStatus: false
+      favoriteStatus: false,
+      isBestFriend: false
     });
     
     toUser.friends.push({
@@ -2363,7 +2400,8 @@ export class MemStorage implements IStorage {
       friendshipXP: 0,
       addedAt: now,
       lastInteraction: now,
-      favoriteStatus: false
+      favoriteStatus: false,
+      isBestFriend: false
     });
     
     return true;
@@ -3832,6 +3870,243 @@ export class MongoStorage implements IStorage {
       }
     } catch (error) {
       console.error(`Error incrementing total games won for user ${userId}:`, error);
+    }
+  }
+  
+  // Friend system implementations for MongoDB storage
+  async getFriendship(userId: number, friendId: number): Promise<Friend | undefined> {
+    try {
+      const user = await UserModel.findOne({ id: userId });
+      if (!user || !user.friends) return undefined;
+      
+      return user.friends.find(f => 
+        f.friendId === String(friendId) || 
+        Number(f.friendId) === friendId
+      );
+    } catch (error) {
+      console.error(`Error getting friendship between users ${userId} and ${friendId}:`, error);
+      return undefined;
+    }
+  }
+  
+  async getPendingFriendRequest(fromUserId: number, toUserId: number): Promise<FriendRequest | undefined> {
+    try {
+      const fromUser = await UserModel.findOne({ id: fromUserId });
+      const toUser = await UserModel.findOne({ id: toUserId });
+      
+      if (!fromUser || !toUser || !toUser.friendRequests) return undefined;
+      
+      // Find pending request between these two users
+      return toUser.friendRequests.find(req => 
+        req.fromUserId === fromUser.discordId && 
+        req.toUserId === toUser.discordId && 
+        req.status === 'pending'
+      );
+    } catch (error) {
+      console.error(`Error getting pending friend request between users ${fromUserId} and ${toUserId}:`, error);
+      return undefined;
+    }
+  }
+  
+  async createFriendRequest(fromUserId: number, toUserId: number, message?: string): Promise<boolean> {
+    // This uses the same implementation as sendFriendRequest
+    return this.sendFriendRequest(fromUserId, toUserId, message);
+  }
+  
+  // Blocked users implementations for MongoDB storage
+  async getBlockedUsers(userId: number): Promise<BlockedUser[]> {
+    try {
+      const user = await UserModel.findOne({ id: userId });
+      if (!user || !user.blockedUsers) return [];
+      
+      return user.blockedUsers;
+    } catch (error) {
+      console.error(`Error getting blocked users for user ${userId}:`, error);
+      return [];
+    }
+  }
+  
+  async blockUser(userId: number, blockedUserId: number, reason?: string): Promise<boolean> {
+    try {
+      const user = await UserModel.findOne({ id: userId });
+      const blockedUser = await UserModel.findOne({ id: blockedUserId });
+      
+      if (!user || !blockedUser) return false;
+      
+      if (!user.blockedUsers) {
+        user.blockedUsers = [];
+      }
+      
+      // Check if already blocked
+      if (user.blockedUsers.some(b => b.userId === blockedUser.discordId)) {
+        return false;
+      }
+      
+      // Add to block list
+      user.blockedUsers.push({
+        userId: blockedUser.discordId,
+        reason,
+        timestamp: new Date().toISOString()
+      });
+      
+      await user.save();
+      return true;
+    } catch (error) {
+      console.error(`Error blocking user ${blockedUserId} by user ${userId}:`, error);
+      return false;
+    }
+  }
+  
+  async unblockUser(userId: number, blockedUserId: string | number): Promise<boolean> {
+    try {
+      const user = await UserModel.findOne({ id: userId });
+      if (!user || !user.blockedUsers) return false;
+      
+      // If ID is numeric, get the Discord ID
+      if (typeof blockedUserId === 'number') {
+        const blockedUser = await UserModel.findOne({ id: blockedUserId });
+        if (!blockedUser) return false;
+        blockedUserId = blockedUser.discordId;
+      }
+      
+      // Find and remove the blocked user
+      const index = user.blockedUsers.findIndex(b => b.userId === blockedUserId);
+      if (index < 0) return false;
+      
+      user.blockedUsers.splice(index, 1);
+      await user.save();
+      return true;
+    } catch (error) {
+      console.error(`Error unblocking user by user ${userId}:`, error);
+      return false;
+    }
+  }
+  
+  async unblockAllUsers(userId: number): Promise<boolean> {
+    try {
+      const user = await UserModel.findOne({ id: userId });
+      if (!user) return false;
+      
+      user.blockedUsers = [];
+      await user.save();
+      return true;
+    } catch (error) {
+      console.error(`Error unblocking all users for user ${userId}:`, error);
+      return false;
+    }
+  }
+  
+  async acceptFriendRequest(requestId: string): Promise<boolean> {
+    try {
+      // Find the request based on the requestId (format: 'fromUserId_toUserId')
+      const [fromUserId, toUserId] = requestId.split('_');
+      
+      // Check if users exist
+      const fromUser = await UserModel.findOne({ discordId: fromUserId });
+      const toUser = await UserModel.findOne({ discordId: toUserId });
+      
+      if (!fromUser || !toUser) {
+        console.error(`Error accepting friend request: user(s) not found for request ${requestId}`);
+        return false;
+      }
+      
+      // Find and update the request to 'accepted'
+      const requestInFromUser = fromUser.friendRequests?.find(req => 
+        req.fromUserId === fromUserId && req.toUserId === toUserId && req.status === 'pending'
+      );
+      
+      const requestInToUser = toUser.friendRequests?.find(req => 
+        req.fromUserId === fromUserId && req.toUserId === toUserId && req.status === 'pending'
+      );
+      
+      if (!requestInFromUser || !requestInToUser) {
+        console.error(`Error accepting friend request: request ${requestId} not found or not pending`);
+        return false;
+      }
+      
+      // Update request status
+      requestInFromUser.status = 'accepted';
+      requestInToUser.status = 'accepted';
+      
+      // Current timestamp
+      const now = new Date().toISOString();
+      
+      // Initialize friends array if not exists
+      if (!fromUser.friends) fromUser.friends = [];
+      if (!toUser.friends) toUser.friends = [];
+      
+      // Add to friends list with initial friendship level
+      fromUser.friends.push({
+        friendId: toUser.discordId,
+        friendshipLevel: 1,
+        friendshipXP: 0,
+        addedAt: now,
+        lastInteraction: now,
+        favoriteStatus: false,
+        isBestFriend: false
+      });
+      
+      toUser.friends.push({
+        friendId: fromUser.discordId,
+        friendshipLevel: 1,
+        friendshipXP: 0,
+        addedAt: now,
+        lastInteraction: now,
+        favoriteStatus: false,
+        isBestFriend: false
+      });
+      
+      // Save changes
+      await fromUser.save();
+      await toUser.save();
+      
+      return true;
+    } catch (error) {
+      console.error(`Error accepting friend request ${requestId}:`, error);
+      return false;
+    }
+  }
+  
+  async rejectFriendRequest(requestId: string): Promise<boolean> {
+    try {
+      // Find the request based on the requestId (format: 'fromUserId_toUserId')
+      const [fromUserId, toUserId] = requestId.split('_');
+      
+      // Check if users exist
+      const fromUser = await UserModel.findOne({ discordId: fromUserId });
+      const toUser = await UserModel.findOne({ discordId: toUserId });
+      
+      if (!fromUser || !toUser) {
+        console.error(`Error rejecting friend request: user(s) not found for request ${requestId}`);
+        return false;
+      }
+      
+      // Find and update the request to 'rejected'
+      const requestInFromUser = fromUser.friendRequests?.find(req => 
+        req.fromUserId === fromUserId && req.toUserId === toUserId && req.status === 'pending'
+      );
+      
+      const requestInToUser = toUser.friendRequests?.find(req => 
+        req.fromUserId === fromUserId && req.toUserId === toUserId && req.status === 'pending'
+      );
+      
+      if (!requestInFromUser || !requestInToUser) {
+        console.error(`Error rejecting friend request: request ${requestId} not found or not pending`);
+        return false;
+      }
+      
+      // Update request status
+      requestInFromUser.status = 'rejected';
+      requestInToUser.status = 'rejected';
+      
+      // Save changes
+      await fromUser.save();
+      await toUser.save();
+      
+      return true;
+    } catch (error) {
+      console.error(`Error rejecting friend request ${requestId}:`, error);
+      return false;
     }
   }
   

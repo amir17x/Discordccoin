@@ -5,6 +5,7 @@ import * as anonymousChatMenu from '../anonymousChatMenu/anonymousChatMenu';
 import { friendshipLevelMenu, handleFriendshipLevelInteraction } from './friendshipLevelMenu';
 import { giftToFriendMenu, handleGiftMenuInteraction } from './giftMenu';
 import { interestsAndSuggestionsMenu, handleInterestsMenuInteraction } from './friendInterestsMenu';
+import { showFriendRequestForm, processFriendRequestForm } from './friendRequestForm';
 
 /**
  * منوی اصلی سیستم دوستان
@@ -40,7 +41,8 @@ export async function friendsMainMenu(interaction: MessageComponentInteraction) 
       )
       .setFooter({ text: '💖 از طریق سیستم دوستی، می‌توانید هدایا و امتیازات ویژه دریافت کنید!' });
     
-    // ایجاد دکمه‌های منو با طراحی جذاب‌تر
+    // ایجاد دکمه‌های منو با طراحی جذاب‌تر و چینش بر اساس اولویت و اهمیت
+    // ردیف اول: دکمه‌های اصلی و پر استفاده
     const row1 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
@@ -48,23 +50,25 @@ export async function friendsMainMenu(interaction: MessageComponentInteraction) 
           .setLabel(`👥 لیست دوستان (${friends?.length || 0})`)
           .setStyle(ButtonStyle.Primary),
         new ButtonBuilder()
-          .setCustomId('friend_requests')
-          .setLabel(`📨 درخواست‌های دوستی ${pendingRequests.length > 0 ? `(${pendingRequests.length})` : ''}`)
-          .setStyle(pendingRequests.length > 0 ? ButtonStyle.Success : ButtonStyle.Primary)
+          .setCustomId('friend_request_form')
+          .setLabel('✉️ ارسال درخواست دوستی')
+          .setStyle(ButtonStyle.Success)
       );
       
+    // ردیف دوم: درخواست‌ها و چت ناشناس
     const row2 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
-          .setCustomId('add_friend')
-          .setLabel('✨ افزودن دوست جدید')
-          .setStyle(ButtonStyle.Success),
+          .setCustomId('friend_requests')
+          .setLabel(`📨 درخواست‌های دریافتی ${pendingRequests.length > 0 ? `(${pendingRequests.length})` : ''}`)
+          .setStyle(pendingRequests.length > 0 ? ButtonStyle.Success : ButtonStyle.Primary),
         new ButtonBuilder()
           .setCustomId('anonymous_chat')
           .setLabel('🎭 چت ناشناس')
           .setStyle(ButtonStyle.Secondary)
       );
       
+    // ردیف سوم: ویژگی‌های تکمیلی و بازگشت
     const row3 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
@@ -955,139 +959,13 @@ export async function searchUserForFriendRequest(interaction: MessageComponentIn
  * @param interaction برهم‌کنش با کاربر
  * @param targetUserId شناسه کاربر مقصد
  */
-export async function sendFriendRequest(interaction: MessageComponentInteraction, targetUserId: number) {
-  try {
-    const user = await storage.getUserByDiscordId(interaction.user.id);
-    if (!user) return;
-    
-    // دریافت پیام اختیاری
-    const messageEmbed = new EmbedBuilder()
-      .setColor('#4E5D94')
-      .setTitle('💬 ارسال پیام همراه درخواست')
-      .setDescription('لطفاً پیامی که می‌خواهید همراه درخواست دوستی ارسال شود، وارد کنید.\nیا برای ارسال بدون پیام، "بدون پیام" را بنویسید.')
-      .setFooter({ text: '⏱️ 60 ثانیه فرصت دارید.' });
-    
-    await interaction.update({
-      embeds: [messageEmbed],
-      components: []
-    });
-    
-    // ایجاد فیلتر برای دریافت پیام
-    const filter = (m: any) => m.author.id === interaction.user.id;
-    const collector = interaction.channel?.createMessageCollector({ filter, time: 60000, max: 1 });
-    
-    collector?.on('collect', async (message) => {
-      try {
-        // حذف پیام کاربر
-        if (message.deletable) {
-          await message.delete().catch(() => {});
-        }
-        
-        const messageContent = message.content.trim();
-        let requestMessage = messageContent;
-        
-        // اگر "بدون پیام" وارد شده، پیامی ارسال نمی‌شود
-        if (messageContent.toLowerCase() === 'بدون پیام') {
-          requestMessage = undefined;
-        }
-        
-        // ارسال درخواست
-        const targetUser = await storage.getUser(targetUserId);
-        const result = await storage.sendFriendRequest(user.id, targetUserId, requestMessage);
-        
-        if (result) {
-          // موفقیت آمیز بود
-          const successEmbed = new EmbedBuilder()
-            .setColor('#2ECC71')
-            .setTitle('✅ درخواست دوستی ارسال شد')
-            .setDescription(`درخواست دوستی شما به **${targetUser?.username}** با موفقیت ارسال شد!`)
-            .setThumbnail('https://img.icons8.com/fluency/48/checkmark.png')
-            .addFields(
-              { name: '⏳ وضعیت', value: 'منتظر پاسخ', inline: true },
-              { name: '📩 پیام', value: requestMessage || 'بدون پیام', inline: true }
-            );
-          
-          const row = new ActionRowBuilder<ButtonBuilder>()
-            .addComponents(
-              new ButtonBuilder()
-                .setCustomId('friend_requests')
-                .setLabel('📩 مشاهده درخواست‌ها')
-                .setStyle(ButtonStyle.Primary),
-              new ButtonBuilder()
-                .setCustomId('friends_menu')
-                .setLabel('🔙 بازگشت')
-                .setStyle(ButtonStyle.Secondary)
-            );
-          
-          await interaction.followUp({
-            embeds: [successEmbed],
-            components: [row],
-            ephemeral: true
-          });
-        } else {
-          // خطا رخ داد
-          const errorEmbed = new EmbedBuilder()
-            .setColor('#E74C3C')
-            .setTitle('❌ خطا در ارسال درخواست')
-            .setDescription('متأسفانه در ارسال درخواست دوستی خطایی رخ داد!')
-            .setThumbnail('https://img.icons8.com/fluency/48/cancel.png');
-          
-          const row = new ActionRowBuilder<ButtonBuilder>()
-            .addComponents(
-              new ButtonBuilder()
-                .setCustomId('add_friend')
-                .setLabel('🔍 جستجوی مجدد')
-                .setStyle(ButtonStyle.Primary),
-              new ButtonBuilder()
-                .setCustomId('friends_menu')
-                .setLabel('🔙 بازگشت')
-                .setStyle(ButtonStyle.Secondary)
-            );
-          
-          await interaction.followUp({
-            embeds: [errorEmbed],
-            components: [row],
-            ephemeral: true
-          });
-        }
-      } catch (error) {
-        console.error("Error sending friend request:", error);
-        await interaction.followUp({
-          content: "❌ خطایی در ارسال درخواست دوستی رخ داد!",
-          ephemeral: true
-        });
-      }
-    });
-    
-    collector?.on('end', (collected) => {
-      if (collected.size === 0) {
-        // تایم‌اوت
-        interaction.followUp({
-          content: "⏱️ زمان ارسال پیام به پایان رسید! درخواست دوستی ارسال نشد.",
-          ephemeral: true
-        }).catch(() => {});
-      }
-    });
-  } catch (error) {
-    console.error("Error in sendFriendRequest:", error);
-    try {
-      // بررسی اینکه آیا قبلاً پاسخی داده شده است
-      if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply({
-          content: "❌ خطایی رخ داد! لطفاً دوباره تلاش کنید.",
-          ephemeral: true
-        });
-      } else {
-        await interaction.followUp({
-          content: "❌ خطایی رخ داد! لطفاً دوباره تلاش کنید.",
-          ephemeral: true
-        });
-      }
-    } catch (finalError) {
-      console.error("Fatal error in sendFriendRequest:", finalError);
-    }
-  }
-}
+/**
+ * این تابع به friendRequestForm.ts منتقل شده است
+ * به عنوان بخشی از بهبود سیستم ارسال درخواست‌های دوستی
+ * و استفاده از فرم‌های مودال به جای جمع‌آوری پیام‌ها
+ *
+ * @deprecated - Use friendRequestForm.ts version instead
+ */
 
 /**
  * قبول یا رد درخواست دوستی
@@ -1459,9 +1337,10 @@ export async function handleFriendsSystem(interaction: MessageComponentInteracti
       default:
         // بررسی اینکه آیا دکمه برای ارسال درخواست دوستی است
         if (customId.startsWith('send_friend_request_')) {
-          const targetUserId = parseInt(customId.split('_').pop() || '0');
-          if (targetUserId > 0) {
-            await sendFriendRequest(interaction, targetUserId);
+          const targetUserId = customId.split('_').pop() || '0';
+          if (targetUserId) {
+            // استفاده از تابع sendFriendRequest از فایل friendRequestForm.ts
+            await showFriendRequestForm(interaction);
           }
         } 
         // اگر دکمه برای انتخاب دوست از منوی کشویی است

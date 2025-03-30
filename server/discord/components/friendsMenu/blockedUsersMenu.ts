@@ -18,8 +18,8 @@ export async function blockedUsersList(interaction: MessageComponentInteraction)
       });
     }
     
-    // دریافت لیست کاربران مسدود شده
-    const blockedUsers = await storage.getBlockedUsers(user.id);
+    // دریافت لیست کاربران مسدود شده (مستقیم از اطلاعات کاربر)
+    const blockedUsers = user.blockedUsers || [];
     
     if (!blockedUsers || blockedUsers.length === 0) {
       // اگر کاربر مسدودی وجود نداشت

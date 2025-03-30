@@ -78,9 +78,10 @@ import { achievementsMenu, showCategoryAchievements } from '../components/achiev
 import { seasonsMenu } from '../components/seasonsMenu';
 import { parallelWorldsMenu } from '../components/parallelWorldsMenu';
 import { petMenu, buyNewPet, feedPet, playWithPet, activatePet, renamePetModal } from '../components/petMenu';
-import { friendsMainMenu, friendsList, friendRequests, sendFriendRequest } from '../components/friendsMenu/friendsMainMenu';
+import { friendsMainMenu, friendsList, friendRequests } from '../components/friendsMenu/friendsMainMenu';
 import { showFriendshipDetails } from '../components/friendsMenu/friendshipLevelMenu';
 import { blockedUsersList, searchUserToBlock, unblockUser, processUnblockUser, cancelUnblockProcess } from '../components/friendsMenu/blockedUsersMenu';
+import { showFriendRequestForm, searchUserForFriendRequest, sendFriendRequest } from '../components/friendsMenu/friendRequestForm';
 import { AnonymousChatMenu } from '../components/anonymousChatMenu/anonymousChatMenu';
 import { personalNotificationsMenu, toggleNotifications, showAdvancedNotificationSettings, toggleNotificationType, sendTestNotification } from '../components/personalNotificationsMenu';
 
@@ -1989,10 +1990,16 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       return;
     }
     
+    // نمایش فرم ارسال درخواست دوستی
+    if (action === 'friend_request_form') {
+      await showFriendRequestForm(interaction);
+      return;
+    }
+    
     // ارسال درخواست دوستی (از چت ناشناس و منوی دوستان)
     if (customId.startsWith('send_friend_request_')) {
-      const targetUserId = parseInt(customId.split('_').pop() || '0');
-      if (targetUserId > 0) {
+      const targetUserId = customId.split('_').pop() || '0';
+      if (targetUserId) {
         await sendFriendRequest(interaction, targetUserId);
       }
       return;
