@@ -1,123 +1,167 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 """
 این اسکریپت نحوه استفاده از فایل CSV برای آموزش و fine-tuning مدل Gemini AI برای CCoin را نشان می‌دهد
 شما باید کلید API Gemini خود را از سایت Google AI Studio دریافت کنید
 """
 
-import csv
 import os
-from google import genai
-from google.genai import types
+import json
+import pandas as pd
+from dotenv import load_dotenv
+import google.generativeai as genai
 
-# تنظیم کلید API 
-API_KEY = "YOUR_GEMINI_API_KEY"  # کلید API خود را اینجا قرار دهید
-os.environ["GOOGLE_API_KEY"] = API_KEY
-genai.configure(api_key=API_KEY)
+# بارگیری متغیرهای محیطی
+load_dotenv()
+
+# تنظیم کلید API
+api_key = os.getenv("GEMINI_API_KEY")
+if not api_key:
+    raise ValueError("کلید API Gemini یافت نشد. لطفاً فایل .env را با کلید GEMINI_API_KEY تنظیم کنید.")
+
+genai.configure(api_key=api_key)
 
 def load_training_data_from_csv(csv_file_path):
     """
     بارگیری داده‌های آموزشی از فایل CSV
     """
-    training_data = []
+    try:
+        df = pd.read_csv(csv_file_path)
+        
+        # بررسی وجود ستون‌های مورد نیاز
+        if 'text_input' not in df.columns or 'output' not in df.columns:
+            raise ValueError("فایل CSV باید دارای ستون‌های 'text_input' و 'output' باشد.")
+        
+        # تبدیل به فرمت مورد نیاز برای API
+        training_data = []
+        for index, row in df.iterrows():
+            training_data.append({
+                "text_input": row['text_input'],
+                "output": row['output']
+            })
+        
+        print(f"تعداد {len(training_data)} نمونه آموزشی بارگیری شد.")
+        
+        # نمایش نمونه‌های ابتدایی
+        print("\nنمونه‌های آموزشی:")
+        for i in range(min(3, len(training_data))):
+            print(f"\nنمونه {i+1}:")
+            print(f"سؤال: {training_data[i]['text_input']}")
+            print(f"پاسخ: {training_data[i]['output'][:100]}...")
+        
+        return training_data
     
-    with open(csv_file_path, 'r', encoding='utf-8') as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            # ایجاد یک نمونه آموزشی از هر ردیف CSV
-            training_data.append([row['text_input'], row['output']])
-    
-    return training_data
+    except Exception as e:
+        print(f"خطا در بارگیری داده‌های آموزشی: {e}")
+        return None
 
 def create_tuned_model(training_data):
     """
     ایجاد یک مدل fine-tuned با استفاده از داده‌های آموزشی
     """
-    client = genai.Client()
-    
-    # تبدیل داده‌های آموزشی به فرمت مورد نیاز API
-    tuning_dataset = types.TuningDataset(
-        examples=[
-            types.TuningExample(
-                text_input=i,
-                output=o,
-            )
-            for i, o in training_data
-        ],
-    )
-    
-    # ایجاد یک tuning job
-    tuning_job = client.tunings.tune(
-        base_model='models/gemini-1.5-flash-001-tuning',
-        training_dataset=tuning_dataset,
-        config=types.CreateTuningJobConfig(
-            epoch_count=5,  # تعداد دوره‌های آموزش
-            batch_size=4,   # اندازه دسته
-            learning_rate=0.001,  # نرخ یادگیری
-            tuned_model_display_name="CCoin AI Assistant"  # نام نمایشی مدل
+    try:
+        # ایجاد مدل
+        tuning_job = genai.create_tuning_job(
+            source_model="gemini-1.5-pro-001",  # مدل پایه
+            training_data=training_data,
+            display_name="CCoinAI",
+            description="مدل آموزش‌دیده CCoin برای پاسخگویی به سؤالات مرتبط با ربات دیسکورد",
+            output_directory=None,  # در صورت نیاز مسیر ذخیره‌سازی را مشخص کنید
         )
-    )
+        
+        print(f"\nفرآیند آموزش با شناسه {tuning_job.id} آغاز شد.")
+        print("این فرآیند ممکن است چند دقیقه تا چند ساعت طول بکشد.")
+        print(f"وضعیت فعلی: {tuning_job.state}")
+        
+        # ذخیره اطلاعات مدل در یک فایل برای استفاده‌های بعدی
+        with open("tuned_model_info.json", "w", encoding="utf-8") as f:
+            json.dump({
+                "model_id": tuning_job.id,
+                "display_name": "CCoinAI",
+                "created_at": str(tuning_job.create_time)
+            }, f, ensure_ascii=False, indent=2)
+        
+        print("\nاطلاعات مدل در فایل tuned_model_info.json ذخیره شد.")
+        
+        # برگرداندن شناسه مدل برای استفاده‌های بعدی
+        return tuning_job.id
     
-    print(f"آموزش مدل شروع شد. شناسه tuning job: {tuning_job.name}")
-    print(f"نام مدل fine-tuned: {tuning_job.tuned_model.model}")
-    
-    return tuning_job
+    except Exception as e:
+        print(f"خطا در ایجاد مدل fine-tuned: {e}")
+        return None
 
 def test_tuned_model(model_name):
     """
     تست مدل fine-tuned با چند پرسش نمونه
     """
-    client = genai.Client()
-    
-    test_questions = [
-        "سلام، من تازه به سرور پیوستم. چطور می‌توانم شروع کنم؟",
-        "چگونه می‌توانم سکه بیشتری به دست آورم؟",
-        "کریستال چیست و چه کاربردی دارد؟",
-        "قابلیت‌های جدید نوتیفیکیشن‌های اقتصادی را توضیح دهید.",
-    ]
-    
-    print("\n=== تست مدل fine-tuned ===\n")
-    
-    for question in test_questions:
-        response = client.models.generate_content(
-            model=model_name,
-            contents=question
-        )
+    try:
+        # ایجاد نمونه مدل
+        model = genai.GenerativeModel(model_name)
         
-        print(f"سوال: {question}")
-        print(f"پاسخ: {response.text}")
-        print("-" * 50)
+        # چند سؤال نمونه برای تست
+        test_questions = [
+            "سلام! CCoin چیست؟",
+            "چگونه می‌توانم سکه‌های بیشتری به دست بیاورم؟",
+            "دستور /daily چه کاری انجام می‌دهد؟",
+            "سیستم دوستی در CCoin چگونه کار می‌کند؟",
+            "مینی‌گیم‌های CCoin کدام‌ها هستند؟"
+        ]
+        
+        print("\n===== تست مدل آموزش‌دیده =====")
+        
+        # تست هر سؤال
+        for i, question in enumerate(test_questions):
+            print(f"\nسؤال {i+1}: {question}")
+            response = model.generate_content(question)
+            print(f"پاسخ: {response.text[:200]}...")
+            print("-" * 50)
+        
+        print("\nتست مدل به پایان رسید.")
+    
+    except Exception as e:
+        print(f"خطا در تست مدل: {e}")
 
 def main():
-    csv_file_path = 'ccoin_ai_training.csv'
+    print("===== آموزش مدل CCoinAI با استفاده از Google Gemini API =====\n")
     
     # بارگیری داده‌های آموزشی
-    print("در حال بارگیری داده‌های آموزشی از فایل CSV...")
-    training_data = load_training_data_from_csv(csv_file_path)
-    print(f"{len(training_data)} نمونه آموزشی بارگیری شد.")
+    csv_path = "ccoin_ai_training_updated.csv"
+    training_data = load_training_data_from_csv(csv_path)
     
-    # پیش‌نمایش چند نمونه از داده‌های آموزشی
-    print("\n=== پیش‌نمایش داده‌های آموزشی ===\n")
-    for i, (input_text, output_text) in enumerate(training_data[:3]):
-        print(f"نمونه {i+1}:")
-        print(f"ورودی: {input_text[:50]}...")
-        print(f"خروجی: {output_text[:50]}...")
-        print("-" * 50)
+    if not training_data:
+        print("بارگیری داده‌های آموزشی ناموفق بود. لطفاً فایل CSV را بررسی کنید.")
+        return
     
-    # آموزش مدل
-    print("\nآیا می‌خواهید فرآیند آموزش مدل را شروع کنید؟ (y/n)")
-    choice = input()
+    # پرسیدن از کاربر برای ادامه
+    proceed = input("\nآیا می‌خواهید با آموزش مدل ادامه دهید؟ (بله/خیر): ")
     
-    if choice.lower() == 'y':
-        print("\nدر حال آموزش مدل... (این فرآیند ممکن است چند دقیقه طول بکشد)")
-        tuning_job = create_tuned_model(training_data)
-        
-        # تست مدل آموزش دیده
-        print("\nآیا می‌خواهید مدل آموزش دیده را تست کنید؟ (y/n)")
-        test_choice = input()
-        
-        if test_choice.lower() == 'y':
-            test_tuned_model(tuning_job.tuned_model.model)
-    else:
+    if proceed.lower() not in ["بله", "y", "yes"]:
         print("فرآیند آموزش لغو شد.")
+        return
+    
+    # ایجاد مدل fine-tuned
+    model_id = create_tuned_model(training_data)
+    
+    if not model_id:
+        print("ایجاد مدل fine-tuned ناموفق بود.")
+        return
+    
+    print("\nمدل با موفقیت ایجاد شد و فرآیند آموزش آغاز شد.")
+    print("لطفاً به پنل Google AI Studio مراجعه کنید تا از وضعیت آموزش مطلع شوید.")
+    
+    # اطلاعات برای تست بعدی
+    print("\n===== برای تست مدل پس از اتمام آموزش =====")
+    print(f"نام کامل مدل: gemini-1.5-pro-001-tuned_{model_id}")
+    print("برای تست مدل، کد زیر را اجرا کنید:")
+    print(f"python ccoin_ai_tuning.py --test gemini-1.5-pro-001-tuned_{model_id}")
 
 if __name__ == "__main__":
-    main()
+    import sys
+    
+    # بررسی آرگومان‌های خط فرمان برای تست مدل
+    if len(sys.argv) > 2 and sys.argv[1] == "--test":
+        model_name = sys.argv[2]
+        test_tuned_model(model_name)
+    else:
+        main()
