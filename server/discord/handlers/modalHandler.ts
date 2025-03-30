@@ -14,6 +14,7 @@ import { processTransfer } from '../components/economyMenu';
 import { handleRobbery } from '../components/robberyMenu';
 import { processBuyPet, processRenamePet } from '../components/petMenu';
 import { log } from '../utils/logger';
+import { sendAdminNotification } from '../utils/adminNotifications';
 
 // Helper function for admin logging since the old logger.logAdminAction is no longer available
 const logger = {
@@ -636,6 +637,7 @@ export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
     if (customId === 'admin_add_coin_modal') {
       const userId = interaction.fields.getTextInputValue('userId');
       const amountInput = interaction.fields.getTextInputValue('amount');
+      const reason = interaction.fields.getTextInputValue('reason') || 'دلیلی ذکر نشده';
       const amount = parseInt(amountInput);
       
       if (isNaN(amount) || amount <= 0) {
@@ -666,7 +668,8 @@ export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
         .addFields(
           { name: 'کاربر', value: user.username, inline: true },
           { name: 'مقدار', value: `${amount} سکه`, inline: true },
-          { name: 'موجودی فعلی', value: `${user.wallet + amount} سکه`, inline: true }
+          { name: 'موجودی فعلی', value: `${user.wallet + amount} سکه`, inline: true },
+          { name: 'دلیل', value: reason }
         )
         .setTimestamp();
       
@@ -675,6 +678,18 @@ export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
         ephemeral: true
       });
       
+      // ارسال اعلان به کاربر
+      sendAdminNotification(
+        user.discordId, 
+        'add_coins',
+        {
+          amount: amount,
+          adminName: interaction.user.username,
+          reason: reason
+        },
+        interaction.client
+      );
+      
       // Log the action
       logger.logAdminAction(
         interaction.user.id,
@@ -682,7 +697,7 @@ export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
         'add_coin',
         user.discordId,
         user.username,
-        `افزودن ${amount} سکه به کاربر ${user.username}`
+        `افزودن ${amount} سکه به کاربر ${user.username} - دلیل: ${reason}`
       );
       
       // Return to admin menu
@@ -697,6 +712,7 @@ export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
     if (customId === 'admin_remove_coin_modal') {
       const userId = interaction.fields.getTextInputValue('userId');
       const amountInput = interaction.fields.getTextInputValue('amount');
+      const reason = interaction.fields.getTextInputValue('reason') || 'دلیلی ذکر نشده';
       const amount = parseInt(amountInput);
       
       if (isNaN(amount) || amount <= 0) {
@@ -736,7 +752,8 @@ export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
         .addFields(
           { name: 'کاربر', value: user.username, inline: true },
           { name: 'مقدار', value: `${amount} سکه`, inline: true },
-          { name: 'موجودی فعلی', value: `${user.wallet - amount} سکه`, inline: true }
+          { name: 'موجودی فعلی', value: `${user.wallet - amount} سکه`, inline: true },
+          { name: 'دلیل', value: reason }
         )
         .setTimestamp();
       
@@ -745,6 +762,18 @@ export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
         ephemeral: true
       });
       
+      // ارسال اعلان به کاربر
+      sendAdminNotification(
+        user.discordId, 
+        'remove_coins',
+        {
+          amount: amount,
+          adminName: interaction.user.username,
+          reason: reason
+        },
+        interaction.client
+      );
+      
       // Log the action
       logger.logAdminAction(
         interaction.user.id,
@@ -752,7 +781,7 @@ export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
         'remove_coin',
         user.discordId,
         user.username,
-        `کاهش ${amount} سکه از کاربر ${user.username}`
+        `کاهش ${amount} سکه از کاربر ${user.username} - دلیل: ${reason}`
       );
       
       // Return to admin menu
@@ -955,11 +984,24 @@ ${prompt}
       const users = await storage.getAllUsers();
       let distributedCount = 0;
       
-      // Distribute coins to all users
+      // Distribute coins to all users and send notifications
       for (const user of users) {
         await storage.addToWallet(user.id, amount, 'admin_distribute', {
           reason: reason
         });
+        
+        // Send notification to each user
+        sendAdminNotification(
+          user.discordId, 
+          'distribute_coins',
+          {
+            amount: amount,
+            adminName: interaction.user.username,
+            reason: reason
+          },
+          interaction.client
+        );
+        
         distributedCount++;
       }
       

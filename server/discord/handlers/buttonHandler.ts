@@ -3992,7 +3992,7 @@ async function handleAdminAddCoin(interaction: ButtonInteraction) {
       return;
     }
     
-    // Create a modal for user ID and amount input
+    // Create a modal for user ID, amount, and reason input
     const modal = new ModalBuilder()
       .setCustomId('admin_add_coin_modal')
       .setTitle('افزودن سکه به کاربر');
@@ -4010,11 +4010,19 @@ async function handleAdminAddCoin(interaction: ButtonInteraction) {
       .setStyle(TextInputStyle.Short)
       .setPlaceholder('مثال: 1000')
       .setRequired(true);
+      
+    const reasonInput = new TextInputBuilder()
+      .setCustomId('reason')
+      .setLabel('دلیل افزودن سکه')
+      .setStyle(TextInputStyle.Paragraph)
+      .setPlaceholder('مثال: پاداش شرکت در ایونت')
+      .setRequired(false);
     
     const userIdRow = new ActionRowBuilder<TextInputBuilder>().addComponents(userIdInput);
     const amountRow = new ActionRowBuilder<TextInputBuilder>().addComponents(amountInput);
+    const reasonRow = new ActionRowBuilder<TextInputBuilder>().addComponents(reasonInput);
     
-    modal.addComponents(userIdRow, amountRow);
+    modal.addComponents(userIdRow, amountRow, reasonRow);
     
     await interaction.showModal(modal);
   } catch (error) {
@@ -4040,7 +4048,7 @@ async function handleAdminRemoveCoin(interaction: ButtonInteraction) {
       return;
     }
     
-    // Create a modal for user ID and amount input
+    // Create a modal for user ID, amount, and reason input
     const modal = new ModalBuilder()
       .setCustomId('admin_remove_coin_modal')
       .setTitle('کاهش سکه کاربر');
@@ -4058,11 +4066,19 @@ async function handleAdminRemoveCoin(interaction: ButtonInteraction) {
       .setStyle(TextInputStyle.Short)
       .setPlaceholder('مثال: 1000')
       .setRequired(true);
+      
+    const reasonInput = new TextInputBuilder()
+      .setCustomId('reason')
+      .setLabel('دلیل کاهش سکه')
+      .setStyle(TextInputStyle.Paragraph)
+      .setPlaceholder('مثال: جریمه تخلف در بازی')
+      .setRequired(false);
     
     const userIdRow = new ActionRowBuilder<TextInputBuilder>().addComponents(userIdInput);
     const amountRow = new ActionRowBuilder<TextInputBuilder>().addComponents(amountInput);
+    const reasonRow = new ActionRowBuilder<TextInputBuilder>().addComponents(reasonInput);
     
-    modal.addComponents(userIdRow, amountRow);
+    modal.addComponents(userIdRow, amountRow, reasonRow);
     
     await interaction.showModal(modal);
   } catch (error) {

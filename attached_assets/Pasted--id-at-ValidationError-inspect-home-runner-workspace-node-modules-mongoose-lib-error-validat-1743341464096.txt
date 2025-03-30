@@ -1,0 +1,155 @@
+"id"
+    at ValidationError.inspect (/home/runner/workspace/node_modules/mongoose/lib/error/validation.js:52:26)
+    at formatValue (node:internal/util/inspect:809:19)
+    at inspect (node:internal/util/inspect:368:10)
+    at formatWithOptionsInternal (node:internal/util/inspect:2307:40)
+    at formatWithOptions (node:internal/util/inspect:2169:10)
+    at console.value (node:internal/console/constructor:350:14)
+    at console.warn (node:internal/console/constructor:383:61)
+    at MongoStorage.addToWallet (/home/runner/workspace/server/storage.ts:4758:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async handleModalSubmit (/home/runner/workspace/server/discord/handlers/modalHandler.ts:730:7) {
+  errors: {
+    id: CastError: Cast to Number failed for value "67e69fb12f788d00cce28f7e" (type string) at path "id"
+        at SchemaNumber.cast (/home/runner/workspace/node_modules/mongoose/lib/schema/number.js:381:11)
+        at SchemaType.applySetters (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1255:12)
+        at model.$set (/home/runner/workspace/node_modules/mongoose/lib/document.js:1438:22)
+        at model.set [as id] (/home/runner/workspace/node_modules/mongoose/lib/helpers/document/compile.js:205:19)
+        at MongoStorage.addToWallet (/home/runner/workspace/server/storage.ts:4730:16)
+        at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+        at async handleModalSubmit (/home/runner/workspace/server/discord/handlers/modalHandler.ts:730:7)
+        at async <anonymous> (/home/runner/workspace/server/discord/client.ts:368:17)
+        at async executeWithTimeout (/home/runner/workspace/server/discord/client.ts:79:7)
+        at async Client.<anonymous> (/home/runner/workspace/server/discord/client.ts:365:13) {
+      stringValue: '"67e69fb12f788d00cce28f7e"',
+      messageFormat: undefined,
+      kind: 'Number',
+      value: '67e69fb12f788d00cce28f7e',
+      path: 'id',
+      reason: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+      
+        assert.ok(!isNaN(val))
+      
+          at castNumber (/home/runner/workspace/node_modules/mongoose/lib/cast/number.js:27:10)
+          at SchemaNumber.cast (/home/runner/workspace/node_modules/mongoose/lib/schema/number.js:379:12)
+          at SchemaType.applySetters (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1255:12)
+          at model.$set (/home/runner/workspace/node_modules/mongoose/lib/document.js:1438:22)
+          at model.set [as id] (/home/runner/workspace/node_modules/mongoose/lib/helpers/document/compile.js:205:19)
+          at MongoStorage.addToWallet (/home/runner/workspace/server/storage.ts:4730:16)
+          at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+          at async handleModalSubmit (/home/runner/workspace/server/discord/handlers/modalHandler.ts:730:7)
+          at async <anonymous> (/home/runner/workspace/server/discord/client.ts:368:17)
+          at async executeWithTimeout (/home/runner/workspace/server/discord/client.ts:79:7) {
+        generatedMessage: true,
+        code: 'ERR_ASSERTION',
+        actual: false,
+        expected: true,
+        operator: '=='
+      },
+      valueType: 'string'
+    }
+  },
+  _message: 'User validation failed'
+}
+Trying alternative update method...
+Alternative method succeeded for user whysiks
+13:07:43 [info] ADMIN ACTION: whysiks (700031045231182005) performed remove_coin on whysiks (700031045231182005): کاهش 120 سکه از کاربر whysiks
+1:07:51 PM [discord] Executing command: menu
+1:07:52 PM [discord] Successfully executed command: menu
+1:07:52 PM [info] اعلانات شخصی کاربر 700031045231182005 منقضی شده است. تولید اعلانات جدید...
+1:07:52 PM [info] تولید اعلانات جدید برای کاربر 700031045231182005
+Error getting stocks for user NaN from MongoDB: CastError: Cast to Number failed for value "NaN" (type number) at path "id" for model "User"
+    at SchemaNumber.cast (/home/runner/workspace/node_modules/mongoose/lib/schema/number.js:381:11)
+    at SchemaType.applySetters (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1255:12)
+    at SchemaNumber.castForQuery (/home/runner/workspace/node_modules/mongoose/lib/schema/number.js:435:16)
+    at cast (/home/runner/workspace/node_modules/mongoose/lib/cast.js:390:32)
+    at Query.cast (/home/runner/workspace/node_modules/mongoose/lib/query.js:4907:12)
+    at Query._castConditions (/home/runner/workspace/node_modules/mongoose/lib/query.js:2325:10)
+    at model.Query._findOne (/home/runner/workspace/node_modules/mongoose/lib/query.js:2648:8)
+    at model.Query.exec (/home/runner/workspace/node_modules/mongoose/lib/query.js:4456:80)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async MongoStorage.getUserStocks (/home/runner/workspace/server/storage.ts:3957:25) {
+  stringValue: '"NaN"',
+  messageFormat: undefined,
+  kind: 'Number',
+  value: NaN,
+  path: 'id',
+  reason: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(!isNaN(val))
+  
+      at castNumber (/home/runner/workspace/node_modules/mongoose/lib/cast/number.js:27:10)
+      at SchemaNumber.cast (/home/runner/workspace/node_modules/mongoose/lib/schema/number.js:379:12)
+      at SchemaType.applySetters (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1255:12)
+      at SchemaNumber.castForQuery (/home/runner/workspace/node_modules/mongoose/lib/schema/number.js:435:16)
+      at cast (/home/runner/workspace/node_modules/mongoose/lib/cast.js:390:32)
+      at Query.cast (/home/runner/workspace/node_modules/mongoose/lib/query.js:4907:12)
+      at Query._castConditions (/home/runner/workspace/node_modules/mongoose/lib/query.js:2325:10)
+      at model.Query._findOne (/home/runner/workspace/node_modules/mongoose/lib/query.js:2648:8)
+      at model.Query.exec (/home/runner/workspace/node_modules/mongoose/lib/query.js:4456:80)
+      at process.processTicksAndRejections (node:internal/process/task_queues:95:5) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '=='
+  },
+  valueType: 'number'
+}
+Error getting user quests from MongoDB: CastError: Cast to ObjectId failed for value "NaN" (type number) at path "_id" for model "User"
+    at SchemaObjectId.cast (/home/runner/workspace/node_modules/mongoose/lib/schema/objectId.js:251:11)
+    at SchemaType.applySetters (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1255:12)
+    at SchemaType.castForQuery (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1673:17)
+    at cast (/home/runner/workspace/node_modules/mongoose/lib/cast.js:390:32)
+    at Query.cast (/home/runner/workspace/node_modules/mongoose/lib/query.js:4907:12)
+    at Query._castConditions (/home/runner/workspace/node_modules/mongoose/lib/query.js:2325:10)
+    at model.Query._findOne (/home/runner/workspace/node_modules/mongoose/lib/query.js:2648:8)
+    at model.Query.exec (/home/runner/workspace/node_modules/mongoose/lib/query.js:4456:80)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async MongoStorage.getUserQuests (/home/runner/workspace/server/storage.ts:5472:20) {
+  stringValue: '"NaN"',
+  messageFormat: undefined,
+  kind: 'ObjectId',
+  value: NaN,
+  path: '_id',
+  reason: BSONError: input must be a 24 character hex string, 12 byte Uint8Array, or an integer
+      at new ObjectId (/home/runner/workspace/node_modules/bson/src/objectid.ts:120:15)
+      at castObjectId (/home/runner/workspace/node_modules/mongoose/lib/cast/objectid.js:25:12)
+      at SchemaObjectId.cast (/home/runner/workspace/node_modules/mongoose/lib/schema/objectId.js:249:12)
+      at SchemaType.applySetters (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1255:12)
+      at SchemaType.castForQuery (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1673:17)
+      at cast (/home/runner/workspace/node_modules/mongoose/lib/cast.js:390:32)
+      at Query.cast (/home/runner/workspace/node_modules/mongoose/lib/query.js:4907:12)
+      at Query._castConditions (/home/runner/workspace/node_modules/mongoose/lib/query.js:2325:10)
+      at model.Query._findOne (/home/runner/workspace/node_modules/mongoose/lib/query.js:2648:8)
+      at model.Query.exec (/home/runner/workspace/node_modules/mongoose/lib/query.js:4456:80),
+  valueType: 'number'
+}
+Error getting inventory items from MongoDB: CastError: Cast to ObjectId failed for value "NaN" (type number) at path "_id" for model "User"
+    at SchemaObjectId.cast (/home/runner/workspace/node_modules/mongoose/lib/schema/objectId.js:251:11)
+    at SchemaType.applySetters (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1255:12)
+    at SchemaType.castForQuery (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1673:17)
+    at cast (/home/runner/workspace/node_modules/mongoose/lib/cast.js:390:32)
+    at Query.cast (/home/runner/workspace/node_modules/mongoose/lib/query.js:4907:12)
+    at Query._castConditions (/home/runner/workspace/node_modules/mongoose/lib/query.js:2325:10)
+    at model.Query._findOne (/home/runner/workspace/node_modules/mongoose/lib/query.js:2648:8)
+    at model.Query.exec (/home/runner/workspace/node_modules/mongoose/lib/query.js:4456:80)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async MongoStorage.getInventoryItems (/home/runner/workspace/server/storage.ts:5136:20) {
+  stringValue: '"NaN"',
+  messageFormat: undefined,
+  kind: 'ObjectId',
+  value: NaN,
+  path: '_id',
+  reason: BSONError: input must be a 24 character hex string, 12 byte Uint8Array, or an integer
+      at new ObjectId (/home/runner/workspace/node_modules/bson/src/objectid.ts:120:15)
+      at castObjectId (/home/runner/workspace/node_modules/mongoose/lib/cast/objectid.js:25:12)
+      at SchemaObjectId.cast (/home/runner/workspace/node_modules/mongoose/lib/schema/objectId.js:249:12)
+      at SchemaType.applySetters (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1255:12)
+      at SchemaType.castForQuery (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1673:17)
+      at cast (/home/runner/workspace/node_modules/mongoose/lib/cast.js:390:32)
+      at Query.cast (/home/runner/workspace/node_modules/mongoose/lib/query.js:4907:12)
+      at Query._castConditions (/home/runner/workspace/node_modules/mongoose/lib/query.js:2325:10)
+      at model.Query._findOne (/home/runner/workspace/node_modules/mongoose/lib/query.js:2648:8)
+      at model.Query.exec (/home/runner/workspace/node_modules/mongoose/lib/query.js:4456:80),
+  valueType: 'number'
