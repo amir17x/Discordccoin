@@ -1,4 +1,4 @@
-import { ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuInteraction } from 'discord.js';
+import { ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuInteraction, ModalActionRowComponentBuilder } from 'discord.js';
 import { storage } from '../../storage';
 import { Transaction } from '@shared/schema';
 import { mainMenu } from '../components/mainMenu';
@@ -2075,8 +2075,18 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
         return;
       }
       
-      if (action === 'admin_reset_economy') {
-        await handleAdminResetEconomy(interaction);
+      if (action === 'admin_economy_reset') {
+        await adminMenu(interaction, 'economy_reset');
+        return;
+      }
+      
+      if (action === 'admin_reset_user_economy') {
+        await handleAdminResetUserEconomy(interaction);
+        return;
+      }
+      
+      if (action === 'admin_reset_all_economy') {
+        await handleAdminResetAllEconomy(interaction);
         return;
       }
       
@@ -4192,7 +4202,66 @@ async function handleAdminSetTax(interaction: ButtonInteraction) {
   }
 }
 
-async function handleAdminResetEconomy(interaction: ButtonInteraction) {
+/**
+ * مدیریت ریست اقتصاد کاربر خاص
+ */
+async function handleAdminResetUserEconomy(interaction: ButtonInteraction) {
+  try {
+    // Check if user has admin permissions
+    const member = interaction.guild?.members.cache.get(interaction.user.id);
+    const adminRoleId = botConfig.getConfig().general.adminRoleId;
+    
+    if (!member?.roles.cache.has(adminRoleId)) {
+      await interaction.reply({
+        content: 'شما دسترسی لازم برای این عملیات را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Create a modal for user input
+    const modal = new ModalBuilder()
+      .setCustomId('admin_reset_user_economy_modal')
+      .setTitle('ریست اقتصاد کاربر');
+    
+    // User ID input
+    const userIdInput = new TextInputBuilder()
+      .setCustomId('userId')
+      .setLabel('شناسه کاربر (Discord ID)')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('شناسه دیسکورد کاربر را وارد کنید')
+      .setRequired(true);
+    
+    // Reason input
+    const reasonInput = new TextInputBuilder()
+      .setCustomId('reason')
+      .setLabel('دلیل ریست (اختیاری)')
+      .setStyle(TextInputStyle.Paragraph)
+      .setPlaceholder('دلیل ریست اقتصاد این کاربر چیست؟')
+      .setRequired(false)
+      .setMaxLength(1000);
+    
+    // Add inputs to modal
+    const firstActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(userIdInput);
+    const secondActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(reasonInput);
+    
+    modal.addComponents(firstActionRow, secondActionRow);
+    
+    // Show the modal
+    await interaction.showModal(modal);
+  } catch (error) {
+    console.error('Error in user economy reset:', error);
+    await interaction.reply({
+      content: 'متاسفانه در انجام عملیات خطایی رخ داد!',
+      ephemeral: true
+    });
+  }
+}
+
+/**
+ * مدیریت ریست کل اقتصاد
+ */
+async function handleAdminResetAllEconomy(interaction: ButtonInteraction) {
   try {
     // Check if user has admin permissions
     const member = interaction.guild?.members.cache.get(interaction.user.id);
@@ -4210,7 +4279,7 @@ async function handleAdminResetEconomy(interaction: ButtonInteraction) {
     const row = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
-          .setCustomId('admin_reset_economy_confirm')
+          .setCustomId('admin_reset_all_economy_confirm')
           .setLabel('بله، ریست کن')
           .setStyle(ButtonStyle.Danger),
         new ButtonBuilder()
@@ -4220,10 +4289,26 @@ async function handleAdminResetEconomy(interaction: ButtonInteraction) {
       );
     
     await interaction.reply({
-      content: '⚠️ **هشدار:** این عملیات تمام سکه‌های کاربران را ریست می‌کند و قابل بازگشت نیست. آیا مطمئن هستید؟',
+      content: '⚠️ **هشدار جدی:** این عملیات تمام سکه‌ها و داده‌های اقتصادی تمام کاربران را ریست می‌کند و قابل بازگشت نیست. آیا مطمئن هستید؟',
       components: [row],
       ephemeral: true
     });
+  } catch (error) {
+    console.error('Error in reset economy:', error);
+    await interaction.reply({
+      content: 'متاسفانه در انجام عملیات خطایی رخ داد!',
+      ephemeral: true
+    });
+  }
+}
+
+/**
+ * این تابع خالی شده و به دو تابع جدید تقسیم شده است
+ */
+async function handleAdminResetEconomy(interaction: ButtonInteraction) {
+  try {
+    // ارجاع به منوی جدید
+    await adminMenu(interaction, 'economy_reset');
   } catch (error) {
     console.error('Error in reset economy:', error);
     await interaction.reply({

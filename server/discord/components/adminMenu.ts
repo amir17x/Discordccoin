@@ -148,8 +148,8 @@ export async function adminMenu(
             .setLabel('💸 تنظیم مالیات')
             .setStyle(ButtonStyle.Primary),
           new ButtonBuilder()
-            .setCustomId('admin_reset_economy')
-            .setLabel('🔄 ریست اقتصاد')
+            .setCustomId('admin_economy_reset')
+            .setLabel('⚠️ مدیریت ریست اقتصاد')
             .setStyle(ButtonStyle.Danger),
         );
         
@@ -162,6 +162,36 @@ export async function adminMenu(
         );
         
       components = [row1, row2, row3];
+    } else if (category === 'economy_reset') {
+      // Economy reset submenu
+      embed.setTitle('⚠️ مدیریت ریست اقتصاد')
+        .setDescription('گزینه‌های ریست اقتصاد را انتخاب کنید. توجه: این عملیات قابل بازگشت نیستند!')
+        .addFields(
+          { name: '🔄 ریست اقتصاد کاربر', value: 'دارایی‌های اقتصادی یک کاربر مشخص به مقدار اولیه بازمی‌گردد', inline: false },
+          { name: '⚠️ ریست کل اقتصاد', value: 'دارایی‌های اقتصادی تمام کاربران به مقدار اولیه بازمی‌گردد. این عملیات برای همه کاربران اجرا می‌شود!', inline: false }
+        );
+      
+      const row1 = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('admin_reset_user_economy')
+            .setLabel('🔄 ریست اقتصاد کاربر')
+            .setStyle(ButtonStyle.Primary),
+          new ButtonBuilder()
+            .setCustomId('admin_reset_all_economy')
+            .setLabel('⚠️ ریست کل اقتصاد')
+            .setStyle(ButtonStyle.Danger),
+        );
+        
+      const row2 = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('admin_economy')
+            .setLabel('🔙 بازگشت به مدیریت اقتصاد')
+            .setStyle(ButtonStyle.Secondary),
+        );
+        
+      components = [row1, row2];
       
     } else if (category === 'users') {
       // User management

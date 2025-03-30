@@ -1093,6 +1093,179 @@ ${prompt}
       return;
     }
     
+    // Handle admin reset user economy modal
+    if (customId === 'admin_reset_user_economy_modal') {
+      const userId = interaction.fields.getTextInputValue('userId');
+      const reason = interaction.fields.getTextInputValue('reason') || 'دلیلی ذکر نشده';
+      
+      // بررسی وجود کاربر
+      const user = await storage.getUserByDiscordId(userId);
+      
+      if (!user) {
+        await interaction.reply({
+          content: '❌ کاربری با این شناسه یافت نشد.',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      // مقادیر اولیه اقتصاد
+      const DEFAULT_WALLET = 1000;
+      const DEFAULT_BANK = 0;
+      const DEFAULT_CRYSTALS = 0;
+      
+      // ذخیره مقادیر قبلی برای گزارش
+      const previousWallet = user.wallet;
+      const previousBank = user.bank;
+      const previousCrystals = user.crystals;
+      
+      // ریست اقتصاد کاربر
+      await storage.updateUserData(user.id, {
+        wallet: DEFAULT_WALLET,
+        bank: DEFAULT_BANK,
+        crystals: DEFAULT_CRYSTALS,
+        stocks: [],
+        investments: []
+      });
+      
+      // ایجاد امبد برای نمایش پیام موفقیت
+      const embed = new EmbedBuilder()
+        .setTitle('🔄 ریست اقتصاد کاربر')
+        .setColor('#FF5733')
+        .setDescription(`اقتصاد کاربر ${user.username} با موفقیت ریست شد.`)
+        .addFields(
+          { name: 'کیف پول قبلی', value: `${previousWallet} سکه`, inline: true },
+          { name: 'بانک قبلی', value: `${previousBank} سکه`, inline: true },
+          { name: 'کریستال قبلی', value: `${previousCrystals}`, inline: true },
+          { name: 'کیف پول جدید', value: `${DEFAULT_WALLET} سکه`, inline: true },
+          { name: 'بانک جدید', value: `${DEFAULT_BANK} سکه`, inline: true },
+          { name: 'کریستال جدید', value: `${DEFAULT_CRYSTALS}`, inline: true },
+          { name: 'دلیل', value: reason }
+        )
+        .setTimestamp();
+      
+      await interaction.reply({
+        embeds: [embed],
+        ephemeral: true
+      });
+      
+      // ثبت اقدام در لاگ سیستم
+      logger.logAdminAction(
+        interaction.user.id,
+        interaction.user.username,
+        'reset_user_economy',
+        userId,
+        user.username,
+        `ریست اقتصاد کاربر به دلیل: ${reason}`
+      );
+      
+      // ارسال اعلان به کاربر
+      const { sendAdminNotification } = await import('../utils/adminNotifications');
+      sendAdminNotification(
+        userId,
+        'reset_economy',
+        {
+          adminName: interaction.user.username,
+          reason: reason
+        },
+        interaction.client
+      );
+      
+      // بازگشت به منوی ادمین
+      setTimeout(async () => {
+        await adminMenu(interaction, 'economy_reset');
+      }, 1500);
+      
+      return;
+    }
+    
+    // Handle admin reset all economy confirmation
+    if (customId === 'admin_reset_all_economy_confirm_modal') {
+      const confirmText = interaction.fields.getTextInputValue('confirm');
+      const reason = interaction.fields.getTextInputValue('reason') || 'دلیلی ذکر نشده';
+      
+      // بررسی تایید کاربر
+      if (confirmText.toUpperCase() !== 'RESET ALL') {
+        await interaction.reply({
+          content: '❌ عملیات ریست کل اقتصاد لغو شد. عبارت تایید را اشتباه وارد کردید.',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      await interaction.deferReply({ ephemeral: true });
+      
+      // مقادیر اولیه اقتصاد
+      const DEFAULT_WALLET = 1000;
+      const DEFAULT_BANK = 0;
+      const DEFAULT_CRYSTALS = 0;
+      
+      // دریافت تمام کاربران
+      const users = await storage.getAllUsers();
+      
+      // ذخیره تعداد کاربران برای نمایش
+      const totalUsers = users.length;
+      let updatedUsers = 0;
+      
+      // ریست اقتصاد همه کاربران
+      for (const user of users) {
+        await storage.updateUserData(user.id, {
+          wallet: DEFAULT_WALLET,
+          bank: DEFAULT_BANK,
+          crystals: DEFAULT_CRYSTALS,
+          stocks: [],
+          investments: []
+        });
+        
+        // ارسال اعلان به کاربر
+        const { sendAdminNotification } = await import('../utils/adminNotifications');
+        await sendAdminNotification(
+          user.discordId,
+          'reset_all_economy',
+          {
+            adminName: interaction.user.username,
+            reason: reason
+          },
+          interaction.client
+        );
+        
+        updatedUsers++;
+      }
+      
+      // ایجاد امبد برای نمایش پیام موفقیت
+      const embed = new EmbedBuilder()
+        .setTitle('⚠️ ریست کل اقتصاد')
+        .setColor('#FF0000')
+        .setDescription(`اقتصاد ربات با موفقیت ریست شد. تمامی ${totalUsers} کاربر به مقادیر اولیه بازگشتند.`)
+        .addFields(
+          { name: 'کاربران ریست شده', value: `${updatedUsers} از ${totalUsers}`, inline: true },
+          { name: 'مقدار اولیه کیف پول', value: `${DEFAULT_WALLET} سکه`, inline: true },
+          { name: 'دلیل', value: reason }
+        )
+        .setTimestamp();
+      
+      await interaction.editReply({
+        embeds: [embed]
+      });
+      
+      // ثبت اقدام در لاگ سیستم
+      logger.logAdminAction(
+        interaction.user.id,
+        interaction.user.username,
+        'reset_all_economy',
+        'system',
+        'all_users',
+        `ریست کل اقتصاد به دلیل: ${reason}`
+      );
+      
+      // بازگشت به منوی ادمین
+      setTimeout(async () => {
+        await adminMenu(interaction, 'economy');
+      }, 2000);
+      
+      return;
+    }
+    
     // Handle clan creation modal
     if (customId === 'create_clan_modal') {
       const clanName = interaction.fields.getTextInputValue('clan_name');
