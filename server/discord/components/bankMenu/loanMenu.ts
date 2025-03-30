@@ -4,15 +4,26 @@ import { formatNumber, formatDate, formatRelativeTime, createProgressBar } from 
 import { Loan } from '../../../../shared/schema';
 import { economyMenu } from '../economyMenu';
 import { v4 as uuidv4 } from 'uuid';
+import { client } from '../../client';
 
 // تنظیمات وام
-const LOAN_INTEREST_RATE = 0.05; // 5% سود
+// نرخ سود بر اساس نوع وام
+const LOAN_INTEREST_RATE_SMALL = 0.05; // 5% سود برای وام کوچک
+const LOAN_INTEREST_RATE_MEDIUM = 0.10; // 10% سود برای وام متوسط
+const LOAN_INTEREST_RATE_LARGE = 0.15; // 15% سود برای وام بزرگ
+
+// محدوده مبلغ وام‌ها
+const LOAN_AMOUNT_SMALL_MAX = 500; // حداکثر 500 سکه وام کوچک
+const LOAN_AMOUNT_MEDIUM_MAX = 2000; // حداکثر 2000 سکه وام متوسط 
+const LOAN_AMOUNT_LARGE_MAX = 5000; // حداکثر 5000 سکه وام بزرگ
+
 const LOAN_DURATION_DAYS = 14; // 14 روز مهلت بازپرداخت
 const LOAN_MAX_RATIO = 0.5; // حداکثر 50% موجودی بانکی
 const LOAN_MIN_CREDIT_SCORE = 30; // حداقل امتیاز اعتباری
 const LOAN_CREDIT_BOOST_ON_REPAY = 10; // افزایش امتیاز اعتباری بر اثر بازپرداخت
 const LOAN_CREDIT_PENALTY_ON_OVERDUE = 20; // کاهش امتیاز اعتباری بر اثر دیرکرد
 const LOAN_OVERDUE_PENALTY_RATE = 0.1; // 10% جریمه دیرکرد
+const LOAN_CONFISCATION_DAYS = 7; // پس از 7 روز عدم پرداخت، اموال مصادره می‌شود
 
 /**
  * منوی اصلی سیستم وام
@@ -92,7 +103,7 @@ export async function loanMenu(
     
     // اضافه کردن توضیحات
     embed.addFields(
-      { name: '📋 شرایط وام', value: `- نرخ سود: ${LOAN_INTEREST_RATE * 100}% برای هر دوره ${LOAN_DURATION_DAYS} روزه\n- حداکثر وام: ${LOAN_MAX_RATIO * 100}% از موجودی بانکی\n- جریمه دیرکرد: ${LOAN_OVERDUE_PENALTY_RATE * 100}% اضافه بر مبلغ وام\n- بازپرداخت به موقع: +${LOAN_CREDIT_BOOST_ON_REPAY} امتیاز اعتباری\n- دیرکرد: ${LOAN_CREDIT_PENALTY_ON_OVERDUE}-  امتیاز اعتباری` }
+      { name: '📋 شرایط وام', value: `- نرخ سود: کوچک: ${LOAN_INTEREST_RATE_SMALL * 100}%، متوسط: ${LOAN_INTEREST_RATE_MEDIUM * 100}%، بزرگ: ${LOAN_INTEREST_RATE_LARGE * 100}% برای هر دوره ${LOAN_DURATION_DAYS} روزه\n- حداکثر وام: ${LOAN_MAX_RATIO * 100}% از موجودی بانکی\n- جریمه دیرکرد: ${LOAN_OVERDUE_PENALTY_RATE * 100}% اضافه بر مبلغ وام\n- بازپرداخت به موقع: +${LOAN_CREDIT_BOOST_ON_REPAY} امتیاز اعتباری\n- دیرکرد: ${LOAN_CREDIT_PENALTY_ON_OVERDUE}-  امتیاز اعتباری` }
     );
     
     // ساخت دکمه‌ها بر اساس وضعیت وام‌های کاربر
@@ -198,7 +209,10 @@ export async function handleLoanRequest(interaction: MessageComponentInteraction
     }
     
     // محاسبه حداکثر مقدار وام
-    const maxLoanAmount = Math.floor(user.bank * LOAN_MAX_RATIO);
+    const maxLoanAmount = Math.min(
+      Math.floor(user.bank * LOAN_MAX_RATIO),
+      LOAN_AMOUNT_LARGE_MAX
+    );
     
     if (maxLoanAmount <= 0) {
       await interaction.reply({
@@ -211,49 +225,75 @@ export async function handleLoanRequest(interaction: MessageComponentInteraction
     // ساخت امبد درخواست وام
     const embed = new EmbedBuilder()
       .setColor('#47A992')
-      .setTitle('📝 درخواست وام')
-      .setDescription(`${interaction.user.username} عزیز، لطفاً مقدار وام درخواستی خود را انتخاب کنید:`)
+      .setTitle('📝 انتخاب نوع وام')
+      .setDescription(`${interaction.user.username} عزیز، لطفاً نوع وام درخواستی خود را انتخاب کنید:`)
       .addFields(
         { name: '💰 موجودی بانکی', value: `${formatNumber(user.bank)} Ccoin`, inline: true },
-        { name: '💳 حداکثر وام', value: `${formatNumber(maxLoanAmount)} Ccoin`, inline: true },
+        { name: '💳 حداکثر مبلغ وام', value: `${formatNumber(maxLoanAmount)} Ccoin`, inline: true },
         { name: '📊 امتیاز اعتباری', value: `${user.creditScore}/100`, inline: true },
-        { name: '📈 نرخ سود', value: `${LOAN_INTEREST_RATE * 100}%`, inline: true },
-        { name: '⏳ مدت بازپرداخت', value: `${LOAN_DURATION_DAYS} روز`, inline: true }
+        { name: '⏳ مدت بازپرداخت', value: `${LOAN_DURATION_DAYS} روز`, inline: false },
+        { 
+          name: '🔵 وام کوچک', 
+          value: `• حداکثر مبلغ: ${formatNumber(Math.min(LOAN_AMOUNT_SMALL_MAX, maxLoanAmount))} Ccoin\n• نرخ سود: ${LOAN_INTEREST_RATE_SMALL * 100}%\n• مناسب برای: خریدهای کوچک و روزمره`, 
+          inline: false 
+        },
+        { 
+          name: '🟡 وام متوسط', 
+          value: `• حداکثر مبلغ: ${formatNumber(Math.min(LOAN_AMOUNT_MEDIUM_MAX, maxLoanAmount))} Ccoin\n• نرخ سود: ${LOAN_INTEREST_RATE_MEDIUM * 100}%\n• مناسب برای: سرمایه‌گذاری و خرید آیتم‌ها`, 
+          inline: false 
+        },
+        { 
+          name: '🔴 وام بزرگ', 
+          value: `• حداکثر مبلغ: ${formatNumber(Math.min(LOAN_AMOUNT_LARGE_MAX, maxLoanAmount))} Ccoin\n• نرخ سود: ${LOAN_INTEREST_RATE_LARGE * 100}%\n• مناسب برای: سرمایه‌گذاری‌های کلان و خرید آیتم‌های نادر`, 
+          inline: false 
+        },
+        {
+          name: '⚠️ مهم',
+          value: 'به یاد داشته باشید که دیرکرد در بازپرداخت وام باعث جریمه، کاهش امتیاز اعتباری و حتی مصادره اموال می‌شود.',
+          inline: false
+        }
       );
     
-    // ساخت دکمه‌های مقادیر وام
+    // ساخت دکمه‌های انتخاب نوع وام
     const row1 = new ActionRowBuilder<ButtonBuilder>();
     const row2 = new ActionRowBuilder<ButtonBuilder>();
     
-    // سه گزینه برای مقدار وام
-    const option1 = Math.floor(maxLoanAmount * 0.25); // 25%
-    const option2 = Math.floor(maxLoanAmount * 0.5);  // 50%
-    const option3 = Math.floor(maxLoanAmount * 0.75); // 75%
-    const option4 = maxLoanAmount;                    // 100%
+    // محاسبه مقادیر وام بر اساس محدودیت‌ها
+    const smallLoanAmount = Math.min(LOAN_AMOUNT_SMALL_MAX, maxLoanAmount);
+    const mediumLoanAmount = Math.min(LOAN_AMOUNT_MEDIUM_MAX, maxLoanAmount);
+    const largeLoanAmount = Math.min(LOAN_AMOUNT_LARGE_MAX, maxLoanAmount);
     
     row1.addComponents(
       new ButtonBuilder()
-        .setCustomId(`loan_confirm_${option1}`)
-        .setLabel(`${formatNumber(option1)} Ccoin`)
-        .setStyle(ButtonStyle.Primary),
-      new ButtonBuilder()
-        .setCustomId(`loan_confirm_${option2}`)
-        .setLabel(`${formatNumber(option2)} Ccoin`)
+        .setCustomId(`loan_confirm_${smallLoanAmount}_small`)
+        .setEmoji('🔵')
+        .setLabel(`وام کوچک (${formatNumber(smallLoanAmount)} Ccoin)`)
         .setStyle(ButtonStyle.Primary)
+        .setDisabled(smallLoanAmount <= 0),
+      new ButtonBuilder()
+        .setCustomId(`loan_confirm_${mediumLoanAmount}_medium`)
+        .setEmoji('🟡')
+        .setLabel(`وام متوسط (${formatNumber(mediumLoanAmount)} Ccoin)`)
+        .setStyle(ButtonStyle.Primary)
+        .setDisabled(mediumLoanAmount <= 0)
     );
     
     row2.addComponents(
       new ButtonBuilder()
-        .setCustomId(`loan_confirm_${option3}`)
-        .setLabel(`${formatNumber(option3)} Ccoin`)
-        .setStyle(ButtonStyle.Primary),
+        .setCustomId(`loan_confirm_${largeLoanAmount}_large`)
+        .setEmoji('🔴')
+        .setLabel(`وام بزرگ (${formatNumber(largeLoanAmount)} Ccoin)`) 
+        .setStyle(ButtonStyle.Primary)
+        .setDisabled(largeLoanAmount <= 0),
       new ButtonBuilder()
-        .setCustomId(`loan_confirm_${option4}`)
-        .setLabel(`${formatNumber(option4)} Ccoin`)
-        .setStyle(ButtonStyle.Primary),
+        .setCustomId('loan_calculator')
+        .setEmoji('🧮')
+        .setLabel('محاسبه وام')
+        .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
         .setCustomId('loan_cancel')
-        .setLabel('❌ لغو')
+        .setEmoji('❌')
+        .setLabel('لغو')
         .setStyle(ButtonStyle.Danger)
     );
     
@@ -292,8 +332,30 @@ export async function handleLoanConfirmation(
       return;
     }
     
+    // تعیین نوع وام و نرخ سود بر اساس customId
+    let interestRate = LOAN_INTEREST_RATE_SMALL; // پیش‌فرض: نرخ وام کوچک
+    let loanType = 'small';
+    let loanTypeDisplay = '🔵 کوچک';
+    
+    // بررسی customId برای تعیین نوع وام
+    const customIdParts = interaction.customId.split('_');
+    if (customIdParts.length > 2) {
+      // اگر فرمت loan_confirm_amount_type باشد
+      const typeParam = customIdParts[customIdParts.length - 1];
+      
+      if (typeParam === 'medium') {
+        interestRate = LOAN_INTEREST_RATE_MEDIUM;
+        loanType = 'medium';
+        loanTypeDisplay = '🟡 متوسط';
+      } else if (typeParam === 'large') {
+        interestRate = LOAN_INTEREST_RATE_LARGE;
+        loanType = 'large';
+        loanTypeDisplay = '🔴 بزرگ';
+      }
+    }
+    
     // محاسبه سود
-    const interest = Math.floor(amount * LOAN_INTEREST_RATE);
+    const interest = Math.floor(amount * interestRate);
     const totalRepayment = amount + interest;
     
     // تاریخ سررسید
@@ -306,16 +368,19 @@ export async function handleLoanConfirmation(
       .setTitle('✅ تأیید نهایی وام')
       .setDescription(`${interaction.user.username} عزیز، آیا از درخواست این وام اطمینان دارید؟`)
       .addFields(
+        { name: '🏷️ نوع وام', value: loanTypeDisplay, inline: true },
         { name: '💰 مقدار وام', value: `${formatNumber(amount)} Ccoin`, inline: true },
-        { name: '📈 سود', value: `${formatNumber(interest)} Ccoin`, inline: true },
-        { name: '💸 مبلغ بازپرداخت', value: `${formatNumber(totalRepayment)} Ccoin`, inline: true },
-        { name: '📅 تاریخ سررسید', value: formatDate(dueDate), inline: true }
+        { name: '📈 نرخ سود', value: `${interestRate * 100}%`, inline: true },
+        { name: '💸 سود', value: `${formatNumber(interest)} Ccoin`, inline: true },
+        { name: '💵 مبلغ بازپرداخت', value: `${formatNumber(totalRepayment)} Ccoin`, inline: true },
+        { name: '📅 تاریخ سررسید', value: formatDate(dueDate), inline: true },
+        { name: '⚠️ نکته مهم', value: 'دیرکرد در پرداخت وام باعث جریمه و کاهش امتیاز اعتباری می‌شود.' }
       );
     
     const row = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
-          .setCustomId(`loan_approve_${amount}`)
+          .setCustomId(`loan_approve_${amount}_${loanType}`)
           .setLabel('✅ تأیید نهایی و دریافت وام')
           .setStyle(ButtonStyle.Success),
         new ButtonBuilder()
@@ -358,8 +423,33 @@ export async function handleLoanApproval(
       return;
     }
     
+    // تعیین نوع وام و نرخ سود بر اساس customId
+    let interestRate = LOAN_INTEREST_RATE_SMALL; // پیش‌فرض: نرخ وام کوچک
+    let loanType = 'small';
+    let loanTypeDisplay = '🔵 کوچک';
+    let loanColor = '#47A992';
+    
+    // بررسی customId برای تعیین نوع وام
+    const customIdParts = interaction.customId.split('_');
+    if (customIdParts.length > 2) {
+      // اگر فرمت loan_approve_amount_type باشد
+      const typeParam = customIdParts[customIdParts.length - 1];
+      
+      if (typeParam === 'medium') {
+        interestRate = LOAN_INTEREST_RATE_MEDIUM;
+        loanType = 'medium';
+        loanTypeDisplay = '🟡 متوسط';
+        loanColor = '#FFB100';
+      } else if (typeParam === 'large') {
+        interestRate = LOAN_INTEREST_RATE_LARGE;
+        loanType = 'large';
+        loanTypeDisplay = '🔴 بزرگ';
+        loanColor = '#FF5F1F';
+      }
+    }
+    
     // محاسبه سود
-    const interest = Math.floor(amount * LOAN_INTEREST_RATE);
+    const interest = Math.floor(amount * interestRate);
     const totalRepayment = amount + interest;
     
     // تاریخ سررسید
@@ -376,24 +466,26 @@ export async function handleLoanApproval(
       dueDate: dueDate,
       status: 'active',
       requestDate: new Date(),
-      remainingAmount: totalRepayment
+      remainingAmount: totalRepayment,
+      type: loanType
     };
     
     // ذخیره وام در دیتابیس
     await storage.createLoan(newLoan);
     
     // واریز مبلغ وام به کیف پول کاربر
-    await storage.addToWallet(user.id, amount, 'loan_received', { loanId });
+    await storage.addToWallet(user.id, amount, 'loan_received', { loanId, loanType });
     
     // ساخت امبد تأیید نهایی
     const embed = new EmbedBuilder()
-      .setColor('#47A992')
+      .setColor(loanColor)
       .setTitle('🎉 وام با موفقیت پرداخت شد')
-      .setDescription(`${interaction.user.username} عزیز، وام شما با موفقیت پرداخت شد و به کیف پول شما واریز گردید.`)
+      .setDescription(`${interaction.user.username} عزیز، وام ${loanTypeDisplay} شما با موفقیت پرداخت شد و به کیف پول شما واریز گردید.`)
       .addFields(
         { name: '💰 مقدار وام', value: `${formatNumber(amount)} Ccoin`, inline: true },
-        { name: '📈 سود', value: `${formatNumber(interest)} Ccoin`, inline: true },
-        { name: '💸 مبلغ بازپرداخت', value: `${formatNumber(totalRepayment)} Ccoin`, inline: true },
+        { name: '📈 نرخ سود', value: `${interestRate * 100}%`, inline: true },
+        { name: '💸 سود', value: `${formatNumber(interest)} Ccoin`, inline: true },
+        { name: '💵 مبلغ بازپرداخت', value: `${formatNumber(totalRepayment)} Ccoin`, inline: true },
         { name: '📅 تاریخ سررسید', value: formatDate(dueDate), inline: true },
         { name: '📝 یادآوری مهم', value: 'لطفاً تا قبل از سررسید، وام خود را بازپرداخت کنید تا امتیاز اعتباری شما افزایش یابد.' }
       );
@@ -418,11 +510,12 @@ export async function handleLoanApproval(
     // ارسال پیام خصوصی یادآوری
     try {
       const reminderEmbed = new EmbedBuilder()
-        .setColor('#47A992')
+        .setColor(loanColor)
         .setTitle('💰 وام دریافت شد')
-        .setDescription('وام شما با موفقیت تأیید و پرداخت شد!')
+        .setDescription(`وام ${loanTypeDisplay} شما با موفقیت تأیید و پرداخت شد!`)
         .addFields(
           { name: '💸 مبلغ وام', value: `${formatNumber(amount)} Ccoin`, inline: true },
+          { name: '💵 مبلغ بازپرداخت', value: `${formatNumber(totalRepayment)} Ccoin`, inline: true },
           { name: '📅 تاریخ سررسید', value: formatDate(dueDate), inline: true },
           { name: '📝 یادآوری', value: 'یک روز قبل از سررسید به شما یادآوری خواهیم کرد.' }
         );
@@ -505,12 +598,38 @@ export async function handleLoanStatus(interaction: MessageComponentInteraction)
       );
     
     if (isOverdue) {
+      // محاسبه جریمه افزایشی بر اساس روزهای تاخیر
+      const daysOverdue = Math.abs(daysDiff);
+      const baseRate = LOAN_OVERDUE_PENALTY_RATE;
+      
+      // نرخ جریمه افزایشی: به ازای هر 3 روز تاخیر، 5% به جریمه اضافه می‌شود
+      const increasedRate = baseRate + Math.min(0.5, Math.floor(daysOverdue / 3) * 0.05);
+      const increasedPenalty = Math.floor(currentLoan.amount * increasedRate);
+      const confiscationWarning = daysOverdue >= Math.floor(LOAN_CONFISCATION_DAYS / 2);
+      
       embed.addFields(
-        { name: '⏰ تأخیر', value: `${Math.abs(daysDiff)} روز`, inline: true },
-        { name: '🚫 جریمه تأخیر', value: `${formatNumber(penalty)} Ccoin`, inline: true },
-        { name: '💸 مبلغ کل قابل پرداخت', value: `${formatNumber(totalRepayment)} Ccoin`, inline: false },
-        { name: '⚠️ هشدار', value: 'لطفاً هر چه سریع‌تر نسبت به تسویه وام خود اقدام کنید تا از کاهش بیشتر امتیاز اعتباری جلوگیری شود.' }
+        { name: '⏰ تأخیر', value: `${daysOverdue} روز`, inline: true },
+        { name: '🚫 جریمه تأخیر', value: `${formatNumber(increasedPenalty)} Ccoin (${increasedRate * 100}%)`, inline: true },
+        { name: '💸 مبلغ کل قابل پرداخت', value: `${formatNumber(currentLoan.remainingAmount + increasedPenalty)} Ccoin`, inline: false }
       );
+      
+      // هشدار مصادره در صورت تاخیر طولانی
+      if (confiscationWarning) {
+        // روزهای باقیمانده تا مصادره
+        const daysUntilConfiscation = LOAN_CONFISCATION_DAYS - daysOverdue;
+        
+        embed.addFields({
+          name: '🚨 هشدار مصادره اموال',
+          value: `در صورت عدم پرداخت طی ${daysUntilConfiscation} روز آینده، بخشی از اموال و آیتم‌های شما مصادره خواهد شد!`,
+          inline: false
+        });
+      } else {
+        embed.addFields({
+          name: '⚠️ هشدار',
+          value: 'لطفاً هر چه سریع‌تر نسبت به تسویه وام خود اقدام کنید تا از کاهش بیشتر امتیاز اعتباری و جریمه‌های سنگین‌تر جلوگیری شود.',
+          inline: false
+        });
+      }
     } else {
       embed.addFields(
         { name: '⏳ زمان باقی‌مانده', value: `${daysDiff} روز`, inline: true },
@@ -580,10 +699,34 @@ export async function handleLoanRepayment(interaction: MessageComponentInteracti
     const currentLoan = overdueLoans.length > 0 ? overdueLoans[0] : activeLoans[0];
     const isOverdue = currentLoan.status === 'overdue';
     
-    // محاسبه جریمه در صورت سررسید شدن
-    const penalty = isOverdue 
-      ? Math.floor(currentLoan.amount * LOAN_OVERDUE_PENALTY_RATE) 
-      : 0;
+    // محاسبه جریمه در صورت سررسید شدن با نرخ افزایشی
+    let penalty = 0;
+    let penaltyText = '';
+    let daysUntilConfiscation = 0;
+    let showConfiscationWarning = false;
+    let diffDays = 0;
+    
+    if (isOverdue) {
+      // محاسبه روزهای تاخیر
+      const currentDate = new Date();
+      const dueDate = new Date(currentLoan.dueDate);
+      const diffTime = Math.abs(currentDate.getTime() - dueDate.getTime());
+      diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      // نرخ جریمه افزایشی: به ازای هر 3 روز تاخیر، 5% به جریمه اضافه می‌شود
+      const baseRate = LOAN_OVERDUE_PENALTY_RATE;
+      const increasedRate = baseRate + Math.min(0.5, Math.floor(diffDays / 3) * 0.05);
+      penalty = Math.floor(currentLoan.amount * increasedRate);
+      
+      // متن توضیحی جریمه
+      penaltyText = `این وام شامل جریمه تأخیر به میزان ${Math.floor(increasedRate * 100)}% است. جریمه با گذشت زمان افزایش می‌یابد.`;
+      
+      // هشدار مصادره در صورت تاخیر طولانی
+      if (diffDays >= Math.floor(LOAN_CONFISCATION_DAYS / 2)) {
+        daysUntilConfiscation = LOAN_CONFISCATION_DAYS - diffDays;
+        showConfiscationWarning = true;
+      }
+    }
     
     const totalRepayment = currentLoan.remainingAmount + penalty;
     
@@ -598,7 +741,7 @@ export async function handleLoanRepayment(interaction: MessageComponentInteracti
     
     // ساخت امبد بازپرداخت
     const embed = new EmbedBuilder()
-      .setColor('#47A992')
+      .setColor(isOverdue && showConfiscationWarning ? '#FF0000' : '#47A992')
       .setTitle('💵 بازپرداخت وام')
       .setDescription(`${interaction.user.username} عزیز، آیا مایل به بازپرداخت کامل وام خود هستید؟`)
       .addFields(
@@ -607,8 +750,15 @@ export async function handleLoanRepayment(interaction: MessageComponentInteracti
       );
     
     if (isOverdue) {
+      if (showConfiscationWarning) {
+        embed.addFields({
+          name: '🚨 هشدار مصادره اموال',
+          value: `در صورت عدم پرداخت طی ${daysUntilConfiscation} روز آینده، بخشی از اموال و آیتم‌های شما مصادره خواهد شد!`
+        });
+      }
+      
       embed.addFields(
-        { name: '⚠️ توجه', value: 'این وام سررسید شده است و شامل جریمه تأخیر می‌باشد.' }
+        { name: '⚠️ توجه', value: penaltyText }
       );
     } else {
       embed.addFields(
@@ -675,11 +825,24 @@ export async function handleLoanRepaymentConfirmation(
       return;
     }
     
-    // محاسبه جریمه در صورت سررسید شدن
+    // محاسبه جریمه در صورت سررسید شدن با نرخ افزایشی
     const isOverdue = loan.status === 'overdue';
-    const penalty = isOverdue 
-      ? Math.floor(loan.amount * LOAN_OVERDUE_PENALTY_RATE) 
-      : 0;
+    let penalty = 0;
+    
+    if (isOverdue) {
+      // محاسبه روزهای تاخیر
+      const currentDate = new Date();
+      const dueDate = new Date(loan.dueDate);
+      const diffTime = Math.abs(currentDate.getTime() - dueDate.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      // نرخ جریمه افزایشی: به ازای هر 3 روز تاخیر، 5% به جریمه اضافه می‌شود
+      const baseRate = LOAN_OVERDUE_PENALTY_RATE;
+      const increasedRate = baseRate + Math.min(0.5, Math.floor(diffDays / 3) * 0.05);
+      penalty = Math.floor(loan.amount * increasedRate);
+      
+      console.log(`Loan overdue by ${diffDays} days. Base penalty rate: ${baseRate}, Increased rate: ${increasedRate}, Penalty: ${penalty}`);
+    }
     
     const totalRepayment = loan.remainingAmount + penalty;
     
@@ -902,7 +1065,7 @@ export async function handleLoanCalculator(interaction: MessageComponentInteract
         { name: '💰 موجودی بانکی', value: `${formatNumber(user.bank)} Ccoin`, inline: true },
         { name: '💳 حداکثر وام', value: `${formatNumber(maxLoanAmount)} Ccoin`, inline: true },
         { name: '📊 امتیاز اعتباری', value: `${user.creditScore}/100`, inline: true },
-        { name: '📈 نرخ سود', value: `${LOAN_INTEREST_RATE * 100}%`, inline: true },
+        { name: '📈 نرخ سود', value: 'کوچک: 5%، متوسط: 10%، بزرگ: 15%', inline: true },
         { name: '⏳ مدت بازپرداخت', value: `${LOAN_DURATION_DAYS} روز`, inline: true }
       );
     
@@ -915,7 +1078,8 @@ export async function handleLoanCalculator(interaction: MessageComponentInteract
     ];
     
     examples.forEach(example => {
-      const interest = Math.floor(example.amount * LOAN_INTEREST_RATE);
+      // استفاده از نرخ وام کوچک برای محاسبه
+      const interest = Math.floor(example.amount * LOAN_INTEREST_RATE_SMALL);
       const totalRepayment = example.amount + interest;
       
       embed.addFields({
@@ -967,5 +1131,180 @@ export async function handleLoanCancel(interaction: MessageComponentInteraction)
       content: '❌ خطایی در لغو درخواست وام رخ داد. لطفاً دوباره تلاش کنید.',
       ephemeral: true
     });
+  }
+}
+
+/**
+ * مصادره اموال کاربران با وام‌های معوق طولانی مدت
+ * این تابع باید به صورت روزانه اجرا شود
+ */
+export async function handleLoanConfiscation() {
+  try {
+    // دریافت تمامی وام‌های سررسید شده
+    const overdueLoans = await storage.getOverdueLoans();
+    
+    if (overdueLoans.length === 0) {
+      console.log('No loans to confiscate.');
+      return;
+    }
+    
+    console.log(`Found ${overdueLoans.length} overdue loans, checking for confiscation...`);
+    
+    // بررسی هر وام برای مصادره
+    for (const loan of overdueLoans) {
+      // محاسبه روزهای تاخیر
+      const currentDate = new Date();
+      const dueDate = new Date(loan.dueDate);
+      const diffTime = Math.abs(currentDate.getTime() - dueDate.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      // اگر تعداد روزهای تاخیر بیشتر از آستانه مصادره باشد
+      if (diffDays >= LOAN_CONFISCATION_DAYS) {
+        console.log(`Loan ID ${loan.id} for user ${loan.userId} is ${diffDays} days overdue. Starting confiscation process...`);
+        
+        try {
+          await confiscateUserAssets(loan);
+        } catch (confiscateError) {
+          console.error(`Error confiscating assets for loan ${loan.id}:`, confiscateError);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error in loan confiscation:', error);
+  }
+}
+
+/**
+ * مصادره اموال کاربر برای وام معوق
+ * @param loan وام معوق
+ */
+async function confiscateUserAssets(loan: any) {
+  try {
+    // دریافت اطلاعات کاربر
+    const user = await storage.getUser(loan.userId);
+    
+    if (!user) {
+      console.error(`User ${loan.userId} not found for confiscation.`);
+      return;
+    }
+    
+    console.log(`Starting confiscation for user ${user.username} (ID: ${user.id})`);
+    
+    // 1. محاسبه جریمه و مقدار بدهی
+    const penalty = Math.floor(loan.amount * LOAN_OVERDUE_PENALTY_RATE * 2); // جریمه مضاعف برای تاخیر طولانی
+    const totalDebt = loan.remainingAmount + penalty;
+    
+    // 2. مصادره مقداری از موجودی کیف پول (اگر موجود باشد)
+    let confiscatedWallet = 0;
+    if (user.wallet > 0) {
+      confiscatedWallet = Math.min(user.wallet, totalDebt);
+      await storage.addToWallet(user.id, -confiscatedWallet, 'loan_confiscation', { loanId: loan.id });
+      console.log(`Confiscated ${confiscatedWallet} Ccoin from wallet.`);
+    }
+    
+    // 3. مصادره مقداری از موجودی بانک (اگر موجود باشد و هنوز بدهی باقی مانده باشد)
+    let remainingDebt = totalDebt - confiscatedWallet;
+    let confiscatedBank = 0;
+    
+    if (remainingDebt > 0 && user.bank > 0) {
+      confiscatedBank = Math.min(user.bank, remainingDebt);
+      await storage.addToBank(user.id, -confiscatedBank, 'loan_confiscation', { loanId: loan.id });
+      console.log(`Confiscated ${confiscatedBank} Ccoin from bank.`);
+      remainingDebt -= confiscatedBank;
+    }
+    
+    // 4. مصادره آیتم‌ها (اگر هنوز بدهی باقی مانده باشد)
+    let confiscatedItems = [];
+    
+    if (remainingDebt > 0) {
+      // دریافت آیتم‌های کاربر
+      const userInventory = await storage.getUserInventory(user.id);
+      
+      if (userInventory && userInventory.length > 0) {
+        // مرتب‌سازی آیتم‌ها بر اساس ارزش (گران‌ترین اول)
+        const sortedItems = userInventory
+          .filter(item => item.item.type !== 'permanent') // آیتم‌های دائمی مصادره نمی‌شوند
+          .sort((a, b) => b.item.price - a.item.price);
+        
+        // مصادره آیتم‌ها تا پوشش دادن بدهی یا تمام شدن آیتم‌ها
+        for (const inventoryItem of sortedItems) {
+          if (remainingDebt <= 0) break;
+          
+          // حذف آیتم از انبار کاربر
+          await storage.removeItemFromUser(user.id, inventoryItem.item.id, 'loan_confiscation');
+          
+          // کاهش بدهی
+          remainingDebt -= inventoryItem.item.price;
+          
+          // افزودن به لیست آیتم‌های مصادره شده
+          confiscatedItems.push({
+            name: inventoryItem.item.name,
+            price: inventoryItem.item.price
+          });
+          
+          console.log(`Confiscated item: ${inventoryItem.item.name} worth ${inventoryItem.item.price} Ccoin.`);
+        }
+      }
+    }
+    
+    // 5. بروزرسانی وضعیت وام به "مصادره شده"
+    await storage.updateLoanStatus(loan.id, 'confiscated', new Date());
+    
+    // 6. کاهش امتیاز اعتباری کاربر
+    const newCreditScore = Math.max(0, user.creditScore - LOAN_CREDIT_PENALTY_ON_OVERDUE * 2);
+    await storage.updateUser(user.id, { creditScore: newCreditScore });
+    
+    // 7. ارسال پیام خصوصی به کاربر
+    try {
+      const discordUser = await client.users.fetch(user.discordId);
+      
+      if (discordUser) {
+        const confiscationEmbed = new EmbedBuilder()
+          .setColor('#FF0000')
+          .setTitle('🚨 اخطار: مصادره اموال')
+          .setDescription('به دلیل عدم بازپرداخت وام طی مدت طولانی، بخشی از اموال شما مصادره شد.')
+          .addFields(
+            { name: '💰 وام معوق', value: `${formatNumber(loan.amount)} Ccoin`, inline: true },
+            { name: '⚠️ جریمه', value: `${formatNumber(penalty)} Ccoin`, inline: true },
+            { name: '💳 کل بدهی', value: `${formatNumber(totalDebt)} Ccoin`, inline: true },
+            { name: '👛 مبلغ مصادره شده از کیف پول', value: `${formatNumber(confiscatedWallet)} Ccoin`, inline: true },
+            { name: '🏦 مبلغ مصادره شده از حساب بانکی', value: `${formatNumber(confiscatedBank)} Ccoin`, inline: true },
+            { name: '📊 امتیاز اعتباری جدید', value: `${newCreditScore}/100`, inline: true }
+          );
+        
+        // اضافه کردن آیتم‌های مصادره شده به امبد
+        if (confiscatedItems.length > 0) {
+          let itemsList = '';
+          confiscatedItems.forEach(item => {
+            itemsList += `• ${item.name}: ${formatNumber(item.price)} Ccoin\n`;
+          });
+          
+          confiscationEmbed.addFields({ name: '📦 آیتم‌های مصادره شده', value: itemsList });
+        }
+        
+        confiscationEmbed.addFields({ 
+          name: '📝 توضیحات', 
+          value: 'برای جلوگیری از مصادره بیشتر اموال در آینده، لطفاً وام‌های خود را به موقع بازپرداخت کنید. همچنین تا بهبود امتیاز اعتباری، امکان دریافت وام جدید نخواهید داشت.'
+        });
+        
+        await discordUser.send({ embeds: [confiscationEmbed] });
+      }
+    } catch (dmError) {
+      console.error(`Could not send DM to user ${user.id}:`, dmError);
+    }
+    
+    console.log(`Confiscation completed for user ${user.username} (ID: ${user.id}). Total recovered: ${confiscatedWallet + confiscatedBank} Ccoin and ${confiscatedItems.length} items.`);
+    
+    return {
+      userId: user.id,
+      loanId: loan.id,
+      confiscatedWallet,
+      confiscatedBank,
+      confiscatedItems,
+      remainingDebt
+    };
+  } catch (error) {
+    console.error(`Error in confiscateUserAssets for loan ${loan.id}:`, error);
+    throw error;
   }
 }

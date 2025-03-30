@@ -50,6 +50,7 @@ import {
 } from '../components/werewolfGame';
 import { handleSwitchAIService, handleTestAIService, handleViewAIStatus } from './aiHandlers';
 import { showAISettingsMenu, handleModelSelect, handleStyleSelect, handleTestAI, handleResetAI, handleAIHelp } from '../components/aiSettingsMenu';
+import { loanMenu, handleLoanRequest, handleLoanConfirmation, handleLoanApproval, handleLoanStatus, handleLoanRepayment, handleLoanCalculator, handleLoanHistory } from '../components/bankMenu/loanMenu';
 import { 
   itemManagementMenu,
   questManagementMenu,
@@ -673,6 +674,101 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       return;
     }
 
+    if (action === 'balance') {
+      try {
+        // Get user data
+        const user = await storage.getUserByDiscordId(interaction.user.id);
+        
+        if (!user) {
+          // Create new user if not exists
+          const newUser = await storage.createUser({
+            discordId: interaction.user.id,
+            username: interaction.user.username,
+          });
+          
+          // ایجاد Embed برای کاربر جدید
+          const newUserEmbed = new EmbedBuilder()
+            .setColor('#2ECC71') // سبز روشن
+            .setTitle('🎉 به دنیای Ccoin خوش آمدید!')
+            .setDescription(`**${interaction.user.username}** عزیز، حساب شما با موفقیت ساخته شد.`)
+            .setThumbnail(interaction.user.displayAvatarURL() || interaction.client.user?.displayAvatarURL())
+            .addFields(
+              { name: '💰 موجودی کیف پول', value: `\`${newUser.wallet} Ccoin\``, inline: true },
+              { name: '🏦 موجودی بانک', value: `\`${newUser.bank} Ccoin\``, inline: true },
+              { name: '💎 کریستال', value: `\`${newUser.crystals}\``, inline: true }
+            )
+            .setFooter({ text: '📌 برای دریافت جایزه روزانه از دستور /daily استفاده کنید!' })
+            .setTimestamp();
+          
+          // دکمه برای دسترسی به منوی اصلی
+          const row = new ActionRowBuilder<ButtonBuilder>()
+            .addComponents(
+              new ButtonBuilder()
+                .setCustomId('menu')
+                .setLabel('🏠 منوی اصلی')
+                .setStyle(ButtonStyle.Success),
+              new ButtonBuilder()
+                .setCustomId('daily')
+                .setLabel('🎁 دریافت جایزه روزانه')
+                .setStyle(ButtonStyle.Primary)
+            );
+          
+          await interaction.update({
+            embeds: [newUserEmbed],
+            components: [row]
+          });
+        } else {
+          // ایجاد امبد برای کاربر موجود
+          const balanceEmbed = new EmbedBuilder()
+            .setColor('#F1C40F') // زرد طلایی
+            .setTitle('💰 اطلاعات حساب کاربری')
+            .setDescription(`**${interaction.user.username}** عزیز، اطلاعات حساب شما به شرح زیر است:`)
+            .setThumbnail(interaction.user.displayAvatarURL() || interaction.client.user?.displayAvatarURL())
+            .addFields(
+              { name: '💰 موجودی کیف پول', value: `\`${user.wallet} Ccoin\``, inline: true },
+              { name: '🏦 موجودی بانک', value: `\`${user.bank} Ccoin\``, inline: true },
+              { name: '💎 کریستال', value: `\`${user.crystals}\``, inline: true },
+              { name: '🏆 امتیاز', value: `\`${user.points || 0}\``, inline: true },
+              { name: '🌟 سطح', value: `\`${user.level || 1}\``, inline: true },
+              { name: '📊 مجموع دارایی', value: `\`${user.wallet + user.bank} Ccoin\``, inline: true }
+            )
+            .setFooter({ text: '📌 برای مشاهده جزئیات بیشتر، از منوی اصلی بخش اقتصاد را انتخاب کنید!' })
+            .setTimestamp();
+          
+          // ساخت دکمه برای دسترسی به منوی اقتصاد
+          const row = new ActionRowBuilder<ButtonBuilder>()
+            .addComponents(
+              new ButtonBuilder()
+                .setCustomId('economy')
+                .setLabel('💰 منوی اقتصاد')
+                .setStyle(ButtonStyle.Success),
+              new ButtonBuilder()
+                .setCustomId('deposit_menu')
+                .setLabel('🏦 انتقال به بانک')
+                .setStyle(ButtonStyle.Primary)
+            );
+          
+          await interaction.update({
+            embeds: [balanceEmbed],
+            components: [row]
+          });
+        }
+      } catch (error) {
+        console.error('Error in balance button handler:', error);
+        
+        try {
+          await interaction.update({
+            content: '⚠️ خطا در بررسی موجودی! لطفاً دوباره تلاش کنید.',
+            embeds: [],
+            components: []
+          });
+        } catch (followUpError) {
+          console.error('Error sending error message for balance button:', followUpError);
+        }
+      }
+      return;
+    }
+
     if (action === 'games') {
       await gamesMenu(interaction);
       return;
@@ -1125,6 +1221,62 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     // Handle bank menu
     if (action === 'bank_menu') {
       await economyMenu(interaction);
+      return;
+    }
+    
+    // Handle loan menu and operations
+    if (action === 'loan_menu') {
+      await loanMenu(interaction);
+      return;
+    }
+    
+    // درخواست وام
+    if (action === 'loan_request') {
+      await handleLoanRequest(interaction);
+      return;
+    }
+    
+    // محاسبه‌گر وام
+    if (action === 'loan_calculator') {
+      await handleLoanCalculator(interaction);
+      return;
+    }
+    
+    // وضعیت وام
+    if (action === 'loan_status') {
+      await handleLoanStatus(interaction);
+      return;
+    }
+    
+    // بازپرداخت وام
+    if (action === 'loan_repay') {
+      await handleLoanRepayment(interaction);
+      return;
+    }
+    
+    // تاریخچه وام‌ها
+    if (action === 'loan_history') {
+      await handleLoanHistory(interaction);
+      return;
+    }
+    
+    // تأیید اولیه وام
+    if (action.startsWith('loan_confirm_')) {
+      const amount = parseInt(action.replace('loan_confirm_', ''));
+      await handleLoanConfirmation(interaction, amount);
+      return;
+    }
+    
+    // تأیید نهایی و دریافت وام
+    if (action.startsWith('loan_approve_')) {
+      const amount = parseInt(action.replace('loan_approve_', ''));
+      await handleLoanApproval(interaction, amount);
+      return;
+    }
+    
+    // لغو درخواست وام
+    if (action === 'loan_cancel') {
+      await loanMenu(interaction);
       return;
     }
     

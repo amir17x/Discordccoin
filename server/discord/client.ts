@@ -181,6 +181,32 @@ export async function initDiscordBot() {
         console.error('Error setting up AI market dynamics:', marketError);
         log('خطا در راه‌اندازی سیستم هوش مصنوعی بازار سهام: ' + marketError, 'error');
       }
+      
+      // راه‌اندازی سیستم مصادره اموال وام‌های معوق
+      try {
+        // وارد کردن ماژول مصادره وام
+        const { handleLoanConfiscation } = await import('./components/bankMenu/loanMenu');
+        
+        // اجرای اولیه پس از 2 دقیقه از راه‌اندازی
+        setTimeout(() => {
+          handleLoanConfiscation()
+            .then(() => log('بررسی اولیه وام‌های معوق با موفقیت انجام شد', 'discord'))
+            .catch(err => log(`خطا در بررسی اولیه وام‌های معوق: ${err}`, 'error'));
+        }, 2 * 60 * 1000);
+        
+        // بررسی روزانه وام‌های معوق
+        const ONE_DAY = 24 * 60 * 60 * 1000; // 24 ساعت به میلی‌ثانیه
+        setInterval(() => {
+          handleLoanConfiscation()
+            .then(() => log('بررسی دوره‌ای وام‌های معوق با موفقیت انجام شد', 'discord'))
+            .catch(err => log(`خطا در بررسی دوره‌ای وام‌های معوق: ${err}`, 'error'));
+        }, ONE_DAY);
+        
+        log('سیستم مصادره اموال وام‌های معوق با موفقیت راه‌اندازی شد', 'discord');
+      } catch (loanError) {
+        console.error('Error setting up loan confiscation system:', loanError);
+        log('خطا در راه‌اندازی سیستم مصادره اموال وام‌های معوق: ' + loanError, 'error');
+      }
     });
 
     // Command interaction

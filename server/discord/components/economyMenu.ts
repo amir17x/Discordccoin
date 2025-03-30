@@ -487,6 +487,7 @@ export async function economyMenu(
           .setStyle(ButtonStyle.Secondary)
       );
       
+    // اضافه کردن سطر دوم دکمه‌ها با دکمه جدید وام
     const bankRow2 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
@@ -494,13 +495,27 @@ export async function economyMenu(
           .setLabel('📈 سرمایه‌گذاری')
           .setStyle(ButtonStyle.Success),
         new ButtonBuilder()
-          .setCustomId('bank_upgrade')
-          .setLabel('⬆️ ارتقای حساب')
-          .setStyle(ButtonStyle.Primary)
-          .setDisabled(user.bank < 10000),
+          .setCustomId('loan_menu')
+          .setLabel('💳 سیستم وام')
+          .setEmoji('🏦')
+          .setStyle(ButtonStyle.Primary),
         new ButtonBuilder()
           .setCustomId('economy')
           .setLabel('🔙 بازگشت')
+          .setStyle(ButtonStyle.Secondary)
+      );
+      
+    // دکمه‌های سطر سوم برای بانک
+    const bankRow3 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('bank_upgrade')
+          .setLabel('⬆️ ارتقای حساب')
+          .setStyle(ButtonStyle.Secondary)
+          .setDisabled(user.bank < 10000),
+        new ButtonBuilder()
+          .setCustomId('bank_history')
+          .setLabel('📋 تاریخچه تراکنش‌ها')
           .setStyle(ButtonStyle.Secondary)
       );
 
@@ -657,9 +672,9 @@ export async function economyMenu(
       }
     } else if (state === 'bank') {
       if (followUp) {
-        await interaction.followUp({ embeds: [bankEmbed], components: [bankRow1, bankRow2], ephemeral: true });
+        await interaction.followUp({ embeds: [bankEmbed], components: [bankRow1, bankRow2, bankRow3], ephemeral: true });
       } else {
-        await interaction.update({ embeds: [bankEmbed], components: [bankRow1, bankRow2] });
+        await interaction.update({ embeds: [bankEmbed], components: [bankRow1, bankRow2, bankRow3] });
       }
     } else if (state === 'transfer') {
       if (followUp) {

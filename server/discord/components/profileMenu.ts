@@ -8,6 +8,65 @@ import {
 } from 'discord.js';
 import { storage } from '../../storage';
 
+// Helper function to generate progress bar
+function getProgressBar(percentage: number): string {
+  const filledSquares = Math.floor(percentage / 10);
+  const emptySquares = 10 - filledSquares;
+  
+  return '█'.repeat(filledSquares) + '░'.repeat(emptySquares);
+}
+
+// Helper function to get membership badge based on days
+function getMembershipBadge(days: number): string {
+  if (days >= 365) return '🔹';
+  if (days >= 180) return '🔸';
+  if (days >= 90) return '🟣';
+  if (days >= 30) return '🟡';
+  return '🟢';
+}
+
+// Helper function to get credit rating stars
+function getCreditRatingStars(creditScore: number): string {
+  if (creditScore >= 90) return '⭐⭐⭐⭐⭐';
+  if (creditScore >= 75) return '⭐⭐⭐⭐☆';
+  if (creditScore >= 60) return '⭐⭐⭐☆☆';
+  if (creditScore >= 40) return '⭐⭐☆☆☆';
+  if (creditScore >= 20) return '⭐☆☆☆☆';
+  return '☆☆☆☆☆';
+}
+
+// Helper function to get economy level badge
+function getEconomyLevelBadge(level: number): string {
+  if (level >= 50) return '👑';
+  if (level >= 40) return '💎';
+  if (level >= 30) return '🏆';
+  if (level >= 20) return '🥇';
+  if (level >= 10) return '🥈';
+  if (level >= 5) return '🥉';
+  return '🔰';
+}
+
+// Helper function to display bank level
+function getBankLevelDisplay(bankLevel: string): string {
+  switch (bankLevel) {
+    case 'gold':
+      return '🥇 طلایی';
+    case 'silver':
+      return '🥈 نقره‌ای';
+    case 'platinum':
+      return '💠 پلاتینیوم';
+    case 'diamond':
+      return '💎 الماس';
+    default:
+      return '🔰 عادی';
+  }
+}
+
+// Helper function to format numbers with commas
+function formatNumber(num: number): string {
+  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
 // Function to create and send the profile menu
 export async function profileMenu(
   interaction: ButtonInteraction | MessageComponentInteraction,
@@ -73,17 +132,55 @@ export async function profileMenu(
       aiDetails = null;
     }
     
-    // Create the profile embed
+    // محاسبه مجموع دارایی کاربر
+    const totalAssets = user.wallet + user.bank;
+    
+    // محاسبه سطح و پیشرفت
+    const currentLevel = user.level || 1;
+    const nextLevelXP = currentLevel * 500; // مقدار تجربه مورد نیاز برای سطح بعدی
+    const currentXP = user.experience || 0;
+    const levelProgressPercent = Math.min(100, Math.round((currentXP / nextLevelXP) * 100));
+    const levelProgressBar = getProgressBar(levelProgressPercent);
+    
+    // تاریخ عضویت با فرمت زیبا
+    const joinDate = new Date(user.createdAt || Date.now());
+    const joinDateStr = joinDate.toLocaleDateString('fa-IR');
+    const memberDays = Math.floor((Date.now() - joinDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Create the profile embed with a modern design
     const embed = new EmbedBuilder()
-      .setColor('#5865F2')
-      .setTitle('👤 پروفایل کاربر')
-      .setDescription(`**${interaction.user.username}**\nعضو شده از: ${new Date(user.createdAt || Date.now()).toLocaleDateString()}`)
+      .setColor('#8A2BE2') // رنگ بنفش زیبا و شیک
+      .setTitle(`👑 پروفایل ${interaction.user.username}`)
+      .setDescription(`${getMembershipBadge(memberDays)} عضو شده از: **${joinDateStr}** (${memberDays} روز)\n${getCreditRatingStars(user.creditScore || 50)} **امتیاز اعتباری:** ${user.creditScore || 50}/100`)
       .addFields(
-        { name: '💰 اقتصاد', value: `**کیف پول:** ${user.wallet} Ccoin\n**بانک:** ${user.bank} Ccoin\n**کریستال:** ${user.crystals} 💎\n**سطح اقتصادی:** ${user.economyLevel}`, inline: false },
-        { name: '🎮 آمار بازی‌ها', value: `**بازی‌های انجام شده:** ${user.totalGamesPlayed}\n**پیروزی‌ها:** ${user.totalGamesWon}\n**نرخ برد:** ${winRate}%`, inline: false }
+        { 
+          name: '💼 اطلاعات اقتصادی', 
+          value: `💵 **کیف پول:** ${formatNumber(user.wallet)} Ccoin\n` +
+                 `🏦 **بانک:** ${formatNumber(user.bank)} Ccoin\n` +
+                 `💎 **کریستال:** ${formatNumber(user.crystals)}\n` +
+                 `📊 **مجموع دارایی:** ${formatNumber(totalAssets)} Ccoin\n` + 
+                 `🏆 **سطح اقتصادی:** ${user.economyLevel || 1} ${getEconomyLevelBadge(user.economyLevel || 1)}\n` +
+                 `💳 **سطح حساب بانکی:** ${getBankLevelDisplay(user.bankLevel || 'normal')}`,
+          inline: true 
+        },
+        { 
+          name: '🎮 آمار بازی‌ها', 
+          value: `🎲 **بازی‌های انجام شده:** ${user.totalGamesPlayed || 0}\n` +
+                 `🏅 **پیروزی‌ها:** ${user.totalGamesWon || 0}\n` +
+                 `📈 **نرخ برد:** ${winRate}%\n` +
+                 `🔄 **استریک روزانه:** ${user.dailyStreak || 0} روز\n` +
+                 `⭐ **امتیازات:** ${user.points || 0} امتیاز`,
+          inline: true 
+        },
+        {
+          name: `📊 پیشرفت سطح ${currentLevel} → ${currentLevel + 1}`,
+          value: `**تجربه:** ${currentXP}/${nextLevelXP} XP\n` +
+                 `**پیشرفت:** ${levelProgressBar} ${levelProgressPercent}%`,
+          inline: false
+        }
       )
       .setThumbnail(interaction.user.displayAvatarURL())
-      .setFooter({ text: `ID: ${interaction.user.id}` })
+      .setFooter({ text: `🆔 شناسه: ${interaction.user.id} • آخرین بروزرسانی` })
       .setTimestamp();
     
     // Add clan info if user is in a clan
@@ -406,12 +503,4 @@ export async function profileMenu(
       console.error('Error handling profile menu failure:', e);
     }
   }
-}
-
-// Helper function to generate progress bar
-function getProgressBar(percentage: number): string {
-  const filledSquares = Math.floor(percentage / 10);
-  const emptySquares = 10 - filledSquares;
-  
-  return '█'.repeat(filledSquares) + '░'.repeat(emptySquares);
 }
