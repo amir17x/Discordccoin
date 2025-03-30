@@ -91,6 +91,7 @@ import { handleDiceDuel } from '../games/diceDuel';
 import { showMatchmakingMenu, startRandomMatchmaking, showInviteOpponentMenu, cancelMatchmaking } from '../games/matchmaking';
 import { log } from '../utils/logger';
 import { botConfig } from '../utils/config';
+import { helpMenu } from '../components/helpMenu';
 
 /**
  * نمایش مودال فرم بازخورد
@@ -398,14 +399,65 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
 
   try {
     
+    // Handle help category select menu
+    if (action === 'help_category_select') {
+      // Procesar el menú desplegable de categorías de ayuda
+      if (interaction.isStringSelectMenu() || interaction instanceof StringSelectMenuInteraction) {
+        const selectedCategory = (interaction as StringSelectMenuInteraction).values[0];
+        
+        try {
+          // Intentar actualizar la respuesta con la categoría seleccionada
+          await helpMenu(interaction, selectedCategory);
+        } catch (e) {
+          console.error(`Error updating help menu for category ${selectedCategory}:`, e);
+          
+          if (!interaction.replied && !interaction.deferred) {
+            await interaction.reply({ 
+              content: `❌ خطایی در نمایش راهنمای دسته "${selectedCategory}" رخ داد. لطفاً دوباره تلاش کنید.`, 
+              ephemeral: true 
+            });
+          }
+        }
+      }
+      return;
+    }
+    
     // Handle navigation buttons
     if (action === 'menu') {
-      await mainMenu(interaction);
+      // اطمینان از اینکه از update استفاده می‌شود به جای reply جدید
+      if ('update' in interaction && typeof interaction.update === 'function') {
+        // اگر قابلیت update وجود دارد، تلاش برای به‌روزرسانی پیام فعلی
+        try {
+          await mainMenu(interaction);
+        } catch (e) {
+          console.error("Error updating menu:", e);
+          // در صورت بروز خطا، پیام جدید ارسال می‌شود
+          await interaction.reply({ content: "منوی اصلی در حال بارگذاری...", ephemeral: true });
+          await mainMenu(interaction);
+        }
+      } else {
+        // اگر تعامل قابلیت update ندارد، از روش قدیمی استفاده می‌شود
+        await mainMenu(interaction);
+      }
       return;
     }
     
     if (action === 'other_options') {
-      await mainMenu(interaction, true);
+      // اطمینان از اینکه از update استفاده می‌شود به جای reply جدید
+      if ('update' in interaction && typeof interaction.update === 'function') {
+        // اگر قابلیت update وجود دارد، تلاش برای به‌روزرسانی پیام فعلی
+        try {
+          await mainMenu(interaction, true);
+        } catch (e) {
+          console.error("Error updating other options menu:", e);
+          // در صورت بروز خطا، پیام جدید ارسال می‌شود
+          await interaction.reply({ content: "منوی امکانات بیشتر در حال بارگذاری...", ephemeral: true });
+          await mainMenu(interaction, true);
+        }
+      } else {
+        // اگر تعامل قابلیت update ندارد، از روش قدیمی استفاده می‌شود
+        await mainMenu(interaction, true);
+      }
       return;
     }
     
@@ -850,148 +902,65 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     }
     
     if (action === 'help') {
-      // ایجاد Embed زیبا برای راهنما با رنگ زرد روشن
-      const helpEmbed = new EmbedBuilder()
-        .setColor('#FFFF99') // رنگ زرد روشن برای حس شادابی و انرژی
-        .setTitle('📖 راهنمای جامع ربات Ccoin 🌟')
-        .setDescription('به دنیای مجازی اقتصاد و سرگرمی Ccoin خوش اومدی! اینجا میتونی با تمام ویژگی‌های ربات آشنا بشی و بیشترین استفاده رو ازش ببری! 😊')
-        .setThumbnail('https://img.icons8.com/fluency/48/help.png') // آیکون help برای راهنما
-        .addFields(
-          { 
-            name: '💸 **بخش اقتصاد و مدیریت Ccoin**', 
-            value: '`💳 موجودی`: مشاهده کیف پول، بانک و کریستال‌ها\n' +
-                  '`🏦 بانک`: واریز/برداشت با سود ماهانه 2% (کارمزد 1%)\n' +
-                  '`📈 سهام`: خرید و فروش با تغییر قیمت روزانه (-10% تا +15%)\n' +
-                  '`💎 تبدیل سکه`: 1000 Ccoin = 10 کریستال (کارمزد 5%)\n' +
-                  '`💸 انتقال`: ارسال Ccoin به دوستان (محدودیت روزانه 5000)\n' +
-                  '`🎁 جایزه روزانه`: 50 Ccoin | 7 روز متوالی: +200 Ccoin\n' +
-                  '`🚀 رتبه‌بندی`: مشاهده 10 کاربر برتر'
-          },
-          { 
-            name: '🎮 **بخش بازی‌ها**', 
-            value: '`🎲 بازی‌های تک‌نفره`: گردونه شانس (50 Ccoin)، شیر یا خط (20 Ccoin)\n' +
-                  '`✂️ سنگ کاغذ قیچی`: شرط 20 Ccoin، برد = 40 Ccoin (شانس 33%)\n' +
-                  '`🔢 حدس عدد`: شرط 30 Ccoin، برد = 100 Ccoin (حدس عدد 1-10)\n' +
-                  '`🏆 بازی‌های رقابتی`: تاس دو نفره، دوئل، پوکر سریع، مسابقه تایپ\n' +
-                  '`👥 بازی‌های گروهی`: مافیا (5+ نفر)، حکم (4 نفر)، اتاق فرار (3-6 نفر)'
-          },
-          { 
-            name: '🛒 **بخش فروشگاه و بازار**', 
-            value: '`🏬 فروشگاه`: خرید آیتم‌های متنوع (بلیط قرعه‌کشی، کلید جعبه شانس)\n' +
-                  '`🎭 نقش‌های ویژه`: 1000 Ccoin (7 روز) | +5% شانس، 5% تخفیف، +10% جایزه روزانه\n' +
-                  '`🎩 نقش افسانه‌ای`: 50 کریستال (14 روز) | +10% شانس، 10% تخفیف، +20% جایزه\n' +
-                  '`🐶 پت‌ها`: سگ/گربه/خرگوش (2000 Ccoin) | اژدها (50 کریستال)\n' +
-                  '`🏪 بازار`: خرید/فروش آیتم‌ها با کارمزد 5% فروش و 3% خرید'
-          },
-          { 
-            name: '🎒 **بخش کوله‌پشتی و آیتم‌ها**', 
-            value: '`👜 آیتم‌های شما`: مدیریت آیتم‌های خریداری شده\n' +
-                  '`✅ استفاده`: فعال‌سازی آیتم‌های ویژه (مثل نقش)\n' +
-                  '`📦 فروش`: فروش آیتم‌های غیرفعال در بازار\n' +
-                  '`⏱️ زمان انقضا`: مشاهده زمان باقی‌مانده آیتم‌های فعال'
-          },
-          { 
-            name: '🎯 **بخش ماموریت‌ها و دستاوردها**', 
-            value: '`📆 روزانه`: انجام کارهای ساده (مثل ارسال 10 پیام) = 100 Ccoin\n' +
-                  '`🗓️ هفتگی`: چالش‌های بزرگتر (مثل 5 برد رقابتی) = 300 Ccoin\n' +
-                  '`📅 ماهانه`: اهداف بزرگ (مثل 2000 Ccoin پس‌انداز) = 1000 Ccoin\n' +
-                  '`🏅 دستاوردها`: افتخارات ویژه مثل سرمایه‌دار (10,000 Ccoin بانک)'
-          },
-          { 
-            name: '🏰 **بخش کلن‌ها و رقابت گروهی**', 
-            value: '`🏢 مدیریت کلن`: ساخت (2000 Ccoin) یا پیوستن به کلن\n' +
-                  '`👥 رده‌بندی`: Leader, Co-Leader, Elder, Member\n' +
-                  '`🏦 بانک کلن`: جمع‌آوری سرمایه برای خرید آیتم‌های کلن\n' +
-                  '`⚔️ وار کلن`: رقابت 48 ساعته (ورودی: 5000 Ccoin، جایزه: 10,000 Ccoin)\n' +
-                  '`🏝️ جزیره کلن`: ارتقا با 5000 Ccoin (سود روزانه 100 Ccoin)'
-          },
-          { 
-            name: '📊 **بخش سرمایه‌گذاری و درآمدزایی**', 
-            value: '`📈 بخش سهام`: خرید و فروش سهام در بخش‌های مختلف اقتصادی\n' +
-                  '`🎟️ قرعه‌کشی`: خرید بلیط (500 Ccoin) برای شانس برنده شدن جکپات\n' +
-                  '`📊 سرمایه‌گذاری‌ها`: کم ریسک، متوسط، و پرریسک با سودهای متفاوت\n' +
-                  '`🎡 چرخ شانس`: گردش برای دریافت جوایز تصادفی (نیاز به بلیط)'
-          },
-          { 
-            name: '🏁 **بخش تورنمنت‌ها و رویدادها**', 
-            value: '`🏁 تورنمنت هفتگی`: رقابت در بازی‌های مختلف (هزینه: 200 Ccoin)\n' +
-                  '`🥇 جوایز`: نفر اول: 5000 Ccoin | دوم: 3000 Ccoin | سوم: 1000 Ccoin\n' +
-                  '`📅 زمان‌بندی`: شروع هر یکشنبه با اعلام در کانال اطلاع‌رسانی'
-          },
-          { 
-            name: '💡 **نکات طلایی و ترفندها**', 
-            value: '• سکه‌های خود را در بانک نگهداری کنید تا از سرقت محافظت شوند\n' +
-                  '• با افزایش سطح می‌توانید به امکانات بیشتری دسترسی پیدا کنید\n' +
-                  '• ماموریت‌های روزانه و هفتگی را فراموش نکنید - منبع درآمد عالی هستند\n' +
-                  '• عضویت در کلن به شما امتیازات گروهی منحصر به فرد می‌دهد\n' +
-                  '• برای رشد سریع اقتصادی، در سهام سرمایه‌گذاری کنید'
+      // استفاده از منوی راهنمای جامع به جای ساخت راهنمای ساده
+      try {
+        // اطمینان از اینکه از update استفاده می‌شود به جای reply جدید
+        if ('update' in interaction && typeof interaction.update === 'function') {
+          try {
+            // تلاش برای به‌روزرسانی پیام فعلی
+            await helpMenu(interaction);
+          } catch (e) {
+            console.error("Error updating help menu:", e);
+            // در صورت بروز خطا، پیام جدید ارسال می‌شود
+            await interaction.reply({ content: "راهنمای جامع در حال بارگذاری...", ephemeral: true });
+            await helpMenu(interaction);
           }
-        )
-        .setFooter({ 
-          text: 'از Ccoin Bot v1.5.0 لذت ببرید! | برای شروع از /menu استفاده کنید', 
-          iconURL: interaction.client.user?.displayAvatarURL() 
-        })
-        .setTimestamp();
-      
-      // دکمه‌های کاربردی راهنما - با ظاهر جذاب‌تر و گزینه‌های بیشتر
-      const helpButtonsRow1 = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId('menu')
-            .setLabel('🏠 منوی اصلی')
-            .setStyle(ButtonStyle.Primary),
-          new ButtonBuilder()
-            .setCustomId('economy')
-            .setLabel('💰 اقتصاد')
-            .setStyle(ButtonStyle.Success),
-          new ButtonBuilder()
-            .setCustomId('games')
-            .setLabel('🎮 بازی‌ها')
-            .setStyle(ButtonStyle.Danger)
-        );
-      
-      const helpButtonsRow2 = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId('shop')
-            .setLabel('🛒 فروشگاه')
-            .setStyle(ButtonStyle.Primary),
-          new ButtonBuilder()
-            .setCustomId('quests')
-            .setLabel('🎯 ماموریت‌ها')
-            .setStyle(ButtonStyle.Success),
-          new ButtonBuilder()
-            .setCustomId('inventory')
-            .setLabel('🎒 کوله‌پشتی')
-            .setStyle(ButtonStyle.Secondary)
-        );
-      
-      // ارسال پاسخ
-      if (interaction.deferred) {
-        await interaction.editReply({
-          embeds: [helpEmbed],
-          components: [helpButtonsRow1, helpButtonsRow2]
-        });
-      } else if ('update' in interaction && typeof interaction.update === 'function') {
-        try {
-          await interaction.update({
-            embeds: [helpEmbed],
-            components: [helpButtonsRow1, helpButtonsRow2]
-          });
-        } catch (e) {
-          // اگر آپدیت با خطا مواجه شد، از reply استفاده کن
-          await interaction.reply({
-            embeds: [helpEmbed],
-            components: [helpButtonsRow1, helpButtonsRow2],
-            ephemeral: true
-          });
+        } else {
+          // اگر تعامل قابلیت update ندارد، از روش قدیمی استفاده می‌شود
+          await helpMenu(interaction);
         }
-      } else {
-        await interaction.reply({
-          embeds: [helpEmbed],
-          components: [helpButtonsRow1, helpButtonsRow2],
-          ephemeral: true
-        });
+      } catch (error) {
+        console.error("Error showing help menu:", error);
+        
+        // در صورت بروز خطا، پیام خطا را نمایش می‌دهیم
+        if (interaction.deferred) {
+          await interaction.editReply({ content: "❌ خطایی در نمایش راهنما رخ داد. لطفاً دوباره تلاش کنید." });
+        } else if (!interaction.replied) {
+          await interaction.reply({ content: "❌ خطایی در نمایش راهنما رخ داد. لطفاً دوباره تلاش کنید.", ephemeral: true });
+        }
+      }
+      return;
+    }
+    
+    // پردازش دکمه‌های راهنمای دسته‌بندی شده
+    if (action.startsWith('help_view_')) {
+      const category = action.replace('help_view_', '');
+      
+      try {
+        // اطمینان از اینکه از update استفاده می‌شود به جای reply جدید
+        if ('update' in interaction && typeof interaction.update === 'function') {
+          try {
+            // تلاش برای به‌روزرسانی پیام فعلی با دسته‌بندی مشخص شده
+            await helpMenu(interaction, category);
+          } catch (e) {
+            console.error(`Error updating help menu for category ${category}:`, e);
+            // در صورت بروز خطا، پیام جدید ارسال می‌شود
+            await interaction.reply({ content: `راهنمای دسته "${category}" در حال بارگذاری...`, ephemeral: true });
+            await helpMenu(interaction, category);
+          }
+        } else {
+          // اگر تعامل قابلیت update ندارد، از روش قدیمی استفاده می‌شود
+          await helpMenu(interaction, category);
+        }
+      } catch (error) {
+        console.error(`Error showing help menu for category ${category}:`, error);
+        
+        // در صورت بروز خطا، پیام خطا را نمایش می‌دهیم
+        if (interaction.deferred) {
+          await interaction.editReply({ content: "❌ خطایی در نمایش راهنما رخ داد. لطفاً دوباره تلاش کنید." });
+        } else if (!interaction.replied) {
+          await interaction.reply({ content: "❌ خطایی در نمایش راهنما رخ داد. لطفاً دوباره تلاش کنید.", ephemeral: true });
+        }
       }
       return;
     }
@@ -1298,8 +1267,8 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       return;
     }
     
-    // Handle bank transaction history
-    if (action === 'bank_history') {
+    // Handle bank transaction history or transaction_history
+    if (action === 'bank_history' || action === 'transaction_history') {
       // دریافت کاربر
       const user = await storage.getUserByDiscordId(interaction.user.id);
       if (!user) {
@@ -2670,10 +2639,6 @@ async function handleDailyReward(interaction: ButtonInteraction) {
     // ساخت دکمه‌های دسترسی به منوهای دیگر
     const row = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
-        new ButtonBuilder()
-          .setCustomId('menu')
-          .setLabel('🏠 منوی اصلی')
-          .setStyle(ButtonStyle.Success),
         new ButtonBuilder()
           .setCustomId('balance')
           .setLabel('💰 مشاهده موجودی')

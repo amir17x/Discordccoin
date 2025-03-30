@@ -514,7 +514,7 @@ export async function economyMenu(
           .setStyle(ButtonStyle.Secondary)
           .setDisabled(user.bank < 10000),
         new ButtonBuilder()
-          .setCustomId('bank_history')
+          .setCustomId('transaction_history') // تغییر شناسه از bank_history به transaction_history برای جلوگیری از تکراری شدن
           .setLabel('📋 تاریخچه تراکنش‌ها')
           .setStyle(ButtonStyle.Secondary)
       );

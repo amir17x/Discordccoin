@@ -462,12 +462,13 @@ export async function handleLoanApproval(
       id: loanId,
       userId: user.id,
       amount: amount,
+      interestRate: interestRate * 100, // تبدیل از نرخ به درصد
       interest: interest,
       dueDate: dueDate,
       status: 'active',
       requestDate: new Date(),
       remainingAmount: totalRepayment,
-      type: loanType
+      type: loanType as 'small' | 'medium' | 'large'
     };
     
     // ذخیره وام در دیتابیس
@@ -856,7 +857,7 @@ export async function handleLoanRepaymentConfirmation(
     }
     
     // انجام بازپرداخت
-    await storage.updateLoanStatus(loanId, 'repaid', new Date());
+    await storage.updateLoanStatus(loanId, 'paid', new Date());
     
     // کسر مبلغ از کیف پول
     await storage.addToWallet(user.id, -totalRepayment, 'loan_repayment', { loanId });
@@ -974,15 +975,19 @@ export async function handleLoanHistory(interaction: MessageComponentInteraction
     recentLoans.forEach((loan, index) => {
       const statusEmoji = loan.status === 'active' 
         ? '🟢' 
-        : loan.status === 'repaid' 
+        : loan.status === 'paid' 
           ? '✅' 
-          : '🔴';
+          : loan.status === 'confiscated'
+            ? '⚠️'
+            : '🔴';
       
       const statusText = loan.status === 'active' 
         ? 'فعال' 
-        : loan.status === 'repaid' 
+        : loan.status === 'paid' 
           ? 'بازپرداخت شده' 
-          : 'سررسید شده';
+          : loan.status === 'confiscated'
+            ? 'مصادره شده'
+            : 'سررسید شده';
       
       embed.addFields({
         name: `${statusEmoji} وام #${index + 1}`,
@@ -997,7 +1002,7 @@ export async function handleLoanHistory(interaction: MessageComponentInteraction
     
     // اضافه کردن آمار کلی
     const totalLoans = userLoans.length;
-    const repaidLoans = userLoans.filter(loan => loan.status === 'repaid').length;
+    const repaidLoans = userLoans.filter(loan => loan.status === 'paid').length;
     const overdueLoans = userLoans.filter(loan => loan.status === 'overdue').length;
     const activeLoans = userLoans.filter(loan => loan.status === 'active').length;
     

@@ -31,6 +31,20 @@ export interface UserInteraction {
   lastInteraction: Date;
 }
 
+// سیستم وام
+export interface Loan {
+  id: string;
+  userId: number;
+  amount: number;
+  interestRate: number;
+  interest: number;
+  requestDate: Date;
+  dueDate: Date;
+  status: 'active' | 'paid' | 'overdue' | 'confiscated';
+  type: 'small' | 'medium' | 'large';
+  remainingAmount: number;
+}
+
 // Users table
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -775,7 +789,7 @@ export interface Loan {
   amount: number;                  // مقدار وام
   interest: number;                // سود وام
   dueDate: Date;                   // تاریخ سررسید
-  status: 'active' | 'repaid' | 'overdue'; // وضعیت وام
+  status: 'active' | 'paid' | 'overdue' | 'confiscated'; // وضعیت وام
   requestDate: Date;               // تاریخ درخواست
   repaymentDate?: Date;            // تاریخ بازپرداخت
   remainingAmount: number;         // مقدار باقی‌مانده برای پرداخت

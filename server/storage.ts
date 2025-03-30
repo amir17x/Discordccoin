@@ -26,6 +26,9 @@ import {
   StockData
 } from "@shared/schema";
 
+// وارد کردن مدل شغل از فایل Job.ts
+import { JobModel } from './models/economy/Job';
+
 import { getCache, setCache, deleteCache } from './utils/cache';
 
 // تعریف انواع داده‌های مورد نیاز برای دوستی
@@ -363,8 +366,9 @@ export interface IStorage {
   // Loan operations
   getUserLoans(userId: number): Promise<Loan[]>;
   getLoanById(loanId: string): Promise<Loan | undefined>;
+  getOverdueLoans(): Promise<Loan[]>;
   createLoan(loan: Loan): Promise<Loan>;
-  updateLoanStatus(loanId: string, status: 'active' | 'repaid' | 'overdue', repaymentDate?: Date): Promise<boolean>;
+  updateLoanStatus(loanId: string, status: 'active' | 'paid' | 'overdue' | 'confiscated', repaymentDate?: Date): Promise<boolean>;
   updateCreditScore(userId: number, amount: number): Promise<number>;
   
   // Job operations
@@ -2943,6 +2947,27 @@ export class MemStorage implements IStorage {
   async getLoanById(loanId: string): Promise<Loan | undefined> {
     return this.loans.get(loanId);
   }
+  
+  /**
+   * دریافت تمام وام‌های سررسید شده (بیش از 7 روز گذشته و پرداخت نشده)
+   * @returns لیست وام‌های سررسید شده
+   */
+  async getOverdueLoans(): Promise<Loan[]> {
+    const overdueLoans: Loan[] = [];
+    const now = new Date();
+    const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000; // 7 روز به میلی‌ثانیه
+    
+    for (const loan of this.loans.values()) {
+      if (loan.status === 'active') {
+        const dueDate = new Date(loan.dueDate);
+        if (now.getTime() - dueDate.getTime() > sevenDaysInMs) {
+          overdueLoans.push(loan);
+        }
+      }
+    }
+    
+    return overdueLoans;
+  }
 
   /**
    * ایجاد وام جدید
@@ -2982,7 +3007,7 @@ export class MemStorage implements IStorage {
    * @param repaymentDate تاریخ بازپرداخت (اختیاری)
    * @returns آیا به‌روزرسانی موفق بود
    */
-  async updateLoanStatus(loanId: string, status: 'active' | 'repaid' | 'overdue', repaymentDate?: Date): Promise<boolean> {
+  async updateLoanStatus(loanId: string, status: 'active' | 'paid' | 'overdue' | 'confiscated', repaymentDate?: Date): Promise<boolean> {
     const loan = this.loans.get(loanId);
     if (!loan) return false;
     
@@ -3776,6 +3801,7 @@ import { connectMongo } from './utils/connectMongo';
 import ItemModel from './models/Item';
 import QuestModel from './models/Quest';
 import { FriendRequestModel, BlockedUserModel } from './models/friend';
+import LoanModel from './models/Loan';
 
 export class MongoStorage implements IStorage {
   async incrementTotalGamesWon(userId: number): Promise<void> {
@@ -3821,6 +3847,165 @@ export class MongoStorage implements IStorage {
     } catch (error) {
       console.error('Error getting all stocks from MongoDB:', error);
       return [];
+    }
+  }
+  
+  /**
+   * دریافت تمام وام‌های یک کاربر
+   * @param userId شناسه کاربر
+   * @returns لیست وام‌های کاربر
+   */
+  async getUserLoans(userId: number): Promise<Loan[]> {
+    try {
+      // بررسی وجود کاربر
+      const user = await UserModel.findOne({ id: userId });
+      if (!user) {
+        console.error(`User ${userId} not found in MongoDB when getting loans`);
+        return [];
+      }
+      
+      // دریافت وام‌های کاربر از مانگو
+      const loans = await LoanModel.find({ userId });
+      
+      // تبدیل به فرمت مناسب Loan
+      return loans.map(loan => ({
+        id: loan.id,
+        userId: loan.userId,
+        amount: loan.amount,
+        interestRate: loan.interestRate,
+        requestDate: loan.requestDate,
+        dueDate: loan.dueDate,
+        status: loan.status,
+        type: loan.type
+      }));
+    } catch (error) {
+      console.error(`Error getting loans for user ${userId} from MongoDB:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * دریافت اطلاعات یک وام با شناسه
+   * @param loanId شناسه وام
+   * @returns اطلاعات وام یا undefined در صورت عدم وجود
+   */
+  async getLoanById(loanId: string): Promise<Loan | undefined> {
+    try {
+      const loan = await LoanModel.findOne({ id: loanId });
+      if (!loan) return undefined;
+      
+      return {
+        id: loan.id,
+        userId: loan.userId,
+        amount: loan.amount,
+        interestRate: loan.interestRate,
+        requestDate: loan.requestDate,
+        dueDate: loan.dueDate,
+        status: loan.status,
+        type: loan.type
+      };
+    } catch (error) {
+      console.error(`Error getting loan ${loanId} from MongoDB:`, error);
+      return undefined;
+    }
+  }
+  
+  /**
+   * دریافت تمام وام‌های سررسید شده (بیش از 7 روز گذشته و پرداخت نشده)
+   * @returns لیست وام‌های سررسید شده
+   */
+  async getOverdueLoans(): Promise<Loan[]> {
+    try {
+      const now = new Date();
+      
+      // یافتن همه وام‌های فعالی که از تاریخ سررسید آنها گذشته است
+      const loans = await LoanModel.find({ 
+        status: 'active',
+        dueDate: { $lt: now }
+      });
+      
+      return loans.map(loan => ({
+        id: loan.id,
+        userId: loan.userId,
+        amount: loan.amount,
+        interestRate: loan.interestRate,
+        requestDate: loan.requestDate,
+        dueDate: loan.dueDate,
+        status: loan.status,
+        type: loan.type
+      }));
+    } catch (error) {
+      console.error('Error getting overdue loans from MongoDB:', error);
+      return [];
+    }
+  }
+
+  /**
+   * ایجاد وام جدید
+   * @param loan اطلاعات وام جدید
+   * @returns وام ایجاد شده
+   */
+  async createLoan(loan: Loan): Promise<Loan> {
+    try {
+      // اطمینان از وجود کاربر
+      const user = await UserModel.findOne({ id: loan.userId });
+      if (!user) {
+        throw new Error(`User ${loan.userId} not found when creating loan`);
+      }
+      
+      // ساخت وام جدید
+      const newLoan = new LoanModel({
+        id: loan.id,
+        userId: loan.userId,
+        amount: loan.amount,
+        interestRate: loan.interestRate,
+        requestDate: loan.requestDate,
+        dueDate: loan.dueDate,
+        status: loan.status,
+        type: loan.type
+      });
+      
+      // ذخیره در دیتابیس
+      await newLoan.save();
+      
+      // به‌روزرسانی موجودی کاربر
+      user.wallet += loan.amount;
+      
+      // ثبت تراکنش
+      if (!user.transactions) user.transactions = [];
+      user.transactions.push({
+        type: 'loan_received',
+        amount: loan.amount,
+        fee: 0,
+        timestamp: new Date()
+      });
+      
+      await user.save();
+      
+      return loan;
+    } catch (error) {
+      console.error('Error creating loan in MongoDB:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * به‌روزرسانی وضعیت وام
+   * @param loanId شناسه وام
+   * @param status وضعیت جدید وام
+   * @returns نتیجه به‌روزرسانی
+   */
+  async updateLoanStatus(loanId: string, status: 'active' | 'paid' | 'overdue' | 'confiscated'): Promise<boolean> {
+    try {
+      const result = await LoanModel.updateOne(
+        { id: loanId },
+        { $set: { status } }
+      );
+      
+      return result.modifiedCount > 0;
+    } catch (error) {
+      console.error(`Error updating loan status for ${loanId} in MongoDB:`, error);
+      return false;
     }
   }
   
