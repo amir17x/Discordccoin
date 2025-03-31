@@ -16,16 +16,19 @@ import {
   InsertItem,
   Game,
   InventoryItem,
-  Transaction,
   TransferStats,
   Pet,
   Investment,
   UserStock,
 } from "@shared/schema";
 
+// Import Transaction type separately to avoid duplicate import error
+import type { Transaction as SchemaTransaction } from "@shared/schema";
+
 // وارد کردن مدل شغل از فایل Job.ts
 import { JobModel } from './models/economy/Job';
 import TransactionModel from './models/Transaction';
+import { ITransaction } from './models/Transaction';
 
 import { getCache, setCache, deleteCache } from './utils/cache';
 
@@ -277,7 +280,7 @@ export interface IStorage {
   updateUser(id: number, updates: Partial<User>): Promise<User | undefined>;
   getAllUsers(limit?: number): Promise<User[]>;
   getUserCount(): Promise<number>;
-  getUserTransactions(userId: number): Promise<Transaction[]>;
+  getUserTransactions(userId: number): Promise<SchemaTransaction[]>;
   
   // Game statistics
   incrementTotalGamesWon(userId: number): Promise<void>;
@@ -300,7 +303,7 @@ export interface IStorage {
   transferToWallet(userId: number, amount: number): Promise<User | undefined>;
   addCrystals(userId: number, amount: number): Promise<User | undefined>;
   transferCoin(fromUserId: number, toUserId: number, amount: number): Promise<boolean>;
-  saveTransaction(transaction: any): Promise<any>;
+  saveTransaction(transaction: SchemaTransaction): Promise<SchemaTransaction>;
   
   // Item operations
   getAllItems(): Promise<Item[]>;

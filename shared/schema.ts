@@ -478,18 +478,28 @@ export interface Transaction {
   type: 'deposit' | 'withdraw' | 'transfer_in' | 'transfer_out' | 'game_win' | 'game_loss' | 'quest_reward' | 
         'steal_success' | 'steal_victim' | 'steal_failed' | 'item_purchase' | 'item_purchase_crystal' | 'welcome_bonus' |
         'stock_buy' | 'stock_sell' | 'stock_dividend' | 'lottery_ticket' | 'lottery_win' | 'bank_interest' |
-        'loan_received' | 'loan_repayment' | 'job_salary' | 'auction_sale' | 'auction_bid' | 'auction_refund';
+        'loan_received' | 'loan_repayment' | 'job_salary' | 'auction_sale' | 'auction_bid' | 'auction_refund' |
+        'transfer_sent' | 'transfer_received';
   amount: number;
-  fee: number;
+  fee?: number;
   timestamp: Date;
+  userId?: number;       // شناسه کاربر
   sourceId?: number;     // برای انتقال دریافتی یا سرقت
   targetId?: number;     // برای انتقال خروجی یا سرقت
   sourceName?: string;   // نام کاربر فرستنده
   targetName?: string;   // نام کاربر گیرنده
+  senderName?: string;   // نام فرستنده
+  receiverName?: string; // نام گیرنده
+  receiverId?: string;   // شناسه گیرنده
   gameType?: string;     // برای تراکنش‌های بازی
   questId?: number;      // برای پاداش‌های کوئست
-  itemId?: number;       // شناسه آیتم خریداری شده
-  itemName?: string;     // نام آیتم خریداری شده
+  description?: string;  // توضیحات تراکنش
+  balance?: number;      // موجودی پس از تراکنش
+  isSuccess?: boolean;   // آیا تراکنش موفق بوده
+  currency?: string;     // نوع ارز (coins, crystals, items)
+  itemId?: string | number;       // شناسه آیتم
+  itemName?: string;     // نام آیتم
+  itemQuantity?: number; // تعداد آیتم
   stockId?: number;      // شناسه سهام
   stockSymbol?: string;  // نماد سهام 
   quantity?: number;     // تعداد سهام یا بلیط لاتاری

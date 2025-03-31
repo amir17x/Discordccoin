@@ -314,6 +314,197 @@ async function handleInvestmentHistory(interaction: ButtonInteraction) {
   }
 }
 
+/**
+ * نمایش تاریخچه معاملات سهام کاربر
+ * @param interaction تعامل دکمه 
+ */
+async function handleStockHistory(interaction: ButtonInteraction) {
+  try {
+    // وارد کردن توابع فرمت‌کننده
+    const { formatNumber, formatDate, timeAgo, formatTransactionType, getSectorEmoji, getSectorName } = require('../utils/formatters');
+    
+    // پاسخ با تاخیر برای جلوگیری از تایم‌اوت
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferReply({ ephemeral: true });
+    }
+    
+    // دریافت اطلاعات کاربر
+    const user = await storage.getUserByDiscordId(interaction.user.id);
+    
+    if (!user) {
+      const message = '⚠️ شما باید ابتدا یک حساب کاربری ایجاد کنید. از دستور /menu استفاده نمایید.';
+      if (interaction.deferred) {
+        await interaction.editReply({ content: message });
+      } else {
+        await interaction.reply({ content: message, ephemeral: true });
+      }
+      return;
+    }
+    
+    // بررسی موجودی سهام کاربر
+    const userStocks = await storage.getUserStocks(user.id);
+    
+    // دریافت تراکنش‌های مربوط به سهام
+    const transactions = await storage.getUserTransactions(Number(user.id));
+    const stockTransactions = transactions.filter(tx => 
+      tx.type === 'stock_buy' || tx.type === 'stock_sell' || tx.type === 'stock_dividend'
+    );
+    
+    if (stockTransactions.length === 0) {
+      const message = '📊 شما هنوز هیچ معامله سهامی انجام نداده‌اید. می‌توانید از منوی بازار سهام، به خرید و فروش سهام بپردازید.';
+      if (interaction.deferred) {
+        await interaction.editReply({ content: message });
+      } else {
+        await interaction.reply({ content: message, ephemeral: true });
+      }
+      
+      // بعد از مدت کوتاهی، منوی سهام را نمایش می‌دهیم
+      setTimeout(async () => {
+        if (interaction.replied || interaction.deferred) {
+          await stocksMenu(interaction);
+        }
+      }, 2000);
+      
+      return;
+    }
+    
+    // محاسبه آمار کلی معاملات سهام
+    let totalBought = 0;
+    let totalSold = 0;
+    let totalDividend = 0;
+    const buyTransactions = stockTransactions.filter(tx => tx.type === 'stock_buy');
+    const sellTransactions = stockTransactions.filter(tx => tx.type === 'stock_sell');
+    const dividendTransactions = stockTransactions.filter(tx => tx.type === 'stock_dividend');
+    
+    buyTransactions.forEach(tx => totalBought += Math.abs(tx.amount));
+    sellTransactions.forEach(tx => totalSold += tx.amount);
+    dividendTransactions.forEach(tx => totalDividend += tx.amount);
+    
+    // محاسبه سود/زیان کل
+    const totalProfit = totalSold + totalDividend - totalBought;
+    const profitPercent = totalBought > 0 ? ((totalProfit / totalBought) * 100).toFixed(2) : '0.00';
+    
+    // ایجاد امبد برای نمایش تاریخچه معاملات سهام
+    const embed = new EmbedBuilder()
+      .setColor('#00A86B')
+      .setTitle('📊 تاریخچه معاملات سهام')
+      .setDescription(`تاریخچه معاملات سهام شما در بازار بورس Ccoin`)
+      .setThumbnail('https://img.icons8.com/fluency/48/stocks-growth.png')
+      .addFields(
+        { name: '💰 کل خرید', value: `${formatNumber(totalBought)} Ccoin`, inline: true },
+        { name: '💸 کل فروش', value: `${formatNumber(totalSold)} Ccoin`, inline: true },
+        { name: '💲 سود سهام', value: `${formatNumber(totalDividend)} Ccoin`, inline: true },
+        { 
+          name: totalProfit >= 0 ? '📈 سود خالص' : '📉 زیان خالص', 
+          value: `${formatNumber(totalProfit)} Ccoin (${profitPercent}%)`, 
+          inline: false 
+        }
+      )
+      .setFooter({ text: `سبد سهام فعلی: ${userStocks.length} سهم | کیف پول: ${formatNumber(user.wallet)} Ccoin` })
+      .setTimestamp();
+    
+    // افزودن بخش تراکنش‌های اخیر
+    if (stockTransactions.length > 0) {
+      embed.addFields({ 
+        name: '📋 تراکنش‌های اخیر', 
+        value: '10 تراکنش آخر مرتبط با سهام شما', 
+        inline: false 
+      });
+      
+      // مرتب‌سازی تراکنش‌ها از جدیدترین به قدیمی‌ترین
+      stockTransactions.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      
+      // نمایش 10 تراکنش آخر
+      const recentTransactions = stockTransactions.slice(0, 10);
+      
+      recentTransactions.forEach((tx, index) => {
+        // تعیین ایموجی و قالب‌بندی مناسب
+        let emoji = '';
+        let stockName = '';
+        let details = '';
+        
+        const metadata = tx.metadata as Record<string, any> | undefined;
+        
+        if (metadata && metadata.stockSymbol) {
+          stockName = metadata.stockSymbol;
+        } else if (tx.description) {
+          // استخراج نام سهام از توضیحات
+          const match = tx.description.match(/سهام (.+?) /);
+          if (match) stockName = match[1];
+        }
+        
+        if (tx.type === 'stock_buy') {
+          emoji = '🔴';
+          details = `خرید${stockName ? ` سهام ${stockName}` : ''} به مبلغ ${formatNumber(Math.abs(tx.amount))} Ccoin`;
+          if (metadata && metadata.quantity) {
+            details += ` (${metadata.quantity} سهم)`;
+          }
+        } else if (tx.type === 'stock_sell') {
+          emoji = '🟢';
+          details = `فروش${stockName ? ` سهام ${stockName}` : ''} به مبلغ ${formatNumber(tx.amount)} Ccoin`;
+          if (metadata && metadata.quantity) {
+            details += ` (${metadata.quantity} سهم)`;
+          }
+          if (metadata && typeof metadata.profit === 'number') {
+            const profit = metadata.profit;
+            details += ` - ${profit >= 0 ? 'سود' : 'ضرر'}: ${formatNumber(profit)} Ccoin`;
+          }
+        } else if (tx.type === 'stock_dividend') {
+          emoji = '💲';
+          details = `دریافت سود سهام${stockName ? ` ${stockName}` : ''} به مبلغ ${formatNumber(tx.amount)} Ccoin`;
+        }
+        
+        // زمان تراکنش
+        const txTime = timeAgo(tx.timestamp);
+        
+        embed.addFields({ 
+          name: `${emoji} معامله #${index + 1} - ${txTime}`, 
+          value: details, 
+          inline: false 
+        });
+      });
+    }
+    
+    // ایجاد دکمه‌های کنترلی
+    const row = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('stocks_portfolio')
+          .setLabel('💼 مشاهده پورتفولیو')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('stocks_market')
+          .setLabel('🏢 بازار سهام')
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId('stocks')
+          .setLabel('🔙 بازگشت به منوی سهام')
+          .setStyle(ButtonStyle.Secondary)
+      );
+    
+    // ارسال پاسخ
+    if (interaction.deferred) {
+      await interaction.editReply({ embeds: [embed], components: [row] });
+    } else {
+      await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+    }
+  } catch (error) {
+    console.error('Error in stock history handler:', error);
+    try {
+      const errorMessage = '❌ متأسفانه در نمایش تاریخچه معاملات سهام شما خطایی رخ داد! لطفاً دوباره تلاش کنید.';
+      if (interaction.deferred) {
+        await interaction.editReply({ content: errorMessage });
+      } else if (interaction.replied) {
+        await interaction.followUp({ content: errorMessage, ephemeral: true });
+      } else {
+        await interaction.reply({ content: errorMessage, ephemeral: true });
+      }
+    } catch (e) {
+      console.error('Error handling stock history failure:', e);
+    }
+  }
+}
+
 export async function handleButtonInteraction(interaction: ButtonInteraction) {
   // Get the custom ID of the button
   const customId = interaction.customId;
@@ -1346,85 +1537,49 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       // تعیین نوع نمایش تراکنش‌ها
       const showBankOnly = action === 'bank_history';
       
-      // ایجاد امبد برای نمایش تراکنش‌ها
-      const embed = new EmbedBuilder()
-        .setColor(showBankOnly ? '#4169E1' : '#9B59B6')
-        .setTitle(showBankOnly ? '📋 تاریخچه تراکنش‌های بانکی' : '📊 تاریخچه تمام تراکنش‌ها')
-        .setDescription(showBankOnly ? 'آخرین تراکنش‌های شما در سیستم بانکی' : 'گزارش کامل تمام فعالیت‌های مالی اخیر شما')
-        .setThumbnail('https://img.icons8.com/fluency/48/transaction-list.png') // آیکون transaction-list برای تاریخچه تراکنش ها
-        .setFooter({ text: `${interaction.user.username} | صفحه 1`, iconURL: interaction.user.displayAvatarURL() })
-        .setTimestamp();
+      // واردسازی ابزارهای مدیریت تراکنش‌ها
+      const { createTransactionHistoryEmbed, createTransactionControlButtons, TransactionFilters, TransactionIcons } = require('../utils/transactionUtils');
+      const { formatNumber } = require('../utils/formatters');
       
-      // فیلتر کردن تراکنش‌ها بر اساس نوع درخواست
-      const filteredTransactions = showBankOnly 
-        ? transactions.filter((t: Transaction) => ['deposit', 'withdraw', 'bank_interest'].includes(t.type)).slice(0, 10)
-        : transactions.slice(0, 15); // نمایش 15 تراکنش آخر برای حالت کلی
+      // تعیین فیلتر مناسب
+      const filter = showBankOnly ? TransactionFilters.bankTransactions : null;
       
-      if (filteredTransactions.length === 0) {
-        embed.setDescription(showBankOnly ? 'شما هنوز هیچ تراکنش بانکی انجام نداده‌اید.' : 'تاریخچه تراکنش‌های شما خالی است.');
-      } else {
-        if (!showBankOnly) {
-          // اضافه کردن خلاصه وضعیت مالی در ابتدای امبد
-          embed.addFields({
-            name: '💰 خلاصه وضعیت مالی',
-            value: `💳 کیف پول: \`${user.wallet.toLocaleString('fa-IR')} Ccoin\`\n🏦 بانک: \`${user.bank.toLocaleString('fa-IR')} Ccoin\`\n💎 کریستال: \`${user.crystals.toLocaleString('fa-IR')}\``,
-            inline: false
-          });
+      // انتخاب آیکون مناسب
+      const thumbnailUrl = showBankOnly ? TransactionIcons.bank : TransactionIcons.all;
+      
+      // ایجاد امبد برای نمایش تراکنش‌ها با استفاده از ابزار جدید
+      const embed = createTransactionHistoryEmbed(
+        transactions,
+        showBankOnly ? '📋 تاریخچه تراکنش‌های بانکی' : '📊 تاریخچه تمام تراکنش‌ها',
+        showBankOnly ? 'آخرین تراکنش‌های شما در سیستم بانکی' : 'گزارش کامل تمام فعالیت‌های مالی اخیر شما',
+        thumbnailUrl,
+        interaction.user.username,
+        filter,
+        {
+          showFee: true,
+          showDescription: true,
+          showDetails: true,
+          maxTransactions: showBankOnly ? 10 : 15
         }
-        
-        // وارد کردن توابع فرمت‌کننده از فایل formatters
-        const { getTransactionTypeInfo, formatTransactionAmount, formatNumber } = require('../utils/formatters');
-        
-        // اضافه کردن تراکنش‌ها به امبد
-        filteredTransactions.forEach((tx: Transaction, index: number) => {
-          // دریافت اطلاعات نمایشی تراکنش
-          const typeInfo = getTransactionTypeInfo(tx.type);
-          
-          const date = new Date(tx.timestamp).toLocaleDateString('fa-IR');
-          const time = new Date(tx.timestamp).toLocaleTimeString('fa-IR');
-          
-          // فرمت کردن مبلغ
-          const amountStr = formatTransactionAmount(tx.amount, tx.type);
-          
-          // اضافه کردن اطلاعات جزئیات
-          let detailsStr = '';
-          
-          // اضافه کردن کارمزد اگر وجود دارد
-          const feeStr = tx.fee > 0 ? ` (کارمزد: ${formatNumber(tx.fee)})` : '';
-          
-          // اضافه کردن جزئیات بیشتر برای برخی تراکنش‌ها
-          if (tx.type === 'transfer_sent' && tx.recipientName) {
-            detailsStr = `\nگیرنده: ${tx.recipientName}`;
-          } else if (tx.type === 'transfer_received' && tx.senderName) {
-            detailsStr = `\nفرستنده: ${tx.senderName}`;
-          } else if (tx.description && tx.description.trim() !== '') {
-            detailsStr = `\n${tx.description}`;
-          }
-          
-          // اضافه کردن نوع ارز
-          const currencyText = tx.currency === 'crystals' ? '💎 کریستال' : (tx.currency === 'items' ? '🎁 آیتم' : '💰 Ccoin');
-          
-          // اضافه کردن فیلد تراکنش به امبد
-          embed.addFields({
-            name: `${typeInfo.emoji} ${typeInfo.label} - ${date} ${time}`,
-            value: `${typeInfo.color} **${amountStr}** ${currencyText}${feeStr}${detailsStr}`,
-            inline: false
-          });
+      );
+      
+      // اضافه کردن خلاصه وضعیت مالی در ابتدای امبد (فقط برای تاریخچه کامل)
+      if (!showBankOnly && transactions.length > 0) {
+        // اضافه کردن فیلد خلاصه مالی در اول امبد
+        embed.spliceFields(0, 0, {
+          name: '💰 خلاصه وضعیت مالی',
+          value: `💳 کیف پول: \`${formatNumber(user.wallet)} Ccoin\`\n🏦 بانک: \`${formatNumber(user.bank)} Ccoin\`\n💎 کریستال: \`${formatNumber(user.crystals)}\``,
+          inline: false
         });
       }
       
-      // دکمه‌های کنترل
-      const row = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId(showBankOnly ? 'transaction_history' : 'bank_history')
-            .setLabel(showBankOnly ? '📊 نمایش همه تراکنش‌ها' : '🏦 فقط تراکنش‌های بانکی')
-            .setStyle(ButtonStyle.Primary),
-          new ButtonBuilder()
-            .setCustomId(showBankOnly ? 'bank_menu' : 'economy')
-            .setLabel(showBankOnly ? '🔙 بازگشت به منوی بانک' : '🔙 بازگشت به منوی اقتصاد')
-            .setStyle(ButtonStyle.Secondary)
-        );
+      // ایجاد دکمه‌های کنترل
+      const row = createTransactionControlButtons(
+        showBankOnly ? 'bank_menu' : 'economy',
+        showBankOnly ? '🔙 بازگشت به منوی بانک' : '🔙 بازگشت به منوی اقتصاد',
+        showBankOnly ? 'transaction_history' : 'bank_history',
+        showBankOnly ? '📊 نمایش همه تراکنش‌ها' : '🏦 فقط تراکنش‌های بانکی'
+      );
       
       await interaction.reply({
         embeds: [embed],
@@ -2000,6 +2155,11 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     
     if (action === 'stocks_analysis') {
       await stocksMenu(interaction, 'analysis');
+      return;
+    }
+    
+    if (action === 'stocks_history') {
+      await handleStockHistory(interaction);
       return;
     }
     

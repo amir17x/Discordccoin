@@ -1,392 +1,244 @@
 /**
- * توابع کمکی برای مدیریت تراکنش‌های مالی
+ * @file تابع‌های کمکی برای مدیریت و نمایش تاریخچه تراکنش‌ها
  */
 
-import { storage } from '../../storage';
-import { getUserById } from './userUtils';
-
-/**
- * ساختار تراکنش
- */
-interface TransactionData {
-  userId: string;
-  amount: number;
-  type: string;
-  description?: string;
-  senderName?: string;
-  senderDiscordId?: string;
-  recipientName?: string;
-  recipientId?: string;
-  itemId?: string;
-  itemName?: string;
-  itemQuantity?: number;
-  balance?: number;
-  guildId?: string;
-  channelId?: string;
-  isSuccess?: boolean;
-  currency?: 'coins' | 'crystals' | 'items';
-  metadata?: Record<string, any>;
-}
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { ITransaction } from '../../models/Transaction';
+import { getTransactionTypeInfo, formatTransactionAmount, formatNumber, formatDate } from './formatters';
 
 /**
- * ایجاد تراکنش جدید و به‌روزرسانی موجودی کاربر
- * @param transaction اطلاعات تراکنش
- * @returns نتیجه تراکنش
+ * ساخت یک امبد نمایش تاریخچه تراکنش‌ها
+ * @param transactions لیست تراکنش‌ها
+ * @param title عنوان امبد
+ * @param description توضیحات امبد
+ * @param thumbnailUrl آدرس تصویر بندانگشتی
+ * @param username نام کاربری
+ * @param filter فیلتر اختیاری برای نوع تراکنش‌ها
+ * @param formatOptions تنظیمات فرمت نمایش
+ * @returns امبد آماده نمایش
  */
-export async function createTransaction(
-  transaction: TransactionData
-): Promise<{ success: boolean; message?: string }> {
-  try {
-    const { 
-      userId, 
-      amount, 
-      type, 
-      description, 
-      recipientId, 
-      recipientName,
-      senderName,
-      senderDiscordId,
-      currency = 'coins',
-      guildId,
-      channelId,
-      itemId,
-      itemName,
-      itemQuantity,
-      metadata
-    } = transaction;
+export function createTransactionHistoryEmbed(
+  transactions: ITransaction[],
+  title: string,
+  description: string,
+  thumbnailUrl: string,
+  username: string,
+  filter?: (tx: ITransaction) => boolean,
+  formatOptions: {
+    showFee?: boolean;
+    showDescription?: boolean;
+    showDetails?: boolean;
+    showId?: boolean;
+    showTimestamp?: boolean;
+    maxTransactions?: number;
+    customFormatter?: (tx: ITransaction) => { name: string; value: string };
+  } = {}
+): EmbedBuilder {
+  // تنظیمات پیش‌فرض
+  const options = {
+    showFee: true,
+    showDescription: true,
+    showDetails: true,
+    showId: true,
+    showTimestamp: true,
+    maxTransactions: 10,
+    ...formatOptions
+  };
+
+  // فیلتر کردن تراکنش‌ها در صورت وجود فیلتر
+  const filteredTransactions = filter ? transactions.filter(filter) : transactions;
+  // انتخاب آخرین تراکنش‌ها تا سقف تعیین شده
+  const recentTransactions = filteredTransactions.slice(0, options.maxTransactions);
+  
+  // ایجاد اِمبد
+  const embed = new EmbedBuilder()
+    .setColor('#0099ff')
+    .setTitle(title)
+    .setThumbnail(thumbnailUrl)
+    .setFooter({ text: `${username} | صفحه 1` })
+    .setTimestamp();
     
-    // دریافت اطلاعات کاربر
-    const user = await getUserById(userId);
-    if (!user) {
-      return { success: false, message: 'کاربر یافت نشد.' };
-    }
-    
-    let updatedBalance = 0;
-    let isSuccess = true;
-    
-    // بررسی نوع تراکنش و اعمال تغییرات مالی
-    switch (type) {
-      case 'deposit': // واریز به حساب بانکی
-        if (user.wallet < amount) {
-          return { success: false, message: 'موجودی کیف پول کافی نیست.' };
-        }
-        await storage.updateUser(parseInt(userId), {
-          wallet: user.wallet - amount,
-          bank: user.bank + amount
-        });
-        updatedBalance = user.bank + amount;
-        break;
-        
-      case 'withdraw': // برداشت از حساب بانکی
-        if (user.bank < amount) {
-          return { success: false, message: 'موجودی حساب بانکی کافی نیست.' };
-        }
-        await storage.updateUser(parseInt(userId), {
-          wallet: user.wallet + amount,
-          bank: user.bank - amount
-        });
-        updatedBalance = user.wallet + amount;
-        break;
-        
-      case 'bank_interest': // سود بانکی
-        await storage.updateUser(parseInt(userId), {
-          bank: user.bank + amount
-        });
-        updatedBalance = user.bank + amount;
-        break;
-        
-      case 'transfer_sent': // ارسال سکه به کاربر دیگر
-        if (user.wallet < amount) {
-          return { success: false, message: 'موجودی کیف پول کافی نیست.' };
-        }
-        await storage.updateUser(parseInt(userId), {
-          wallet: user.wallet - amount
-        });
-        updatedBalance = user.wallet - amount;
-        break;
-        
-      case 'transfer_received': // دریافت سکه از کاربر دیگر
-        await storage.updateUser(parseInt(userId), {
-          wallet: user.wallet + amount
-        });
-        updatedBalance = user.wallet + amount;
-        break;
-        
-      case 'achievement_reward': // پاداش دستاورد
-      case 'quest_reward': // پاداش ماموریت
-      case 'game_win': // برد در بازی
-      case 'daily': // دریافت روزانه
-      case 'weekly': // دریافت هفتگی
-      case 'monthly': // دریافت ماهانه
-      case 'work': // انجام کار
-      case 'job_income': // درآمد شغلی
-      case 'clan_reward': // پاداش کلن
-      case 'friend_bonus': // پاداش دوستی
-      case 'lottery_win': // برد در لاتاری
-      case 'wheel_spin': // چرخش چرخ شانس
-        await storage.updateUser(parseInt(userId), {
-          wallet: user.wallet + amount
-        });
-        updatedBalance = user.wallet + amount;
-        break;
-        
-      case 'game_bet': // شرط‌بندی در بازی
-      case 'game_loss': // باخت در بازی
-      case 'lottery_ticket': // خرید بلیط لاتاری
-      case 'steal_failed': // شکست در دزدی
-      case 'tax': // مالیات
-      case 'penalty': // جریمه
-        if (user.wallet < amount) {
-          return { success: false, message: 'موجودی کافی نیست.' };
-        }
-        await storage.updateUser(parseInt(userId), {
-          wallet: user.wallet - amount
-        });
-        updatedBalance = user.wallet - amount;
-        break;
-        
-      case 'steal_success': // موفقیت در دزدی
-        await storage.updateUser(parseInt(userId), {
-          wallet: user.wallet + amount
-        });
-        updatedBalance = user.wallet + amount;
-        break;
-        
-      case 'robbed': // دزدیده شدن از کاربر
-        if (user.wallet < amount) {
-          await storage.updateUser(parseInt(userId), {
-            wallet: 0
-          });
-          updatedBalance = 0;
-        } else {
-          await storage.updateUser(parseInt(userId), {
-            wallet: user.wallet - amount
-          });
-          updatedBalance = user.wallet - amount;
-        }
-        break;
-        
-      case 'shop_purchase': // خرید از فروشگاه
-      case 'market_purchase': // خرید از بازار
-        if (currency === 'coins') {
-          if (user.wallet < amount) {
-            return { success: false, message: 'موجودی کیف پول کافی نیست.' };
-          }
-          await storage.updateUser(parseInt(userId), {
-            wallet: user.wallet - amount
-          });
-          updatedBalance = user.wallet - amount;
-        } else if (currency === 'crystals') {
-          if (user.crystals < amount) {
-            return { success: false, message: 'موجودی کریستال کافی نیست.' };
-          }
-          await storage.updateUser(parseInt(userId), {
-            crystals: user.crystals - amount
-          });
-          updatedBalance = user.crystals - amount;
-        }
-        break;
-        
-      case 'shop_sale': // فروش به فروشگاه
-      case 'market_sale': // فروش در بازار
-        if (currency === 'coins') {
-          await storage.updateUser(parseInt(userId), {
-            wallet: user.wallet + amount
-          });
-          updatedBalance = user.wallet + amount;
-        } else if (currency === 'crystals') {
-          await storage.updateUser(parseInt(userId), {
-            crystals: user.crystals + amount
-          });
-          updatedBalance = user.crystals + amount;
-        }
-        break;
-        
-      case 'investment': // سرمایه‌گذاری
-        if (user.wallet < amount) {
-          return { success: false, message: 'موجودی کیف پول کافی نیست.' };
-        }
-        await storage.updateUser(parseInt(userId), {
-          wallet: user.wallet - amount
-        });
-        updatedBalance = user.wallet - amount;
-        break;
-        
-      case 'investment_return': // بازگشت سرمایه‌گذاری
-        await storage.updateUser(parseInt(userId), {
-          wallet: user.wallet + amount
-        });
-        updatedBalance = user.wallet + amount;
-        break;
-        
-      case 'stock_buy': // خرید سهام
-        if (user.wallet < amount) {
-          return { success: false, message: 'موجودی کیف پول کافی نیست.' };
-        }
-        await storage.updateUser(parseInt(userId), {
-          wallet: user.wallet - amount
-        });
-        updatedBalance = user.wallet - amount;
-        break;
-        
-      case 'stock_sell': // فروش سهام
-      case 'stock_dividend': // سود سهام
-        await storage.updateUser(parseInt(userId), {
-          wallet: user.wallet + amount
-        });
-        updatedBalance = user.wallet + amount;
-        break;
-        
-      case 'loan': // دریافت وام
-        await storage.updateUser(parseInt(userId), {
-          wallet: user.wallet + amount
-        });
-        updatedBalance = user.wallet + amount;
-        break;
-        
-      case 'loan_repayment': // بازپرداخت وام
-        if (user.wallet < amount) {
-          return { success: false, message: 'موجودی کیف پول کافی نیست.' };
-        }
-        await storage.updateUser(parseInt(userId), {
-          wallet: user.wallet - amount
-        });
-        updatedBalance = user.wallet - amount;
-        break;
-        
-      // سایر انواع تراکنش‌ها
-      default:
-        console.warn(`نوع تراکنش نامعتبر: ${type}`);
-        if (amount > 0) {
-          await storage.updateUser(parseInt(userId), {
-            wallet: user.wallet + amount
-          });
-          updatedBalance = user.wallet + amount;
-        } else if (amount < 0) {
-          if (user.wallet < Math.abs(amount)) {
-            return { success: false, message: 'موجودی کافی نیست.' };
-          }
-          await storage.updateUser(parseInt(userId), {
-            wallet: user.wallet + amount // amount منفی است
-          });
-          updatedBalance = user.wallet + amount;
-        }
-    }
-    
-    // ثبت تراکنش در پایگاه داده
-    if (storage.saveTransaction) {
-      await storage.saveTransaction({
-        userId,
-        amount,
-        type,
-        description: description || '',
-        senderName,
-        senderDiscordId,
-        recipientName,
-        recipientId,
-        itemId,
-        itemName,
-        itemQuantity,
-        balance: updatedBalance,
-        guildId,
-        channelId,
-        isSuccess: transaction.isSuccess !== undefined ? transaction.isSuccess : isSuccess,
-        currency,
-        metadata,
-        timestamp: new Date()
-      });
-    } else {
-      console.warn('saveTransaction method not implemented in storage');
-    }
-    
-    return { success: true };
-  } catch (error) {
-    console.error('Error creating transaction:', error);
-    return { success: false, message: 'خطا در ایجاد تراکنش.' };
+  // بررسی وجود تراکنش
+  if (recentTransactions.length === 0) {
+    embed.setDescription(description || 'هیچ تراکنشی یافت نشد.');
+    return embed;
   }
+  
+  // افزودن توضیحات
+  if (description) {
+    embed.setDescription(description);
+  }
+  
+  // افزودن فیلدهای تراکنش
+  recentTransactions.forEach((tx: ITransaction) => {
+    // اگر فرمت‌کننده سفارشی وجود دارد از آن استفاده می‌کنیم
+    if (options.customFormatter) {
+      const formattedField = options.customFormatter(tx);
+      embed.addFields(formattedField);
+      return;
+    }
+    
+    // دریافت اطلاعات نمایشی تراکنش
+    const typeInfo = getTransactionTypeInfo(tx.type);
+    
+    // فرمت کردن تاریخ و زمان
+    const date = new Date(tx.timestamp).toLocaleDateString('fa-IR');
+    const time = new Date(tx.timestamp).toLocaleTimeString('fa-IR');
+    
+    // فرمت کردن مبلغ
+    const amountStr = formatTransactionAmount(tx.amount, tx.type);
+    
+    // ایجاد عنوان فیلد
+    let fieldName = `${typeInfo.emoji} ${typeInfo.label}`;
+    if (options.showTimestamp) {
+      fieldName += ` - ${date} ${time}`;
+    }
+    
+    // ایجاد محتوای فیلد
+    let fieldValue = `${typeInfo.color} **${amountStr}**`;
+    
+    // افزودن کارمزد در صورت وجود
+    if (options.showFee && tx.fee && tx.fee > 0) {
+      fieldValue += ` (کارمزد: ${formatNumber(tx.fee)}-)`;
+    }
+    
+    // افزودن توضیحات در صورت وجود
+    if (options.showDescription && tx.description && tx.description.trim()) {
+      fieldValue += `\n**توضیحات:** ${tx.description}`;
+    }
+    
+    // افزودن جزئیات اضافی بر اساس نوع تراکنش
+    if (options.showDetails) {
+      if (tx.type === 'transfer_sent' && tx.recipientName) {
+        fieldValue += `\n**گیرنده:** ${tx.recipientName}`;
+      } else if (tx.type === 'transfer_received' && tx.senderName) {
+        fieldValue += `\n**فرستنده:** ${tx.senderName}`;
+      } else if (tx.type === 'stock_buy' || tx.type === 'stock_sell') {
+        const metadata = tx.metadata as Record<string, any> | undefined;
+        if (metadata) {
+          if (metadata.stockSymbol) {
+            fieldValue += `\n**نماد:** ${metadata.stockSymbol}`;
+          }
+          if (metadata.quantity) {
+            fieldValue += `\n**تعداد سهام:** ${metadata.quantity}`;
+          }
+          if (metadata.price) {
+            fieldValue += `\n**قیمت واحد:** ${formatNumber(metadata.price)}`;
+          }
+        }
+      } else if (tx.type === 'loan_received' || tx.type === 'loan_repayment') {
+        const metadata = tx.metadata as Record<string, any> | undefined;
+        if (metadata) {
+          if (metadata.loanId) {
+            fieldValue += `\n**شناسه وام:** ${metadata.loanId}`;
+          }
+          if (metadata.interestRate) {
+            fieldValue += `\n**نرخ سود:** %${metadata.interestRate}`;
+          }
+          if (metadata.remainingAmount !== undefined) {
+            fieldValue += `\n**مانده بدهی:** ${formatNumber(metadata.remainingAmount)}`;
+          }
+        }
+      }
+    }
+    
+    // افزودن شناسه تراکنش
+    if (options.showId && tx.id) {
+      fieldValue += `\n**شناسه تراکنش:** ${tx.id}`;
+    }
+    
+    // افزودن فیلد به امبد
+    embed.addFields({ name: fieldName, value: fieldValue, inline: false });
+  });
+  
+  return embed;
 }
 
 /**
- * ارسال سکه به کاربر دیگر
- * @param senderId شناسه فرستنده
- * @param receiverId شناسه گیرنده
- * @param amount مقدار سکه
- * @returns نتیجه تراکنش
+ * ساخت دکمه‌های کنترل برای تاریخچه تراکنش
+ * @param backActionId شناسه اکشن دکمه بازگشت
+ * @param backLabel متن دکمه بازگشت
+ * @param toggleActionId شناسه اکشن دکمه تغییر حالت نمایش (اختیاری)
+ * @param toggleLabel متن دکمه تغییر حالت نمایش (اختیاری)
+ * @returns ردیف دکمه‌ها
  */
-export async function transferCoins(
-  senderId: string,
-  receiverId: string,
-  amount: number
-): Promise<{ success: boolean; message?: string }> {
-  try {
-    if (senderId === receiverId) {
-      return { success: false, message: 'نمی‌توانید به خودتان سکه ارسال کنید.' };
-    }
-    
-    if (amount <= 0) {
-      return { success: false, message: 'مقدار سکه باید بیشتر از صفر باشد.' };
-    }
-    
-    // دریافت اطلاعات فرستنده
-    const sender = await getUserById(senderId);
-    if (!sender) {
-      return { success: false, message: 'فرستنده یافت نشد.' };
-    }
-    
-    // دریافت اطلاعات گیرنده
-    const receiver = await getUserById(receiverId);
-    if (!receiver) {
-      return { success: false, message: 'گیرنده یافت نشد.' };
-    }
-    
-    // بررسی موجودی فرستنده
-    if (sender.wallet < amount) {
-      return { success: false, message: 'موجودی کافی نیست.' };
-    }
-    
-    // کم کردن سکه از فرستنده
-    await storage.updateUser(parseInt(senderId), {
-      wallet: sender.wallet - amount
-    });
-    
-    // اضافه کردن سکه به گیرنده
-    await storage.updateUser(parseInt(receiverId), {
-      wallet: receiver.wallet + amount
-    });
-    
-    // ثبت تراکنش برای فرستنده
-    if (storage.saveTransaction) {
-      await storage.saveTransaction({
-        userId: senderId,
-        amount: -amount,
-        type: 'transfer_sent',
-        description: `ارسال ${amount} سکه به ${receiver.username}`,
-        recipientId: receiverId,
-        recipientName: receiver.username,
-        balance: sender.wallet - amount,
-        timestamp: new Date(),
-        currency: 'coins',
-        isSuccess: true
-      });
-      
-      // ثبت تراکنش برای گیرنده
-      await storage.saveTransaction({
-        userId: receiverId,
-        amount: amount,
-        type: 'transfer_received',
-        description: `دریافت ${amount} سکه از ${sender.username}`,
-        senderDiscordId: senderId,
-        senderName: sender.username,
-        balance: receiver.wallet + amount,
-        timestamp: new Date(),
-        currency: 'coins',
-        isSuccess: true
-      });
-    }
-    
-    return { success: true, message: `${amount} سکه با موفقیت به ${receiver.username} ارسال شد.` };
-  } catch (error) {
-    console.error('Error transferring coins:', error);
-    return { success: false, message: 'خطا در ارسال سکه.' };
+export function createTransactionControlButtons(
+  backActionId: string,
+  backLabel: string,
+  toggleActionId?: string,
+  toggleLabel?: string
+): ActionRowBuilder<ButtonBuilder> {
+  const row = new ActionRowBuilder<ButtonBuilder>();
+  
+  // اگر دکمه تغییر حالت نمایش وجود دارد، آن را اضافه می‌کنیم
+  if (toggleActionId && toggleLabel) {
+    row.addComponents(
+      new ButtonBuilder()
+        .setCustomId(toggleActionId)
+        .setLabel(toggleLabel)
+        .setStyle(ButtonStyle.Primary)
+    );
   }
+  
+  // دکمه بازگشت
+  row.addComponents(
+    new ButtonBuilder()
+      .setCustomId(backActionId)
+      .setLabel(backLabel)
+      .setStyle(ButtonStyle.Secondary)
+  );
+  
+  return row;
 }
+
+/**
+ * دریافت فیلترهای رایج تراکنش‌ها
+ */
+export const TransactionFilters = {
+  // فیلتر تراکنش‌های بانکی
+  bankTransactions: (tx: ITransaction) => ['deposit', 'withdraw', 'bank_interest'].includes(tx.type),
+  
+  // فیلتر تراکنش‌های انتقال وجه
+  transferTransactions: (tx: ITransaction) => ['transfer_sent', 'transfer_received', 'transfer_in', 'transfer_out'].includes(tx.type),
+  
+  // فیلتر تراکنش‌های بازی
+  gameTransactions: (tx: ITransaction) => ['game_win', 'game_loss', 'game_bet', 'game_reward'].includes(tx.type),
+  
+  // فیلتر تراکنش‌های سهام
+  stockTransactions: (tx: ITransaction) => ['stock_buy', 'stock_sell', 'stock_dividend'].includes(tx.type),
+  
+  // فیلتر تراکنش‌های سرمایه‌گذاری
+  investmentTransactions: (tx: ITransaction) => ['investment', 'investment_return'].includes(tx.type),
+  
+  // فیلتر تراکنش‌های وام
+  loanTransactions: (tx: ITransaction) => ['loan_received', 'loan_repayment'].includes(tx.type),
+  
+  // فیلتر تراکنش‌های لاتاری و قرعه‌کشی
+  lotteryTransactions: (tx: ITransaction) => ['lottery_ticket', 'lottery_win', 'wheel_spin'].includes(tx.type),
+  
+  // فیلتر تراکنش‌های خرید و فروش آیتم
+  itemTransactions: (tx: ITransaction) => ['item_purchase', 'item_purchase_crystal', 'item_sold'].includes(tx.type),
+  
+  // فیلتر تراکنش‌های کلن
+  clanTransactions: (tx: ITransaction) => ['clan_contribution', 'clan_withdrawal', 'clan_reward'].includes(tx.type),
+  
+  // فیلتر تراکنش‌های مدیریتی
+  adminTransactions: (tx: ITransaction) => ['admin_add', 'admin_remove', 'admin_adjustment'].includes(tx.type)
+};
+
+/**
+ * دریافت آیکون‌های متداول برای بخش‌های مختلف تراکنش‌ها
+ */
+export const TransactionIcons = {
+  bank: 'https://img.icons8.com/fluency/48/bank-building.png',
+  transfer: 'https://img.icons8.com/fluency/48/money-transfer.png',
+  game: 'https://img.icons8.com/fluency/48/controller.png',
+  stock: 'https://img.icons8.com/fluency/48/stock-market.png',
+  investment: 'https://img.icons8.com/fluency/48/investment-portfolio.png',
+  loan: 'https://img.icons8.com/fluency/48/refund.png',
+  lottery: 'https://img.icons8.com/fluency/48/winning-ticket.png',
+  shop: 'https://img.icons8.com/fluency/48/shop.png',
+  clan: 'https://img.icons8.com/fluency/48/castle.png',
+  admin: 'https://img.icons8.com/fluency/48/admin-settings-male.png',
+  all: 'https://img.icons8.com/fluency/48/transaction.png'
+};

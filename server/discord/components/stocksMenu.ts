@@ -212,13 +212,17 @@ export async function stocksMenu(
               .setLabel('💼 پورتفولیو')
               .setStyle(ButtonStyle.Success),
             new ButtonBuilder()
-              .setCustomId('stocks_analysis')
-              .setLabel('🤖 تحلیل هوشمند')
-              .setStyle(ButtonStyle.Secondary)
+              .setCustomId('stocks_history')
+              .setLabel('📋 تاریخچه معاملات')
+              .setStyle(ButtonStyle.Primary)
           );
 
         const row2 = new ActionRowBuilder<ButtonBuilder>()
           .addComponents(
+            new ButtonBuilder()
+              .setCustomId('stocks_analysis')
+              .setLabel('🤖 تحلیل هوشمند')
+              .setStyle(ButtonStyle.Secondary),
             new ButtonBuilder()
               .setCustomId('menu')
               .setLabel('🔙 بازگشت به منوی اصلی')

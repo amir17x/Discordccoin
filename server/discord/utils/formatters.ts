@@ -74,68 +74,537 @@ export function timeAgo(date: Date | string, locale: string = 'fa-IR'): string {
 }
 
 /**
- * نوع تراکنش به همراه ایموجی مناسب
+ * دریافت اطلاعات کامل مربوط به نوع تراکنش
+ * @param transactionType نوع تراکنش
+ * @returns اطلاعات نمایشی تراکنش شامل عنوان، ایموجی، توضیحات و رنگ
+ */
+export function getTransactionTypeInfo(transactionType: string): {
+  label: string;
+  emoji: string;
+  description: string;
+  color: string;
+  category: 'bank' | 'transfer' | 'game' | 'shop' | 'investment' | 'crime' | 'daily' | 'job' | 'clan' | 'admin' | 'lottery' | 'other';
+} {
+  const types: Record<string, {
+    label: string;
+    emoji: string;
+    description: string;
+    color: string;
+    category: 'bank' | 'transfer' | 'game' | 'shop' | 'investment' | 'crime' | 'daily' | 'job' | 'clan' | 'admin' | 'lottery' | 'other';
+  }> = {
+    // بانک و انتقال
+    'deposit': {
+      label: 'واریز به بانک',
+      emoji: '💰',
+      description: 'واریز سکه به حساب بانکی',
+      color: '🟢',
+      category: 'bank'
+    },
+    'withdraw': {
+      label: 'برداشت از بانک',
+      emoji: '💸',
+      description: 'برداشت سکه از حساب بانکی',
+      color: '🔴',
+      category: 'bank'
+    },
+    'bank_interest': {
+      label: 'سود بانکی',
+      emoji: '✨',
+      description: 'دریافت سود سپرده بانکی',
+      color: '🟢',
+      category: 'bank'
+    },
+    'transfer_sent': {
+      label: 'ارسال سکه',
+      emoji: '📤',
+      description: 'ارسال سکه به کاربر دیگر',
+      color: '🔴',
+      category: 'transfer'
+    },
+    'transfer_received': {
+      label: 'دریافت سکه',
+      emoji: '📥',
+      description: 'دریافت سکه از کاربر دیگر',
+      color: '🟢',
+      category: 'transfer'
+    },
+    'transfer_in': {
+      label: 'دریافت حواله',
+      emoji: '📥',
+      description: 'دریافت حواله از کاربر دیگر',
+      color: '🟢',
+      category: 'transfer'
+    },
+    'transfer_out': {
+      label: 'ارسال حواله',
+      emoji: '📤',
+      description: 'ارسال حواله به کاربر دیگر',
+      color: '🔴',
+      category: 'transfer'
+    },
+    
+    // بازی و سرگرمی
+    'game_win': {
+      label: 'برد در بازی',
+      emoji: '🎮',
+      description: 'برنده شدن در بازی و دریافت جایزه',
+      color: '🟢',
+      category: 'game'
+    },
+    'game_loss': {
+      label: 'باخت در بازی',
+      emoji: '🎮',
+      description: 'باختن در بازی و از دست دادن سکه',
+      color: '🔴',
+      category: 'game'
+    },
+    'game_bet': {
+      label: 'شرط‌بندی',
+      emoji: '🎲',
+      description: 'شرط‌بندی در بازی',
+      color: '🔴',
+      category: 'game'
+    },
+    'game_reward': {
+      label: 'جایزه بازی',
+      emoji: '🏆',
+      description: 'دریافت جایزه بازی',
+      color: '🟢',
+      category: 'game'
+    },
+    'wheel_spin': {
+      label: 'چرخ شانس',
+      emoji: '🎡',
+      description: 'دریافت جایزه از چرخ شانس',
+      color: '🟢',
+      category: 'game'
+    },
+    
+    // ماموریت و پاداش روزانه
+    'quest_reward': {
+      label: 'جایزه ماموریت',
+      emoji: '🏆',
+      description: 'دریافت پاداش تکمیل ماموریت',
+      color: '🟢',
+      category: 'daily'
+    },
+    'daily': {
+      label: 'پاداش روزانه',
+      emoji: '🎁',
+      description: 'دریافت پاداش روزانه',
+      color: '🟢',
+      category: 'daily'
+    },
+    'weekly': {
+      label: 'پاداش هفتگی',
+      emoji: '🎁',
+      description: 'دریافت پاداش هفتگی',
+      color: '🟢',
+      category: 'daily'
+    },
+    'monthly': {
+      label: 'پاداش ماهانه',
+      emoji: '🎁',
+      description: 'دریافت پاداش ماهانه',
+      color: '🟢',
+      category: 'daily'
+    },
+    
+    // دزدی و جرم
+    'steal_success': {
+      label: 'دزدی موفق',
+      emoji: '🦹‍♂️',
+      description: 'دزدی موفقیت‌آمیز از کاربر دیگر',
+      color: '🟢',
+      category: 'crime'
+    },
+    'steal_victim': {
+      label: 'قربانی دزدی',
+      emoji: '😱',
+      description: 'سرقت سکه توسط کاربر دیگر',
+      color: '🔴',
+      category: 'crime'
+    },
+    'steal_failed': {
+      label: 'دزدی ناموفق',
+      emoji: '🚓',
+      description: 'تلاش ناموفق برای دزدی و پرداخت جریمه',
+      color: '🔴',
+      category: 'crime'
+    },
+    'robbed': {
+      label: 'سرقت شده',
+      emoji: '💸',
+      description: 'سکه‌های دزدیده شده',
+      color: '🔴',
+      category: 'crime'
+    },
+    
+    // فروشگاه و بازار
+    'item_purchase': {
+      label: 'خرید آیتم',
+      emoji: '🛒',
+      description: 'خرید آیتم از فروشگاه',
+      color: '🔴',
+      category: 'shop'
+    },
+    'item_sold': {
+      label: 'فروش آیتم',
+      emoji: '💼',
+      description: 'فروش آیتم به فروشگاه',
+      color: '🟢',
+      category: 'shop'
+    },
+    'shop_purchase': {
+      label: 'خرید از فروشگاه',
+      emoji: '🛍️',
+      description: 'خرید کالا از فروشگاه',
+      color: '🔴',
+      category: 'shop'
+    },
+    'shop_sale': {
+      label: 'فروش به فروشگاه',
+      emoji: '💵',
+      description: 'فروش کالا به فروشگاه',
+      color: '🟢',
+      category: 'shop'
+    },
+    'market_purchase': {
+      label: 'خرید از بازار',
+      emoji: '🏪',
+      description: 'خرید کالا از بازار آزاد',
+      color: '🔴',
+      category: 'shop'
+    },
+    'market_sale': {
+      label: 'فروش در بازار',
+      emoji: '💹',
+      description: 'فروش کالا در بازار آزاد',
+      color: '🟢',
+      category: 'shop'
+    },
+    
+    // شغل و درآمد
+    'job_income': {
+      label: 'درآمد شغلی',
+      emoji: '💼',
+      description: 'دریافت حقوق از شغل',
+      color: '🟢',
+      category: 'job'
+    },
+    'work': {
+      label: 'درآمد کار',
+      emoji: '⚒️',
+      description: 'درآمد حاصل از کار کردن',
+      color: '🟢',
+      category: 'job'
+    },
+    
+    // وام و اعتبار
+    'loan': {
+      label: 'دریافت وام',
+      emoji: '📝',
+      description: 'دریافت وام از بانک',
+      color: '🟢',
+      category: 'bank'
+    },
+    'loan_repayment': {
+      label: 'بازپرداخت وام',
+      emoji: '📋',
+      description: 'پرداخت قسط وام',
+      color: '🔴',
+      category: 'bank'
+    },
+    'loan_received': {
+      label: 'دریافت وام',
+      emoji: '💳',
+      description: 'دریافت وام از بانک',
+      color: '🟢',
+      category: 'bank'
+    },
+    
+    // لاتاری و شانس
+    'lottery_ticket': {
+      label: 'خرید بلیط لاتاری',
+      emoji: '🎟️',
+      description: 'خرید بلیط لاتاری',
+      color: '🔴',
+      category: 'lottery'
+    },
+    'lottery_win': {
+      label: 'برنده لاتاری',
+      emoji: '🎯',
+      description: 'برنده شدن در قرعه‌کشی لاتاری',
+      color: '🟢',
+      category: 'lottery'
+    },
+    
+    // سرمایه‌گذاری و سهام
+    'investment': {
+      label: 'سرمایه‌گذاری',
+      emoji: '📈',
+      description: 'سرمایه‌گذاری در صندوق',
+      color: '🔴',
+      category: 'investment'
+    },
+    'investment_return': {
+      label: 'بازگشت سرمایه',
+      emoji: '💹',
+      description: 'دریافت اصل و سود سرمایه‌گذاری',
+      color: '🟢',
+      category: 'investment'
+    },
+    'stock_buy': {
+      label: 'خرید سهام',
+      emoji: '📊',
+      description: 'خرید سهام از بازار بورس',
+      color: '🔴',
+      category: 'investment'
+    },
+    'stock_sell': {
+      label: 'فروش سهام',
+      emoji: '📊',
+      description: 'فروش سهام در بازار بورس',
+      color: '🟢',
+      category: 'investment'
+    },
+    'stock_dividend': {
+      label: 'سود سهام',
+      emoji: '💲',
+      description: 'دریافت سود سهام',
+      color: '🟢',
+      category: 'investment'
+    },
+    
+    // کلن و گروه
+    'clan_contribution': {
+      label: 'کمک به کلن',
+      emoji: '🏰',
+      description: 'پرداخت سکه به خزانه کلن',
+      color: '🔴',
+      category: 'clan'
+    },
+    'clan_withdrawal': {
+      label: 'برداشت از کلن',
+      emoji: '🏰',
+      description: 'برداشت سکه از خزانه کلن',
+      color: '🟢',
+      category: 'clan'
+    },
+    'clan_reward': {
+      label: 'پاداش کلن',
+      emoji: '🏆',
+      description: 'دریافت پاداش از کلن',
+      color: '🟢',
+      category: 'clan'
+    },
+    
+    // اجتماعی
+    'gift_received': {
+      label: 'هدیه دریافتی',
+      emoji: '🎁',
+      description: 'دریافت هدیه از کاربر دیگر',
+      color: '🟢',
+      category: 'transfer'
+    },
+    'gift_sent': {
+      label: 'هدیه ارسالی',
+      emoji: '🎁',
+      description: 'ارسال هدیه به کاربر دیگر',
+      color: '🔴',
+      category: 'transfer'
+    },
+    'friend_bonus': {
+      label: 'پاداش دوستی',
+      emoji: '👥',
+      description: 'پاداش فعالیت با دوستان',
+      color: '🟢',
+      category: 'daily'
+    },
+    
+    // حراج و مزایده
+    'auction_bid': {
+      label: 'پیشنهاد در حراجی',
+      emoji: '🔨',
+      description: 'پیشنهاد قیمت در حراجی',
+      color: '🔴',
+      category: 'shop'
+    },
+    'auction_win': {
+      label: 'برنده حراجی',
+      emoji: '🏆',
+      description: 'برنده شدن در حراجی',
+      color: '🟢',
+      category: 'shop'
+    },
+    'auction_refund': {
+      label: 'بازگشت وجه حراجی',
+      emoji: '💱',
+      description: 'بازگشت وجه پیشنهاد شده در حراجی',
+      color: '🟢',
+      category: 'shop'
+    },
+    'auction_sale': {
+      label: 'فروش در حراجی',
+      emoji: '💰',
+      description: 'فروش آیتم در حراجی',
+      color: '🟢',
+      category: 'shop'
+    },
+    
+    // اشتراک و ویژه
+    'premium_purchase': {
+      label: 'خرید اشتراک ویژه',
+      emoji: '⭐',
+      description: 'خرید اشتراک ویژه',
+      color: '🔴',
+      category: 'shop'
+    },
+    'subscription_purchase': {
+      label: 'خرید اشتراک',
+      emoji: '📱',
+      description: 'خرید اشتراک سرویس',
+      color: '🔴',
+      category: 'shop'
+    },
+    
+    // مدیریتی
+    'admin_add': {
+      label: 'افزایش توسط ادمین',
+      emoji: '👑',
+      description: 'افزایش موجودی توسط ادمین',
+      color: '🟢',
+      category: 'admin'
+    },
+    'admin_remove': {
+      label: 'کاهش توسط ادمین',
+      emoji: '👑',
+      description: 'کاهش موجودی توسط ادمین',
+      color: '🔴',
+      category: 'admin'
+    },
+    'admin_adjustment': {
+      label: 'تنظیم توسط ادمین',
+      emoji: '🔧',
+      description: 'تنظیم موجودی توسط ادمین',
+      color: '🟡',
+      category: 'admin'
+    },
+    
+    // متفرقه
+    'tax': {
+      label: 'مالیات',
+      emoji: '💲',
+      description: 'پرداخت مالیات',
+      color: '🔴',
+      category: 'other'
+    },
+    'penalty': {
+      label: 'جریمه',
+      emoji: '⚠️',
+      description: 'پرداخت جریمه',
+      color: '🔴',
+      category: 'other'
+    },
+    'refund': {
+      label: 'بازپرداخت',
+      emoji: '🔄',
+      description: 'بازپرداخت وجه',
+      color: '🟢',
+      category: 'other'
+    },
+    'crystal_exchange': {
+      label: 'تبدیل کریستال',
+      emoji: '💎',
+      description: 'تبدیل کریستال به سکه یا برعکس',
+      color: '🟡',
+      category: 'other'
+    },
+    'system': {
+      label: 'تراکنش سیستمی',
+      emoji: '⚙️',
+      description: 'تراکنش خودکار سیستم',
+      color: '⚪',
+      category: 'other'
+    }
+  };
+  
+  // اگر نوع تراکنش موجود نبود، نوع پیش‌فرض را برمی‌گردانیم
+  if (!types[transactionType]) {
+    return {
+      label: transactionType,
+      emoji: '❓',
+      description: 'تراکنش نامشخص',
+      color: '⚪',
+      category: 'other'
+    };
+  }
+  
+  return types[transactionType];
+}
+
+/**
+ * نوع تراکنش به همراه ایموجی مناسب (نسخه ساده‌شده)
  * @param transactionType نوع تراکنش
  * @returns نوع تراکنش فارسی به همراه ایموجی
  */
 export function formatTransactionType(transactionType: string): string {
-  const types: Record<string, string> = {
-    'deposit': '💰 واریز به بانک',
-    'withdraw': '💸 برداشت از بانک',
-    'bank_interest': '✨ سود بانکی',
-    'transfer_in': '📥 دریافت حواله',
-    'transfer_out': '📤 ارسال حواله',
-    'game_win': '🎮 برد در بازی',
-    'game_loss': '🎮 باخت در بازی',
-    'quest_reward': '🏆 جایزه ماموریت',
-    'daily_reward': '🎁 جایزه روزانه',
-    'steal_success': '🦹‍♂️ دزدی موفق',
-    'steal_victim': '😱 قربانی دزدی',
-    'steal_failed': '🚓 دزدی ناموفق',
-    'item_purchase': '🛒 خرید آیتم',
-    'item_sold': '💼 فروش آیتم',
-    'job_income': '💼 درآمد شغلی',
-    'loan_taken': '📝 دریافت وام',
-    'loan_repayment': '📋 بازپرداخت وام',
-    'lottery_ticket': '🎟️ خرید بلیط لاتاری',
-    'lottery_win': '🎯 برنده لاتاری',
-    'investment': '📈 سرمایه‌گذاری',
-    'investment_return': '💹 سود سرمایه‌گذاری',
-    'stock_buy': '📊 خرید سهام',
-    'stock_sell': '📊 فروش سهام',
-    'stock_dividend': '💲 سود سهام',
-    'clan_contribution': '🏰 کمک به کلن',
-    'clan_withdraw': '🏰 برداشت از کلن',
-    'wheel_of_fortune': '🎡 چرخ شانس',
-    'giveaway_ticket': '🎫 بلیط قرعه‌کشی',
-    'premium_purchase': '⭐ خرید اشتراک ویژه',
-    'auction_bid': '🔨 پیشنهاد در حراجی',
-    'auction_win': '🏆 برنده حراجی',
-    'auction_refund': '💱 بازگشت وجه حراجی',
-    'crystal_exchange': '💎 تبدیل کریستال',
-    'admin_add': '👑 افزایش توسط ادمین',
-    'admin_remove': '👑 کاهش توسط ادمین',
-    'subscription_purchase': '📱 خرید اشتراک',
-    'gift_received': '🎁 هدیه دریافتی',
-    'gift_sent': '🎁 هدیه ارسالی'
-  };
-  
-  return types[transactionType] || `❓ ${transactionType}`;
+  const typeInfo = getTransactionTypeInfo(transactionType);
+  return `${typeInfo.emoji} ${typeInfo.label}`;
 }
 
 /**
  * فرمت کردن مبلغ تراکنش (مثبت یا منفی) با فرمت و رنگ مناسب
  * @param amount مبلغ تراکنش
+ * @param transactionType نوع تراکنش (برای تعیین جهت تراکنش)
  * @param currency واحد پول (پیش‌فرض: Ccoin)
  * @returns مبلغ فرمت شده
  */
-export function formatTransactionAmount(amount: number, currency: string = 'Ccoin'): string {
+export function formatTransactionAmount(
+  amount: number, 
+  transactionType?: string, 
+  currency: string = 'Ccoin'
+): string {
+  // تراکنش‌هایی که منفی هستند (کاهش موجودی)
+  const negativeTransactions = [
+    'withdraw', 'transfer_sent', 'transfer_out', 'game_loss',
+    'steal_failed', 'item_purchase', 'item_purchase_crystal',
+    'shop_purchase', 'market_purchase', 'tax', 'penalty',
+    'loan_repayment', 'investment', 'stock_buy', 'lottery_ticket',
+    'auction_bid', 'premium_purchase', 'subscription_purchase',
+    'clan_contribution', 'gift_sent', 'admin_remove'
+  ];
+  
+  // تراکنش‌هایی که مثبت هستند (افزایش موجودی)
+  const positiveTransactions = [
+    'deposit', 'transfer_received', 'transfer_in', 'game_win',
+    'quest_reward', 'steal_success', 'daily', 'weekly', 'monthly',
+    'bank_interest', 'loan_received', 'job_income', 'work',
+    'investment_return', 'stock_sell', 'stock_dividend', 'lottery_win',
+    'auction_refund', 'auction_sale', 'refund', 'gift_received',
+    'clan_withdrawal', 'clan_reward', 'friend_bonus', 'admin_add',
+    'welcome_bonus'
+  ];
+  
+  const absAmount = Math.abs(amount);
+  const formattedNumber = formatNumber(absAmount);
+  
+  // اگر نوع تراکنش مشخص شده باشد، بر اساس آن تعیین می‌کنیم
+  if (transactionType) {
+    if (negativeTransactions.includes(transactionType)) {
+      return `-${formattedNumber} ${currency}`;
+    } else if (positiveTransactions.includes(transactionType)) {
+      return `+${formattedNumber} ${currency}`;
+    }
+  }
+  
+  // اگر نوع تراکنش مشخص نشده باشد، بر اساس مقدار عددی تصمیم می‌گیریم
   if (amount > 0) {
-    return `+${formatNumber(amount)} ${currency}`;
+    return `+${formattedNumber} ${currency}`;
   } else if (amount < 0) {
-    return `${formatNumber(amount)} ${currency}`;
+    return `-${formattedNumber} ${currency}`;
   } else {
-    return `${formatNumber(amount)} ${currency}`;
+    return `${formattedNumber} ${currency}`;
   }
 }
 
