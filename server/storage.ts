@@ -544,6 +544,11 @@ export interface IStorage {
   getActiveGameSessionsInChannel(channelId: string): Promise<any[]>;
   getMaxGameSessionNumber(guildId: string, gameType: string): Promise<number>;
   getGameSessionsForUser(userId: string): Promise<any[]>;
+  
+  // Global Settings operations
+  getGlobalSetting(key: string): Promise<string | null>;
+  setGlobalSetting(key: string, value: string): Promise<boolean>;
+  deleteGlobalSetting(key: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -582,6 +587,7 @@ export class MemStorage implements IStorage {
   
   // تنظیمات کانال نکات
   private tipChannelSettings: Map<string, TipChannelSettings> = new Map(); // کلید: guildId
+  private globalSettings: Map<string, string> = new Map(); // کلید: نام تنظیم
   
   // ذخیره سازی داده‌های بازی گروهی
   private quizQuestions: Map<string, QuizQuestion> = new Map(); // کلید: id
@@ -3381,6 +3387,31 @@ export class MemStorage implements IStorage {
     return activeSettings;
   }
   
+  // Global Settings operations
+  async getGlobalSetting(key: string): Promise<string | null> {
+    const value = this.globalSettings.get(key);
+    return value !== undefined ? value : null;
+  }
+  
+  async setGlobalSetting(key: string, value: string): Promise<boolean> {
+    try {
+      this.globalSettings.set(key, value);
+      return true;
+    } catch (error) {
+      console.error('Error setting global setting:', error);
+      return false;
+    }
+  }
+  
+  async deleteGlobalSetting(key: string): Promise<boolean> {
+    try {
+      return this.globalSettings.delete(key);
+    } catch (error) {
+      console.error('Error deleting global setting:', error);
+      return false;
+    }
+  }
+  
   // Quiz Question operations
   async saveQuizQuestion(question: QuizQuestion): Promise<QuizQuestion> {
     if (!question.id) {
@@ -3997,6 +4028,7 @@ import QuestModel from './models/Quest';
 import { FriendRequestModel, BlockedUserModel } from './models/friend';
 import LoanModel from './models/Loan';
 import MarketListingModel from './models/MarketListing';
+import { GlobalSettingModel } from './models/GlobalSetting';
 
 export class MongoStorage implements IStorage {
   async getUsersWithRobberyNotificationsEnabled(): Promise<User[]> {
@@ -6636,6 +6668,51 @@ export class MongoStorage implements IStorage {
     } catch (error) {
       console.error('Error getting active tip channel settings from MongoDB:', error);
       return memStorage.getAllActiveTipChannelSettings();
+    }
+  }
+
+  // Global Settings operations
+  async getGlobalSetting(key: string): Promise<string | null> {
+    try {
+      const setting = await GlobalSettingModel.findOne({ key });
+      return setting ? setting.value : null;
+    } catch (error) {
+      console.error('Error getting global setting from MongoDB:', error);
+      const memValue = await memStorage.getGlobalSetting(key);
+      return memValue || null;
+    }
+  }
+
+  async setGlobalSetting(key: string, value: string): Promise<boolean> {
+    try {
+      await GlobalSettingModel.findOneAndUpdate(
+        { key },
+        { key, value, updatedAt: new Date() },
+        { upsert: true, new: true }
+      );
+      
+      // Also update in memory for redundancy
+      await memStorage.setGlobalSetting(key, value);
+      return true;
+    } catch (error) {
+      console.error('Error setting global setting in MongoDB:', error);
+      return memStorage.setGlobalSetting(key, value);
+    }
+  }
+
+  async deleteGlobalSetting(key: string): Promise<boolean> {
+    try {
+      const result = await GlobalSettingModel.deleteOne({ key });
+      const deleted = result.deletedCount > 0;
+      
+      // Also delete from memory
+      if (deleted) {
+        await memStorage.deleteGlobalSetting(key);
+      }
+      return deleted;
+    } catch (error) {
+      console.error('Error deleting global setting from MongoDB:', error);
+      return memStorage.deleteGlobalSetting(key);
     }
   }
 
