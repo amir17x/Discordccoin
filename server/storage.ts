@@ -4667,7 +4667,19 @@ export class MongoStorage implements IStorage {
       const cachedGame = getCache<Game>('games', cacheKey);
       if (cachedGame) return cachedGame;
       
-      const user = await UserModel.findById(userId);
+      // استفاده از findOne به جای findById برای جلوگیری از خطای ObjectId
+      let user;
+      try {
+        user = await UserModel.findOne({ id: userId });
+        
+        // اگر با id پیدا نشد، با discordId امتحان کنیم (شاید userId در واقع discordId است)
+        if (!user && typeof userId === 'string') {
+          user = await UserModel.findOne({ discordId: userId });
+        }
+      } catch (error) {
+        console.error('Error finding user in recordGame:', error);
+      }
+      
       if (!user) return memStorage.recordGame(userId, type, bet, won, reward);
       
       const now = new Date();

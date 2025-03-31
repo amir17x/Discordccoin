@@ -2100,7 +2100,8 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     
     // منوی بازار
     if (action === 'market_menu') {
-      await showMarketMenu(interaction.user.id, interaction.user.username);
+      const response = await showMarketMenu(interaction.user.id, interaction.user.username);
+      await interaction.update(response);
       return;
     }
     

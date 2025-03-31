@@ -332,16 +332,24 @@ export async function mainMenu(
               .setLabel('📈 سهام')
               .setStyle(ButtonStyle.Success),
             new ButtonBuilder()
-              .setCustomId('help')
-              .setLabel('📜 راهنما')
+              .setCustomId('market_menu')
+              .setLabel('🛒 بازار')
               .setStyle(ButtonStyle.Primary),
             new ButtonBuilder()
               .setCustomId('other_options')
               .setLabel('✨ موارد دیگر')
               .setStyle(ButtonStyle.Secondary),
           );
+          
+        const row5 = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId('help')
+              .setLabel('📜 راهنما')
+              .setStyle(ButtonStyle.Primary),
+          );
         
-        components = [row1, row2, row3, row4];
+        components = [row1, row2, row3, row4, row5];
       }
       else {
         // Row 1: اصلی‌ترین ویژگی‌ها با بیشترین کاربرد
@@ -481,13 +489,22 @@ export async function mainMenu(
             .setLabel('🐾 پت‌های من')
             .setStyle(ButtonStyle.Success),
           new ButtonBuilder()
-            .setCustomId('ai_assistant')
-            .setLabel('🧠 دستیار هوشمند')
+            .setCustomId('market_menu')
+            .setLabel('🛒 بازار')
             .setStyle(ButtonStyle.Primary),
           new ButtonBuilder()
             .setCustomId('donate')
             .setLabel('❤️ حمایت از ربات')
             .setStyle(ButtonStyle.Secondary),
+        );
+        
+      // Row 5: AI Assistant
+      const row5Extra = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('ai_assistant')
+            .setLabel('🧠 دستیار هوشمند')
+            .setStyle(ButtonStyle.Primary),
         );
       
       // Row 5: دکمه بازگشت
@@ -499,7 +516,7 @@ export async function mainMenu(
             .setStyle(ButtonStyle.Primary),
         );
       
-      components = [row1, row2, row3, row4, row5];
+      components = [row1, row2, row3, row4, row5Extra, row5];
     }
     
     // Send or update the message - همیشه به صورت ephemeral (فقط برای کاربر قابل مشاهده)

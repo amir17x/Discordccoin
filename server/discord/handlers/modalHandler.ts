@@ -1949,6 +1949,309 @@ ${prompt}
       ephemeral: true
     });
     
+    // پردازش فرم‌های مربوط به بازار
+    // خرید آیتم از بازار
+    if (customId === 'market_buy_modal') {
+      try {
+        const listingIdField = interaction.fields.getTextInputValue('listing_id');
+        const quantityField = interaction.fields.getTextInputValue('quantity');
+        
+        const listingId = listingIdField.trim();
+        const quantity = parseInt(quantityField) || 1;
+        
+        if (!listingId) {
+          await interaction.reply({
+            content: '❌ شناسه آگهی معتبر نیست!',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // دریافت اطلاعات کاربر
+        const user = await storage.getUserByDiscordId(interaction.user.id);
+        if (!user) {
+          await interaction.reply({
+            content: '❌ شما ثبت نام نشده‌اید! لطفاً ابتدا با استفاده از دستور `/start` ثبت نام کنید.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // خرید از بازار
+        const result = await storage.buyFromMarket(user.id, listingId, quantity);
+        
+        if (result.success) {
+          // خرید موفقیت‌آمیز
+          const embed = new EmbedBuilder()
+            .setColor('#2ECC71')
+            .setTitle('✅ خرید موفقیت‌آمیز')
+            .setDescription(`شما با موفقیت **${quantity}** عدد **${result.item?.name}** را به قیمت **${result.totalPrice}** سکه خریداری کردید.`)
+            .setThumbnail('https://img.icons8.com/fluency/48/purchase-order.png')
+            .setFooter({ text: `کاربر: ${interaction.user.username} | ${new Date().toLocaleString('fa-IR')}` });
+            
+          await interaction.reply({
+            embeds: [embed],
+            components: [
+              new ActionRowBuilder<ButtonBuilder>()
+                .addComponents(
+                  new ButtonBuilder()
+                    .setCustomId('market_regular')
+                    .setLabel('🏪 بازگشت به بازار')
+                    .setStyle(ButtonStyle.Primary),
+                  new ButtonBuilder()
+                    .setCustomId('inventory')
+                    .setLabel('🎒 مشاهده کوله‌پشتی')
+                    .setStyle(ButtonStyle.Success)
+                )
+            ],
+            ephemeral: true
+          });
+        } else {
+          // خطا در خرید
+          await interaction.reply({
+            content: `❌ خرید ناموفق: ${result.message || 'خطایی رخ داد. لطفاً دوباره تلاش کنید.'}`,
+            ephemeral: true
+          });
+        }
+      } catch (error) {
+        console.error('Error processing market buy:', error);
+        await interaction.reply({
+          content: '❌ خطایی در پردازش خرید رخ داد. لطفاً دوباره تلاش کنید.',
+          ephemeral: true
+        });
+      }
+      return;
+    }
+    
+    // حذف آگهی از بازار
+    if (customId === 'market_remove_modal') {
+      try {
+        const listingIdField = interaction.fields.getTextInputValue('listing_id');
+        const listingId = listingIdField.trim();
+        
+        if (!listingId) {
+          await interaction.reply({
+            content: '❌ شناسه آگهی معتبر نیست!',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // دریافت اطلاعات کاربر
+        const user = await storage.getUserByDiscordId(interaction.user.id);
+        if (!user) {
+          await interaction.reply({
+            content: '❌ شما ثبت نام نشده‌اید! لطفاً ابتدا با استفاده از دستور `/start` ثبت نام کنید.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // حذف آگهی
+        const result = await storage.removeMarketListing(listingId, user.id);
+        
+        if (result.success) {
+          // حذف موفقیت‌آمیز
+          const embed = new EmbedBuilder()
+            .setColor('#2ECC71')
+            .setTitle('✅ حذف آگهی')
+            .setDescription(`آگهی شما با موفقیت حذف شد و آیتم‌ها به کوله‌پشتی شما برگشتند.`)
+            .setThumbnail('https://img.icons8.com/fluency/48/delete-sign.png')
+            .setFooter({ text: `کاربر: ${interaction.user.username} | ${new Date().toLocaleString('fa-IR')}` });
+            
+          await interaction.reply({
+            embeds: [embed],
+            components: [
+              new ActionRowBuilder<ButtonBuilder>()
+                .addComponents(
+                  new ButtonBuilder()
+                    .setCustomId('market_my_listings')
+                    .setLabel('📋 آگهی‌های من')
+                    .setStyle(ButtonStyle.Primary),
+                  new ButtonBuilder()
+                    .setCustomId('inventory')
+                    .setLabel('🎒 مشاهده کوله‌پشتی')
+                    .setStyle(ButtonStyle.Success)
+                )
+            ],
+            ephemeral: true
+          });
+        } else {
+          // خطا در حذف
+          await interaction.reply({
+            content: `❌ حذف ناموفق: ${result.message || 'خطایی رخ داد. لطفاً دوباره تلاش کنید.'}`,
+            ephemeral: true
+          });
+        }
+      } catch (error) {
+        console.error('Error removing market listing:', error);
+        await interaction.reply({
+          content: '❌ خطایی در حذف آگهی رخ داد. لطفاً دوباره تلاش کنید.',
+          ephemeral: true
+        });
+      }
+      return;
+    }
+    
+    // ویرایش آگهی
+    if (customId === 'market_edit_modal') {
+      try {
+        const listingIdField = interaction.fields.getTextInputValue('listing_id');
+        const priceField = interaction.fields.getTextInputValue('price');
+        const descriptionField = interaction.fields.getTextInputValue('description');
+        
+        const listingId = listingIdField.trim();
+        const price = parseInt(priceField);
+        const description = descriptionField.trim();
+        
+        if (!listingId || isNaN(price) || price <= 0) {
+          await interaction.reply({
+            content: '❌ اطلاعات وارد شده معتبر نیست! لطفاً شناسه آگهی و قیمت معتبر وارد کنید.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // دریافت اطلاعات کاربر
+        const user = await storage.getUserByDiscordId(interaction.user.id);
+        if (!user) {
+          await interaction.reply({
+            content: '❌ شما ثبت نام نشده‌اید! لطفاً ابتدا با استفاده از دستور `/start` ثبت نام کنید.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // ویرایش آگهی
+        const result = await storage.updateMarketListing(listingId, user.id, { price, description });
+        
+        if (result.success) {
+          // ویرایش موفقیت‌آمیز
+          const embed = new EmbedBuilder()
+            .setColor('#2ECC71')
+            .setTitle('✅ ویرایش آگهی')
+            .setDescription(`آگهی شما با موفقیت ویرایش شد.\n**قیمت جدید:** ${price} سکه`)
+            .setThumbnail('https://img.icons8.com/fluency/48/edit.png')
+            .setFooter({ text: `کاربر: ${interaction.user.username} | ${new Date().toLocaleString('fa-IR')}` });
+            
+          await interaction.reply({
+            embeds: [embed],
+            components: [
+              new ActionRowBuilder<ButtonBuilder>()
+                .addComponents(
+                  new ButtonBuilder()
+                    .setCustomId('market_my_listings')
+                    .setLabel('📋 آگهی‌های من')
+                    .setStyle(ButtonStyle.Primary)
+                )
+            ],
+            ephemeral: true
+          });
+        } else {
+          // خطا در ویرایش
+          await interaction.reply({
+            content: `❌ ویرایش ناموفق: ${result.message || 'خطایی رخ داد. لطفاً دوباره تلاش کنید.'}`,
+            ephemeral: true
+          });
+        }
+      } catch (error) {
+        console.error('Error editing market listing:', error);
+        await interaction.reply({
+          content: '❌ خطایی در ویرایش آگهی رخ داد. لطفاً دوباره تلاش کنید.',
+          ephemeral: true
+        });
+      }
+      return;
+    }
+    
+    // ایجاد آگهی جدید
+    if (customId === 'market_new_listing_modal') {
+      try {
+        const itemIdField = interaction.fields.getTextInputValue('item_id');
+        const quantityField = interaction.fields.getTextInputValue('quantity');
+        const priceField = interaction.fields.getTextInputValue('price');
+        const descriptionField = interaction.fields.getTextInputValue('description');
+        const listingTypeField = interaction.fields.getTextInputValue('listing_type');
+        
+        const itemId = parseInt(itemIdField);
+        const quantity = parseInt(quantityField) || 1;
+        const price = parseInt(priceField);
+        const description = descriptionField.trim();
+        const isBlackMarket = listingTypeField.toLowerCase() === 'b' || listingTypeField.toLowerCase() === 'black';
+        
+        if (isNaN(itemId) || isNaN(price) || price <= 0) {
+          await interaction.reply({
+            content: '❌ اطلاعات وارد شده معتبر نیست! لطفاً شناسه آیتم و قیمت معتبر وارد کنید.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // دریافت اطلاعات کاربر
+        const user = await storage.getUserByDiscordId(interaction.user.id);
+        if (!user) {
+          await interaction.reply({
+            content: '❌ شما ثبت نام نشده‌اید! لطفاً ابتدا با استفاده از دستور `/start` ثبت نام کنید.',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // ایجاد آگهی جدید
+        const result = await storage.createMarketListing({
+          sellerId: user.id,
+          sellerName: interaction.user.username,
+          itemId,
+          quantity,
+          price,
+          description,
+          isBlackMarket
+        });
+        
+        if (result.success) {
+          // ایجاد موفقیت‌آمیز
+          const marketType = isBlackMarket ? 'بازار سیاه' : 'بازار عادی';
+          const embed = new EmbedBuilder()
+            .setColor('#2ECC71')
+            .setTitle('✅ آگهی جدید')
+            .setDescription(`آگهی شما با موفقیت در ${marketType} ثبت شد.\n**آیتم:** ${result.itemName}\n**تعداد:** ${quantity}\n**قیمت:** ${price} سکه هر عدد`)
+            .setThumbnail('https://img.icons8.com/fluency/48/new--v1.png')
+            .setFooter({ text: `کاربر: ${interaction.user.username} | ${new Date().toLocaleString('fa-IR')}` });
+            
+          await interaction.reply({
+            embeds: [embed],
+            components: [
+              new ActionRowBuilder<ButtonBuilder>()
+                .addComponents(
+                  new ButtonBuilder()
+                    .setCustomId('market_my_listings')
+                    .setLabel('📋 آگهی‌های من')
+                    .setStyle(ButtonStyle.Primary),
+                  new ButtonBuilder()
+                    .setCustomId(isBlackMarket ? 'market_black' : 'market_regular')
+                    .setLabel(`🏪 بازگشت به ${marketType}`)
+                    .setStyle(ButtonStyle.Success)
+                )
+            ],
+            ephemeral: true
+          });
+        } else {
+          // خطا در ایجاد
+          await interaction.reply({
+            content: `❌ ایجاد آگهی ناموفق: ${result.message || 'خطایی رخ داد. لطفاً دوباره تلاش کنید.'}`,
+            ephemeral: true
+          });
+        }
+      } catch (error) {
+        console.error('Error creating market listing:', error);
+        await interaction.reply({
+          content: '❌ خطایی در ایجاد آگهی رخ داد. لطفاً دوباره تلاش کنید.',
+          ephemeral: true
+        });
+      }
+      return;
+    }
+    
   } catch (error) {
     console.error('Error in modal submit handler:', error);
     
