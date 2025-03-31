@@ -10,32 +10,33 @@ import { storage } from '../../storage';
 /**
  * سیستم جهان‌های موازی Ccoin
  * امکان ماجراجویی در جهان‌های تخیلی با ماموریت‌های اختصاصی
+ * با طراحی بهبودیافته و رابط کاربری جذاب
  */
 export async function parallelWorldsMenu(
   interaction: MessageComponentInteraction
 ) {
   try {
     // دریافت اطلاعات کاربر از دیتابیس
-    const userId = parseInt(interaction.user.id);
-    const user = await storage.getUser(userId);
+    const userId = interaction.user.id;
+    const user = await storage.getUserByDiscordId(userId);
     
     if (!user) {
       if ('update' in interaction && typeof interaction.update === 'function') {
         try {
           await interaction.update({ 
-            content: 'حساب شما در سیستم یافت نشد! لطفاً با دستور `/start` ثبت نام کنید.', 
+            content: '❌ **خطا:** حساب شما در سیستم یافت نشد! لطفاً با ورود به منوی اصلی (`/menu`) ثبت نام کنید.', 
             embeds: [], 
             components: [] 
           });
         } catch (e) {
           await interaction.reply({ 
-            content: 'حساب شما در سیستم یافت نشد! لطفاً با دستور `/start` ثبت نام کنید.', 
+            content: '❌ **خطا:** حساب شما در سیستم یافت نشد! لطفاً با ورود به منوی اصلی (`/menu`) ثبت نام کنید.', 
             ephemeral: true 
           });
         }
       } else {
         await interaction.reply({ 
-          content: 'حساب شما در سیستم یافت نشد! لطفاً با دستور `/start` ثبت نام کنید.', 
+          content: '❌ **خطا:** حساب شما در سیستم یافت نشد! لطفاً با ورود به منوی اصلی (`/menu`) ثبت نام کنید.', 
           ephemeral: true 
         });
       }
@@ -256,12 +257,12 @@ async function showWorldDetails(
 ) {
   try {
     // دریافت اطلاعات کاربر از دیتابیس
-    const userId = parseInt(interaction.user.id);
-    const user = await storage.getUser(userId);
+    const userId = interaction.user.id;
+    const user = await storage.getUserByDiscordId(userId);
     
     if (!user) {
       await interaction.reply({ 
-        content: 'حساب شما در سیستم یافت نشد!', 
+        content: '❌ **خطا:** حساب شما در سیستم یافت نشد! لطفاً با ورود به منوی اصلی (`/menu`) ثبت نام کنید.', 
         ephemeral: true 
       });
       return;
@@ -348,19 +349,63 @@ async function showWorldDetails(
           .setStyle(ButtonStyle.Primary)
       );
     
-    await interaction.reply({ 
-      embeds: [embed], 
-      components: [row], 
-      ephemeral: true 
-    });
+    // ارسال یا بروزرسانی پیام
+    if ('update' in interaction && typeof interaction.update === 'function') {
+      try {
+        await interaction.update({ 
+          embeds: [embed], 
+          components: [row] 
+        });
+      } catch (e) {
+        // اگر بروزرسانی با خطا مواجه شد، پیام جدید ارسال کن
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({ 
+            embeds: [embed], 
+            components: [row],
+            ephemeral: true 
+          });
+        } else {
+          await interaction.followUp({ 
+            embeds: [embed], 
+            components: [row],
+            ephemeral: true 
+          });
+        }
+      }
+    } else {
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({ 
+          embeds: [embed], 
+          components: [row], 
+          ephemeral: true 
+        });
+      } else {
+        await interaction.followUp({ 
+          embeds: [embed], 
+          components: [row], 
+          ephemeral: true 
+        });
+      }
+    }
     
   } catch (error) {
     console.error(`Error in show world details for ${worldId}:`, error);
     
-    await interaction.reply({ 
-      content: 'خطایی در نمایش جزئیات جهان رخ داد! لطفاً دوباره تلاش کنید.', 
-      ephemeral: true 
-    });
+    try {
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({ 
+          content: 'خطایی در نمایش جزئیات جهان رخ داد! لطفاً دوباره تلاش کنید.', 
+          ephemeral: true 
+        });
+      } else {
+        await interaction.followUp({ 
+          content: 'خطایی در نمایش جزئیات جهان رخ داد! لطفاً دوباره تلاش کنید.', 
+          ephemeral: true 
+        });
+      }
+    } catch (e) {
+      console.error('Error handling world details failure:', e);
+    }
   }
 }
 

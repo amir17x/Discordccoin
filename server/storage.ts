@@ -272,7 +272,10 @@ export interface IStorage {
   // Item operations
   getAllItems(): Promise<Item[]>;
   getItem(id: number): Promise<Item | undefined>;
+  getItemById(id: number): Promise<Item | undefined>;
   createItem(item: InsertItem): Promise<Item>;
+  updateItem(id: number, updates: Partial<Item>): Promise<Item | undefined>;
+  deleteItem(id: number): Promise<boolean>;
   buyItem(userId: number, itemId: number): Promise<{success: boolean; item?: Item; inventoryItem?: InventoryItem; message?: string}>;
   useItem(userId: number, inventoryItemId: string): Promise<{success: boolean; message?: string}>;
   getInventoryItems(userId: number): Promise<InventoryItem[]>;
@@ -920,6 +923,25 @@ export class MemStorage implements IStorage {
   // Item operations
   async getAllItems(): Promise<Item[]> {
     return Array.from(this.items.values());
+  }
+  
+  async getItemById(id: number): Promise<Item | undefined> {
+    return this.items.get(id);
+  }
+  
+  async updateItem(id: number, updates: Partial<Item>): Promise<Item | undefined> {
+    const item = this.items.get(id);
+    if (!item) {
+      return undefined;
+    }
+    
+    const updatedItem = { ...item, ...updates };
+    this.items.set(id, updatedItem);
+    return updatedItem;
+  }
+  
+  async deleteItem(id: number): Promise<boolean> {
+    return this.items.delete(id);
   }
 
   async getItem(id: number): Promise<Item | undefined> {
@@ -3861,6 +3883,66 @@ import { FriendRequestModel, BlockedUserModel } from './models/friend';
 import LoanModel from './models/Loan';
 
 export class MongoStorage implements IStorage {
+  async getItemById(id: number): Promise<Item | undefined> {
+    try {
+      const item = await ItemModel.findOne({ id });
+      if (!item) return undefined;
+      return {
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        crystalPrice: item.crystalPrice,
+        emoji: item.emoji,
+        type: item.type,
+        duration: item.duration,
+        rarity: item.rarity,
+        effects: item.effects || {},
+      };
+    } catch (error) {
+      console.error('Error getting item by ID:', error);
+      return undefined;
+    }
+  }
+  
+  async updateItem(id: number, updates: Partial<Item>): Promise<Item | undefined> {
+    try {
+      const item = await ItemModel.findOneAndUpdate(
+        { id },
+        updates,
+        { new: true }
+      );
+      
+      if (!item) return undefined;
+      
+      return {
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        crystalPrice: item.crystalPrice,
+        emoji: item.emoji,
+        type: item.type,
+        duration: item.duration,
+        rarity: item.rarity,
+        effects: item.effects || {},
+      };
+    } catch (error) {
+      console.error('Error updating item:', error);
+      return undefined;
+    }
+  }
+  
+  async deleteItem(id: number): Promise<boolean> {
+    try {
+      const result = await ItemModel.deleteOne({ id });
+      return result.deletedCount > 0;
+    } catch (error) {
+      console.error('Error deleting item:', error);
+      return false;
+    }
+  }
+  
   async incrementTotalGamesWon(userId: number): Promise<void> {
     try {
       const user = await UserModel.findOne({ id: userId });
@@ -4776,6 +4858,46 @@ export class MongoStorage implements IStorage {
   }
   
   // اضافه کردن متدهای مورد نیاز برای پنل مدیریت
+  async createItem(item: InsertItem): Promise<Item> {
+    try {
+      // Get the highest item ID currently in the database
+      const items = await ItemModel.find().sort({ id: -1 }).limit(1);
+      const nextId = items.length > 0 ? items[0].id + 1 : 1;
+      
+      // Create the new item with the next available ID
+      const newItem = new ItemModel({
+        id: nextId,
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        crystalPrice: item.crystalPrice || null,
+        emoji: item.emoji,
+        type: item.type, 
+        duration: item.duration || null,
+        rarity: item.rarity,
+        effects: item.effects || {}
+      });
+      
+      await newItem.save();
+      
+      return {
+        id: newItem.id,
+        name: newItem.name,
+        description: newItem.description,
+        price: newItem.price,
+        crystalPrice: newItem.crystalPrice,
+        emoji: newItem.emoji,
+        type: newItem.type,
+        duration: newItem.duration,
+        rarity: newItem.rarity,
+        effects: newItem.effects || {},
+      };
+    } catch (error) {
+      console.error('Error creating item:', error);
+      throw error;
+    }
+  }
+  
   async getAllItems(): Promise<Item[]> {
     try {
       const items = await ItemModel.find();

@@ -15,10 +15,22 @@ export async function personalNotificationsMenu(
     const user = await storage.getUser(userId);
 
     if (!user) {
-      return await interaction.reply({
-        content: '❌ شما هنوز در سیستم ثبت نشده‌اید! لطفاً ابتدا با دستور `/start` ثبت نام کنید.',
-        ephemeral: true
-      });
+      try {
+        if (!interaction.replied && !interaction.deferred) {
+          return await interaction.reply({
+            content: '❌ **خطا:** شما هنوز در سیستم ثبت نشده‌اید! لطفاً ابتدا با دستور `/menu` ثبت نام کنید.',
+            ephemeral: true
+          });
+        } else {
+          return await interaction.followUp({
+            content: '❌ **خطا:** شما هنوز در سیستم ثبت نشده‌اید! لطفاً ابتدا با دستور `/menu` ثبت نام کنید.',
+            ephemeral: true
+          });
+        }
+      } catch (e) {
+        console.error('Error handling user not found in personalNotificationsMenu:', e);
+        return;
+      }
     }
 
     // دریافت تنظیمات اعلان‌های کاربر
@@ -79,10 +91,21 @@ export async function personalNotificationsMenu(
 
   } catch (error) {
     console.error('خطا در منوی اعلان‌های شخصی:', error);
-    await interaction.reply({
-      content: '❌ متأسفانه خطایی رخ داد. لطفاً دوباره تلاش کنید.',
-      ephemeral: true
-    });
+    try {
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({
+          content: '❌ متأسفانه خطایی رخ داد. لطفاً دوباره تلاش کنید.',
+          ephemeral: true
+        });
+      } else {
+        await interaction.followUp({
+          content: '❌ متأسفانه خطایی رخ داد. لطفاً دوباره تلاش کنید.',
+          ephemeral: true
+        });
+      }
+    } catch (e) {
+      console.error('Error handling error in personalNotificationsMenu:', e);
+    }
   }
 }
 
@@ -133,10 +156,21 @@ export async function toggleNotifications(
 
   } catch (error) {
     console.error('خطا در تغییر وضعیت اعلان‌ها:', error);
-    await interaction.reply({
-      content: '❌ متأسفانه خطایی رخ داد. لطفاً دوباره تلاش کنید.',
-      ephemeral: true
-    });
+    try {
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({
+          content: '❌ متأسفانه خطایی رخ داد. لطفاً دوباره تلاش کنید.',
+          ephemeral: true
+        });
+      } else {
+        await interaction.followUp({
+          content: '❌ متأسفانه خطایی رخ داد. لطفاً دوباره تلاش کنید.',
+          ephemeral: true
+        });
+      }
+    } catch (e) {
+      console.error('Error handling error in toggleNotifications:', e);
+    }
   }
 }
 
@@ -221,10 +255,21 @@ export async function showAdvancedNotificationSettings(
 
   } catch (error) {
     console.error('خطا در نمایش تنظیمات پیشرفته اعلان‌ها:', error);
-    await interaction.reply({
-      content: '❌ متأسفانه خطایی رخ داد. لطفاً دوباره تلاش کنید.',
-      ephemeral: true
-    });
+    try {
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({
+          content: '❌ متأسفانه خطایی رخ داد. لطفاً دوباره تلاش کنید.',
+          ephemeral: true
+        });
+      } else {
+        await interaction.followUp({
+          content: '❌ متأسفانه خطایی رخ داد. لطفاً دوباره تلاش کنید.',
+          ephemeral: true
+        });
+      }
+    } catch (e) {
+      console.error('Error handling error in showAdvancedNotificationSettings:', e);
+    }
   }
 }
 
@@ -325,10 +370,21 @@ export async function toggleNotificationType(
     
   } catch (error) {
     console.error(`خطا در تغییر تنظیمات اعلان ${notificationType}:`, error);
-    await interaction.reply({
-      content: '❌ متأسفانه خطایی رخ داد. لطفاً دوباره تلاش کنید.',
-      ephemeral: true
-    });
+    try {
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({
+          content: '❌ متأسفانه خطایی رخ داد. لطفاً دوباره تلاش کنید.',
+          ephemeral: true
+        });
+      } else {
+        await interaction.followUp({
+          content: '❌ متأسفانه خطایی رخ داد. لطفاً دوباره تلاش کنید.',
+          ephemeral: true
+        });
+      }
+    } catch (e) {
+      console.error('Error handling error in toggleNotificationType:', e);
+    }
   }
 }
 
@@ -581,10 +637,22 @@ export async function sendTestNotification(interaction: ButtonInteraction) {
     const settings = await storage.getUserNotificationSettings(userId);
     
     if (!settings || !settings.enabled) {
-      return await interaction.reply({
-        content: '⚠️ اعلان‌های شما غیرفعال است! ابتدا باید اعلان‌ها را فعال کنید.',
-        ephemeral: true
-      });
+      try {
+        if (!interaction.replied && !interaction.deferred) {
+          return await interaction.reply({
+            content: '⚠️ اعلان‌های شما غیرفعال است! ابتدا باید اعلان‌ها را فعال کنید.',
+            ephemeral: true
+          });
+        } else {
+          return await interaction.followUp({
+            content: '⚠️ اعلان‌های شما غیرفعال است! ابتدا باید اعلان‌ها را فعال کنید.',
+            ephemeral: true
+          });
+        }
+      } catch (e) {
+        console.error('Error handling disabled notifications in sendTestNotification:', e);
+        return;
+      }
     }
     
     // ارسال اعلان تستی برای هر نوع اعلان که فعال است
@@ -600,10 +668,22 @@ export async function sendTestNotification(interaction: ButtonInteraction) {
     });
     
     if (enabledTypes.length === 0) {
-      return await interaction.reply({
-        content: '⚠️ شما هیچ نوع اعلانی را فعال نکرده‌اید! ابتدا باید حداقل یک نوع اعلان را فعال کنید.',
-        ephemeral: true
-      });
+      try {
+        if (!interaction.replied && !interaction.deferred) {
+          return await interaction.reply({
+            content: '⚠️ شما هیچ نوع اعلانی را فعال نکرده‌اید! ابتدا باید حداقل یک نوع اعلان را فعال کنید.',
+            ephemeral: true
+          });
+        } else {
+          return await interaction.followUp({
+            content: '⚠️ شما هیچ نوع اعلانی را فعال نکرده‌اید! ابتدا باید حداقل یک نوع اعلان را فعال کنید.',
+            ephemeral: true
+          });
+        }
+      } catch (e) {
+        console.error('Error handling no enabled notification types in sendTestNotification:', e);
+        return;
+      }
     }
     
     // ارسال یک اعلان آزمایشی از نوع اول فعال
@@ -613,16 +693,38 @@ export async function sendTestNotification(interaction: ButtonInteraction) {
     await sendNotification(userId, testType, testMessage, 'test_notification');
     
     // پاسخ به کاربر
-    await interaction.reply({
-      content: `✅ یک اعلان آزمایشی از نوع "${getNotificationTitle(testType)}" برای شما ارسال شد. لطفاً پیام‌های خصوصی خود را بررسی کنید.`,
-      ephemeral: true
-    });
+    try {
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({
+          content: `✅ یک اعلان آزمایشی از نوع "${getNotificationTitle(testType)}" برای شما ارسال شد. لطفاً پیام‌های خصوصی خود را بررسی کنید.`,
+          ephemeral: true
+        });
+      } else {
+        await interaction.followUp({
+          content: `✅ یک اعلان آزمایشی از نوع "${getNotificationTitle(testType)}" برای شما ارسال شد. لطفاً پیام‌های خصوصی خود را بررسی کنید.`,
+          ephemeral: true
+        });
+      }
+    } catch (e) {
+      console.error('Error responding to user in sendTestNotification:', e);
+    }
     
   } catch (error) {
     console.error('خطا در ارسال اعلان آزمایشی:', error);
-    await interaction.reply({
-      content: '❌ متأسفانه خطایی در ارسال اعلان آزمایشی رخ داد. لطفاً دوباره تلاش کنید.',
-      ephemeral: true
-    });
+    try {
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({
+          content: '❌ متأسفانه خطایی در ارسال اعلان آزمایشی رخ داد. لطفاً دوباره تلاش کنید.',
+          ephemeral: true
+        });
+      } else {
+        await interaction.followUp({
+          content: '❌ متأسفانه خطایی در ارسال اعلان آزمایشی رخ داد. لطفاً دوباره تلاش کنید.',
+          ephemeral: true
+        });
+      }
+    } catch (e) {
+      console.error('Error handling error in sendTestNotification:', e);
+    }
   }
 }

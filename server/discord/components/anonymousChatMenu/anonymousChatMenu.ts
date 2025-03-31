@@ -177,29 +177,59 @@ export class AnonymousChatMenu {
    */
   public static async startChatSearch(interaction: MessageComponentInteraction) {
     try {
+      // برای جلوگیری از خطاهای زمان پاسخ‌دهی
+      let needsUpdate = !interaction.replied && !interaction.deferred;
+      if (needsUpdate) {
+        try {
+          await interaction.deferUpdate().catch(() => {
+            needsUpdate = false;
+          });
+        } catch (deferError) {
+          console.error("Error deferring update in startChatSearch:", deferError);
+          needsUpdate = false;
+        }
+      }
+      
       const user = await storage.getUserByDiscordId(interaction.user.id);
       
       if (!user) {
-        return await interaction.reply({
-          content: "❌ حساب کاربری شما یافت نشد.",
-          ephemeral: true
-        });
+        try {
+          if (!interaction.replied) {
+            return await interaction.followUp({
+              content: "❌ حساب کاربری شما یافت نشد.",
+              ephemeral: true
+            });
+          }
+        } catch (error) {
+          console.error("Error responding to user not found:", error);
+        }
+        return;
       }
       
       // بررسی آیا کاربر در یک چت فعال حضور دارد
       if (this.findUserActiveChat(user.discordId)) {
-        return await interaction.update({
-          content: "⚠️ شما در حال حاضر در یک چت فعال هستید! ابتدا آن را پایان دهید.",
-          components: []
-        });
+        try {
+          return await interaction.editReply({
+            content: "⚠️ شما در حال حاضر در یک چت فعال هستید! ابتدا آن را پایان دهید.",
+            components: []
+          });
+        } catch (error) {
+          console.error("Error responding to active chat check:", error);
+          return;
+        }
       }
       
       // بررسی آیا کاربر قبلاً در صف انتظار است
       if (this.waitingUsers.has(user.discordId)) {
-        return await interaction.update({
-          content: "⚠️ شما قبلاً در صف انتظار قرار دارید!",
-          components: []
-        });
+        try {
+          return await interaction.editReply({
+            content: "⚠️ شما قبلاً در صف انتظار قرار دارید!",
+            components: []
+          });
+        } catch (error) {
+          console.error("Error responding to waiting user check:", error);
+          return;
+        }
       }
       
       // جستجو برای کاربر دیگری که در انتظار است
@@ -348,6 +378,19 @@ export class AnonymousChatMenu {
    */
   private static async showWaitingMessage(interaction: MessageComponentInteraction) {
     try {
+      // برای جلوگیری از خطاهای زمان پاسخ‌دهی
+      let needsUpdate = !interaction.replied && !interaction.deferred;
+      if (needsUpdate) {
+        try {
+          await interaction.deferUpdate().catch(() => {
+            needsUpdate = false;
+          });
+        } catch (deferError) {
+          console.error("Error deferring update in showWaitingMessage:", deferError);
+          needsUpdate = false;
+        }
+      }
+      
       const waitingEmbed = new EmbedBuilder()
         .setColor('#F39C12')
         .setTitle('⏳ در حال جستجوی هم‌صحبت...')
@@ -372,10 +415,25 @@ export class AnonymousChatMenu {
             .setStyle(ButtonStyle.Secondary)
         );
       
-      await interaction.update({
-        embeds: [waitingEmbed],
-        components: [row]
-      });
+      try {
+        await interaction.editReply({
+          embeds: [waitingEmbed],
+          components: [row]
+        });
+      } catch (updateError) {
+        console.error("Error updating waiting message:", updateError);
+        if (!interaction.replied) {
+          try {
+            await interaction.followUp({
+              embeds: [waitingEmbed],
+              components: [row],
+              ephemeral: true
+            });
+          } catch (followError) {
+            console.error("Error following up with waiting message:", followError);
+          }
+        }
+      }
     } catch (error) {
       console.error("Error showing waiting message:", error);
     }

@@ -15,6 +15,7 @@ import { handleRobbery } from '../components/robberyMenu';
 import { processBuyPet, processRenamePet } from '../components/petMenu';
 import { log } from '../utils/logger';
 import { sendAdminNotification } from '../utils/adminNotifications';
+import { itemManagementMenu } from '../components/adminMenuExtended';
 
 // Helper function for admin logging since the old logger.logAdminAction is no longer available
 const logger = {
@@ -57,6 +58,182 @@ function asMessageComponent(interaction: ModalSubmitInteraction): MessageCompone
 export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
   try {
     const customId = interaction.customId;
+    
+    // Handle admin item creation form
+    if (customId === 'add_item_modal') {
+      const name = interaction.fields.getTextInputValue('item_name');
+      const description = interaction.fields.getTextInputValue('item_description');
+      const type = interaction.fields.getTextInputValue('item_type');
+      const emoji = interaction.fields.getTextInputValue('item_emoji');
+      const priceStr = interaction.fields.getTextInputValue('item_price');
+      const price = parseInt(priceStr);
+      
+      if (isNaN(price) || price < 0) {
+        await interaction.reply({
+          content: '❌ قیمت آیتم باید یک عدد مثبت باشد.',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      try {
+        // ایجاد آیتم جدید در دیتابیس
+        const newItem = await storage.createItem({
+          name,
+          description,
+          type,
+          emoji,
+          price,
+          crystalPrice: null,
+          duration: null,
+          rarity: 'common',
+          effects: {}
+        });
+        
+        // ثبت لاگ ادمین
+        logger.logAdminAction(
+          interaction.user.id,
+          interaction.user.username,
+          'add_item',
+          null,
+          null,
+          `آیتم جدید اضافه شد: ${name} (${emoji}) با قیمت ${price} سکه`
+        );
+        
+        // ایجاد امبد نمایش موفقیت
+        const successEmbed = new EmbedBuilder()
+          .setColor('#4CAF50')
+          .setTitle('✅ آیتم جدید با موفقیت اضافه شد')
+          .setDescription(`آیتم **${emoji} ${name}** با موفقیت به فروشگاه اضافه شد.`)
+          .addFields(
+            { name: '📝 نام', value: name, inline: true },
+            { name: '💰 قیمت', value: `${price} سکه`, inline: true },
+            { name: '🔖 نوع', value: type, inline: true },
+            { name: '📄 توضیحات', value: description || 'بدون توضیحات' }
+          )
+          .setFooter({ text: `توسط: ${interaction.user.username} | ${new Date().toLocaleString()}` })
+          .setTimestamp();
+          
+        // ایجاد دکمه بازگشت به منوی مدیریت آیتم
+        const backButton = new ButtonBuilder()
+          .setCustomId('admin_items')
+          .setLabel('🔙 بازگشت به مدیریت آیتم‌ها')
+          .setStyle(ButtonStyle.Secondary);
+          
+        const row = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(backButton);
+          
+        await interaction.reply({
+          embeds: [successEmbed],
+          components: [row],
+          ephemeral: true
+        });
+      } catch (error) {
+        console.error('Error creating item:', error);
+        await interaction.reply({
+          content: '❌ خطایی در ایجاد آیتم رخ داد. لطفاً دوباره تلاش کنید.',
+          ephemeral: true
+        });
+      }
+      return;
+    }
+    
+    // Handle item editing modal
+    if (customId.startsWith('edit_item_modal_')) {
+      const itemId = parseInt(customId.replace('edit_item_modal_', ''));
+      
+      if (isNaN(itemId)) {
+        await interaction.reply({
+          content: '❌ شناسه آیتم نامعتبر است!',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      const name = interaction.fields.getTextInputValue('item_name');
+      const description = interaction.fields.getTextInputValue('item_description');
+      const type = interaction.fields.getTextInputValue('item_type');
+      const emoji = interaction.fields.getTextInputValue('item_emoji');
+      const priceStr = interaction.fields.getTextInputValue('item_price');
+      const price = parseInt(priceStr);
+      
+      if (isNaN(price) || price < 0) {
+        await interaction.reply({
+          content: '❌ قیمت آیتم باید یک عدد مثبت باشد.',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      try {
+        // دریافت آیتم قبلی برای نمایش تغییرات
+        const oldItem = await storage.getItemById(itemId);
+        
+        if (!oldItem) {
+          await interaction.reply({
+            content: '❌ آیتم مورد نظر یافت نشد!',
+            ephemeral: true
+          });
+          return;
+        }
+        
+        // ویرایش آیتم در دیتابیس
+        const updatedItem = await storage.updateItem(itemId, {
+          name,
+          description,
+          type,
+          emoji,
+          price
+        });
+        
+        // ثبت لاگ ادمین
+        logger.logAdminAction(
+          interaction.user.id,
+          interaction.user.username,
+          'edit_item',
+          itemId.toString(),
+          oldItem.name,
+          `آیتم ویرایش شد: از ${oldItem.name} به ${name}, قیمت از ${oldItem.price} به ${price}`
+        );
+        
+        // ایجاد امبد نمایش موفقیت
+        const successEmbed = new EmbedBuilder()
+          .setColor('#3498DB')
+          .setTitle('✅ آیتم با موفقیت ویرایش شد')
+          .setDescription(`آیتم **${emoji} ${name}** با موفقیت ویرایش شد.`)
+          .addFields(
+            { name: '📝 نام', value: `${oldItem.name} -> ${name}`, inline: true },
+            { name: '💰 قیمت', value: `${oldItem.price} -> ${price} سکه`, inline: true },
+            { name: '🔖 نوع', value: `${oldItem.type} -> ${type}`, inline: true },
+            { name: '😀 ایموجی', value: `${oldItem.emoji || '📦'} -> ${emoji}`, inline: true },
+            { name: '📄 توضیحات جدید', value: description || 'بدون توضیحات' }
+          )
+          .setFooter({ text: `شناسه آیتم: ${itemId} | توسط: ${interaction.user.username}` })
+          .setTimestamp();
+          
+        // ایجاد دکمه بازگشت به منوی مدیریت آیتم
+        const backButton = new ButtonBuilder()
+          .setCustomId('admin_items')
+          .setLabel('🔙 بازگشت به مدیریت آیتم‌ها')
+          .setStyle(ButtonStyle.Secondary);
+          
+        const row = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(backButton);
+          
+        await interaction.reply({
+          embeds: [successEmbed],
+          components: [row],
+          ephemeral: true
+        });
+      } catch (error) {
+        console.error('Error updating item:', error);
+        await interaction.reply({
+          content: '❌ خطایی در ویرایش آیتم رخ داد. لطفاً دوباره تلاش کنید.',
+          ephemeral: true
+        });
+      }
+      return;
+    }
     
     // پردازش فرم بازخورد
     if (customId === 'feedback_modal') {

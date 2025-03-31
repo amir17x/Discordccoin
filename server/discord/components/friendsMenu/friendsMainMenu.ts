@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, MessageComponentInteraction, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
 import { storage } from '../../../storage';
 import { formatNumber, formatDate, formatRelativeTime } from '../../utils/formatter';
-import * as anonymousChatMenu from '../anonymousChatMenu/anonymousChatMenu';
+import { AnonymousChatMenu } from '../anonymousChatMenu/anonymousChatMenu';
 import { friendshipLevelMenu, handleFriendshipLevelInteraction } from './friendshipLevelMenu';
 import { giftToFriendMenu, handleGiftMenuInteraction } from './giftMenu';
 import { interestsAndSuggestionsMenu, handleInterestsMenuInteraction } from './friendInterestsMenu';
@@ -41,8 +41,8 @@ export async function friendsMainMenu(interaction: MessageComponentInteraction) 
       )
       .setFooter({ text: '💖 از طریق سیستم دوستی، می‌توانید هدایا و امتیازات ویژه دریافت کنید!' });
     
-    // ایجاد دکمه‌های منو با طراحی جذاب‌تر و چینش بر اساس اولویت و اهمیت
-    // ردیف اول: دکمه‌های اصلی و پر استفاده
+    // ایجاد دکمه‌های منو با چینش متوازن و طراحی جذاب و کاربرپسند
+    // ردیف اول: دکمه‌های اصلی به صورت متوازن
     const row1 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
@@ -50,35 +50,35 @@ export async function friendsMainMenu(interaction: MessageComponentInteraction) 
           .setLabel(`👥 لیست دوستان (${friends?.length || 0})`)
           .setStyle(ButtonStyle.Primary),
         new ButtonBuilder()
+          .setCustomId('friend_requests')
+          .setLabel(`📩 درخواست‌ها ${pendingRequests.length > 0 ? `(${pendingRequests.length})` : ''}`)
+          .setStyle(pendingRequests.length > 0 ? ButtonStyle.Success : ButtonStyle.Primary),
+        new ButtonBuilder()
           .setCustomId('friend_request_form')
-          .setLabel('✉️ ارسال درخواست دوستی')
+          .setLabel('➕ افزودن دوست')
           .setStyle(ButtonStyle.Success)
       );
       
-    // ردیف دوم: درخواست‌ها و چت ناشناس
+    // ردیف دوم: ویژگی‌های تعاملی با دوستان
     const row2 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
-          .setCustomId('friend_requests')
-          .setLabel(`📨 درخواست‌های دریافتی ${pendingRequests.length > 0 ? `(${pendingRequests.length})` : ''}`)
-          .setStyle(pendingRequests.length > 0 ? ButtonStyle.Success : ButtonStyle.Primary),
-        new ButtonBuilder()
           .setCustomId('anonymous_chat')
           .setLabel('🎭 چت ناشناس')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('friendship_levels')
+          .setLabel('🏆 سطوح دوستی')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('blocked_users')
+          .setLabel('🚫 لیست مسدودها')
           .setStyle(ButtonStyle.Secondary)
       );
       
-    // ردیف سوم: ویژگی‌های تکمیلی و بازگشت
+    // ردیف سوم: بازگشت به منوی اصلی
     const row3 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
-        new ButtonBuilder()
-          .setCustomId('blocked_users')
-          .setLabel('🚫 کاربران مسدود شده')
-          .setStyle(ButtonStyle.Danger),
-        new ButtonBuilder()
-          .setCustomId('friendship_levels')
-          .setLabel('🏆 راهنمای سطوح دوستی')
-          .setStyle(ButtonStyle.Secondary),
         new ButtonBuilder()
           .setCustomId('menu')
           .setLabel('🏠 بازگشت به منوی اصلی')
@@ -481,32 +481,12 @@ export async function friendRequests(interaction: MessageComponentInteraction) {
         inline: false
       });
       
-      // دکمه‌های عملیات با طراحی بهتر
-      const rowAction = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId('accept_all_requests')
-            .setLabel('✅ قبول همه درخواست‌ها')
-            .setStyle(ButtonStyle.Success),
-          new ButtonBuilder()
-            .setCustomId('accept_friend_request')
-            .setLabel('🤝 قبول درخواست')
-            .setStyle(ButtonStyle.Success),
-          new ButtonBuilder()
-            .setCustomId('reject_friend_request')
-            .setLabel('❌ رد درخواست')
-            .setStyle(ButtonStyle.Danger)
-        );
-      
+      // فقط دکمه بازگشت به منوی دوستان را نمایش می‌دهیم (طبق درخواست کاربر)
       const rowNav = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
           new ButtonBuilder()
-            .setCustomId('add_friend')
-            .setLabel('✨ ارسال درخواست جدید')
-            .setStyle(ButtonStyle.Primary),
-          new ButtonBuilder()
             .setCustomId('friends_menu')
-            .setLabel('🔙 بازگشت')
+            .setLabel('🔙 بازگشت به منوی دوستان')
             .setStyle(ButtonStyle.Secondary)
         );
       
@@ -514,7 +494,7 @@ export async function friendRequests(interaction: MessageComponentInteraction) {
       try {
         await interaction.update({
           embeds: [requestsEmbed],
-          components: [rowAction, rowNav]
+          components: [rowNav]
         });
       } catch (error) {
         console.error("Error updating friend requests:", error);
@@ -531,28 +511,12 @@ export async function friendRequests(interaction: MessageComponentInteraction) {
         }
       }
     } else {
-      // فقط درخواست‌های ارسالی دارد - طراحی بهتر
-      const row1 = new ActionRowBuilder<ButtonBuilder>()
+      // فقط دکمه بازگشت نمایش می‌دهیم (طبق درخواست کاربر)
+      const rowNav = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
-          new ButtonBuilder()
-            .setCustomId('cancel_friend_request')
-            .setLabel('🚫 لغو درخواست')
-            .setStyle(ButtonStyle.Danger),
-          new ButtonBuilder()
-            .setCustomId('add_friend')
-            .setLabel('✨ ارسال درخواست جدید')
-            .setStyle(ButtonStyle.Primary)
-        );
-        
-      const row2 = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId('anonymous_chat')
-            .setLabel('🎭 چت ناشناس')
-            .setStyle(ButtonStyle.Secondary),
           new ButtonBuilder()
             .setCustomId('friends_menu')
-            .setLabel('🔙 بازگشت')
+            .setLabel('🔙 بازگشت به منوی دوستان')
             .setStyle(ButtonStyle.Secondary)
         );
       
@@ -560,7 +524,7 @@ export async function friendRequests(interaction: MessageComponentInteraction) {
       try {
         await interaction.update({
           embeds: [requestsEmbed],
-          components: [row1, row2]
+          components: [rowNav]
         });
       } catch (error) {
         console.error("Error updating friend requests:", error);
@@ -1323,7 +1287,7 @@ export async function handleFriendsSystem(interaction: MessageComponentInteracti
       
       case 'anonymous_chat':
         // منوی چت ناشناس
-        await anonymousChatMenu.AnonymousChatMenu.showMainMenu(interaction);
+        await AnonymousChatMenu.showMainMenu(interaction);
         break;
       
       case 'accept_friend_request':

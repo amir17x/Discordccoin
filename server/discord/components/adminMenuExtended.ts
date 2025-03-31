@@ -10,7 +10,9 @@ import {
   PermissionFlagsBits,
   ModalBuilder,
   TextInputBuilder,
-  TextInputStyle
+  TextInputStyle,
+  MessageActionRowComponentBuilder,
+  StringSelectMenuInteraction
 } from 'discord.js';
 import { storage } from '../../storage';
 import { botConfig } from '../utils/config';
@@ -19,7 +21,632 @@ import { getItemEmoji } from '../utils/helpers';
 import { showAISettingsMenu } from './aiSettingsMenu';
 
 /**
- * منوی مدیریت آیتم‌ها
+ * نمایش فرم افزودن آیتم جدید
+ * @param interaction تعامل کاربر
+ */
+export async function showAddItemForm(interaction: ButtonInteraction) {
+  try {
+    // بررسی دسترسی ادمین
+    if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+      await interaction.reply({
+        content: '⛔ شما دسترسی لازم برای استفاده از این بخش را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+
+    // ایجاد فرم مودال برای افزودن آیتم جدید
+    const modal = new ModalBuilder()
+      .setCustomId('add_item_modal')
+      .setTitle('➕ افزودن آیتم جدید به فروشگاه');
+
+    // فیلد نام آیتم
+    const nameInput = new TextInputBuilder()
+      .setCustomId('item_name')
+      .setLabel('📝 نام آیتم')
+      .setPlaceholder('مثال: شمشیر طلایی')
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true)
+      .setMinLength(2)
+      .setMaxLength(50);
+
+    // فیلد توضیحات آیتم
+    const descriptionInput = new TextInputBuilder()
+      .setCustomId('item_description')
+      .setLabel('📄 توضیحات آیتم')
+      .setPlaceholder('مثال: یک شمشیر قدرتمند طلایی با قابلیت آسیب بالا')
+      .setStyle(TextInputStyle.Paragraph)
+      .setRequired(true)
+      .setMinLength(5)
+      .setMaxLength(1000);
+
+    // فیلد نوع آیتم
+    const typeInput = new TextInputBuilder()
+      .setCustomId('item_type')
+      .setLabel('🔖 نوع آیتم')
+      .setPlaceholder('مثال: weapon, tool, badge, accessory')
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
+
+    // فیلد ایموجی آیتم
+    const emojiInput = new TextInputBuilder()
+      .setCustomId('item_emoji')
+      .setLabel('😀 ایموجی آیتم')
+      .setPlaceholder('مثال: 🗡️ یا 💎')
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true)
+      .setMinLength(1)
+      .setMaxLength(5);
+
+    // فیلد قیمت آیتم
+    const priceInput = new TextInputBuilder()
+      .setCustomId('item_price')
+      .setLabel('💰 قیمت آیتم (سکه)')
+      .setPlaceholder('مثال: 1000')
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
+
+    // افزودن فیلدها به مودال
+    const nameRow = new ActionRowBuilder<TextInputBuilder>().addComponents(nameInput);
+    const descriptionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(descriptionInput);
+    const typeRow = new ActionRowBuilder<TextInputBuilder>().addComponents(typeInput);
+    const emojiRow = new ActionRowBuilder<TextInputBuilder>().addComponents(emojiInput);
+    const priceRow = new ActionRowBuilder<TextInputBuilder>().addComponents(priceInput);
+
+    modal.addComponents(nameRow, descriptionRow, typeRow, emojiRow, priceRow);
+
+    // نمایش فرم مودال
+    await interaction.showModal(modal);
+  } catch (error) {
+    console.error('Error in showAddItemForm:', error);
+    try {
+      await interaction.reply({ 
+        content: '❌ خطایی هنگام نمایش فرم افزودن آیتم رخ داد! لطفاً دوباره تلاش کنید.',
+        ephemeral: true 
+      });
+    } catch (replyError) {
+      console.error('Error replying to interaction:', replyError);
+    }
+  }
+}
+
+/**
+ * نمایش فرم انتخاب آیتم برای ویرایش
+ * @param interaction تعامل کاربر
+ */
+export async function showEditItemSelectForm(interaction: ButtonInteraction) {
+  try {
+    // بررسی دسترسی ادمین
+    if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+      await interaction.reply({
+        content: '⛔ شما دسترسی لازم برای استفاده از این بخش را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+
+    // دریافت لیست آیتم‌ها
+    const items = await storage.getAllItems();
+
+    if (items.length === 0) {
+      await interaction.reply({
+        content: '⚠️ هیچ آیتمی برای ویرایش وجود ندارد. ابتدا باید یک آیتم ایجاد کنید.',
+        ephemeral: true
+      });
+      return;
+    }
+
+    // ایجاد منوی کشویی انتخاب آیتم
+    const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId('edit_item_select')
+      .setPlaceholder('آیتم مورد نظر برای ویرایش را انتخاب کنید')
+      .setMinValues(1)
+      .setMaxValues(1);
+
+    // افزودن آیتم‌ها به منوی کشویی
+    items.forEach(item => {
+      selectMenu.addOptions(
+        new StringSelectMenuOptionBuilder()
+          .setLabel(`${item.name}`)
+          .setDescription(`قیمت: ${item.price} سکه | نوع: ${item.type}`)
+          .setValue(`${item.id}`)
+          .setEmoji(item.emoji || '📦')
+      );
+    });
+
+    // ایجاد سطر منوی کشویی
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>()
+      .addComponents(selectMenu);
+
+    // ایجاد دکمه بازگشت
+    const backButton = new ButtonBuilder()
+      .setCustomId('admin_items')
+      .setLabel('🔙 بازگشت به مدیریت آیتم‌ها')
+      .setStyle(ButtonStyle.Secondary);
+
+    const backRow = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(backButton);
+
+    // ایجاد Embed راهنما
+    const embed = new EmbedBuilder()
+      .setColor('#3498DB')
+      .setTitle('✏️ ویرایش آیتم فروشگاه')
+      .setDescription('لطفاً آیتم مورد نظر برای ویرایش را از لیست زیر انتخاب کنید.')
+      .setFooter({ text: `مدیر: ${interaction.user.username} | ${new Date().toLocaleString()}` })
+      .setTimestamp();
+
+    // ارسال پاسخ
+    await interaction.reply({
+      embeds: [embed],
+      components: [row, backRow],
+      ephemeral: true
+    });
+  } catch (error) {
+    console.error('Error in showEditItemSelectForm:', error);
+    try {
+      await interaction.reply({ 
+        content: '❌ خطایی هنگام نمایش فرم انتخاب آیتم رخ داد! لطفاً دوباره تلاش کنید.',
+        ephemeral: true 
+      });
+    } catch (replyError) {
+      console.error('Error replying to interaction:', replyError);
+    }
+  }
+}
+
+/**
+ * نمایش فرم ویرایش آیتم انتخاب شده
+ * @param interaction تعامل منوی کشویی
+ * @param itemId شناسه آیتم انتخاب شده
+ */
+export async function showEditItemForm(interaction: StringSelectMenuInteraction, itemId: number) {
+  try {
+    // دریافت اطلاعات آیتم
+    const item = await storage.getItemById(itemId);
+
+    if (!item) {
+      await interaction.reply({
+        content: '❌ آیتم مورد نظر یافت نشد!',
+        ephemeral: true
+      });
+      return;
+    }
+
+    // ایجاد فرم مودال برای ویرایش آیتم
+    const modal = new ModalBuilder()
+      .setCustomId(`edit_item_modal_${itemId}`)
+      .setTitle(`✏️ ویرایش آیتم: ${item.name}`);
+
+    // فیلد نام آیتم
+    const nameInput = new TextInputBuilder()
+      .setCustomId('item_name')
+      .setLabel('📝 نام آیتم')
+      .setValue(item.name)
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true)
+      .setMinLength(2)
+      .setMaxLength(50);
+
+    // فیلد توضیحات آیتم
+    const descriptionInput = new TextInputBuilder()
+      .setCustomId('item_description')
+      .setLabel('📄 توضیحات آیتم')
+      .setValue(item.description || '')
+      .setStyle(TextInputStyle.Paragraph)
+      .setRequired(true)
+      .setMinLength(5)
+      .setMaxLength(1000);
+
+    // فیلد نوع آیتم
+    const typeInput = new TextInputBuilder()
+      .setCustomId('item_type')
+      .setLabel('🔖 نوع آیتم')
+      .setValue(item.type || '')
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
+
+    // فیلد ایموجی آیتم
+    const emojiInput = new TextInputBuilder()
+      .setCustomId('item_emoji')
+      .setLabel('😀 ایموجی آیتم')
+      .setValue(item.emoji || '📦')
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true)
+      .setMinLength(1)
+      .setMaxLength(5);
+
+    // فیلد قیمت آیتم
+    const priceInput = new TextInputBuilder()
+      .setCustomId('item_price')
+      .setLabel('💰 قیمت آیتم (سکه)')
+      .setValue(item.price.toString())
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
+
+    // افزودن فیلدها به مودال
+    const nameRow = new ActionRowBuilder<TextInputBuilder>().addComponents(nameInput);
+    const descriptionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(descriptionInput);
+    const typeRow = new ActionRowBuilder<TextInputBuilder>().addComponents(typeInput);
+    const emojiRow = new ActionRowBuilder<TextInputBuilder>().addComponents(emojiInput);
+    const priceRow = new ActionRowBuilder<TextInputBuilder>().addComponents(priceInput);
+
+    modal.addComponents(nameRow, descriptionRow, typeRow, emojiRow, priceRow);
+
+    // نمایش فرم مودال
+    await interaction.showModal(modal);
+  } catch (error) {
+    console.error('Error in showEditItemForm:', error);
+    try {
+      await interaction.reply({ 
+        content: '❌ خطایی هنگام نمایش فرم ویرایش آیتم رخ داد! لطفاً دوباره تلاش کنید.',
+        ephemeral: true 
+      });
+    } catch (replyError) {
+      console.error('Error replying to interaction:', replyError);
+    }
+  }
+}
+
+/**
+ * نمایش فرم انتخاب آیتم برای حذف
+ * @param interaction تعامل کاربر
+ */
+export async function showRemoveItemSelectForm(interaction: ButtonInteraction) {
+  try {
+    // بررسی دسترسی ادمین
+    if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+      await interaction.reply({
+        content: '⛔ شما دسترسی لازم برای استفاده از این بخش را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+
+    // دریافت لیست آیتم‌ها
+    const items = await storage.getAllItems();
+
+    if (items.length === 0) {
+      await interaction.reply({
+        content: '⚠️ هیچ آیتمی برای حذف وجود ندارد.',
+        ephemeral: true
+      });
+      return;
+    }
+
+    // ایجاد منوی کشویی انتخاب آیتم
+    const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId('remove_item_select')
+      .setPlaceholder('آیتم مورد نظر برای حذف را انتخاب کنید')
+      .setMinValues(1)
+      .setMaxValues(1);
+
+    // افزودن آیتم‌ها به منوی کشویی
+    items.forEach(item => {
+      selectMenu.addOptions(
+        new StringSelectMenuOptionBuilder()
+          .setLabel(`${item.name}`)
+          .setDescription(`قیمت: ${item.price} سکه | نوع: ${item.type}`)
+          .setValue(`${item.id}`)
+          .setEmoji(item.emoji || '📦')
+      );
+    });
+
+    // ایجاد سطر منوی کشویی
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>()
+      .addComponents(selectMenu);
+
+    // ایجاد دکمه بازگشت
+    const backButton = new ButtonBuilder()
+      .setCustomId('admin_items')
+      .setLabel('🔙 بازگشت به مدیریت آیتم‌ها')
+      .setStyle(ButtonStyle.Secondary);
+
+    const backRow = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(backButton);
+
+    // ایجاد Embed راهنما
+    const embed = new EmbedBuilder()
+      .setColor('#E74C3C')
+      .setTitle('🗑️ حذف آیتم فروشگاه')
+      .setDescription('⚠️ **هشدار**: حذف آیتم غیرقابل بازگشت است.\n\nلطفاً آیتم مورد نظر برای حذف را از لیست زیر انتخاب کنید.')
+      .setFooter({ text: `مدیر: ${interaction.user.username} | ${new Date().toLocaleString()}` })
+      .setTimestamp();
+
+    // ارسال پاسخ
+    await interaction.reply({
+      embeds: [embed],
+      components: [row, backRow],
+      ephemeral: true
+    });
+  } catch (error) {
+    console.error('Error in showRemoveItemSelectForm:', error);
+    try {
+      await interaction.reply({ 
+        content: '❌ خطایی هنگام نمایش فرم حذف آیتم رخ داد! لطفاً دوباره تلاش کنید.',
+        ephemeral: true 
+      });
+    } catch (replyError) {
+      console.error('Error replying to interaction:', replyError);
+    }
+  }
+}
+
+/**
+ * نمایش تأییدیه حذف آیتم انتخاب شده
+ * @param interaction تعامل منوی کشویی
+ * @param itemId شناسه آیتم انتخاب شده
+ */
+export async function showRemoveItemConfirmation(interaction: StringSelectMenuInteraction, itemId: number) {
+  try {
+    // دریافت اطلاعات آیتم
+    const item = await storage.getItemById(itemId);
+
+    if (!item) {
+      await interaction.reply({
+        content: '❌ آیتم مورد نظر یافت نشد!',
+        ephemeral: true
+      });
+      return;
+    }
+
+    // ایجاد Embed تأییدیه
+    const embed = new EmbedBuilder()
+      .setColor('#E74C3C')
+      .setTitle('⚠️ تأیید حذف آیتم')
+      .setDescription(`آیا از حذف آیتم **${item.emoji} ${item.name}** اطمینان دارید؟\n\nاین عملیات غیرقابل بازگشت است و ممکن است روی کاربرانی که این آیتم را خریداری کرده‌اند تأثیر بگذارد.`)
+      .addFields(
+        { name: '📝 نام', value: item.name, inline: true },
+        { name: '💰 قیمت', value: `${item.price} سکه`, inline: true },
+        { name: '🔖 نوع', value: item.type, inline: true },
+        { name: '📄 توضیحات', value: item.description || 'بدون توضیحات' }
+      )
+      .setFooter({ text: `شناسه آیتم: ${item.id}` })
+      .setTimestamp();
+
+    // ایجاد دکمه‌های تأیید و لغو
+    const confirmButton = new ButtonBuilder()
+      .setCustomId(`confirm_remove_item_${itemId}`)
+      .setLabel('✅ بله، حذف شود')
+      .setStyle(ButtonStyle.Danger);
+
+    const cancelButton = new ButtonBuilder()
+      .setCustomId('admin_items')
+      .setLabel('❌ خیر، لغو عملیات')
+      .setStyle(ButtonStyle.Secondary);
+
+    const row = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(confirmButton, cancelButton);
+
+    // ارسال پاسخ
+    await interaction.reply({
+      embeds: [embed],
+      components: [row],
+      ephemeral: true
+    });
+  } catch (error) {
+    console.error('Error in showRemoveItemConfirmation:', error);
+    try {
+      await interaction.reply({ 
+        content: '❌ خطایی هنگام نمایش تأییدیه حذف آیتم رخ داد! لطفاً دوباره تلاش کنید.',
+        ephemeral: true 
+      });
+    } catch (replyError) {
+      console.error('Error replying to interaction:', replyError);
+    }
+  }
+}
+
+/**
+ * حذف آیتم از فروشگاه
+ * @param interaction تعامل دکمه
+ * @param itemId شناسه آیتم برای حذف
+ */
+export async function removeItem(interaction: ButtonInteraction, itemId: number) {
+  try {
+    // بررسی دسترسی ادمین
+    if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+      await interaction.reply({
+        content: '⛔ شما دسترسی لازم برای استفاده از این بخش را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+
+    // دریافت اطلاعات آیتم برای نمایش در پیام تأیید
+    const itemBeforeDelete = await storage.getItemById(itemId);
+    
+    if (!itemBeforeDelete) {
+      await interaction.reply({
+        content: '❌ آیتم مورد نظر یافت نشد!',
+        ephemeral: true
+      });
+      return;
+    }
+
+    // حذف آیتم
+    const success = await storage.deleteItem(itemId);
+
+    if (!success) {
+      await interaction.reply({
+        content: '❌ خطایی هنگام حذف آیتم رخ داد! لطفاً دوباره تلاش کنید.',
+        ephemeral: true
+      });
+      return;
+    }
+
+    // ایجاد Embed تأیید حذف
+    const embed = new EmbedBuilder()
+      .setColor('#2ECC71')
+      .setTitle('✅ آیتم با موفقیت حذف شد')
+      .setDescription(`آیتم **${itemBeforeDelete.emoji} ${itemBeforeDelete.name}** با موفقیت از فروشگاه حذف شد.`)
+      .setFooter({ text: `توسط: ${interaction.user.username} | ${new Date().toLocaleString()}` })
+      .setTimestamp();
+
+    // ایجاد دکمه بازگشت به منوی مدیریت آیتم
+    const backButton = new ButtonBuilder()
+      .setCustomId('admin_items')
+      .setLabel('🔙 بازگشت به مدیریت آیتم‌ها')
+      .setStyle(ButtonStyle.Secondary);
+
+    const row = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(backButton);
+
+    // ارسال پاسخ
+    await interaction.reply({
+      embeds: [embed],
+      components: [row],
+      ephemeral: true
+    });
+  } catch (error) {
+    console.error('Error in removeItem:', error);
+    try {
+      await interaction.reply({ 
+        content: '❌ خطایی هنگام حذف آیتم رخ داد! لطفاً دوباره تلاش کنید.',
+        ephemeral: true 
+      });
+    } catch (replyError) {
+      console.error('Error replying to interaction:', replyError);
+    }
+  }
+}
+
+/**
+ * نمایش لیست آیتم‌های فروشگاه
+ * @param interaction تعامل کاربر
+ */
+export async function showItemsList(interaction: ButtonInteraction) {
+  try {
+    // بررسی دسترسی ادمین
+    if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+      await interaction.reply({
+        content: '⛔ شما دسترسی لازم برای استفاده از این بخش را ندارید!',
+        ephemeral: true
+      });
+      return;
+    }
+
+    // دریافت لیست آیتم‌ها
+    const items = await storage.getAllItems();
+
+    if (items.length === 0) {
+      const emptyEmbed = new EmbedBuilder()
+        .setColor('#3498DB')
+        .setTitle('📋 لیست آیتم‌های فروشگاه')
+        .setDescription('هیچ آیتمی در فروشگاه موجود نیست. برای افزودن آیتم جدید، از دکمه "افزودن آیتم" استفاده کنید.')
+        .setFooter({ text: `مدیر: ${interaction.user.username} | ${new Date().toLocaleString()}` })
+        .setTimestamp();
+
+      const backButton = new ButtonBuilder()
+        .setCustomId('admin_items')
+        .setLabel('🔙 بازگشت به مدیریت آیتم‌ها')
+        .setStyle(ButtonStyle.Secondary);
+
+      const row = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(backButton);
+
+      await interaction.reply({
+        embeds: [emptyEmbed],
+        components: [row],
+        ephemeral: true
+      });
+      return;
+    }
+
+    // دسته‌بندی آیتم‌ها بر اساس نوع
+    const itemsByType = {};
+    items.forEach(item => {
+      const type = item.type || 'نامشخص';
+      if (!itemsByType[type]) {
+        itemsByType[type] = [];
+      }
+      itemsByType[type].push(item);
+    });
+
+    // ایجاد Embed اصلی
+    const embed = new EmbedBuilder()
+      .setColor('#3498DB')
+      .setTitle('📋 لیست آیتم‌های فروشگاه')
+      .setDescription(`مجموع ${items.length} آیتم در فروشگاه موجود است. این لیست به تفکیک نوع آیتم‌ها نمایش داده می‌شود.`)
+      .setFooter({ text: `مدیر: ${interaction.user.username} | ${new Date().toLocaleString()}` })
+      .setTimestamp();
+
+    // افزودن اطلاعات آیتم‌ها به Embed
+    Object.keys(itemsByType).forEach(type => {
+      const typeItems = itemsByType[type];
+      const typeEmoji = getTypeEmoji(type);
+      
+      const itemsList = typeItems
+        .map(item => `${item.emoji || '📦'} **${item.name}** - ${item.price.toLocaleString()} سکه (شناسه: ${item.id})`)
+        .join('\n');
+      
+      embed.addFields({ name: `${typeEmoji} ${type} (${typeItems.length} آیتم)`, value: itemsList, inline: false });
+    });
+
+    // ایجاد دکمه بازگشت
+    const backButton = new ButtonBuilder()
+      .setCustomId('admin_items')
+      .setLabel('🔙 بازگشت به مدیریت آیتم‌ها')
+      .setStyle(ButtonStyle.Secondary);
+
+    const row = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(backButton);
+
+    // ارسال پاسخ
+    await interaction.reply({
+      embeds: [embed],
+      components: [row],
+      ephemeral: true
+    });
+  } catch (error) {
+    console.error('Error in showItemsList:', error);
+    try {
+      await interaction.reply({ 
+        content: '❌ خطایی هنگام نمایش لیست آیتم‌ها رخ داد! لطفاً دوباره تلاش کنید.',
+        ephemeral: true 
+      });
+    } catch (replyError) {
+      console.error('Error replying to interaction:', replyError);
+    }
+  }
+}
+
+/**
+ * دریافت ایموجی مناسب برای نوع آیتم
+ * @param type نوع آیتم
+ * @returns ایموجی مناسب
+ */
+function getTypeEmoji(type: string): string {
+  // تبدیل متن به حروف کوچک برای بررسی ساده‌تر
+  const lowerType = type.toLowerCase();
+  
+  // تعیین ایموجی بر اساس نوع آیتم
+  if (lowerType.includes('weapon') || lowerType.includes('سلاح')) {
+    return '⚔️';
+  } else if (lowerType.includes('tool') || lowerType.includes('ابزار')) {
+    return '🛠️';
+  } else if (lowerType.includes('badge') || lowerType.includes('نشان')) {
+    return '🏅';
+  } else if (lowerType.includes('accessory') || lowerType.includes('زینتی')) {
+    return '👑';
+  } else if (lowerType.includes('food') || lowerType.includes('غذا')) {
+    return '🍕';
+  } else if (lowerType.includes('potion') || lowerType.includes('معجون')) {
+    return '🧪';
+  } else if (lowerType.includes('outfit') || lowerType.includes('لباس')) {
+    return '👕';
+  } else if (lowerType.includes('pet') || lowerType.includes('حیوان')) {
+    return '🐾';
+  } else if (lowerType.includes('boost') || lowerType.includes('تقویت')) {
+    return '🚀';
+  } else if (lowerType.includes('special') || lowerType.includes('ویژه')) {
+    return '✨';
+  } else {
+    return '📦'; // ایموجی پیش‌فرض
+  }
+}
+
+/**
+ * منوی مدیریت آیتم‌های ربات
  * @param interaction تعامل کاربر
  */
 export async function itemManagementMenu(interaction: ButtonInteraction | ChatInputCommandInteraction) {

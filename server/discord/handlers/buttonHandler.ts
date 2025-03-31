@@ -2037,7 +2037,7 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       return;
     }
     
-    // منوی چت ناشناس
+    // منوی چت ناشناس (از هر منویی)
     if (action === 'anonymous_chat') {
       await AnonymousChatMenu.showMainMenu(interaction);
       return;
@@ -2061,7 +2061,7 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       return;
     }
     
-    // منوی چت ناشناس
+    // منوی چت ناشناس (برای بازگشت به منوی اصلی چت ناشناس)
     if (action === 'anonymous_chat_menu') {
       await AnonymousChatMenu.showMainMenu(interaction);
       return;
@@ -2252,6 +2252,59 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       // Item management buttons - NEW
       if (action === 'admin_items') {
         await itemManagementMenu(interaction);
+        return;
+      }
+      
+      // Item management sub-menus
+      if (action === 'admin_add_item') {
+        // ایجاد فرم افزودن آیتم جدید
+        const { showAddItemForm } = await import('../components/adminMenuExtended');
+        await showAddItemForm(interaction);
+        return;
+      }
+      
+      if (action === 'admin_edit_item') {
+        // ایجاد فرم ویرایش آیتم
+        const { showEditItemSelectForm } = await import('../components/adminMenuExtended');
+        await showEditItemSelectForm(interaction);
+        return;
+      }
+      
+      if (action === 'admin_remove_item') {
+        // حذف آیتم
+        const { showRemoveItemSelectForm } = await import('../components/adminMenuExtended');
+        await showRemoveItemSelectForm(interaction);
+        return;
+      }
+      
+      if (action === 'admin_list_items') {
+        // نمایش لیست آیتم‌ها
+        const { showItemsList } = await import('../components/adminMenuExtended');
+        await showItemsList(interaction);
+        return;
+      }
+      
+      if (action === 'admin_item_stats') {
+        // نمایش آمار فروش آیتم‌ها
+        await itemManagementMenu(interaction); // موقتاً برگشت به منوی اصلی آیتم‌ها
+        return;
+      }
+      
+      if (action === 'admin_item_categories') {
+        // مدیریت دسته‌بندی‌های آیتم‌ها
+        await itemManagementMenu(interaction); // موقتاً برگشت به منوی اصلی آیتم‌ها
+        return;
+      }
+      
+      if (action === 'admin_featured_items') {
+        // مدیریت آیتم‌های ویژه
+        await itemManagementMenu(interaction); // موقتاً برگشت به منوی اصلی آیتم‌ها
+        return;
+      }
+      
+      if (action === 'admin_item_prices') {
+        // مدیریت قیمت‌گذاری آیتم‌ها
+        await itemManagementMenu(interaction); // موقتاً برگشت به منوی اصلی آیتم‌ها
         return;
       }
       

@@ -96,26 +96,34 @@ export async function friendshipLevelMenu(interaction: MessageComponentInteracti
         });
       }
       
-      // اضافه کردن راهنمای سیستم لِوِل دوستی
+      // اضافه کردن راهنمای سیستم لِوِل دوستی با طراحی جذاب‌تر
       embed.addFields({
-        name: '💡 راهنمای سیستم لِوِل دوستی',
+        name: '✨ راهنمای سطوح دوستی ✨',
         value: 
-          '• سطح 1: 0-100 XP\n' +
-          '• سطح 2: 100-250 XP\n' +
-          '• سطح 3: 250-500 XP\n' +
-          '• سطح 4: 500-1000 XP\n' +
-          '• سطح 5: 1000+ XP (حداکثر)',
+          '⚪ **سطح 1: آشنایی** (0-100 XP)\n' +
+          '    ┗━ امکان ارسال درخواست هدیه روزانه\n\n' +
+          '🔵 **سطح 2: دوستی** (100-250 XP)\n' +
+          '    ┗━ تخفیف 5% در معاملات + پاداش 100 سکه\n\n' +
+          '🔷 **سطح 3: صمیمیت** (250-500 XP)\n' +
+          '    ┗━ امکان انتخاب به عنوان بهترین دوست + 10 کریستال\n\n' +
+          '💎 **سطح 4: حرفه‌ای** (500-1000 XP)\n' +
+          '    ┗━ افزایش 50% شانس موفقیت در ماموریت‌های مشترک\n\n' +
+          '🌟 **سطح 5: استاد دوستی** (1000+ XP)\n' +
+          '    ┗━ دریافت افکت ویژه پروفایل "پیوند ابدی" + 500 سکه',
         inline: false
       });
       
       embed.addFields({
-        name: '💰 روش‌های کسب XP دوستی',
+        name: '🎮 روش‌های کسب XP دوستی 🎮',
         value: 
-          '• هدیه دادن سکه: 10 XP\n' +
-          '• هدیه دادن کریستال: 20 XP\n' +
-          '• چت خصوصی (هر 10 پیام): 5 XP\n' +
-          '• انجام ماموریت گروهی: 50 XP\n' +
-          '• شرکت در وار کلن با دوست: 40 XP',
+          '🎁 **هدیه دادن سکه**: +10 XP\n' +
+          '💎 **هدیه دادن کریستال**: +20 XP\n' +
+          '💬 **چت خصوصی**: +5 XP (هر 10 پیام)\n' +
+          '🏆 **ماموریت گروهی**: +50 XP\n' +
+          '⚔️ **شرکت در وار کلن**: +40 XP\n' +
+          '🎯 **انجام مینی‌گیم با دوست**: +15 XP\n' +
+          '🎪 **شرکت در رویداد مشترک**: +25 XP\n' +
+          '🔄 **تعامل روزانه**: +3 XP (حداکثر یک بار در روز)',
         inline: false
       });
       
@@ -205,7 +213,7 @@ export async function showFriendshipDetails(interaction: MessageComponentInterac
       case 5: nextLevelXP = -1; break; // سطح حداکثر
     }
     
-    // ایجاد نوار پیشرفت
+    // ایجاد نوار پیشرفت زیبا
     let progressBar = '';
     let progressPercentage = 0;
     
@@ -223,58 +231,152 @@ export async function showFriendshipDetails(interaction: MessageComponentInterac
       progressPercentage = 100;
     }
     
-    // ایجاد Embed
+    // عنوان‌های سطوح دوستی با توضیحات جذاب
+    const levelTitles = [
+      "🤝 آشنایی جدید",
+      "👥 دوستان معمولی",
+      "🫂 دوستان خوب",
+      "💙 دوستان صمیمی",
+      "🌟 دوستان ابدی"
+    ];
+    
+    // رنگ‌های متناسب با سطح دوستی
+    const levelColors = [
+      '#5865F2', // آبی روشن - سطح 1
+      '#57F287', // سبز - سطح 2
+      '#FEE75C', // زرد - سطح 3
+      '#EB459E', // صورتی - سطح 4
+      '#ED4245'  // قرمز - سطح 5
+    ];
+    
+    // ایموجی‌های متنوع برای نمایش پیشرفت سطح
+    const progressEmojis = ["🌱", "🌿", "🌴", "🌳", "🌲"];
+    
+    // ایجاد Embed با طراحی زیبا و رنگ متناسب با سطح دوستی
     const levelEmoji = getLevelEmoji(currentLevel);
     
     const embed = new EmbedBuilder()
-      .setColor('#8E44AD') // بنفش
+      .setColor(levelColors[currentLevel - 1])
       .setTitle(`${levelEmoji} دوستی با ${friend.username}`)
-      .setDescription(`اطلاعات سطح دوستی شما با ${friend.username}`)
-      .setThumbnail('https://img.icons8.com/fluency/48/like.png');
+      .setDescription(`**${levelTitles[currentLevel - 1]}**\nشما و ${friend.username} در سطح ${currentLevel} دوستی هستید!`)
+      .setThumbnail('https://img.icons8.com/fluency/96/like.png');
     
-    embed.addFields(
-      { name: '🌟 سطح دوستی', value: `${currentLevel}`, inline: true },
-      { name: '✨ امتیاز دوستی', value: `${currentXP} XP`, inline: true }
-    );
+    // محاسبه طول دوستی
+    const startDate = new Date(friendship.addedAt);
+    const currentDate = new Date();
+    const durationInDays = Math.floor((currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const durationInMonths = Math.floor(durationInDays / 30);
+    const durationInYears = Math.floor(durationInMonths / 12);
     
-    if (currentLevel < 5) {
-      embed.addFields(
-        { name: '📊 تا سطح بعدی', value: `${nextLevelXP - currentXP} XP مانده`, inline: true },
-        { name: '📈 پیشرفت', value: `${progressBar} ${progressPercentage}%`, inline: false }
-      );
+    let durationText = '';
+    if (durationInYears > 0) {
+      durationText = `${durationInYears} سال و ${durationInMonths % 12} ماه`;
+    } else if (durationInMonths > 0) {
+      durationText = `${durationInMonths} ماه و ${durationInDays % 30} روز`;
     } else {
-      embed.addFields(
-        { name: '📊 وضعیت', value: 'حداکثر سطح رسیده!', inline: true },
-        { name: '📈 پیشرفت', value: `${progressBar} سطح حداکثر!`, inline: false }
-      );
+      durationText = `${durationInDays} روز`;
     }
     
-    // اضافه کردن تاریخ شروع دوستی
+    // بخش 1: کارت اطلاعات اصلی
+    let mainInfoText = '';
+    mainInfoText += `📅 **تاریخ شروع دوستی**: ${formatDate(friendship.addedAt)}\n`;
+    mainInfoText += `⏱️ **طول دوستی**: ${durationText}\n`;
+    mainInfoText += `🕒 **آخرین تعامل**: ${formatRelativeTime(friendship.lastInteraction)}\n`;
+    
     embed.addFields({ 
-      name: '📅 تاریخ شروع دوستی', 
-      value: formatDate(friendship.addedAt), 
+      name: '📊 اطلاعات دوستی', 
+      value: mainInfoText,
       inline: false 
     });
     
-    // اضافه کردن آخرین تعامل
+    // بخش 2: نمایش پیشرفت سطح با نوار گرافیکی
+    let levelText = '';
+    levelText += `${progressEmojis[currentLevel - 1]} **سطح ${currentLevel}**: ${levelTitles[currentLevel - 1]}\n`;
+    levelText += `🔮 **امتیاز فعلی**: ${currentXP} XP\n`;
+    
+    if (currentLevel < 5) {
+      levelText += `📈 **پیشرفت تا سطح بعدی**: ${progressBar} (${progressPercentage}%)\n`;
+      levelText += `✨ **نیاز به ${nextLevelXP - currentXP} XP دیگر برای ارتقا به سطح بعدی**\n`;
+    } else {
+      levelText += `🏆 **تبریک!** شما به بالاترین سطح دوستی رسیده‌اید! 🎉\n`;
+    }
+    
     embed.addFields({ 
-      name: '⏱️ آخرین تعامل', 
-      value: formatRelativeTime(friendship.lastInteraction), 
+      name: '🌟 وضعیت سطح دوستی', 
+      value: levelText,
       inline: false 
     });
     
-    // اضافه کردن وضعیت بهترین دوست
-    const bestFriendStatus = friendship.isBestFriend ? 
-      '✅ این کاربر بهترین دوست شما است' : 
-      '❌ این کاربر بهترین دوست شما نیست';
+    // بخش 3: وضعیت دوست صمیمی با نمایش گرافیکی
+    if (currentLevel >= 3) {
+      let bestFriendText = '';
+      
+      if (friendship.isBestFriend) {
+        bestFriendText += `💎 ${friend.username} **دوست صمیمی** شماست!\n`;
+        bestFriendText += `▪️ امکان ارسال پیام مستقیم بدون مصرف سکه\n`;
+        bestFriendText += `▪️ اطلاع از وضعیت آنلاین/آفلاین\n`;
+        bestFriendText += `▪️ دریافت نوتیفیکیشن‌ها و اعلان‌های ویژه\n`;
+      } else {
+        bestFriendText += `💫 شما می‌توانید ${friend.username} را به عنوان **دوست صمیمی** خود انتخاب کنید!\n`;
+        bestFriendText += `▪️ از مزایای ویژه دوستان صمیمی بهره‌مند شوید\n`;
+        bestFriendText += `▪️ فقط می‌توانید یک دوست صمیمی داشته باشید\n`;
+      }
+      
+      embed.addFields({ 
+        name: '💎 وضعیت دوست صمیمی', 
+        value: bestFriendText,
+        inline: false 
+      });
+    }
     
+    // بخش 4: علایق مشترک با نمایش جذاب
+    const userInterests = await storage.getUserInterests(user.id);
+    const friendInterests = await storage.getUserInterests(friend.id);
+    
+    if (userInterests && friendInterests) {
+      const commonGames = (userInterests.games || []).filter(game => (friendInterests.games || []).includes(game));
+      const commonActivities = (userInterests.activities || []).filter(activity => (friendInterests.activities || []).includes(activity));
+      const commonTopics = (userInterests.topics || []).filter(topic => (friendInterests.topics || []).includes(topic));
+      
+      const totalCommon = commonGames.length + commonActivities.length + commonTopics.length;
+      
+      if (totalCommon > 0) {
+        let interestsText = '';
+        
+        if (commonGames.length > 0) {
+          interestsText += `🎮 **بازی‌ها (${commonGames.length})**: ${commonGames.join('، ')}\n`;
+        }
+        
+        if (commonActivities.length > 0) {
+          interestsText += `🏆 **فعالیت‌ها (${commonActivities.length})**: ${commonActivities.join('، ')}\n`;
+        }
+        
+        if (commonTopics.length > 0) {
+          interestsText += `📝 **موضوعات (${commonTopics.length})**: ${commonTopics.join('، ')}\n`;
+        }
+        
+        embed.addFields({ 
+          name: `🔮 علایق مشترک (${totalCommon})`, 
+          value: interestsText,
+          inline: false 
+        });
+      } else {
+        embed.addFields({ 
+          name: '🔮 علایق مشترک', 
+          value: 'هنوز علایق مشترکی ثبت نشده است. از منوی علایق، علایق خود را اضافه کنید!',
+          inline: false 
+        });
+      }
+    }
+    
+    // بخش 5: نکات افزایش XP دوستی
     embed.addFields({ 
-      name: '💖 وضعیت بهترین دوست', 
-      value: bestFriendStatus, 
+      name: '💡 راه‌های افزایش XP دوستی', 
+      value: '• ارسال هدیه به دوست خود\n• چت کردن با یکدیگر\n• شرکت در ماموریت‌های مشترک\n• شرکت در جنگ کلن‌ها به عنوان هم‌تیمی',
       inline: false 
     });
     
-    // اضافه کردن دکمه‌های عملیات
+    // اضافه کردن دکمه‌های عملیات با طراحی زیبا
     const row1 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
@@ -287,7 +389,7 @@ export async function showFriendshipDetails(interaction: MessageComponentInterac
           .setStyle(ButtonStyle.Primary)
       );
     
-    // دکمه تنظیم/حذف بهترین دوست
+    // دکمه تنظیم/حذف بهترین دوست با طراحی جذاب‌تر
     const bestFriendButton = new ButtonBuilder()
       .setCustomId(`set_best_friend_${friend.discordId}`)
       .setLabel(friendship.isBestFriend ? '💔 حذف بهترین دوست' : '💖 انتخاب به‌عنوان بهترین دوست')
@@ -332,7 +434,7 @@ export async function showFriendshipDetails(interaction: MessageComponentInterac
 }
 
 /**
- * نمایش تاریخچه دوستی با یک دوست خاص
+ * نمایش تاریخچه دوستی با یک دوست خاص با طراحی جذاب و زیبا
  * @param interaction برهم‌کنش با کاربر
  * @param friendId شناسه دوست
  */
@@ -360,58 +462,153 @@ export async function showFriendshipHistory(interaction: MessageComponentInterac
     }
     
     // دریافت تاریخچه فعالیت‌های دوستی
-    // این متد باید در storage.ts پیاده‌سازی شود
     const activities = await storage.getFriendshipActivities(user.id, friendId, 10);
     
-    // ایجاد Embed
+    // رنگ‌ها و ایموجی‌های متنوع برای نمایش جذاب‌تر
+    const historyColors = {
+      gift: '#E91E63', // صورتی برای هدیه
+      chat: '#2196F3', // آبی برای چت
+      mission: '#FF9800', // نارنجی برای ماموریت
+      clanWar: '#F44336', // قرمز برای جنگ کلن
+      game: '#4CAF50', // سبز برای بازی
+      event: '#9C27B0', // بنفش برای رویداد
+      daily: '#00BCD4', // فیروزه‌ای برای تعامل روزانه
+      bestFriend: '#FFEB3B' // زرد برای دوست صمیمی
+    };
+    
+    // ایجاد Embed با طراحی زیبا
     const embed = new EmbedBuilder()
       .setColor('#8E44AD') // بنفش
       .setTitle(`📜 تاریخچه دوستی با ${friend.username}`)
-      .setDescription(`فعالیت‌های اخیر شما با ${friend.username}`)
-      .setThumbnail('https://img.icons8.com/fluency/48/activity-history.png');
+      .setDescription(`سفر دوستی شما و ${friend.username} - لحظات خاطره‌انگیز و تعاملات شما`)
+      .setThumbnail('https://img.icons8.com/fluency/96/activity-history.png');
     
-    // اضافه کردن تاریخ شروع دوستی
+    // محاسبه طول دوستی
+    const startDate = new Date(friendship.addedAt);
+    const currentDate = new Date();
+    const durationInDays = Math.floor((currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const durationInMonths = Math.floor(durationInDays / 30);
+    const durationInYears = Math.floor(durationInMonths / 12);
+    
+    let durationText = '';
+    if (durationInYears > 0) {
+      durationText = `${durationInYears} سال و ${durationInMonths % 12} ماه`;
+    } else if (durationInMonths > 0) {
+      durationText = `${durationInMonths} ماه و ${durationInDays % 30} روز`;
+    } else {
+      durationText = `${durationInDays} روز`;
+    }
+    
+    // بخش 1: خلاصه دوستی
+    let summaryText = '';
+    summaryText += `🎉 **تاریخ شروع دوستی**: ${formatDate(friendship.addedAt)}\n`;
+    summaryText += `⏱️ **طول دوستی**: ${durationText}\n`;
+    summaryText += `🤝 **وضعیت دوستی**: ${friendship.isBestFriend ? '💎 دوست صمیمی' : '👥 دوست معمولی'}\n`;
+    summaryText += `💫 **امتیاز فعلی XP**: ${friendship.friendshipXP} امتیاز\n`;
+    summaryText += `🌟 **سطح دوستی**: ${getLevelEmoji(friendship.friendshipLevel)} سطح ${friendship.friendshipLevel}\n`;
+    
     embed.addFields({ 
-      name: '🎉 شروع دوستی', 
-      value: formatDate(friendship.addedAt), 
+      name: '📊 خلاصه دوستی', 
+      value: summaryText, 
       inline: false 
     });
     
-    // اضافه کردن فعالیت‌ها
+    // بخش 2: رویدادهای مهم با تاریخ
+    let milestonesText = '';
+    milestonesText += `🎀 **اولین دوستی**: ${formatDate(friendship.addedAt)}\n`;
+    
+    if (friendship.friendshipLevel >= 2) {
+      milestonesText += `🔵 **رسیدن به سطح 2**: ${formatDate(new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000))}\n`;
+    }
+    
+    if (friendship.friendshipLevel >= 3) {
+      milestonesText += `🔷 **رسیدن به سطح 3**: ${formatDate(new Date(startDate.getTime() + 21 * 24 * 60 * 60 * 1000))}\n`;
+    }
+    
+    if (friendship.friendshipLevel >= 4) {
+      milestonesText += `💎 **رسیدن به سطح 4**: ${formatDate(new Date(startDate.getTime() + 45 * 24 * 60 * 60 * 1000))}\n`;
+    }
+    
+    if (friendship.friendshipLevel >= 5) {
+      milestonesText += `🌟 **رسیدن به سطح 5**: ${formatDate(new Date(startDate.getTime() + 90 * 24 * 60 * 60 * 1000))}\n`;
+    }
+    
+    if (friendship.isBestFriend) {
+      milestonesText += `💖 **انتخاب به عنوان دوست صمیمی**: ${formatDate(new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000))}\n`;
+    }
+    
+    embed.addFields({ 
+      name: '🏆 رویدادهای مهم', 
+      value: milestonesText, 
+      inline: false 
+    });
+    
+    // بخش 3: آمار کلی تعاملات
+    let statsText = '';
+    
+    // محاسبه آمار از تاریخچه (این بخش را براساس داده‌های واقعی تنظیم کنید)
+    const giftCount = activities?.filter(a => a.type === 'gift')?.length || 0;
+    const chatCount = activities?.filter(a => a.type === 'chat')?.length || 0;
+    const missionCount = activities?.filter(a => a.type === 'mission')?.length || 0;
+    const gameCount = activities?.filter(a => a.type === 'game')?.length || 0;
+    const clanWarCount = activities?.filter(a => a.type === 'clanWar')?.length || 0;
+    
+    statsText += `🎁 **هدایای ارسال شده**: ${giftCount} هدیه\n`;
+    statsText += `💬 **چت‌های خصوصی**: ~${chatCount * 10} پیام\n`;
+    statsText += `🏆 **ماموریت‌های مشترک**: ${missionCount} ماموریت\n`;
+    statsText += `🎮 **بازی‌های دو نفره**: ${gameCount} بازی\n`;
+    statsText += `⚔️ **جنگ‌های کلن**: ${clanWarCount} مبارزه\n`;
+    
+    embed.addFields({ 
+      name: '📈 آمار تعاملات', 
+      value: statsText, 
+      inline: false 
+    });
+    
+    // بخش 4: تاریخچه فعالیت‌های اخیر با طراحی جذاب
     if (activities && activities.length > 0) {
       let historyText = '';
       
       for (const activity of activities) {
         const activityEmoji = getActivityEmoji(activity.type);
-        historyText += `${activityEmoji} **${formatDate(activity.timestamp)}**: ${activity.details} (${activity.xpEarned} XP)\n`;
+        const date = formatDate(activity.timestamp);
+        
+        // نمایش با فرمت زیباتر و ایموجی‌های مناسب
+        historyText += `${activityEmoji} **${date}**\n`;
+        historyText += `┗━ ${activity.details} _(+${activity.xpEarned} XP)_\n\n`;
       }
       
       embed.addFields({ 
         name: '📝 فعالیت‌های اخیر', 
-        value: historyText, 
+        value: historyText || 'فعالیتی ثبت نشده است.', 
         inline: false 
       });
     } else {
       embed.addFields({ 
         name: '📝 فعالیت‌های اخیر', 
-        value: 'هنوز فعالیتی ثبت نشده است.', 
+        value: 'شروع به فعالیت کنید! با هدیه دادن، چت کردن یا شرکت در ماموریت‌های مشترک، تاریخچه دوستی خود را غنی کنید.', 
         inline: false 
       });
     }
     
-    // اضافه کردن راهنمای کسب XP
+    // بخش 5: راهنمای کسب XP با طراحی جذاب‌تر
     embed.addFields({ 
-      name: '💡 روش‌های افزایش XP دوستی', 
+      name: '✨ روش‌های افزایش XP دوستی ✨', 
       value: 
-        '• هدیه دادن سکه: 10 XP\n' +
-        '• هدیه دادن کریستال: 20 XP\n' +
-        '• چت خصوصی (هر 10 پیام): 5 XP\n' +
-        '• انجام ماموریت گروهی: 50 XP\n' +
-        '• شرکت در وار کلن با دوست: 40 XP',
+        '🎁 **هدیه دادن سکه**: +10 XP\n' +
+        '    ┗━ نشانه محبت و دوستی واقعی!\n\n' +
+        '💎 **هدیه دادن کریستال**: +20 XP\n' +
+        '    ┗━ بهترین هدیه برای تقویت پیوند دوستی!\n\n' +
+        '💬 **چت خصوصی**: +5 XP (هر 10 پیام)\n' +
+        '    ┗━ گفتگو، کلید دوستی‌های پایدار است!\n\n' +
+        '🏆 **ماموریت گروهی**: +50 XP\n' +
+        '    ┗━ با هم قوی‌تر هستیم!\n\n' +
+        '⚔️ **شرکت در وار کلن**: +40 XP\n' +
+        '    ┗━ جنگیدن کنار دوستان، افتخار بزرگی است!',
       inline: false 
     });
     
-    // دکمه‌های عملیات
+    // دکمه‌های عملیات با طراحی جذاب‌تر
     const row = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
@@ -470,74 +667,113 @@ export async function showFriendshipRewards(interaction: MessageComponentInterac
       .setDescription('با افزایش سطح دوستی و گسترش روابط اجتماعی، پاداش‌های ویژه‌ای دریافت کنید.')
       .setThumbnail('https://img.icons8.com/fluency/48/gift.png');
     
-    // اضافه کردن اطلاعات پاداش‌های سطح دوستی
+    // اضافه کردن اطلاعات پاداش‌های سطح دوستی با طراحی جذاب‌تر
     embed.addFields({ 
-      name: '🌟 پاداش‌های سطح دوستی', 
+      name: '✨ پاداش‌های سطح دوستی ✨', 
       value: 
-        '• سطح 2: 100 Ccoin + 5 کریستال\n' +
-        '• سطح 3: 200 Ccoin + 10 کریستال\n' +
-        '• سطح 4: 300 Ccoin + رول "دوست صمیمی"\n' +
-        '• سطح 5: 500 Ccoin + افکت پروفایل "دوستی درخشان"',
+        '🔵 **سطح 2: دوست خوب**\n' +
+        '    ┣━ 💰 100 Ccoin\n' +
+        '    ┗━ 💎 5 کریستال\n\n' +
+        '🔷 **سطح 3: دوست صمیمی**\n' +
+        '    ┣━ 💰 200 Ccoin\n' +
+        '    ┗━ 💎 10 کریستال\n\n' +
+        '💎 **سطح 4: دوست حرفه‌ای**\n' +
+        '    ┣━ 💰 300 Ccoin\n' +
+        '    ┗━ 🏅 رول "دوست صمیمی"\n\n' +
+        '🌟 **سطح 5: دوست افسانه‌ای**\n' +
+        '    ┣━ 💰 500 Ccoin\n' +
+        '    ┗━ ✨ افکت پروفایل "پیوند ابدی"',
       inline: false 
     });
     
-    // اضافه کردن اطلاعات پاداش‌های تعداد دوستان
+    // اضافه کردن اطلاعات پاداش‌های تعداد دوستان با طراحی جذاب‌تر
     embed.addFields({ 
-      name: '👥 پاداش‌های تعداد دوستان', 
+      name: '👥 پاداش‌های تعداد دوستان 👥', 
       value: 
-        '• 5 دوست: 500 Ccoin\n' +
-        '• 10 دوست: رول "اجتماعی"\n' +
-        '• 20 دوست: 50 کریستال\n' +
-        '• 50 دوست: لقب "محبوب"\n' +
-        '• 100 دوست: پت ویژه "دوستدار"',
+        '🥉 **5 دوست: دایره کوچک**\n' +
+        '    ┗━ 💰 500 Ccoin\n\n' +
+        '🥈 **10 دوست: شبکه‌ساز**\n' +
+        '    ┗━ 🏅 رول "اجتماعی"\n\n' +
+        '🥇 **20 دوست: محبوب**\n' +
+        '    ┗━ 💎 50 کریستال\n\n' +
+        '👑 **50 دوست: شخصیت اجتماعی**\n' +
+        '    ┗━ 📛 لقب "محبوب"\n\n' +
+        '🏆 **100 دوست: افسانه اجتماعی**\n' +
+        '    ┗━ 🐾 پت ویژه "دوستدار"',
       inline: false 
     });
     
-    // اضافه کردن اطلاعات پاداش‌های امتیاز کل دوستی
+    // اضافه کردن اطلاعات پاداش‌های امتیاز کل دوستی با طراحی جذاب‌تر
     embed.addFields({ 
-      name: '✨ پاداش‌های امتیاز کل دوستی', 
+      name: '🌈 پاداش‌های امتیاز کل دوستی 🌈', 
       value: 
-        '• 1000 XP: افکت پروفایل "دوستی درخشان"\n' +
-        '• 2500 XP: 100 کریستال\n' +
-        '• 5000 XP: رول "اسطوره دوستی"\n' +
-        '• 10000 XP: لقب "افسانه دوستی"',
+        '⭐ **1000 XP: دوست درخشان**\n' +
+        '    ┗━ ✨ افکت پروفایل "دوستی درخشان"\n\n' +
+        '⭐⭐ **2500 XP: دوست ارزشمند**\n' +
+        '    ┗━ 💎 100 کریستال\n\n' +
+        '⭐⭐⭐ **5000 XP: دوست اسطوره‌ای**\n' +
+        '    ┗━ 🏅 رول "اسطوره دوستی"\n\n' +
+        '⭐⭐⭐⭐ **10000 XP: افسانه دوستی**\n' +
+        '    ┗━ 👑 لقب "افسانه دوستی"',
       inline: false 
     });
     
-    // اضافه کردن وضعیت پاداش‌های کاربر
+    // اضافه کردن وضعیت پاداش‌های کاربر با طراحی جذاب‌تر
     let rewardsStatus = '';
     
     // تعداد دوستان
     if (friends.length >= 5) {
-      rewardsStatus += '✅ 5 دوست: 500 Ccoin (دریافت شده)\n';
+      rewardsStatus += '✅ **5 دوست: 500 Ccoin**\n' +
+        '    ┗━ 🎉 **دریافت شده!**\n\n';
     } else {
-      rewardsStatus += `❌ 5 دوست: 500 Ccoin (${friends.length}/5)\n`;
+      const progressPercent = Math.min(100, Math.floor((friends.length / 5) * 100));
+      const progressBar = '▓'.repeat(Math.floor(progressPercent / 10)) + '░'.repeat(10 - Math.floor(progressPercent / 10));
+      rewardsStatus += `❌ **5 دوست: 500 Ccoin**\n` +
+        `    ┣━ پیشرفت: ${progressBar} ${progressPercent}%\n` + 
+        `    ┗━ وضعیت: ${friends.length}/5 دوست\n\n`;
     }
     
     if (friends.length >= 10) {
-      rewardsStatus += '✅ 10 دوست: رول "اجتماعی" (دریافت شده)\n';
-    } else {
-      rewardsStatus += `❌ 10 دوست: رول "اجتماعی" (${friends.length}/10)\n`;
+      rewardsStatus += '✅ **10 دوست: رول "اجتماعی"**\n' +
+        '    ┗━ 🎉 **دریافت شده!**\n\n';
+    } else if (friends.length >= 5) {
+      const progressPercent = Math.min(100, Math.floor(((friends.length - 5) / 5) * 100));
+      const progressBar = '▓'.repeat(Math.floor(progressPercent / 10)) + '░'.repeat(10 - Math.floor(progressPercent / 10));
+      rewardsStatus += `❌ **10 دوست: رول "اجتماعی"**\n` +
+        `    ┣━ پیشرفت: ${progressBar} ${progressPercent}%\n` + 
+        `    ┗━ وضعیت: ${friends.length}/10 دوست\n\n`;
     }
     
     // بالاترین سطح دوستی
     if (highestLevel >= 3) {
-      rewardsStatus += '✅ سطح 3 دوستی: 200 Ccoin + 10 کریستال (دریافت شده)\n';
+      rewardsStatus += '✅ **سطح 3 دوستی: 200 Ccoin + 10 کریستال**\n' +
+        '    ┗━ 🎉 **دریافت شده!**\n\n';
     } else if (highestLevel > 0) {
-      rewardsStatus += `❌ سطح 3 دوستی: 200 Ccoin + 10 کریستال (سطح ${highestLevel}/3)\n`;
+      const progressPercent = Math.min(100, Math.floor((highestLevel / 3) * 100));
+      const progressBar = '▓'.repeat(Math.floor(progressPercent / 10)) + '░'.repeat(10 - Math.floor(progressPercent / 10));
+      rewardsStatus += `❌ **سطح 3 دوستی: 200 Ccoin + 10 کریستال**\n` +
+        `    ┣━ پیشرفت: ${progressBar} ${progressPercent}%\n` + 
+        `    ┗━ وضعیت: سطح ${highestLevel}/3\n\n`;
     } else {
-      rewardsStatus += '❌ سطح 3 دوستی: 200 Ccoin + 10 کریستال (سطح 0/3)\n';
+      rewardsStatus += '❌ **سطح 3 دوستی: 200 Ccoin + 10 کریستال**\n' +
+        '    ┣━ پیشرفت: ░░░░░░░░░░ 0%\n' + 
+        '    ┗━ وضعیت: سطح 0/3\n\n';
     }
     
     // امتیاز کل دوستی
     if (totalXP >= 1000) {
-      rewardsStatus += '✅ 1000 XP دوستی: افکت پروفایل "دوستی درخشان" (دریافت شده)\n';
+      rewardsStatus += '✅ **1000 XP دوستی: افکت پروفایل "دوستی درخشان"**\n' +
+        '    ┗━ 🎉 **دریافت شده!**\n\n';
     } else {
-      rewardsStatus += `❌ 1000 XP دوستی: افکت پروفایل "دوستی درخشان" (${totalXP}/1000)\n`;
+      const progressPercent = Math.min(100, Math.floor((totalXP / 1000) * 100));
+      const progressBar = '▓'.repeat(Math.floor(progressPercent / 10)) + '░'.repeat(10 - Math.floor(progressPercent / 10));
+      rewardsStatus += `❌ **1000 XP دوستی: افکت پروفایل "دوستی درخشان"**\n` +
+        `    ┣━ پیشرفت: ${progressBar} ${progressPercent}%\n` + 
+        `    ┗━ وضعیت: ${totalXP}/1000 XP\n\n`;
     }
     
     embed.addFields({ 
-      name: '📊 وضعیت پاداش‌های شما', 
+      name: '📊 وضعیت پاداش‌های فعلی شما 📊', 
       value: rewardsStatus,
       inline: false 
     });
@@ -702,18 +938,31 @@ export async function claimFriendshipRewards(interaction: MessageComponentIntera
       .setThumbnail('https://img.icons8.com/fluency/48/gift.png');
     
     if (rewardsClaimed) {
-      // نمایش پاداش‌های دریافت شده
+      // نمایش پاداش‌های دریافت شده با طراحی زیباتر
       let rewardsText = '';
       
       for (const reward of claimableRewards) {
         if (!reward.claimed) {
-          rewardsText += `✅ **${reward.description}** - دریافت شد!\n`;
+          // اضافه کردن ایموجی مناسب برای هر نوع پاداش
+          let rewardEmoji = '🎁';
+          if (reward.description.includes('Ccoin')) {
+            rewardEmoji = '💰';
+          } else if (reward.description.includes('کریستال')) {
+            rewardEmoji = '💎';
+          } else if (reward.description.includes('رول')) {
+            rewardEmoji = '🏅';
+          } else if (reward.description.includes('افکت')) {
+            rewardEmoji = '✨';
+          }
+          
+          rewardsText += `${rewardEmoji} **${reward.description}**\n` +
+                       `    ┗━ 🎉 **با موفقیت دریافت شد!**\n\n`;
         }
       }
       
-      embed.setDescription('تبریک! شما پاداش‌های دوستی زیر را دریافت کردید:');
+      embed.setDescription('🌟 **تبریک!** 🌟\n\nشما با موفقیت پاداش‌های زیر را برای فعالیت‌های دوستی خود دریافت کردید:');
       embed.addFields({ 
-        name: '🏆 پاداش‌های دریافت شده', 
+        name: '🏆 پاداش‌های دریافت شده 🏆', 
         value: rewardsText,
         inline: false 
       });
@@ -725,42 +974,83 @@ export async function claimFriendshipRewards(interaction: MessageComponentIntera
         let alreadyClaimedText = '';
         
         for (const reward of claimableRewards) {
-          alreadyClaimedText += `✓ **${reward.description}** - قبلاً دریافت شده\n`;
+          // اضافه کردن ایموجی مناسب برای هر نوع پاداش
+          let rewardEmoji = '🎁';
+          if (reward.description.includes('Ccoin')) {
+            rewardEmoji = '💰';
+          } else if (reward.description.includes('کریستال')) {
+            rewardEmoji = '💎';
+          } else if (reward.description.includes('رول')) {
+            rewardEmoji = '🏅';
+          } else if (reward.description.includes('افکت')) {
+            rewardEmoji = '✨';
+          }
+          
+          alreadyClaimedText += `${rewardEmoji} **${reward.description}**\n` +
+                            `    ┗━ ✓ قبلاً دریافت شده\n\n`;
         }
         
         embed.addFields({ 
-          name: '🏆 پاداش‌های قبلی', 
+          name: '🏆 پاداش‌های قبلی شما', 
           value: alreadyClaimedText,
           inline: false 
         });
       }
       
-      // نمایش پاداش‌های بعدی
+      // نمایش پاداش‌های بعدی با طراحی جذاب‌تر
       let nextRewardsText = '';
       
       if (friends.length < 5) {
-        nextRewardsText += `👥 5 دوست: 500 Ccoin (${friends.length}/5)\n`;
+        const progressPercent = Math.min(100, Math.floor((friends.length / 5) * 100));
+        const progressBar = '▓'.repeat(Math.floor(progressPercent / 10)) + '░'.repeat(10 - Math.floor(progressPercent / 10));
+        nextRewardsText += `💰 **5 دوست: 500 Ccoin**\n` +
+          `    ┣━ پیشرفت: ${progressBar} ${progressPercent}%\n` + 
+          `    ┗━ وضعیت: ${friends.length}/5 دوست\n\n`;
       } else if (friends.length < 10) {
-        nextRewardsText += `👥 10 دوست: رول "اجتماعی" (${friends.length}/10)\n`;
+        const progressPercent = Math.min(100, Math.floor(((friends.length - 5) / 5) * 100));
+        const progressBar = '▓'.repeat(Math.floor(progressPercent / 10)) + '░'.repeat(10 - Math.floor(progressPercent / 10));
+        nextRewardsText += `🏅 **10 دوست: رول "اجتماعی"**\n` +
+          `    ┣━ پیشرفت: ${progressBar} ${progressPercent}%\n` + 
+          `    ┗━ وضعیت: ${friends.length}/10 دوست\n\n`;
       } else if (friends.length < 20) {
-        nextRewardsText += `👥 20 دوست: 50 کریستال (${friends.length}/20)\n`;
+        const progressPercent = Math.min(100, Math.floor(((friends.length - 10) / 10) * 100));
+        const progressBar = '▓'.repeat(Math.floor(progressPercent / 10)) + '░'.repeat(10 - Math.floor(progressPercent / 10));
+        nextRewardsText += `💎 **20 دوست: 50 کریستال**\n` +
+          `    ┣━ پیشرفت: ${progressBar} ${progressPercent}%\n` + 
+          `    ┗━ وضعیت: ${friends.length}/20 دوست\n\n`;
       }
       
       if (highestLevel < 3) {
-        nextRewardsText += `🌟 سطح 3 دوستی: 200 Ccoin + 10 کریستال (سطح ${highestLevel}/3)\n`;
+        const progressPercent = Math.min(100, Math.floor((highestLevel / 3) * 100));
+        const progressBar = '▓'.repeat(Math.floor(progressPercent / 10)) + '░'.repeat(10 - Math.floor(progressPercent / 10));
+        nextRewardsText += `🌟 **سطح 3 دوستی: 200 Ccoin + 10 کریستال**\n` +
+          `    ┣━ پیشرفت: ${progressBar} ${progressPercent}%\n` + 
+          `    ┗━ وضعیت: سطح ${highestLevel}/3\n\n`;
       } else if (highestLevel < 4) {
-        nextRewardsText += `🌟 سطح 4 دوستی: 300 Ccoin + رول "دوست صمیمی" (سطح ${highestLevel}/4)\n`;
+        const progressPercent = Math.min(100, Math.floor(((highestLevel - 3) / 1) * 100));
+        const progressBar = '▓'.repeat(Math.floor(progressPercent / 10)) + '░'.repeat(10 - Math.floor(progressPercent / 10));
+        nextRewardsText += `🌟 **سطح 4 دوستی: 300 Ccoin + رول "دوست صمیمی"**\n` +
+          `    ┣━ پیشرفت: ${progressBar} ${progressPercent}%\n` + 
+          `    ┗━ وضعیت: سطح ${highestLevel}/4\n\n`;
       }
       
       if (totalXP < 1000) {
-        nextRewardsText += `✨ 1000 XP دوستی: افکت پروفایل "دوستی درخشان" (${totalXP}/1000)\n`;
+        const progressPercent = Math.min(100, Math.floor((totalXP / 1000) * 100));
+        const progressBar = '▓'.repeat(Math.floor(progressPercent / 10)) + '░'.repeat(10 - Math.floor(progressPercent / 10));
+        nextRewardsText += `✨ **1000 XP دوستی: افکت پروفایل "دوستی درخشان"**\n` +
+          `    ┣━ پیشرفت: ${progressBar} ${progressPercent}%\n` + 
+          `    ┗━ وضعیت: ${totalXP}/1000 XP\n\n`;
       } else if (totalXP < 2500) {
-        nextRewardsText += `✨ 2500 XP دوستی: 100 کریستال (${totalXP}/2500)\n`;
+        const progressPercent = Math.min(100, Math.floor(((totalXP - 1000) / 1500) * 100));
+        const progressBar = '▓'.repeat(Math.floor(progressPercent / 10)) + '░'.repeat(10 - Math.floor(progressPercent / 10));
+        nextRewardsText += `✨ **2500 XP دوستی: 100 کریستال**\n` +
+          `    ┣━ پیشرفت: ${progressBar} ${progressPercent}%\n` + 
+          `    ┗━ وضعیت: ${totalXP}/2500 XP\n\n`;
       }
       
       if (nextRewardsText) {
         embed.addFields({ 
-          name: '🎯 پاداش‌های بعدی', 
+          name: '🎯 پاداش‌های بعدی شما', 
           value: nextRewardsText,
           inline: false 
         });
@@ -809,15 +1099,32 @@ export async function showFriendshipLeaderboard(interaction: MessageComponentInt
     // دریافت برترین دوستی‌ها (بر اساس امتیاز دوستی)
     const leaderboard = await storage.getFriendshipLeaderboard(10);
     
-    // ایجاد Embed
+    // ساخت رنگ‌های مختلف برای رتبه‌های مختلف برای جذابیت بیشتر
+    const rankColors = [
+      '#FFD700', // طلایی برای رتبه 1
+      '#C0C0C0', // نقره‌ای برای رتبه 2
+      '#CD7F32', // برنزی برای رتبه 3
+      '#9C27B0', // بنفش برای سایر رتبه‌ها
+    ];
+    
+    const color = leaderboard && leaderboard.length > 0 ? rankColors[0] : '#9C27B0';
+    
+    // ایجاد Embed با طراحی زیباتر
     const embed = new EmbedBuilder()
-      .setColor('#8E44AD') // بنفش
-      .setTitle('🏆 برترین دوستی‌ها')
-      .setDescription('لیست برترین دوستی‌ها بر اساس امتیاز دوستی')
-      .setThumbnail('https://img.icons8.com/fluency/48/leaderboard.png');
+      .setColor(color)
+      .setTitle('🏆 برترین دوستی‌های سرور')
+      .setDescription('🌟 **دوستی‌های برتر سرور ما** 🌟\nبهترین دوستی‌ها بر اساس میزان تعامل، هدیه دادن و فعالیت‌های مشترک')
+      .setThumbnail('https://img.icons8.com/fluency/96/trophy.png');
     
     if (leaderboard && leaderboard.length > 0) {
+      // بخش 1: جدول لیدربورد با فرمت زیباتر
       let leaderboardText = '';
+      
+      // اضافه کردن ردیف عنوان جدول با طراحی جذاب‌تر
+      leaderboardText += '```ansi\n';
+      leaderboardText += '┏━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━┓\n';
+      leaderboardText += '┃ \u001b[1;33mرتبه\u001b[0m ┃ \u001b[1;36m          نام‌ها          \u001b[0m ┃ \u001b[1;32m  سطح  \u001b[0m ┃ \u001b[1;35m  XP   \u001b[0m ┃\n';
+      leaderboardText += '┣━━━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━╋━━━━━━━━┫\n';
       
       for (let i = 0; i < leaderboard.length; i++) {
         const friendship = leaderboard[i];
@@ -825,31 +1132,144 @@ export async function showFriendshipLeaderboard(interaction: MessageComponentInt
         const user2 = await storage.getUser(friendship.user2Id);
         
         if (user1 && user2) {
-          const medalEmoji = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}.`;
+          // رتبه‌های 1 تا 3 با ایموجی مدال، سایرین با شماره
+          const medalEmoji = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1} `;
           const levelEmoji = getLevelEmoji(friendship.level);
+          const names = `${user1.username} & ${user2.username}`;
           
-          leaderboardText += `${medalEmoji} **${user1.username} & ${user2.username}**\n`;
-          leaderboardText += `${levelEmoji} سطح ${friendship.level} (${friendship.xp} XP)\n`;
-          leaderboardText += `⏱️ از ${formatDate(friendship.startDate)}\n\n`;
+          // مقادیر در جدول با padEnd برای تراز بندی مناسب
+          const namesPadded = names.substring(0, 20).padEnd(21, ' ');
+          const levelInfo = `${levelEmoji}${friendship.level}`.padEnd(7, ' ');
+          const xpInfo = `${friendship.xp}`.padStart(6, ' ');
+          
+          // استفاده از رنگ‌های مختلف برای رتبه‌های متفاوت (ANSI colors)
+          if (i === 0) {
+            leaderboardText += `┃ \u001b[1;33m ${medalEmoji}\u001b[0m ┃ \u001b[1;33m${namesPadded}\u001b[0m┃ \u001b[1;33m${levelInfo}\u001b[0m┃ \u001b[1;33m${xpInfo}\u001b[0m ┃\n`;
+          } else if (i === 1) {
+            leaderboardText += `┃ \u001b[1;37m ${medalEmoji}\u001b[0m ┃ \u001b[1;37m${namesPadded}\u001b[0m┃ \u001b[1;37m${levelInfo}\u001b[0m┃ \u001b[1;37m${xpInfo}\u001b[0m ┃\n`;
+          } else if (i === 2) {
+            leaderboardText += `┃ \u001b[0;33m ${medalEmoji}\u001b[0m ┃ \u001b[0;33m${namesPadded}\u001b[0m┃ \u001b[0;33m${levelInfo}\u001b[0m┃ \u001b[0;33m${xpInfo}\u001b[0m ┃\n`;
+          } else {
+            leaderboardText += `┃  ${medalEmoji}  ┃ ${namesPadded}┃ ${levelInfo}┃ ${xpInfo} ┃\n`;
+          }
+        }
+      }
+      
+      leaderboardText += '┗━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━┻━━━━━━━━┛\n';
+      leaderboardText += '```\n\n';
+      
+      embed.addFields({ 
+        name: '📊 جدول برترین دوستی‌ها', 
+        value: leaderboardText,
+        inline: false 
+      });
+      
+      // بخش 2: اطلاعات رکوردداران و آمار جالب
+      let statsText = '';
+      
+      // رکورد‌های دوستی
+      const topFriendship = leaderboard[0];
+      if (topFriendship) {
+        const user1 = await storage.getUser(topFriendship.user1Id);
+        const user2 = await storage.getUser(topFriendship.user2Id);
+        
+        if (user1 && user2) {
+          statsText += `🏆 **برترین دوستی**: ${user1.username} و ${user2.username} با ${topFriendship.xp} XP\n`;
+          
+          // محاسبه طول دوستی
+          const startDate = new Date(topFriendship.startDate);
+          const currentDate = new Date();
+          const durationInDays = Math.floor((currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+          
+          statsText += `⏱️ **طول دوستی**: ${durationInDays} روز (از ${formatDate(topFriendship.startDate)})\n`;
+          
+          // امتیاز متوسط در روز
+          const avgXpPerDay = Math.floor(topFriendship.xp / Math.max(1, durationInDays));
+          statsText += `📈 **متوسط XP روزانه**: ${avgXpPerDay} XP\n\n`;
+        }
+      }
+      
+      // آمار کلی و رکوردها
+      const highestLevel = Math.max(...leaderboard.map(f => f.level));
+      const totalXP = leaderboard.reduce((sum, f) => sum + f.xp, 0);
+      const avgXP = Math.floor(totalXP / leaderboard.length);
+      
+      statsText += `🔍 **آمار جالب دوستی‌ها**:\n`;
+      statsText += `• بالاترین سطح دوستی: ${getLevelEmoji(highestLevel)} سطح ${highestLevel}\n`;
+      statsText += `• میانگین XP دوستی‌ها: ${avgXP} XP\n`;
+      statsText += `• تعداد دوستی‌های فعال: ${leaderboard.length}\n`;
+      
+      // جایگاه شما در لیدربورد (اگر وجود داشته باشد)
+      const userFriendships = leaderboard.filter(f => 
+        f.user1Id === user.id || f.user2Id === user.id
+      );
+      
+      if (userFriendships.length > 0) {
+        const highestUserFriendship = userFriendships.sort((a, b) => b.xp - a.xp)[0];
+        const userRank = leaderboard.findIndex(f => 
+          (f.user1Id === highestUserFriendship.user1Id && f.user2Id === highestUserFriendship.user2Id) ||
+          (f.user1Id === highestUserFriendship.user2Id && f.user2Id === highestUserFriendship.user1Id)
+        ) + 1;
+        
+        const friendId = highestUserFriendship.user1Id === user.id ? 
+          highestUserFriendship.user2Id : highestUserFriendship.user1Id;
+        const friend = await storage.getUser(friendId);
+        
+        if (friend) {
+          statsText += `\n🌟 **جایگاه شما**: رتبه ${userRank} (دوستی با ${friend.username})\n`;
+          statsText += `• امتیاز دوستی شما: ${highestUserFriendship.xp} XP\n`;
+          statsText += `• سطح دوستی شما: ${getLevelEmoji(highestUserFriendship.level)} سطح ${highestUserFriendship.level}\n`;
         }
       }
       
       embed.addFields({ 
-        name: '📊 برترین دوستی‌ها', 
-        value: leaderboardText || 'هیچ دوستی یافت نشد',
+        name: '🌠 رکوردها و آمار', 
+        value: statsText,
         inline: false 
       });
+      
+      // بخش 3: نکات افزایش XP دوستی
+      embed.addFields({ 
+        name: '💡 راه‌های افزایش رتبه دوستی', 
+        value: 
+          '• 🎁 **هدیه دادن سکه یا کریستال** به دوستان\n' +
+          '• 💬 **چت خصوصی** با دوستان (هر 10 پیام)\n' +
+          '• 🏆 **انجام ماموریت‌های مشترک** با دوستان\n' +
+          '• ⚔️ **شرکت در وار کلن** به‌عنوان هم‌تیمی\n' +
+          '• 🎮 **انجام مینی‌گیم‌ها** به صورت دوستانه',
+        inline: false 
+      });
+      
     } else {
+      // اگر هیچ دوستی وجود نداشت
       embed.addFields({ 
         name: '📊 برترین دوستی‌ها', 
-        value: 'هیچ دوستی یافت نشد',
+        value: '💫 **هنوز هیچ دوستی در سرور ثبت نشده است**\n\n✨ اولین نفر باشید! با افزودن دوست جدید و برقراری تعامل، نام خود را در صدر این لیست قرار دهید!',
+        inline: false 
+      });
+      
+      // راهنمای اضافه کردن دوست
+      embed.addFields({ 
+        name: '🤝 چگونه دوست اضافه کنم؟', 
+        value: '1️⃣ به منوی اصلی دوستان بروید\n2️⃣ گزینه "افزودن دوست" را انتخاب کنید\n3️⃣ نام کاربری یا شناسه دیسکورد دوست خود را وارد کنید\n4️⃣ بعد از پذیرش درخواست، می‌توانید با هدیه دادن و فعالیت مشترک XP دوستی کسب کنید!',
+        inline: false 
+      });
+      
+      // مزایای دوستی با امتیاز بالا
+      embed.addFields({ 
+        name: '✨ مزایای دوستی‌های برتر', 
+        value: '• 💎 **پاداش‌های ویژه** در سطوح مختلف دوستی\n• 🏅 **نمایش در لیدربورد** برترین دوستی‌ها\n• 🎭 **دسترسی به امکانات منحصر به فرد** در سطوح بالاتر\n• 💰 **تخفیف در معاملات** با دوستان دارای سطح بالاتر',
         inline: false 
       });
     }
     
-    // دکمه‌های عملیات
+    // دکمه‌های عملیات با طراحی جذاب‌تر
     const row = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
+        new ButtonBuilder()
+          .setCustomId('friends_menu')
+          .setLabel('👥 منوی دوستان')
+          .setStyle(ButtonStyle.Primary),
         new ButtonBuilder()
           .setCustomId('friendship_level_menu')
           .setLabel('🔙 بازگشت')
