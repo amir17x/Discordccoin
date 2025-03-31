@@ -161,6 +161,9 @@ const ROB_COOLDOWN = 4 * 60 * 60 * 1000; // 4 ساعت
 // Handler for investment history
 async function handleInvestmentHistory(interaction: ButtonInteraction) {
   try {
+    // وارد کردن توابع فرمت‌کننده از فایل formatters
+    const { formatNumber, formatDate, timeAgo } = require('../utils/formatters');
+    
     // برای اطمینان از عدم تایم‌اوت، یک پاسخ با تاخیر ارسال می‌کنیم
     if (!interaction.deferred && !interaction.replied) {
       await interaction.deferReply({ ephemeral: true });
@@ -199,24 +202,83 @@ async function handleInvestmentHistory(interaction: ButtonInteraction) {
       return;
     }
     
-    // ایجاد امبد برای نمایش تاریخچه سرمایه‌گذاری‌ها
+    // محاسبه کل مبلغ سرمایه‌گذاری‌ها
+    const totalInvested = investments.reduce((sum, inv) => sum + inv.amount, 0);
+    const totalReturns = investments.reduce((sum, inv) => sum + (inv.expectedReturn - inv.amount), 0);
+    
+    // ایجاد امبد برای نمایش تاریخچه سرمایه‌گذاری‌ها با طراحی بهبود یافته
     const embed = new EmbedBuilder()
       .setColor('#9370DB')
-      .setTitle('📋 تاریخچه سرمایه‌گذاری‌های شما')
-      .setDescription(`شما در حال حاضر ${investments.length} سرمایه‌گذاری فعال دارید.`)
-      .setFooter({ text: 'Ccoin Investment System', iconURL: interaction.client.user?.displayAvatarURL() });
+      .setTitle('💼 پورتفولیو سرمایه‌گذاری‌های شما')
+      .setDescription(`شما در حال حاضر **${investments.length}** سرمایه‌گذاری فعال دارید.`)
+      .setThumbnail('https://img.icons8.com/fluency/48/investment-portfolio.png')
+      .addFields(
+        { name: '💰 کل سرمایه‌گذاری', value: `${formatNumber(totalInvested)} Ccoin`, inline: true },
+        { name: '📈 سود پیش‌بینی شده', value: `${formatNumber(totalReturns)} Ccoin`, inline: true },
+        { name: '📊 بازدهی کلی', value: `${Math.round((totalReturns / totalInvested) * 100)}%`, inline: true }
+      )
+      .setFooter({ text: 'Ccoin Investment System', iconURL: interaction.client.user?.displayAvatarURL() })
+      .setTimestamp();
     
-    // افزودن سرمایه‌گذاری‌ها به امبد
+    // دسته‌بندی سرمایه‌گذاری‌ها براساس نوع ریسک
+    const investmentsByRisk = {
+      low_risk: investments.filter(inv => inv.type === 'low_risk'),
+      medium_risk: investments.filter(inv => inv.type === 'medium_risk'),
+      high_risk: investments.filter(inv => inv.type === 'high_risk')
+    };
+    
+    // افزودن فیلدهای مربوط به هر نوع سرمایه‌گذاری
+    if (investmentsByRisk.low_risk.length > 0) {
+      embed.addFields({ 
+        name: '🔵 سرمایه‌گذاری‌های کم ریسک', 
+        value: '─────────────────────', 
+        inline: false 
+      });
+    }
+    
+    // افزودن سرمایه‌گذاری‌ها به امبد با فرمت بهبود یافته
     investments.forEach((investment, index) => {
       const startDate = new Date(investment.startDate).toLocaleDateString('fa-IR');
       const endDate = new Date(investment.endDate).toLocaleDateString('fa-IR');
       const daysLeft = Math.ceil((new Date(investment.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
       
+      // محاسبه درصد پیشرفت
+      const totalDays = Math.ceil((new Date(investment.endDate).getTime() - new Date(investment.startDate).getTime()) / (1000 * 60 * 60 * 24));
+      const daysPassed = totalDays - daysLeft;
+      const progressPercent = Math.round((daysPassed / totalDays) * 100);
+      
+      // نمایش نوار پیشرفت
+      let progressBar = '';
+      const barLength = 10;
+      const filledLength = Math.round((progressPercent / 100) * barLength);
+      for (let i = 0; i < barLength; i++) {
+        progressBar += i < filledLength ? '🟩' : '⬜';
+      }
+      
+      // تعیین ایموجی و رنگ براساس نوع ریسک
+      let riskEmoji, riskLabel;
+      if (investment.type === 'low_risk') {
+        riskEmoji = '🔵';
+        riskLabel = 'کم ریسک';
+      } else if (investment.type === 'medium_risk') {
+        riskEmoji = '🟡';
+        riskLabel = 'ریسک متوسط';
+      } else {
+        riskEmoji = '🔴';
+        riskLabel = 'پرریسک';
+      }
+      
+      const profit = investment.expectedReturn - investment.amount;
+      const profitPercent = Math.round((investment.expectedReturn/investment.amount - 1) * 100);
+      
       embed.addFields({ 
-        name: `${index + 1}. ${investment.type === 'low_risk' ? '🔵 کم ریسک' : 
-                      investment.type === 'medium_risk' ? '🟡 ریسک متوسط' : '🔴 پرریسک'}`, 
-        value: `مبلغ: ${investment.amount} Ccoin\nسود: ${investment.expectedReturn - investment.amount} Ccoin (${Math.round((investment.expectedReturn/investment.amount - 1) * 100)}%)\nتاریخ شروع: ${startDate}\nتاریخ پایان: ${endDate}\nروز باقیمانده: ${daysLeft}`,
-        inline: true 
+        name: `${index + 1}. ${riskEmoji} سرمایه‌گذاری ${riskLabel}`, 
+        value: `💰 **مبلغ:** ${formatNumber(investment.amount)} Ccoin\n` +
+               `💸 **سود انتظاری:** ${formatNumber(profit)} Ccoin (${profitPercent}%)\n` +
+               `📆 **شروع:** ${startDate} | **پایان:** ${endDate}\n` +
+               `⏳ **زمان باقیمانده:** ${daysLeft} روز (${progressPercent}%)\n` +
+               `${progressBar}`,
+        inline: false 
       });
     });
     
@@ -1281,52 +1343,150 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       // دریافت تراکنش‌های کاربر
       const transactions = await storage.getUserTransactions(user.id);
       
+      // تعیین نوع نمایش تراکنش‌ها
+      const showBankOnly = action === 'bank_history';
+      
       // ایجاد امبد برای نمایش تراکنش‌ها
       const embed = new EmbedBuilder()
-        .setColor('#4169E1')
-        .setTitle('📋 تاریخچه تراکنش‌های بانکی')
-        .setDescription('آخرین تراکنش‌های شما در سیستم بانکی')
+        .setColor(showBankOnly ? '#4169E1' : '#9B59B6')
+        .setTitle(showBankOnly ? '📋 تاریخچه تراکنش‌های بانکی' : '📊 تاریخچه تمام تراکنش‌ها')
+        .setDescription(showBankOnly ? 'آخرین تراکنش‌های شما در سیستم بانکی' : 'گزارش کامل تمام فعالیت‌های مالی اخیر شما')
         .setThumbnail('https://img.icons8.com/fluency/48/transaction-list.png') // آیکون transaction-list برای تاریخچه تراکنش ها
-        .setFooter({ text: `${interaction.user.username} | صفحه 1` })
+        .setFooter({ text: `${interaction.user.username} | صفحه 1`, iconURL: interaction.user.displayAvatarURL() })
         .setTimestamp();
       
-      // فیلتر کردن تراکنش‌های بانکی
-      const bankTransactions = transactions.filter((t: Transaction) => 
-        ['deposit', 'withdraw', 'bank_interest'].includes(t.type)
-      ).slice(0, 10);
+      // فیلتر کردن تراکنش‌ها بر اساس نوع درخواست
+      const filteredTransactions = showBankOnly 
+        ? transactions.filter((t: Transaction) => ['deposit', 'withdraw', 'bank_interest'].includes(t.type)).slice(0, 10)
+        : transactions.slice(0, 15); // نمایش 15 تراکنش آخر برای حالت کلی
       
-      if (bankTransactions.length === 0) {
-        embed.setDescription('شما هنوز هیچ تراکنش بانکی انجام نداده‌اید.');
+      if (filteredTransactions.length === 0) {
+        embed.setDescription(showBankOnly ? 'شما هنوز هیچ تراکنش بانکی انجام نداده‌اید.' : 'تاریخچه تراکنش‌های شما خالی است.');
       } else {
-        bankTransactions.forEach((tx: Transaction, index: number) => {
-          let emoji = '';
-          let typeText = '';
-          
-          switch (tx.type) {
-            case 'deposit':
-              emoji = '💸';
-              typeText = 'واریز به بانک';
-              break;
-            case 'withdraw':
-              emoji = '💰';
-              typeText = 'برداشت از بانک';
-              break;
-            case 'bank_interest':
-              emoji = '📈';
-              typeText = 'سود بانکی';
-              break;
-          }
+        if (!showBankOnly) {
+          // اضافه کردن خلاصه وضعیت مالی در ابتدای امبد
+          embed.addFields({
+            name: '💰 خلاصه وضعیت مالی',
+            value: `💳 کیف پول: \`${user.wallet.toLocaleString('fa-IR')} Ccoin\`\n🏦 بانک: \`${user.bank.toLocaleString('fa-IR')} Ccoin\`\n💎 کریستال: \`${user.crystals.toLocaleString('fa-IR')}\``,
+            inline: false
+          });
+        }
+        
+        // وارد کردن توابع فرمت‌کننده از فایل formatters
+        const { getTransactionTypeInfo, formatTransactionAmount, formatNumber } = require('../utils/formatters');
+        
+        // اضافه کردن تراکنش‌ها به امبد
+        filteredTransactions.forEach((tx: Transaction, index: number) => {
+          // دریافت اطلاعات نمایشی تراکنش
+          const typeInfo = getTransactionTypeInfo(tx.type);
           
           const date = new Date(tx.timestamp).toLocaleDateString('fa-IR');
           const time = new Date(tx.timestamp).toLocaleTimeString('fa-IR');
           
-          const amountStr = tx.type === 'withdraw' ? `-${tx.amount}` : `+${tx.amount}`;
-          const feeStr = tx.fee > 0 ? ` (کارمزد: ${tx.fee})` : '';
+          // فرمت کردن مبلغ
+          const amountStr = formatTransactionAmount(tx.amount, tx.type);
           
+          // اضافه کردن اطلاعات جزئیات
+          let detailsStr = '';
+          
+          // اضافه کردن کارمزد اگر وجود دارد
+          const feeStr = tx.fee > 0 ? ` (کارمزد: ${formatNumber(tx.fee)})` : '';
+          
+          // اضافه کردن جزئیات بیشتر برای برخی تراکنش‌ها
+          if (tx.type === 'transfer_sent' && tx.recipientName) {
+            detailsStr = `\nگیرنده: ${tx.recipientName}`;
+          } else if (tx.type === 'transfer_received' && tx.senderName) {
+            detailsStr = `\nفرستنده: ${tx.senderName}`;
+          } else if (tx.description && tx.description.trim() !== '') {
+            detailsStr = `\n${tx.description}`;
+          }
+          
+          // اضافه کردن نوع ارز
+          const currencyText = tx.currency === 'crystals' ? '💎 کریستال' : (tx.currency === 'items' ? '🎁 آیتم' : '💰 Ccoin');
+          
+          // اضافه کردن فیلد تراکنش به امبد
           embed.addFields({
-            name: `${emoji} ${typeText} - ${date} ${time}`,
-            value: `مبلغ: ${amountStr} Ccoin${feeStr}`,
+            name: `${typeInfo.emoji} ${typeInfo.label} - ${date} ${time}`,
+            value: `${typeInfo.color} **${amountStr}** ${currencyText}${feeStr}${detailsStr}`,
             inline: false
+          });
+        });
+      }
+      
+      // دکمه‌های کنترل
+      const row = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId(showBankOnly ? 'transaction_history' : 'bank_history')
+            .setLabel(showBankOnly ? '📊 نمایش همه تراکنش‌ها' : '🏦 فقط تراکنش‌های بانکی')
+            .setStyle(ButtonStyle.Primary),
+          new ButtonBuilder()
+            .setCustomId(showBankOnly ? 'bank_menu' : 'economy')
+            .setLabel(showBankOnly ? '🔙 بازگشت به منوی بانک' : '🔙 بازگشت به منوی اقتصاد')
+            .setStyle(ButtonStyle.Secondary)
+        );
+      
+      await interaction.reply({
+        embeds: [embed],
+        components: [row],
+        ephemeral: true
+      });
+      return;
+    }
+    
+    // Handle transfer history button (نمایش تاریخچه انتقال‌های سکه)
+    if (action === 'transfer_history') {
+      // دریافت کاربر
+      const user = await storage.getUserByDiscordId(interaction.user.id);
+      if (!user) {
+        await interaction.reply({ content: '❌ کاربر یافت نشد!', ephemeral: true });
+        return;
+      }
+      
+      // دریافت تراکنش‌های کاربر
+      const transactions = await storage.getUserTransactions(user.id);
+      
+      // ایجاد امبد برای نمایش تراکنش‌های انتقال وجه
+      const embed = new EmbedBuilder()
+        .setColor('#32CD32')
+        .setTitle('📋 تاریخچه انتقال‌های سکه')
+        .setDescription('آخرین تراکنش‌های انتقال سکه شما')
+        .setThumbnail('https://img.icons8.com/fluency/48/money-transfer.png')
+        .setFooter({ text: `${interaction.user.username} | صفحه 1` })
+        .setTimestamp();
+      
+      // فیلتر کردن تراکنش‌های انتقال
+      const transferTransactions = transactions.filter((t: Transaction) => 
+        ['transfer_sent', 'transfer_received'].includes(t.type)
+      ).slice(0, 10);
+      
+      if (transferTransactions.length === 0) {
+        embed.setDescription('شما هنوز هیچ انتقال سکه‌ای انجام نداده‌اید یا دریافت نکرده‌اید.');
+      } else {
+        // وارد کردن توابع فرمت‌کننده از فایل formatters
+        const { getTransactionTypeInfo, formatTransactionAmount, formatNumber } = require('../utils/formatters');
+        
+        transferTransactions.forEach((tx: Transaction, index: number) => {
+          // دریافت اطلاعات نمایشی تراکنش
+          const typeInfo = getTransactionTypeInfo(tx.type);
+          
+          const date = new Date(tx.timestamp).toLocaleDateString('fa-IR');
+          const time = new Date(tx.timestamp).toLocaleTimeString('fa-IR');
+          
+          // فرمت کردن مبلغ
+          const amountStr = formatTransactionAmount(tx.amount, tx.type);
+          
+          // ایجاد متن اضافی
+          const detailText = tx.description && tx.description.trim() ? `**توضیحات:** ${tx.description}\n` : '';
+          const personText = tx.type === 'transfer_sent' 
+            ? `**گیرنده:** ${tx.recipientName || 'ناشناس'}` 
+            : `**فرستنده:** ${tx.senderName || 'ناشناس'}`;
+            
+          embed.addFields({
+            name: `${typeInfo.emoji} ${typeInfo.label} - ${date} ${time}`,
+            value: `${typeInfo.color} **${amountStr}** Ccoin\n` +
+                   `${detailText}${personText}\n` +
+                   `**شناسه تراکنش:** ${tx.id || 'نامشخص'}`
           });
         });
       }
@@ -1335,8 +1495,8 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       const row = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
           new ButtonBuilder()
-            .setCustomId('bank_menu')
-            .setLabel('🔙 بازگشت به منوی بانک')
+            .setCustomId('transfer_menu')
+            .setLabel('🔙 بازگشت به منوی انتقال')
             .setStyle(ButtonStyle.Secondary)
         );
       

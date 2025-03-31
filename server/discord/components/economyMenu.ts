@@ -482,7 +482,7 @@ export async function economyMenu(
           .setStyle(ButtonStyle.Success)
           .setDisabled(user.bank <= 0),
         new ButtonBuilder()
-          .setCustomId('bank_history')
+          .setCustomId('transaction_history')
           .setLabel('📋 تاریخچه تراکنش‌ها')
           .setStyle(ButtonStyle.Secondary)
       );
@@ -512,11 +512,7 @@ export async function economyMenu(
           .setCustomId('bank_upgrade')
           .setLabel('⬆️ ارتقای حساب')
           .setStyle(ButtonStyle.Secondary)
-          .setDisabled(user.bank < 10000),
-        new ButtonBuilder()
-          .setCustomId('transaction_history') // تغییر شناسه از bank_history به transaction_history برای جلوگیری از تکراری شدن
-          .setLabel('📋 تاریخچه تراکنش‌ها')
-          .setStyle(ButtonStyle.Secondary)
+          .setDisabled(user.bank < 10000)
       );
 
     // Create transfer menu with transaction image

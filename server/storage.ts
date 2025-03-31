@@ -25,6 +25,7 @@ import {
 
 // وارد کردن مدل شغل از فایل Job.ts
 import { JobModel } from './models/economy/Job';
+import TransactionModel from './models/Transaction';
 
 import { getCache, setCache, deleteCache } from './utils/cache';
 
@@ -299,6 +300,7 @@ export interface IStorage {
   transferToWallet(userId: number, amount: number): Promise<User | undefined>;
   addCrystals(userId: number, amount: number): Promise<User | undefined>;
   transferCoin(fromUserId: number, toUserId: number, amount: number): Promise<boolean>;
+  saveTransaction(transaction: any): Promise<any>;
   
   // Item operations
   getAllItems(): Promise<Item[]>;
@@ -813,6 +815,48 @@ export class MemStorage implements IStorage {
     return [...user.transactions].sort((a, b) => 
       new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
+  }
+  
+  /**
+   * ذخیره یک تراکنش جدید در پایگاه داده
+   * @param transaction اطلاعات تراکنش
+   * @returns تراکنش ذخیره شده
+   */
+  async saveTransaction(transaction: any): Promise<any> {
+    try {
+      const user = this.users.get(parseInt(transaction.userId));
+      if (!user) {
+        console.error(`MemStorage.saveTransaction: User with ID ${transaction.userId} not found`);
+        return null;
+      }
+      
+      // اطمینان از وجود آرایه تراکنش‌ها
+      if (!user.transactions) {
+        user.transactions = [];
+      }
+      
+      // ایجاد شناسه منحصر به فرد
+      const id = `trx_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+      
+      // اطمینان از وجود timestamp
+      if (!transaction.timestamp) {
+        transaction.timestamp = new Date();
+      }
+      
+      // ایجاد تراکنش کامل
+      const newTransaction = {
+        id,
+        ...transaction
+      };
+      
+      // افزودن به آرایه تراکنش‌های کاربر
+      user.transactions.push(newTransaction);
+      
+      return newTransaction;
+    } catch (error) {
+      console.error('Error saving transaction in MemStorage:', error);
+      return null;
+    }
   }
 
   // Economy operations
@@ -5496,6 +5540,44 @@ export class MongoStorage implements IStorage {
 
   async getUserTransactions(userId: number): Promise<Transaction[]> {
     return memStorage.getUserTransactions(userId);
+  }
+  
+  /**
+   * ذخیره یک تراکنش جدید در پایگاه داده MongoDB
+   * @param transaction اطلاعات تراکنش
+   * @returns تراکنش ذخیره شده
+   */
+  async saveTransaction(transaction: any): Promise<any> {
+    try {
+      // استفاده از مدل Transaction از مانگوس
+      const newTransaction = new Transaction({
+        userId: transaction.userId,
+        amount: transaction.amount,
+        type: transaction.type,
+        description: transaction.description || '',
+        senderName: transaction.senderName,
+        receiverName: transaction.recipientName,
+        receiverId: transaction.recipientId,
+        itemId: transaction.itemId,
+        itemName: transaction.itemName,
+        itemQuantity: transaction.itemQuantity,
+        balance: transaction.balance,
+        guildId: transaction.guildId,
+        channelId: transaction.channelId,
+        isSuccess: transaction.isSuccess !== undefined ? transaction.isSuccess : true,
+        currency: transaction.currency || 'coins',
+        metadata: transaction.metadata || {},
+        timestamp: transaction.timestamp || new Date()
+      });
+      
+      // ذخیره تراکنش در دیتابیس
+      const savedTransaction = await newTransaction.save();
+      return savedTransaction;
+    } catch (error) {
+      console.error('Error saving transaction in MongoDB:', error);
+      // اگر خطا داشت، از ذخیره‌سازی حافظه استفاده کنیم
+      return memStorage.saveTransaction(transaction);
+    }
   }
 
   async addToWallet(userId: number, amount: number, transactionType: string = 'deposit', metadata: any = {}): Promise<User | undefined> {

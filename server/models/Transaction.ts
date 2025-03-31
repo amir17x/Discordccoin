@@ -35,10 +35,30 @@ const TransactionSchema: Schema = new Schema({
   type: { 
     type: String, 
     enum: [
-      'deposit', 'withdraw', 'transfer', 'daily', 'weekly', 'monthly',
-      'work', 'rob', 'quest_reward', 'shop_purchase', 'shop_sale',
-      'casino_win', 'casino_loss', 'clan_contribution', 'clan_withdrawal',
-      'gift', 'admin_adjustment', 'tax', 'interest', 'penalty', 'refund',
+      // بانک و انتقال
+      'deposit', 'withdraw', 'bank_interest', 
+      'transfer', 'transfer_sent', 'transfer_received',
+      
+      // دریافت‌های روزانه و کارها
+      'daily', 'weekly', 'monthly', 'work', 'job_income',
+      
+      // اقتصاد و کسب و کار
+      'quest_reward', 'shop_purchase', 'shop_sale', 'market_sale', 'market_purchase',
+      'investment', 'investment_return', 'stock_buy', 'stock_sell', 'stock_dividend',
+      
+      // سرگرمی و قمار
+      'casino_win', 'casino_loss', 'lottery_ticket', 'lottery_win', 'wheel_spin',
+      'game_bet', 'game_win', 'game_reward',
+      
+      // رویدادهای دزدی
+      'rob', 'steal_success', 'steal_failed', 'robbed',
+      
+      // کلن و اجتماعی
+      'clan_contribution', 'clan_withdrawal', 'clan_reward',
+      'gift', 'friend_bonus',
+      
+      // مدیریتی و سیستمی
+      'admin_adjustment', 'tax', 'penalty', 'refund', 'loan', 'loan_repayment',
       'system', 'other'
     ],
     required: true 
