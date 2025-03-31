@@ -1,6 +1,18 @@
 import { AchievementModel, IAchievement, IUserAchievement, UserAchievementModel } from '../../models/Achievement';
 import { createTransaction } from './transactionUtils';
-import { updateUserXP } from './userUtils';
+import { updateUserXP, getUserById } from './userUtils';
+import UserModel from '../../models/User';
+import StockTransactionModel from '../../models/Stock';
+import TransactionModel from '../../models/Transaction';
+import FriendshipModel from '../../models/Friendship';
+
+// Interface for tracking achievement events
+interface AchievementTracking {
+  [eventName: string]: {
+    relatedAchievements: string[];
+    handler: (userId: string, context: any) => Promise<any>;
+  }
+}
 
 /**
  * بررسی یک دستاورد
@@ -27,26 +39,35 @@ export async function checkAchievementEligibility(
     });
     
     // اگر کاربر دستاورد را قبلاً کسب کرده، شرایط را ندارد
-    if (userAchievement) return false;
+    if (userAchievement && userAchievement.progress === 100) return false;
+
+    // دریافت اطلاعات کاربر برای بررسی‌های پیشرفته
+    const userDoc = await getUserById(userId);
+    if (!userDoc) return false;
 
     // در اینجا شرایط مختلف دستاوردها را بررسی می‌کنیم
-    // این بخش باید براساس نوع دستاورد پیاده‌سازی شود
-    // می‌توان از requirement و context استفاده کرد
-    
-    // این یک پیاده‌سازی ساده برای نمونه است
-    // در واقعیت باید پیچیده‌تر باشد و شرایط را دقیق بررسی کند
+    // برای هر دستاورد، منطق خاص آن را پیاده‌سازی می‌کنیم
     switch (achievement.requirement) {
       case 'login_first_time':
         return true; // اگر کاربر برای اولین بار وارد شده باشد
       
       case 'win_games_10':
-        return context.gamesWon >= 10;
+        // بررسی آمار پیروزی‌های کاربر در بازی‌ها
+        return userDoc.stats?.gamesWon >= 10 || context.gamesWon >= 10;
       
       case 'friend_count_20':
-        return context.friendCount >= 20;
+        // شمارش تعداد دوستان کاربر از دیتابیس
+        const friendCount = await FriendshipModel.countDocuments({
+          $or: [
+            { userId: userId, status: 'accepted' },
+            { friendId: userId, status: 'accepted' }
+          ]
+        });
+        return friendCount >= 20 || context.friendCount >= 20;
       
       case 'complete_daily_streak_7':
-        return context.dailyStreak >= 7;
+        // بررسی تعداد روزهای متوالی دریافت جایزه روزانه
+        return userDoc.dailyStreak >= 7 || context.dailyStreak >= 7;
       
       case 'reached_level_10':
         return context.level >= 10;
@@ -240,6 +261,173 @@ export async function updateAchievementProgress(
   }
 }
 
+// سیستم ردیابی رویدادها و دستاوردهای مرتبط
+const ACHIEVEMENT_TRACKING: AchievementTracking = {
+  // رویدادهای بازی
+  'game_won': {
+    relatedAchievements: ['gaming_first_win', 'gaming_champion', 'win_games_10', 'win_games_50', 'win_games_100'],
+    handler: async (userId, context) => {
+      // دریافت تعداد کل بردها
+      const user = await getUserById(userId);
+      if (!user) return;
+      
+      const totalWins = context.totalWins || user.stats?.gamesWon || 1;
+      
+      // اگر اولین برد است
+      if (totalWins === 1) {
+        await grantAchievement(userId, 'gaming_first_win');
+      }
+      
+      // بررسی دستاوردهای مرتبط با تعداد بردها
+      await checkAndUpdateProgress(userId, 'win_games_10', { current: totalWins, target: 10 });
+      await checkAndUpdateProgress(userId, 'win_games_50', { current: totalWins, target: 50 });
+      await checkAndUpdateProgress(userId, 'win_games_100', { current: totalWins, target: 100 });
+    }
+  },
+  
+  // رویدادهای دوستی
+  'friend_added': {
+    relatedAchievements: ['social_first_friend', 'social_popular', 'friend_count_20', 'friend_count_50', 'friend_count_100'],
+    handler: async (userId, context) => {
+      // شمارش تعداد دوستان
+      const friendCount = context.totalFriends || await UserModel.aggregate([
+        { $match: { discordId: userId } },
+        { $project: { friendCount: { $size: "$friends" } } }
+      ]).then(result => result[0]?.friendCount || 0);
+      
+      // اگر اولین دوست است
+      if (friendCount === 1) {
+        await grantAchievement(userId, 'social_first_friend');
+      }
+      
+      // بررسی دستاوردهای مرتبط با تعداد دوستان
+      await checkAndUpdateProgress(userId, 'friend_count_20', { current: friendCount, target: 20 });
+      await checkAndUpdateProgress(userId, 'friend_count_50', { current: friendCount, target: 50 });
+      await checkAndUpdateProgress(userId, 'friend_count_100', { current: friendCount, target: 100 });
+    }
+  },
+  
+  // رویدادهای بانکی
+  'deposit_made': {
+    relatedAchievements: ['economic_first_deposit', 'economic_millionaire', 'bank_balance_1000000', 'bank_balance_10000000'],
+    handler: async (userId, context) => {
+      const user = await getUserById(userId);
+      if (!user) return;
+      
+      const bankBalance = user.bank;
+      const isFirstDeposit = context.isFirstDeposit || !await TransactionModel.findOne({ 
+        userId, 
+        type: 'deposit',
+        createdAt: { $lt: new Date() }
+      });
+      
+      // اگر اولین واریز است
+      if (isFirstDeposit) {
+        await grantAchievement(userId, 'economic_first_deposit');
+      }
+      
+      // بررسی دستاوردهای مرتبط با موجودی بانک
+      await checkAndUpdateProgress(userId, 'bank_balance_1000000', { 
+        current: bankBalance, 
+        target: 1000000
+      });
+      
+      await checkAndUpdateProgress(userId, 'bank_balance_10000000', { 
+        current: bankBalance, 
+        target: 10000000
+      });
+    }
+  },
+  
+  // رویدادهای سهام
+  'stock_purchased': {
+    relatedAchievements: ['economic_stock_master', 'buy_stocks_5'],
+    handler: async (userId, context) => {
+      // دریافت تعداد سهام‌های خریداری شده
+      const stocksCount = context.stocksCount || await StockTransactionModel.distinct('stockId', { 
+        userId,
+        type: 'buy'
+      }).then(stocks => stocks.length);
+      
+      // بررسی دستاورد خرید 5 سهام مختلف
+      await checkAndUpdateProgress(userId, 'buy_stocks_5', { 
+        current: stocksCount, 
+        target: 5
+      });
+      
+      // بررسی سود حاصل از سهام (اگر در context موجود باشد)
+      if (context.stockProfit) {
+        await checkAndUpdateProgress(userId, 'stock_profit_100000', { 
+          current: context.stockProfit, 
+          target: 100000
+        });
+      }
+    }
+  },
+  
+  // رویدادهای جایزه روزانه
+  'daily_claimed': {
+    relatedAchievements: ['special_daily_streak'],
+    handler: async (userId, context) => {
+      const user = await getUserById(userId);
+      if (!user) return;
+      
+      const streak = user.dailyStreak;
+      
+      // بررسی دستاورد دریافت 7 روز متوالی
+      await checkAndUpdateProgress(userId, 'complete_daily_streak_7', { 
+        current: streak, 
+        target: 7
+      });
+    }
+  },
+  
+  // رویدادهای سطح (لول)
+  'level_up': {
+    relatedAchievements: ['special_level_10', 'reached_level_10', 'reached_level_20', 'reached_level_50'],
+    handler: async (userId, context) => {
+      const user = await getUserById(userId);
+      if (!user) return;
+      
+      const level = user.level;
+      
+      // بررسی دستاوردهای مرتبط با سطح
+      await checkAndUpdateProgress(userId, 'reached_level_10', { 
+        current: level, 
+        target: 10
+      });
+      
+      await checkAndUpdateProgress(userId, 'reached_level_20', { 
+        current: level, 
+        target: 20
+      });
+      
+      await checkAndUpdateProgress(userId, 'reached_level_50', { 
+        current: level, 
+        target: 50
+      });
+    }
+  },
+  
+  // رویدادهای خرید از فروشگاه
+  'shop_purchase': {
+    relatedAchievements: ['secret_big_spender'],
+    handler: async (userId, context) => {
+      // جمع کل مبلغ خرج شده در فروشگاه
+      const totalSpent = context.totalSpent || await TransactionModel.aggregate([
+        { $match: { userId, type: 'shop_purchase' } },
+        { $group: { _id: null, total: { $sum: "$amount" } } }
+      ]).then(result => Math.abs(result[0]?.total || 0));
+      
+      // بررسی دستاورد خرج کردن 100,000 سکه در فروشگاه
+      await checkAndUpdateProgress(userId, 'spend_shop_100000', { 
+        current: totalSpent, 
+        target: 100000
+      });
+    }
+  }
+};
+
 /**
  * افزایش شمارنده یک دستاورد
  * @param userId شناسه کاربر
@@ -252,37 +440,44 @@ export async function incrementAchievementCounter(
   context: any = {}
 ): Promise<void> {
   try {
-    // یافتن دستاوردهای مرتبط با این رویداد
-    // این بخش باید براساس سیستم دستاوردها پیاده‌سازی شود
-    // در یک سیستم واقعی، می‌توانیم یک مپینگ بین رویدادها و دستاوردها داشته باشیم
+    console.log(`📊 بررسی دستاوردهای کاربر ${userId} برای رویداد ${event}`);
     
-    // مثال ساده:
-    switch (event) {
-      case 'game_won':
-        // بررسی دستاورد "برنده شدن در 10 بازی"
-        await checkAndUpdateProgress(userId, 'win_games_10', { 
-          current: context.totalWins || 1, 
-          target: 10 
-        });
-        break;
+    // بررسی آیا رویداد در سیستم ردیابی وجود دارد
+    const eventTracking = ACHIEVEMENT_TRACKING[event];
+    if (eventTracking) {
+      // اجرای هندلر مخصوص رویداد
+      await eventTracking.handler(userId, context);
       
-      case 'friend_added':
-        // بررسی دستاورد "افزودن 20 دوست"
-        await checkAndUpdateProgress(userId, 'friend_count_20', { 
-          current: context.totalFriends || 1, 
-          target: 20 
-        });
-        break;
+      // لاگ برای اشکال‌زدایی
+      console.log(`✅ رویداد ${event} برای کاربر ${userId} پردازش شد`);
+    } else {
+      console.log(`⚠️ هیچ پردازش‌کننده‌ای برای رویداد ${event} تعریف نشده است`);
       
-      case 'daily_claimed':
-        // بررسی دستاورد "دریافت روزانه برای 7 روز متوالی"
-        await checkAndUpdateProgress(userId, 'complete_daily_streak_7', { 
-          current: context.streak || 1, 
-          target: 7 
-        });
-        break;
+      // رویدادهای تعریف نشده را هم با روش قدیمی پردازش می‌کنیم
+      switch (event) {
+        case 'game_won':
+          await checkAndUpdateProgress(userId, 'win_games_10', { 
+            current: context.totalWins || 1, 
+            target: 10 
+          });
+          break;
         
-      // و سایر رویدادها...
+        case 'friend_added':
+          await checkAndUpdateProgress(userId, 'friend_count_20', { 
+            current: context.totalFriends || 1, 
+            target: 20 
+          });
+          break;
+        
+        case 'daily_claimed':
+          await checkAndUpdateProgress(userId, 'complete_daily_streak_7', { 
+            current: context.streak || 1, 
+            target: 7 
+          });
+          break;
+          
+        // و سایر رویدادها...
+      }
     }
   } catch (error) {
     console.error(`Error incrementing achievement counter:`, error);
