@@ -11,7 +11,7 @@ export async function personalNotificationsMenu(
   interaction: MessageComponentInteraction
 ) {
   try {
-    const userId = parseInt(interaction.user.id);
+    const userId = interaction.user.id;
     const user = await storage.getUser(userId);
 
     if (!user) {
@@ -117,7 +117,7 @@ export async function toggleNotifications(
   enable: boolean
 ) {
   try {
-    const userId = parseInt(interaction.user.id);
+    const userId = interaction.user.id;
     const user = await storage.getUser(userId);
 
     if (!user) {
@@ -181,7 +181,7 @@ export async function showAdvancedNotificationSettings(
   interaction: ButtonInteraction
 ) {
   try {
-    const userId = parseInt(interaction.user.id);
+    const userId = interaction.user.id;
     const user = await storage.getUser(userId);
 
     if (!user) {
@@ -281,7 +281,7 @@ export async function toggleNotificationType(
   notificationType: NotificationType
 ) {
   try {
-    const userId = parseInt(interaction.user.id);
+    const userId = interaction.user.id;
     
     // دریافت تنظیمات فعلی
     const settings = await storage.getUserNotificationSettings(userId) || {
@@ -392,7 +392,7 @@ export async function toggleNotificationType(
  * ارسال یک اعلان به کاربر با هوش مصنوعی لوکال
  */
 export async function sendNotification(
-  userId: number,
+  userId: string,
   notificationType: NotificationType,
   message: string,
   relatedEntityId?: string
@@ -503,7 +503,7 @@ export async function sendNotification(
  * محاسبه اولویت اعلان با استفاده از هوش مصنوعی لوکال
  */
 async function calculateNotificationPriority(
-  userId: number,
+  userId: string,
   notificationType: NotificationType,
   relatedEntityId?: string
 ): Promise<number> {
@@ -623,7 +623,7 @@ function getToggleStatusText(settings: Partial<NotificationSettings>, type: Noti
  */
 export async function sendTestNotification(interaction: ButtonInteraction) {
   try {
-    const userId = parseInt(interaction.user.id);
+    const userId = interaction.user.id;
     const user = await storage.getUser(userId);
 
     if (!user) {

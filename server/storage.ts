@@ -239,7 +239,7 @@ type UserStockData = {
 
 export interface IStorage {
   // User operations
-  getUser(id: number): Promise<User | undefined>;
+  getUser(id: number | string): Promise<User | undefined>;
   getUserByDiscordId(discordId: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, updates: Partial<User>): Promise<User | undefined>;
@@ -397,6 +397,36 @@ export interface IStorage {
   getTipChannelSettings(guildId: string): Promise<TipChannelSettings | undefined>;
   setTipChannelSettings(settings: TipChannelSettings): Promise<boolean>;
   getAllActiveTipChannelSettings(): Promise<TipChannelSettings[]>;
+  
+  // Market operations
+  getMarketListings(listingType?: 'regular' | 'black_market'): Promise<any[]>;
+  getMarketListingById(listingId: string): Promise<any | undefined>;
+  getUserMarketListings(userId: string): Promise<any[]>;
+  createMarketListing(listing: {
+    sellerId: string, 
+    sellerName: string, 
+    itemId: number, 
+    itemName: string,
+    itemEmoji: string,
+    quantity: number, 
+    price: number, 
+    description: string,
+    listingType: 'regular' | 'black_market',
+    expiresAt: Date
+  }): Promise<any>;
+  updateMarketListing(listingId: string, updates: {
+    price?: number, 
+    quantity?: number, 
+    description?: string, 
+    active?: boolean
+  }): Promise<any | undefined>;
+  deleteMarketListing(listingId: string): Promise<boolean>;
+  buyFromMarket(buyerId: string, listingId: string, quantity: number): Promise<{
+    success: boolean, 
+    message?: string, 
+    listing?: any, 
+    item?: any
+  }>;
   
   // Quiz Question operations
   saveQuizQuestion(question: QuizQuestion): Promise<QuizQuestion>;
@@ -3881,6 +3911,7 @@ import ItemModel from './models/Item';
 import QuestModel from './models/Quest';
 import { FriendRequestModel, BlockedUserModel } from './models/friend';
 import LoanModel from './models/Loan';
+import MarketListingModel from './models/MarketListing';
 
 export class MongoStorage implements IStorage {
   async getItemById(id: number): Promise<Item | undefined> {
@@ -4683,12 +4714,13 @@ export class MongoStorage implements IStorage {
     }
   }
   // User operations
-  async getUser(id: number): Promise<User | undefined> {
+  async getUser(id: number | string): Promise<User | undefined> {
     try {
-      // ابتدا با استفاده از فیلد id جستجو می‌کنیم
-      let user = await UserModel.findOne({ _id: id });
+      // با امنیت بیشتر ابتدا با discordId جستجو می‌کنیم
+      // برای حل مشکل نوع داده، از String(id) استفاده می‌کنیم
+      let user = await UserModel.findOne({ discordId: String(id) });
       
-      // اگر پیدا نشد، سعی می‌کنیم با id عددی جستجو کنیم
+      // اگر پیدا نشد، با id معمولی جستجو می‌کنیم
       if (!user) {
         user = await UserModel.findOne({ id });
       }
@@ -7518,6 +7550,226 @@ export class MongoStorage implements IStorage {
 // Create instances
 export const memStorage = new MemStorage();
 export const mongoStorage = new MongoStorage();
+
+// Add market-related methods to the MongoStorage class
+MongoStorage.prototype.getMarketListings = async function(listingType?: 'regular' | 'black_market'): Promise<any[]> {
+  try {
+    const query: any = { active: true, expiresAt: { $gt: new Date() } };
+    
+    if (listingType) {
+      query.listingType = listingType;
+    }
+    
+    const listings = await MarketListingModel.find(query).sort({ createdAt: -1 });
+    return listings;
+  } catch (error) {
+    console.error('Error getting market listings:', error);
+    return [];
+  }
+};
+
+MongoStorage.prototype.getMarketListingById = async function(listingId: string): Promise<any | undefined> {
+  try {
+    const listing = await MarketListingModel.findById(listingId);
+    if (!listing) return undefined;
+    return listing;
+  } catch (error) {
+    console.error(`Error getting market listing ${listingId}:`, error);
+    return undefined;
+  }
+};
+
+MongoStorage.prototype.getUserMarketListings = async function(userId: string): Promise<any[]> {
+  try {
+    const listings = await MarketListingModel.find({ 
+      sellerId: userId,
+      active: true
+    }).sort({ createdAt: -1 });
+    
+    return listings;
+  } catch (error) {
+    console.error(`Error getting user market listings for user ${userId}:`, error);
+    return [];
+  }
+};
+
+MongoStorage.prototype.createMarketListing = async function(listing: {
+  sellerId: string, 
+  sellerName: string, 
+  itemId: number, 
+  itemName: string,
+  itemEmoji: string,
+  quantity: number, 
+  price: number, 
+  description: string,
+  listingType: 'regular' | 'black_market',
+  expiresAt: Date
+}): Promise<any> {
+  try {
+    // Create new listing
+    const newListing = new MarketListingModel({
+      ...listing,
+      active: true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+    
+    // Save to database
+    await newListing.save();
+    
+    return newListing;
+  } catch (error) {
+    console.error('Error creating market listing:', error);
+    throw error;
+  }
+};
+
+MongoStorage.prototype.updateMarketListing = async function(listingId: string, updates: {
+  price?: number, 
+  quantity?: number, 
+  description?: string, 
+  active?: boolean
+}): Promise<any | undefined> {
+  try {
+    // Update listing with provided changes
+    const listing = await MarketListingModel.findByIdAndUpdate(
+      listingId,
+      { ...updates, updatedAt: new Date() },
+      { new: true }
+    );
+    
+    if (!listing) return undefined;
+    return listing;
+  } catch (error) {
+    console.error(`Error updating market listing ${listingId}:`, error);
+    return undefined;
+  }
+};
+
+MongoStorage.prototype.deleteMarketListing = async function(listingId: string): Promise<boolean> {
+  try {
+    const result = await MarketListingModel.findByIdAndDelete(listingId);
+    return !!result;
+  } catch (error) {
+    console.error(`Error deleting market listing ${listingId}:`, error);
+    return false;
+  }
+};
+
+MongoStorage.prototype.buyFromMarket = async function(buyerId: string, listingId: string, quantity: number): Promise<{
+  success: boolean, 
+  message?: string, 
+  listing?: any, 
+  item?: any
+}> {
+  try {
+    // Get the listing
+    const listing = await MarketListingModel.findById(listingId);
+    if (!listing) {
+      return { success: false, message: 'آیتم مورد نظر یافت نشد.' };
+    }
+    
+    // Check if listing is active and not expired
+    if (!listing.active || listing.expiresAt < new Date()) {
+      return { success: false, message: 'این آگهی دیگر فعال نیست.' };
+    }
+    
+    // Check if desired quantity is available
+    if (quantity > listing.quantity) {
+      return { success: false, message: `تنها ${listing.quantity} عدد از این آیتم موجود است.` };
+    }
+    
+    // Get buyer and seller
+    const buyer = await UserModel.findOne({ discordId: buyerId });
+    const seller = await UserModel.findOne({ discordId: listing.sellerId });
+    
+    if (!buyer || !seller) {
+      return { success: false, message: 'خطا در یافتن خریدار یا فروشنده.' };
+    }
+    
+    // Calculate total price
+    const totalPrice = listing.price * quantity;
+    
+    // Check if buyer has enough money
+    if (buyer.wallet < totalPrice) {
+      return { success: false, message: `شما به اندازه کافی سکه در کیف پول خود ندارید. شما نیاز به ${totalPrice} سکه دارید.` };
+    }
+    
+    // Get the item
+    const item = await ItemModel.findOne({ id: listing.itemId });
+    if (!item) {
+      return { success: false, message: 'آیتم مورد نظر در سیستم یافت نشد.' };
+    }
+    
+    // All checks passed, perform the transaction
+    
+    // Update buyer (deduct money and add item to inventory)
+    buyer.wallet -= totalPrice;
+    
+    // Initialize inventory if needed
+    if (!buyer.inventory) {
+      buyer.inventory = {};
+    }
+    
+    // Add item to buyer's inventory
+    const itemKey = `item_${listing.itemId}`;
+    if (!buyer.inventory[itemKey]) {
+      buyer.inventory[itemKey] = {
+        id: itemKey,
+        itemId: listing.itemId,
+        quantity: 0,
+        acquiredAt: new Date()
+      };
+    }
+    
+    buyer.inventory[itemKey].quantity += quantity;
+    
+    // Record transaction
+    if (!buyer.transactions) buyer.transactions = [];
+    buyer.transactions.push({
+      type: 'market_purchase',
+      amount: totalPrice,
+      fee: 0,
+      timestamp: new Date(),
+      details: `خرید ${quantity} عدد ${listing.itemName} از بازار`
+    });
+    
+    // Update seller (add money)
+    seller.wallet += totalPrice;
+    
+    // Record transaction
+    if (!seller.transactions) seller.transactions = [];
+    seller.transactions.push({
+      type: 'market_sale',
+      amount: totalPrice,
+      fee: 0,
+      timestamp: new Date(),
+      details: `فروش ${quantity} عدد ${listing.itemName} در بازار`
+    });
+    
+    // Update listing quantity or mark as inactive if all items sold
+    if (quantity === listing.quantity) {
+      listing.active = false;
+    } else {
+      listing.quantity -= quantity;
+    }
+    
+    // Save everything to database
+    await buyer.save();
+    await seller.save();
+    await listing.save();
+    
+    return {
+      success: true,
+      message: `شما با موفقیت ${quantity} عدد ${listing.itemName} خریداری کردید.`,
+      listing,
+      item
+    };
+  } catch (error) {
+    console.error(`Error buying from market (buyer: ${buyerId}, listing: ${listingId}):`, error);
+    return { success: false, message: 'خطای سیستمی در خرید از بازار.' };
+  }
+};
 
 // Use MongoDB storage if we have a connection, otherwise fallback to in-memory
 export const storage = process.env.MONGODB_URI ? mongoStorage : memStorage;

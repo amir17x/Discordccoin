@@ -84,6 +84,7 @@ import { blockedUsersList, searchUserToBlock, unblockUser, processUnblockUser, c
 import { showFriendRequestForm, searchUserForFriendRequest, sendFriendRequest } from '../components/friendsMenu/friendRequestForm';
 import { AnonymousChatMenu } from '../components/anonymousChatMenu/anonymousChatMenu';
 import { personalNotificationsMenu, toggleNotifications, showAdvancedNotificationSettings, toggleNotificationType, sendTestNotification } from '../components/personalNotificationsMenu';
+import { showMarketMenu, showRegularMarket, showBlackMarket, showMyListings, startNewListing, buyItem } from '../components/marketMenu';
 
 import { handleCoinFlip } from '../games/coinFlip';
 import { handleRockPaperScissors } from '../games/rockPaperScissors';
@@ -2094,6 +2095,171 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     // منوی اعلان‌های شخصی
     if (action === 'notifications_menu') {
       await personalNotificationsMenu(interaction);
+      return;
+    }
+    
+    // منوی بازار
+    if (action === 'market_menu') {
+      await showMarketMenu(interaction.user.id, interaction.user.username);
+      return;
+    }
+    
+    // بازار عادی
+    if (action === 'market_regular') {
+      // نمایش بازار عادی با صفحه 0 (اولین صفحه)
+      const response = await showRegularMarket(interaction.user.id, interaction.user.username);
+      await interaction.update(response);
+      return;
+    }
+    
+    // بازار سیاه
+    if (action === 'market_black') {
+      // نمایش بازار سیاه با صفحه 0 (اولین صفحه)
+      const response = await showBlackMarket(interaction.user.id, interaction.user.username);
+      await interaction.update(response);
+      return;
+    }
+    
+    // آگهی‌های من
+    if (action === 'market_my_listings') {
+      // نمایش آگهی‌های کاربر با صفحه 0 (اولین صفحه)
+      const response = await showMyListings(interaction.user.id, interaction.user.username);
+      await interaction.update(response);
+      return;
+    }
+    
+    // ثبت آگهی جدید
+    if (action === 'market_new_listing') {
+      // شروع فرآیند ثبت آگهی جدید
+      const response = await startNewListing(interaction.user.id, interaction.user.username);
+      await interaction.update(response);
+      return;
+    }
+    
+    // صفحه‌بندی بازار عادی
+    if (action.startsWith('market_regular_page_')) {
+      const page = parseInt(action.replace('market_regular_page_', ''));
+      const response = await showRegularMarket(interaction.user.id, interaction.user.username, page);
+      await interaction.update(response);
+      return;
+    }
+    
+    // صفحه‌بندی بازار سیاه
+    if (action.startsWith('market_black_page_')) {
+      const page = parseInt(action.replace('market_black_page_', ''));
+      const response = await showBlackMarket(interaction.user.id, interaction.user.username, page);
+      await interaction.update(response);
+      return;
+    }
+    
+    // صفحه‌بندی آگهی‌های من
+    if (action.startsWith('market_mylistings_page_')) {
+      const page = parseInt(action.replace('market_mylistings_page_', ''));
+      const response = await showMyListings(interaction.user.id, interaction.user.username, page);
+      await interaction.update(response);
+      return;
+    }
+    
+    // خرید آیتم از بازار
+    if (action === 'market_buy_item') {
+      // نمایش مودال خرید
+      const modal = new ModalBuilder()
+        .setCustomId('market_buy_modal')
+        .setTitle('🛒 خرید آیتم از بازار');
+      
+      // فیلد شناسه آیتم
+      const listingIdInput = new TextInputBuilder()
+        .setCustomId('listing_id')
+        .setLabel('شناسه آیتم (کپی از آگهی)')
+        .setPlaceholder('مثال: 6126f3c6e8b7a2c9f3e8b7a2')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
+      
+      // فیلد تعداد
+      const quantityInput = new TextInputBuilder()
+        .setCustomId('quantity')
+        .setLabel('تعداد')
+        .setPlaceholder('مثال: 1')
+        .setValue('1')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
+      
+      // افزودن فیلدها به مودال
+      const listingIdRow = new ActionRowBuilder<TextInputBuilder>().addComponents(listingIdInput);
+      const quantityRow = new ActionRowBuilder<TextInputBuilder>().addComponents(quantityInput);
+      
+      modal.addComponents(listingIdRow, quantityRow);
+      
+      // نمایش مودال
+      await interaction.showModal(modal);
+      return;
+    }
+    
+    // حذف آگهی
+    if (action === 'market_remove_listing') {
+      // نمایش مودال حذف آگهی
+      const modal = new ModalBuilder()
+        .setCustomId('market_remove_modal')
+        .setTitle('🗑️ حذف آگهی');
+      
+      // فیلد شناسه آگهی
+      const listingIdInput = new TextInputBuilder()
+        .setCustomId('listing_id')
+        .setLabel('شناسه آگهی (کپی از آگهی)')
+        .setPlaceholder('مثال: 6126f3c6e8b7a2c9f3e8b7a2')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
+      
+      // افزودن فیلد به مودال
+      const listingIdRow = new ActionRowBuilder<TextInputBuilder>().addComponents(listingIdInput);
+      
+      modal.addComponents(listingIdRow);
+      
+      // نمایش مودال
+      await interaction.showModal(modal);
+      return;
+    }
+    
+    // ویرایش آگهی
+    if (action === 'market_edit_listing') {
+      // نمایش مودال ویرایش آگهی
+      const modal = new ModalBuilder()
+        .setCustomId('market_edit_modal')
+        .setTitle('✏️ ویرایش آگهی');
+      
+      // فیلد شناسه آگهی
+      const listingIdInput = new TextInputBuilder()
+        .setCustomId('listing_id')
+        .setLabel('شناسه آگهی (کپی از آگهی)')
+        .setPlaceholder('مثال: 6126f3c6e8b7a2c9f3e8b7a2')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
+      
+      // فیلد قیمت جدید
+      const priceInput = new TextInputBuilder()
+        .setCustomId('price')
+        .setLabel('قیمت جدید (به سکه)')
+        .setPlaceholder('مثال: 1000')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
+      
+      // فیلد توضیحات
+      const descriptionInput = new TextInputBuilder()
+        .setCustomId('description')
+        .setLabel('توضیحات جدید (اختیاری)')
+        .setPlaceholder('توضیحات خود را وارد کنید')
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(false);
+      
+      // افزودن فیلدها به مودال
+      const listingIdRow = new ActionRowBuilder<TextInputBuilder>().addComponents(listingIdInput);
+      const priceRow = new ActionRowBuilder<TextInputBuilder>().addComponents(priceInput);
+      const descriptionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(descriptionInput);
+      
+      modal.addComponents(listingIdRow, priceRow, descriptionRow);
+      
+      // نمایش مودال
+      await interaction.showModal(modal);
       return;
     }
     
