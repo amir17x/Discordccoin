@@ -1,24 +1,24 @@
 {
   "service": "geminialt",
-  "lastUsed": "2025-03-31T12:37:07.529Z",
-  "requestCount": 171,
+  "lastUsed": "2025-03-31T13:00:03.165Z",
+  "requestCount": 177,
   "providerStats": {
     "geminialt": 24,
     "googleai": 78,
     "vertexai": 0,
     "openai": 0,
     "huggingface": 6,
-    "ccoinai": 63
+    "ccoinai": 69
   },
   "usageCounts": {
-    "statusMessages": 98,
+    "statusMessages": 100,
     "marketAnalysis": 0,
     "questStories": 0,
     "aiAssistant": 21,
-    "other": 34,
+    "other": 38,
     "statusMessage": 4,
     "notifications": 12
   },
-  "averageLatency": 2026,
-  "totalLatency": 346507
+  "averageLatency": 2029,
+  "totalLatency": 359155
 }

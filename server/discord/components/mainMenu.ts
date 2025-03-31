@@ -516,7 +516,8 @@ export async function mainMenu(
             .setStyle(ButtonStyle.Primary),
         );
       
-      components = [row1, row2, row3, row4, row5Extra, row5];
+      // Discord only allows up to 5 ActionRow components
+      components = [row1, row2, row3, row4, row5];
     }
     
     // Send or update the message - همیشه به صورت ephemeral (فقط برای کاربر قابل مشاهده)

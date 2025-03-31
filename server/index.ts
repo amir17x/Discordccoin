@@ -62,6 +62,14 @@ app.use((req, res, next) => {
   try {
     await connectToDatabase();
     log("Connected to MongoDB database", "success");
+    
+    // راه‌اندازی سهام‌های اولیه در سیستم
+    try {
+      const { initializeStocks } = await import('./scripts/initializeStocks');
+      await initializeStocks();
+    } catch (stocksError) {
+      log(`Error initializing stocks: ${stocksError}`, "error");
+    }
   } catch (error) {
     log(`Error connecting to MongoDB: ${error}`, "error");
     log("Continuing without database functionality...", "warn");

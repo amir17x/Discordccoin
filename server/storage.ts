@@ -226,6 +226,40 @@ type StockData = {
   totalShares: number;
   availableShares: number;
   updatedAt: Date;
+  news?: { 
+    title: string;
+    content: string;
+    impact: number;
+    timestamp: string;
+  }[];
+};
+
+// Used for creating a new stock
+type InsertStock = {
+  symbol: string;
+  name: string;
+  description: string;
+  currentPrice: number;
+  previousPrice: number;
+  volatility: number;
+  trend: number;
+  sector: string;
+  totalShares: number;
+  availableShares: number;
+};
+
+// News for a stock
+type StockNews = {
+  title: string;
+  content: string;
+  impact: number;
+  timestamp: string;
+};
+
+// Price history for a stock
+type StockPriceHistory = {
+  price: number;
+  timestamp: Date;
 };
 
 type UserStockData = {
@@ -319,6 +353,7 @@ export interface IStorage {
   getAllStocks(): Promise<StockData[]>;
   getUserStocks(userId: number): Promise<UserStockData[]>;
   getStockById(stockId: number): Promise<StockData | null>;
+  createStock(insertStock: InsertStock): Promise<StockData>;
   updateStockPrice(stockId: number, newPrice: number): Promise<boolean>;
   addStockNews(stockId: number, news: StockNews): Promise<boolean>;
   getStockNews(stockId: number, limit?: number): Promise<StockNews[]>;
@@ -1597,20 +1632,12 @@ export class MemStorage implements IStorage {
     
     const stock: StockData = {
       id,
-      symbol: insertStock.symbol,
-      name: insertStock.name,
-      description: insertStock.description,
-      currentPrice: insertStock.currentPrice,
-      previousPrice: insertStock.previousPrice,
+      ...insertStock,
       priceHistory: [{
         timestamp: now.toISOString(),
         price: insertStock.currentPrice
       }],
-      volatility: insertStock.volatility,
-      trend: insertStock.trend,
-      sector: insertStock.sector,
-      totalShares: insertStock.totalShares,
-      availableShares: insertStock.availableShares,
+      news: [], // اضافه کردن فیلد خبرها
       updatedAt: now
     };
     
@@ -3900,6 +3927,7 @@ export class MemStorage implements IStorage {
 
 // مدل‌های MongoDB
 import mongoose from 'mongoose';
+import { StockModel, UserStockModel } from './models/Stock';
 import UserModel from './models/User';
 import ClanModel from './models/Clan';
 import TipChannelModel from './models/TipChannel';
@@ -4248,12 +4276,71 @@ export class MongoStorage implements IStorage {
   async getAllStocks(): Promise<StockData[]> {
     // پیاده‌سازی متد getAllStocks برای MongoDB
     try {
-      const stocksCollection = await connectMongo('stocks');
-      const stocks = await stocksCollection.find({}).toArray();
-      return stocks as StockData[];
+      const stocks = await StockModel.find({});
+      return stocks.map(stock => ({
+        id: stock.id,
+        symbol: stock.symbol,
+        name: stock.name,
+        description: stock.description,
+        currentPrice: stock.currentPrice,
+        previousPrice: stock.previousPrice,
+        priceHistory: stock.priceHistory,
+        volatility: stock.volatility,
+        trend: stock.trend,
+        sector: stock.sector,
+        totalShares: stock.totalShares,
+        availableShares: stock.availableShares,
+        news: stock.news || [],
+        updatedAt: stock.updatedAt
+      }));
     } catch (error) {
       console.error('Error getting all stocks from MongoDB:', error);
       return [];
+    }
+  }
+  
+  async createStock(insertStock: InsertStock): Promise<StockData> {
+    try {
+      // بررسی تکراری نبودن نماد سهام
+      const existingStock = await StockModel.findOne({ symbol: insertStock.symbol });
+      if (existingStock) {
+        throw new Error(`سهام با نماد ${insertStock.symbol} قبلا در سیستم ثبت شده است`);
+      }
+      
+      // یافتن آخرین شناسه برای تولید شناسه جدید
+      const lastStock = await StockModel.findOne().sort({ id: -1 });
+      const id = lastStock ? lastStock.id + 1 : 1;
+      const now = new Date();
+      
+      // ایجاد رکورد جدید سهام
+      const newStock = new StockModel({
+        id,
+        ...insertStock,
+        priceHistory: [{
+          timestamp: now,
+          price: insertStock.currentPrice
+        }],
+        news: [],
+        updatedAt: now
+      });
+      
+      // ذخیره در دیتابیس
+      await newStock.save();
+      
+      // برگرداندن اطلاعات سهام
+      return {
+        id,
+        ...insertStock,
+        priceHistory: [{
+          timestamp: now,
+          price: insertStock.currentPrice
+        }],
+        news: [],
+        updatedAt: now
+      };
+    } catch (error) {
+      console.error('Error creating stock in MongoDB:', error);
+      throw error;
     }
   }
   
@@ -4418,9 +4505,25 @@ export class MongoStorage implements IStorage {
   
   async getStockById(stockId: number): Promise<StockData | null> {
     try {
-      const stocksCollection = await connectMongo('stocks');
-      const stock = await stocksCollection.findOne({ id: stockId });
-      return stock as StockData || null;
+      const stock = await StockModel.findOne({ id: stockId });
+      if (!stock) return null;
+      
+      return {
+        id: stock.id,
+        symbol: stock.symbol,
+        name: stock.name,
+        description: stock.description,
+        currentPrice: stock.currentPrice,
+        previousPrice: stock.previousPrice,
+        priceHistory: stock.priceHistory,
+        volatility: stock.volatility,
+        trend: stock.trend,
+        sector: stock.sector,
+        totalShares: stock.totalShares,
+        availableShares: stock.availableShares,
+        news: stock.news || [],
+        updatedAt: stock.updatedAt
+      };
     } catch (error) {
       console.error(`Error getting stock ${stockId} from MongoDB:`, error);
       return null;
@@ -4429,39 +4532,24 @@ export class MongoStorage implements IStorage {
   
   async updateStockPrice(stockId: number, newPrice: number): Promise<boolean> {
     try {
-      const stocksCollection = await connectMongo('stocks');
-      const stock = await stocksCollection.findOne({ id: stockId });
+      const stock = await StockModel.findOne({ id: stockId });
       
       if (!stock) return false;
       
       // ذخیره قیمت قبلی
       const oldPrice = stock.currentPrice;
-      
-      // به‌روزرسانی قیمت جدید
-      await stocksCollection.updateOne(
-        { id: stockId },
-        { 
-          $set: { 
-            previousPrice: oldPrice,
-            currentPrice: newPrice,
-            updatedAt: new Date()
-          }
-        }
-      );
-      
-      // ذخیره تاریخچه قیمت
       const now = new Date();
-      await stocksCollection.updateOne(
-        { id: stockId },
-        { 
-          $push: { 
-            priceHistory: {
-              price: newPrice,
-              timestamp: now
-            }
-          }
-        }
-      );
+      
+      // به‌روزرسانی قیمت جدید و ذخیره تاریخچه قیمت
+      stock.previousPrice = oldPrice;
+      stock.currentPrice = newPrice;
+      stock.updatedAt = now;
+      stock.priceHistory.push({
+        price: newPrice,
+        timestamp: now
+      });
+      
+      await stock.save();
       
       return true;
     } catch (error) {
@@ -4472,11 +4560,13 @@ export class MongoStorage implements IStorage {
   
   async addStockNews(stockId: number, news: StockNews): Promise<boolean> {
     try {
-      const stocksCollection = await connectMongo('stocks');
-      await stocksCollection.updateOne(
-        { id: stockId },
-        { $push: { news: news } }
-      );
+      const stock = await StockModel.findOne({ id: stockId });
+      if (!stock) return false;
+      
+      if (!stock.news) stock.news = [];
+      stock.news.push(news);
+      
+      await stock.save();
       return true;
     } catch (error) {
       console.error(`Error adding news for stock ${stockId} in MongoDB:`, error);
@@ -4486,8 +4576,7 @@ export class MongoStorage implements IStorage {
   
   async getStockNews(stockId: number, limit?: number): Promise<StockNews[]> {
     try {
-      const stocksCollection = await connectMongo('stocks');
-      const stock = await stocksCollection.findOne({ id: stockId });
+      const stock = await StockModel.findOne({ id: stockId });
       
       if (!stock || !stock.news) return [];
       
@@ -4505,8 +4594,7 @@ export class MongoStorage implements IStorage {
   
   async getStockPriceHistory(stockId: number, limit?: number): Promise<StockPriceHistory[]> {
     try {
-      const stocksCollection = await connectMongo('stocks');
-      const stock = await stocksCollection.findOne({ id: stockId });
+      const stock = await StockModel.findOne({ id: stockId });
       
       if (!stock || !stock.priceHistory) return [];
       
@@ -4531,11 +4619,45 @@ export class MongoStorage implements IStorage {
   // برای به‌روزرسانی کلی سهام
   async updateStock(stockId: number, updates: Partial<StockData>): Promise<boolean> {
     try {
-      const stocksCollection = await connectMongo('stocks');
-      await stocksCollection.updateOne(
-        { id: stockId },
-        { $set: updates }
-      );
+      // تلاش برای یافتن سهام با ID
+      const stock = await StockModel.findOne({ id: stockId });
+      
+      // اگر سهامی یافت نشد
+      if (!stock) {
+        console.error(`هیچ سهمی برای به‌روزرسانی یافت نشد: ${stockId}`);
+        
+        // بررسی کنیم که آیا نیاز به ایجاد سهام‌های اولیه است
+        const stockCount = await StockModel.countDocuments();
+        if (stockCount === 0) {
+          // اگر هیچ سهامی وجود ندارد، سهام‌های اولیه را ایجاد کنید
+          try {
+            const script = require('./scripts/initializeStocks');
+            await script.initializeStocks();
+            console.log("سهام‌های اولیه با موفقیت ایجاد شدند. تلاش دوباره برای به‌روزرسانی...");
+            
+            // تلاش مجدد برای یافتن سهام
+            const newStock = await StockModel.findOne({ id: stockId });
+            if (newStock) {
+              Object.keys(updates).forEach(key => {
+                newStock[key] = updates[key];
+              });
+              await newStock.save();
+              return true;
+            }
+          } catch (initError) {
+            console.error("خطا در ایجاد سهام‌های اولیه:", initError);
+          }
+        }
+        
+        return false;
+      }
+      
+      // به‌روزرسانی فیلدهای سهام
+      Object.keys(updates).forEach(key => {
+        stock[key] = updates[key];
+      });
+      
+      await stock.save();
       return true;
     } catch (error) {
       console.error(`Error updating stock ${stockId} in MongoDB:`, error);
@@ -4546,10 +4668,18 @@ export class MongoStorage implements IStorage {
   // دریافت سهام‌های یک کاربر
   async getUserStocks(userId: number): Promise<UserStockData[]> {
     try {
-      const userModel = await UserModel.findOne({ id: userId });
-      if (!userModel || !userModel.stockPortfolio) return [];
+      const user = await UserModel.findOne({ id: userId });
       
-      return userModel.stockPortfolio as UserStockData[];
+      // اگر کاربر پیدا نشد با id، امتحان کن با discordId
+      if (!user && typeof userId === 'string') {
+        const userByDiscordId = await UserModel.findOne({ discordId: userId });
+        if (!userByDiscordId || !userByDiscordId.stockPortfolio) return [];
+        return userByDiscordId.stockPortfolio as UserStockData[];
+      }
+      
+      if (!user || !user.stockPortfolio) return [];
+      
+      return user.stockPortfolio as UserStockData[];
     } catch (error) {
       console.error(`Error getting stocks for user ${userId} from MongoDB:`, error);
       return [];
@@ -4561,7 +4691,12 @@ export class MongoStorage implements IStorage {
     try {
       // دریافت اطلاعات سهام و کاربر
       const stock = await this.getStockById(stockId);
-      const user = await UserModel.findOne({ id: userId });
+      let user = await UserModel.findOne({ id: userId });
+      
+      // اگر کاربر پیدا نشد با id، امتحان کن با discordId
+      if (!user && typeof userId === 'string') {
+        user = await UserModel.findOne({ discordId: userId });
+      }
       
       if (!stock || !user) return false;
       
@@ -4618,7 +4753,12 @@ export class MongoStorage implements IStorage {
     try {
       // دریافت اطلاعات سهام و کاربر
       const stock = await this.getStockById(stockId);
-      const user = await UserModel.findOne({ id: userId });
+      let user = await UserModel.findOne({ id: userId });
+      
+      // اگر کاربر پیدا نشد با id، امتحان کن با discordId
+      if (!user && typeof userId === 'string') {
+        user = await UserModel.findOne({ discordId: userId });
+      }
       
       if (!stock || !user || !user.stockPortfolio) return false;
       
