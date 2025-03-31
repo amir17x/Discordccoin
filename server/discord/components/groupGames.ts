@@ -965,14 +965,14 @@ async function handleQuizGame(interaction: ButtonInteraction) {
     
     // ایجاد Embed پیشرفته با طراحی جذاب‌تر
     const embed = new EmbedBuilder()
-      .setTitle('🧠 مسابقه اطلاعات عمومی VIP')
-      .setDescription('**به مسابقه هیجان‌انگیز اطلاعات عمومی خوش آمدید!** 🎉\n\nدر این بازی دانش و سرعت عمل شما به چالش کشیده می‌شود. با پاسخ صحیح به سوالات، امتیاز جمع کنید و برنده شوید! هر پاسخ سریع‌تر امتیاز بیشتری دارد. 🏆')
-      .setColor(0x9B59B6) // رنگ بنفش برای تم VIP
+      .setTitle('🧠 مسابقه اطلاعات عمومی رقابتی')
+      .setDescription('**به مسابقه هیجان‌انگیز اطلاعات عمومی رقابتی خوش آمدید!** 🎉\n\nدر این بازی دونفره، دانش و سرعت عمل شما به چالش کشیده می‌شود. با پاسخ صحیح به سوالات، امتیاز جمع کنید و برنده شوید! هر پاسخ سریع‌تر امتیاز بیشتری دارد. 🏆')
+      .setColor(0xE74C3C) // رنگ قرمز برای نشان دادن رقابت
       .addFields(
-        { name: '👥 ظرفیت بازیکنان', value: '0/10', inline: true },
+        { name: '👥 ظرفیت بازیکنان', value: '0/2', inline: true },
         { name: '⏱️ زمان هر سوال', value: '30 ثانیه', inline: true },
         { name: '📚 تعداد سوالات', value: '10 سوال', inline: true },
-        { name: '💰 جایزه برندگان', value: 'نفر اول: 500 کوین 🥇\nنفر دوم: 250 کوین 🥈\nنفر سوم: 100 کوین 🥉', inline: true },
+        { name: '💰 جایزه برندگان', value: 'برنده: 500 کوین 🥇\nبازنده: 100 کوین 🎖️', inline: true },
         { name: '👑 میزبان بازی', value: hostUser.username, inline: true }
       )
       .setImage('https://media.discordapp.net/attachments/1005948809465335931/1111362362733785190/group_games_banner.png?width=915&height=147') // تصویر بنر بازی
@@ -1100,13 +1100,13 @@ async function joinQuizGame(interaction: ButtonInteraction) {
     }
     
     // بررسی محدودیت تعداد بازیکنان
-    if (gameSession.players.length >= 10) {
+    if (gameSession.players.length >= 2) {
       const fullGameEmbed = new EmbedBuilder()
         .setTitle('❌ ظرفیت تکمیل است!')
-        .setDescription('متأسفانه ظرفیت این بازی تکمیل شده است و امکان پیوستن به آن وجود ندارد.')
+        .setDescription('متأسفانه ظرفیت این بازی رقابتی تکمیل شده است و امکان پیوستن به آن وجود ندارد.')
         .setColor(0xFF0000) // رنگ قرمز برای خطا
         .addFields(
-          { name: '👥 تعداد بازیکنان', value: `${gameSession.players.length}/10 (تکمیل)`, inline: true },
+          { name: '👥 تعداد بازیکنان', value: `${gameSession.players.length}/2 (تکمیل)`, inline: true },
           { name: '👤 میزبان بازی', value: `<@${gameSession.createdBy}>`, inline: true }
         )
         .setFooter({ text: 'می‌توانید یک بازی جدید ایجاد کنید یا منتظر باشید تا یک بازی دیگر شروع شود' });
@@ -1149,7 +1149,7 @@ async function joinQuizGame(interaction: ButtonInteraction) {
     // به‌روزرسانی فیلد تعداد بازیکنان
     const playerField = embed.data.fields?.find(field => field.name?.includes('ظرفیت بازیکنان') || field.name?.includes('تعداد بازیکنان'));
     if (playerField) {
-      playerField.value = `${gameSession.players.length}/10`;
+      playerField.value = `${gameSession.players.length}/2`;
     }
     
     // افزودن لیست بازیکنان
@@ -1172,9 +1172,9 @@ async function joinQuizGame(interaction: ButtonInteraction) {
       .setDescription(`شما با موفقیت به بازی اطلاعات عمومی پیوستید. منتظر شروع بازی باشید!`)
       .setColor(0x3BA55D) // رنگ سبز برای موفقیت
       .addFields(
-        { name: '🎮 نام بازی', value: 'مسابقه اطلاعات عمومی VIP', inline: true },
+        { name: '🎮 نام بازی', value: 'مسابقه اطلاعات عمومی رقابتی', inline: true },
         { name: '👤 میزبان بازی', value: `<@${gameSession.createdBy}>`, inline: true },
-        { name: '👥 تعداد بازیکنان', value: `${gameSession.players.length}/10`, inline: true }
+        { name: '👥 تعداد بازیکنان', value: `${gameSession.players.length}/2`, inline: true }
       )
       .setThumbnail(interaction.user.displayAvatarURL({ size: 128 }))
       .setFooter({ text: `Game ID: ${gameSession.id} • ${new Date().toLocaleString('fa-IR')}` });
@@ -1407,7 +1407,7 @@ async function startQuizGame(interaction: ButtonInteraction) {
     
     // ایجاد Embed زیبا برای شروع بازی
     const gameStartEmbed = new EmbedBuilder()
-      .setTitle('🎮 مسابقه اطلاعات عمومی VIP شروع شد!')
+      .setTitle('🎮 مسابقه اطلاعات عمومی رقابتی شروع شد!')
       .setDescription(
         '**بازی با موفقیت آغاز شد!** 🎉\n\n' +
         'اولین سوال به زودی نمایش داده می‌شود. آماده باشید و سریع پاسخ دهید! ' +
