@@ -281,6 +281,8 @@ export interface IStorage {
   getAllUsers(limit?: number): Promise<User[]>;
   getUserCount(): Promise<number>;
   getUserTransactions(userId: number): Promise<SchemaTransaction[]>;
+  getUsersWithRobberyNotificationsEnabled(): Promise<User[]>;
+  getUsersWithMinWalletAmount(minAmount: number): Promise<User[]>;
   
   // Game statistics
   incrementTotalGamesWon(userId: number): Promise<void>;
@@ -545,6 +547,17 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
+  async getUsersWithRobberyNotificationsEnabled(): Promise<User[]> {
+    return Array.from(this.users.values()).filter(user => 
+      user.robberyNotifications && user.robberyNotifications.enabled === true
+    );
+  }
+
+  async getUsersWithMinWalletAmount(minAmount: number): Promise<User[]> {
+    return Array.from(this.users.values()).filter(user => 
+      user.wallet >= minAmount
+    );
+  }
   private users: Map<number, User> = new Map();
   private items: Map<number, Item> = new Map();
   private clans: Map<number, Clan> = new Map();
@@ -3986,6 +3999,25 @@ import LoanModel from './models/Loan';
 import MarketListingModel from './models/MarketListing';
 
 export class MongoStorage implements IStorage {
+  async getUsersWithRobberyNotificationsEnabled(): Promise<User[]> {
+    try {
+      const users = await UserModel.find({ 'robberyNotifications.enabled': true });
+      return users.map(user => this.mapUserFromDb(user));
+    } catch (error) {
+      console.error('Error getting users with robbery notifications enabled:', error);
+      return [];
+    }
+  }
+
+  async getUsersWithMinWalletAmount(minAmount: number): Promise<User[]> {
+    try {
+      const users = await UserModel.find({ wallet: { $gte: minAmount } });
+      return users.map(user => this.mapUserFromDb(user));
+    } catch (error) {
+      console.error('Error getting users with minimum wallet amount:', error);
+      return [];
+    }
+  }
   async getItemById(id: number): Promise<Item | undefined> {
     try {
       const item = await ItemModel.findOne({ id });

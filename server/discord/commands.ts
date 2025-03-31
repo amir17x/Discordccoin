@@ -7,6 +7,7 @@ import { handleGroupGamesMenu } from './components/groupGames';
 import { botConfig } from './utils/config';
 import { pingCurrentAIService, generateAIResponse } from './services/aiService';
 import { setFeedbackChannelCommand, executeSetFeedbackChannel } from './commands/admin/setFeedbackChannel';
+import { timeThiefCommand, unTimeThiefCommand, executeTimeThief, executeUnTimeThief } from './commands/economy/robberyCommands';
 
 // Command to display the main menu
 const menu = {
@@ -1016,6 +1017,18 @@ export async function loadCommands(client: Client) {
     execute: executeSetFeedbackChannel
   };
   client.commands.set(setFeedbackChannelCommand.name, setFeedbackChannel);
+  
+  // دستورات مربوط به سیستم دزدی
+  const timeThief = {
+    data: timeThiefCommand,
+    execute: executeTimeThief
+  };
+  const unTimeThief = {
+    data: unTimeThiefCommand,
+    execute: executeUnTimeThief
+  };
+  client.commands.set('timethief', timeThief);
+  client.commands.set('untimethief', unTimeThief);
 }
 
 export const commands = [
@@ -1029,5 +1042,7 @@ export const commands = [
   unTipChannel.data.toJSON(),
   // کامند بازی‌های گروهی حذف شد و با منوی بازی‌ها یکپارچه شد
   hf.data.toJSON(), // Add the CCOIN AI command to slash commands
+  timeThiefCommand.toJSON(), // کامند فعال‌سازی اطلاع‌رسانی دزدی 
+  unTimeThiefCommand.toJSON(), // کامند غیرفعال‌سازی اطلاع‌رسانی دزدی
   setFeedbackChannelCommand.toJSON() // کامند تنظیم کانال بازخورد
 ];

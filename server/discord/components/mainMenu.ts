@@ -332,10 +332,6 @@ export async function mainMenu(
               .setLabel('📈 سهام')
               .setStyle(ButtonStyle.Success),
             new ButtonBuilder()
-              .setCustomId('market_menu')
-              .setLabel('🛒 بازار')
-              .setStyle(ButtonStyle.Primary),
-            new ButtonBuilder()
               .setCustomId('other_options')
               .setLabel('✨ موارد دیگر')
               .setStyle(ButtonStyle.Secondary),
@@ -488,10 +484,6 @@ export async function mainMenu(
             .setCustomId('pets')
             .setLabel('🐾 پت‌های من')
             .setStyle(ButtonStyle.Success),
-          new ButtonBuilder()
-            .setCustomId('market_menu')
-            .setLabel('🛒 بازار')
-            .setStyle(ButtonStyle.Primary),
           new ButtonBuilder()
             .setCustomId('donate')
             .setLabel('❤️ حمایت از ربات')

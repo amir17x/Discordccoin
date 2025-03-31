@@ -75,35 +75,13 @@ export async function robberyMenu(
       .setFooter({ text: `توجه: در صورت شکست، ${PENALTY_AMOUNT} Ccoin جریمه خواهید شد!` })
       .setTimestamp();
     
-    // Create target selection menu
-    const targetMenu = new ActionRowBuilder<StringSelectMenuBuilder>()
-      .addComponents(
-        new StringSelectMenuBuilder()
-          .setCustomId('target_select')
-          .setPlaceholder('هدف سرقت خود را انتخاب کنید')
-          .addOptions(
-            possibleTargets.map(target => 
-              new StringSelectMenuOptionBuilder()
-                .setLabel(`${target.username}`)
-                .setValue(`${target.id}`)
-                .setDescription(`کیف پول: ${target.wallet} Ccoin`)
-                .setEmoji('👤')
-            )
-          )
-          .setDisabled(!canRob || possibleTargets.length === 0)
-      );
-    
-    // Create action buttons for robbery menu with new mechanism buttons
+    // Create action buttons for robbery menu with simplified mechanism
     const row1 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
           .setCustomId('rob_radar')
           .setLabel('📡 رادار')
-          .setStyle(ButtonStyle.Primary),
-        new ButtonBuilder()
-          .setCustomId('rob_select')
-          .setLabel('✅ انتخاب')
-          .setStyle(ButtonStyle.Success)
+          .setStyle(ButtonStyle.Primary)
           .setDisabled(!canRob),
         new ButtonBuilder()
           .setCustomId('rob_stats')
@@ -138,10 +116,8 @@ export async function robberyMenu(
           .setStyle(ButtonStyle.Secondary)
       );
     
-    // Components to show based on availability
-    const components: (ActionRowBuilder<ButtonBuilder> | ActionRowBuilder<StringSelectMenuBuilder>)[] = possibleTargets.length > 0 ? 
-      [targetMenu, row1, rowMechanisms, row2] : 
-      [row1, rowMechanisms, row2];
+    // Components to show - simplified to only necessary buttons
+    const components: ActionRowBuilder<ButtonBuilder>[] = [row1, rowMechanisms, row2];
     
     // Send the robbery menu
     if (followUp) {

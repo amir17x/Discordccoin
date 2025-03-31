@@ -111,6 +111,15 @@ export const users = pgTable("users", {
     updatedAt: new Date().toISOString()
   }),
   
+  // تنظیمات اطلاع‌رسانی دزدی
+  robberyNotifications: jsonb("robbery_notifications").$type<{
+    enabled: boolean;
+    lastNotified: Date | null;
+  }>().default({
+    enabled: false,
+    lastNotified: null
+  }),
+  
   // فیلدهای مدیریتی
   banned: boolean("banned").notNull().default(false), // وضعیت مسدودیت
   banReason: text("ban_reason"), // دلیل مسدودیت

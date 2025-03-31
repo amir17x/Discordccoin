@@ -1754,11 +1754,12 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
         u.wallet > 0
       );
       
-      // انتخاب 3 کاربر تصادفی از بین کاربران با کیف پول غیر خالی
+      // انتخاب 3 تا 5 کاربر تصادفی از بین کاربران با کیف پول غیر خالی
       const targets = [];
       const usedIndexes = new Set();
+      const targetCount = Math.min(5, potentialTargets.length);
       
-      for (let i = 0; i < 3 && i < potentialTargets.length; i++) {
+      for (let i = 0; i < targetCount; i++) {
         let randomIndex;
         do {
           randomIndex = Math.floor(Math.random() * potentialTargets.length);
@@ -1768,11 +1769,41 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
         targets.push(potentialTargets[randomIndex]);
       }
       
+      // ساخت دکمه‌های انتخاب هدف
+      const rows: ActionRowBuilder<ButtonBuilder>[] = [];
+      let currentRow = new ActionRowBuilder<ButtonBuilder>();
+      
+      targets.forEach((target, index) => {
+        currentRow.addComponents(
+          new ButtonBuilder()
+            .setCustomId(`rob_target_${target.id}`)
+            .setLabel(`🎯 ${target.username}`)
+            .setStyle(ButtonStyle.Danger)
+        );
+        
+        // حداکثر 3 دکمه در هر ردیف
+        if ((index + 1) % 3 === 0 || index === targets.length - 1) {
+          rows.push(currentRow);
+          currentRow = new ActionRowBuilder<ButtonBuilder>();
+        }
+      });
+      
+      // افزودن دکمه بازگشت
+      const backRow = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('robbery')
+            .setLabel('🔙 بازگشت')
+            .setStyle(ButtonStyle.Secondary)
+        );
+      
+      rows.push(backRow);
+      
       const embed = new EmbedBuilder()
         .setColor('#800080')
         .setTitle('📡 رادار دزدی')
         .setDescription('🔍 کاربران زیر برای دزدی شناسایی شدند:')
-        .setThumbnail('https://img.icons8.com/fluency/48/radar.png') // آیکون radar برای رادار دزدی
+        .setThumbnail('https://img.icons8.com/fluency/48/radar.png')
         .setTimestamp();
       
       if (targets.length > 0) {
@@ -1784,19 +1815,15 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
           });
         });
         
-        embed.setFooter({ text: '✅ برای انتخاب هدف، دکمه "انتخاب" را بزنید!' });
+        embed.setFooter({ text: '✅ برای انتخاب هدف، روی دکمه با نام کاربر کلیک کنید!' });
       } else {
         embed.setDescription('⚠️ هیچ کاربر مناسبی برای دزدی پیدا نشد! بعداً دوباره امتحان کنید.');
       }
       
-      if ('update' in interaction && typeof interaction.update === 'function') {
-        try {
-          await interaction.update({ embeds: [embed] });
-        } catch (e) {
-          await interaction.reply({ embeds: [embed], ephemeral: true });
-        }
-      } else {
-        await interaction.reply({ embeds: [embed], ephemeral: true });
+      try {
+        await interaction.update({ embeds: [embed], components: rows });
+      } catch (e) {
+        await interaction.reply({ embeds: [embed], components: rows, ephemeral: true });
       }
       return;
     }
@@ -1809,8 +1836,7 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
         .setDescription('در این بخش می‌توانید از کاربران دیگر Ccoin دزدی کنید.')
         .setThumbnail('https://img.icons8.com/fluency/48/help.png') // آیکون help برای راهنما
         .addFields(
-          { name: '📡 رادار', value: 'کاربران را برای دزدی اسکن می‌کند.', inline: false },
-          { name: '✅ انتخاب', value: 'یک هدف برای دزدی انتخاب می‌کنید.', inline: false },
+          { name: '📡 رادار', value: 'کاربران را برای دزدی اسکن می‌کند و سه تا پنج هدف تصادفی نمایش می‌دهد.', inline: false },
           { name: '📊 آماردزدی', value: 'آمار دزدی‌های شما را نمایش می‌دهد.', inline: false },
           { name: '🎭 تغییر چهره', value: 'با هزینه 50 کریستال، شانس موفقیت دزدی را افزایش می‌دهد.', inline: false },
           { name: '🛡️ آیتم‌های دزدی', value: 'آیتم‌های مخصوص دزدی را مشاهده و مدیریت کنید.', inline: false },
@@ -1914,6 +1940,56 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     if (action === 'rob_select') {
       // نمایش فرم انتخاب هدف دزدی
       await selectRobberyTarget(interaction);
+      return;
+    }
+    
+    if (action.startsWith('rob_target_')) {
+      // پردازش انتخاب هدف دزدی از لیست رادار
+      const targetId = parseInt(action.replace('rob_target_', ''));
+      if (isNaN(targetId)) {
+        await interaction.reply({
+          content: '❌ شناسه کاربر هدف نامعتبر است!',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      // دریافت اطلاعات کاربر هدف
+      const targetUser = await storage.getUser(targetId);
+      if (!targetUser) {
+        await interaction.reply({
+          content: '❌ کاربر هدف یافت نشد!',
+          ephemeral: true
+        });
+        return;
+      }
+      
+      // نمایش تأییدیه دزدی
+      const confirmEmbed = new EmbedBuilder()
+        .setColor('#800080')
+        .setTitle('🔒 تأیید دزدی')
+        .setDescription(`آیا مطمئن هستید که می‌خواهید از **${targetUser.username}** دزدی کنید؟`)
+        .addFields(
+          { name: '👛 موجودی کیف پول هدف', value: `${targetUser.wallet} Ccoin`, inline: true },
+          { name: '💰 حداکثر مقدار قابل دزدی', value: `${Math.min(targetUser.wallet, MAX_ROB_AMOUNT)} Ccoin`, inline: true },
+          { name: '⚠️ هشدار', value: 'در صورت شکست، 200 Ccoin جریمه خواهید شد!', inline: false }
+        )
+        .setThumbnail('https://img.icons8.com/fluency/48/warning-shield.png')
+        .setTimestamp();
+      
+      const row = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId(`rob_confirm_${targetId}`)
+            .setLabel('✅ تأیید دزدی')
+            .setStyle(ButtonStyle.Success),
+          new ButtonBuilder()
+            .setCustomId('robbery')
+            .setLabel('❌ انصراف')
+            .setStyle(ButtonStyle.Danger)
+        );
+      
+      await interaction.update({ embeds: [confirmEmbed], components: [row] });
       return;
     }
     

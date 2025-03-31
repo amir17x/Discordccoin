@@ -109,6 +109,15 @@ app.use((req, res, next) => {
     
     // سیستم نکات در رویداد ready بات دیسکورد راه‌اندازی می‌شود
     log("Tip system will be initialized when Discord bot is ready", "success");
+    
+    // راه‌اندازی سیستم اطلاع‌رسانی دزدی
+    try {
+      const { setupRobberyNotificationService } = await import("./discord/services/robberyNotificationService");
+      setupRobberyNotificationService(client);
+      log("Robbery notification service initialized successfully", "success");
+    } catch (robberyNotificationError) {
+      log(`Error initializing robbery notification service: ${robberyNotificationError}`, "error");
+    }
   } catch (error) {
     log(`Error initializing Discord bot: ${error}`, "error");
     log("Continuing without Discord bot functionality", "warn");

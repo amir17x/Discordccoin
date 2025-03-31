@@ -45,6 +45,11 @@ export interface IUser extends Document {
     multiplier: number;
     expiresAt: Date | null;
   };
+  // تنظیمات اطلاع‌رسانی دزدی
+  robberyNotifications: {
+    enabled: boolean;
+    lastNotified: Date | null;
+  };
   // اعلانات شخصی ذخیره شده
   personalNotifications: {
     notifications: string[];
@@ -139,6 +144,13 @@ const userSchema = new Schema<IUser>({
       active: false,
       multiplier: 1,
       expiresAt: null
+    }
+  },
+  robberyNotifications: {
+    type: Object,
+    default: {
+      enabled: false,
+      lastNotified: null
     }
   },
   nickname: { type: String, default: null },
