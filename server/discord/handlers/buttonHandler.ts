@@ -12,6 +12,7 @@ import { profileMenu } from '../components/profileMenu';
 import { wheelOfFortuneMenu, spinWheel } from '../components/wheelOfFortuneMenu';
 import { robberyMenu, selectRobberyTarget, handleRobbery } from '../components/robberyMenu';
 import { adminMenu } from '../components/adminMenu';
+import { achievementsMenu, showCategoryAchievements, showEarnedAchievements, showProgressAchievements } from '../components/achievementsMenu';
 import { 
   handleGroupGamesButton, 
   handleQuizQuestionModalSubmit, 
@@ -74,7 +75,6 @@ import { stocksMenu, processBuyStock, processSellStock, processStockAnalysis } f
 import { lotteryMenu, processBuyLotteryTicket } from '../components/lotteryMenu';
 import { giveawayBridgeMenu, buyGiveawayTickets, checkGiveawayBalance } from '../components/giveawayBridge';
 import { tournamentsMenu, processJoinTournament } from '../components/tournamentsMenu';
-import { achievementsMenu, showCategoryAchievements } from '../components/achievementsMenu';
 import { seasonsMenu } from '../components/seasonsMenu';
 import { parallelWorldsMenu } from '../components/parallelWorldsMenu';
 import { petMenu, buyNewPet, feedPet, playWithPet, activatePet, renamePetModal } from '../components/petMenu';
@@ -1891,6 +1891,18 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     if (action === 'achievements_category') {
       const category = params[0];
       await showCategoryAchievements(interaction, category);
+      return;
+    }
+    
+    // نمایش دستاوردهای کسب شده
+    if (action === 'achievements_earned') {
+      await showEarnedAchievements(interaction);
+      return;
+    }
+    
+    // نمایش دستاوردهای در حال پیشرفت
+    if (action === 'achievements_progress') {
+      await showProgressAchievements(interaction);
       return;
     }
     

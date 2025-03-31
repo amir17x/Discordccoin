@@ -498,13 +498,17 @@ export async function mainMenu(
             .setStyle(ButtonStyle.Secondary),
         );
         
-      // Row 5: AI Assistant
+      // Row 5: AI Assistant و دستاوردها
       const row5Extra = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
           new ButtonBuilder()
             .setCustomId('ai_assistant')
             .setLabel('🧠 دستیار هوشمند')
             .setStyle(ButtonStyle.Primary),
+          new ButtonBuilder()
+            .setCustomId('achievements')
+            .setLabel('🏆 دستاوردهای من')
+            .setStyle(ButtonStyle.Success),
         );
       
       // Row 5: دکمه بازگشت

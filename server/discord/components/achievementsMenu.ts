@@ -1,353 +1,502 @@
-import { 
-  MessageComponentInteraction, 
-  EmbedBuilder, 
-  ActionRowBuilder, 
-  ButtonBuilder, 
-  ButtonStyle 
-} from 'discord.js';
-import { storage } from '../../storage';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CommandInteraction, EmbedBuilder, Message, StringSelectMenuBuilder } from 'discord.js';
+import { AchievementModel, UserAchievementModel } from '../../models/Achievement';
+import { getUserById } from '../utils/userUtils';
+import { formatNumber } from '../utils/formatters';
+
+// مپ رنگ‌های مربوط به سطح کمیابی دستاوردها
+const RARITY_COLORS = {
+  1: 0x7F8C8D, // خاکستری - معمولی
+  2: 0x3498DB, // آبی - غیرمعمول
+  3: 0x9B59B6, // بنفش - کمیاب
+  4: 0xF1C40F, // طلایی - خیلی کمیاب
+  5: 0xE74C3C, // قرمز - افسانه‌ای
+};
+
+// توضیحات سطح کمیابی
+const RARITY_NAMES = {
+  1: '🔹 معمولی',
+  2: '🔷 غیرمعمول',
+  3: '🔮 کمیاب',
+  4: '✨ خیلی کمیاب',
+  5: '🌟 افسانه‌ای',
+};
+
+// دسته‌بندی‌های دستاوردها
+const CATEGORIES = {
+  'economic': { name: '💰 اقتصادی', emoji: '💰' },
+  'social': { name: '👥 اجتماعی', emoji: '👥' },
+  'gaming': { name: '🎮 بازی', emoji: '🎮' },
+  'special': { name: '🏆 ویژه', emoji: '🏆' },
+  'event': { name: '🎉 رویداد', emoji: '🎉' },
+  'secret': { name: '🔒 مخفی', emoji: '🔒' },
+  'legacy': { name: '👑 افتخاری', emoji: '👑' },
+};
 
 /**
- * سیستم دستاوردهای Ccoin
- * دستاوردهایی برای انگیزه‌ی بیشتر کاربران و حس پیشرفت
+ * نمایش منوی دستاوردهای کاربر
+ * @param interaction تعامل کاربر
+ * @param followUp آیا به عنوان پیام دنباله‌دار ارسال شود؟
  */
 export async function achievementsMenu(
-  interaction: MessageComponentInteraction
+  interaction: CommandInteraction | ButtonInteraction | Message,
+  followUp = false
 ) {
   try {
-    // دریافت اطلاعات کاربر از دیتابیس - اصلاح مشکل ObjectId
-    // در اینجا interaction.user.id را مستقیم به عنوان string به تابع getUserByDiscordId می‌دهیم
-    const discordId = interaction.user.id;
-    const user = await storage.getUserByDiscordId(discordId);
+    let userId: string;
+    let discordId: string;
     
+    // تشخیص نوع تعامل و استخراج شناسه کاربر
+    if (interaction instanceof Message) {
+      userId = interaction.author.id;
+      discordId = interaction.author.id;
+    } else {
+      userId = interaction.user.id;
+      discordId = interaction.user.id;
+    }
+
+    // دریافت اطلاعات کاربر از دیتابیس
+    const user = await getUserById(discordId);
     if (!user) {
-      // در صورت عدم موفقیت، تلاش دوم با متد getUser با تبدیل به عدد
-      const userId = parseInt(discordId);
-      const userById = await storage.getUser(userId);
+      const errorEmbed = new EmbedBuilder()
+        .setColor(0xFF0000)
+        .setTitle('❌ خطا در بارگذاری اطلاعات')
+        .setDescription('متأسفانه اطلاعات کاربری شما یافت نشد. لطفاً مجدداً تلاش کنید.');
       
-      if (!userById) {
-        if ('update' in interaction && typeof interaction.update === 'function') {
-          try {
-            await interaction.update({ 
-              content: 'حساب شما در سیستم یافت نشد! لطفاً با دستور `/start` ثبت نام کنید.', 
-              embeds: [], 
-              components: [] 
-            });
-          } catch (e) {
-            await interaction.reply({ 
-              content: 'حساب شما در سیستم یافت نشد! لطفاً با دستور `/start` ثبت نام کنید.', 
-              ephemeral: true 
-            });
-          }
-        } else {
-          await interaction.reply({ 
-            content: 'حساب شما در سیستم یافت نشد! لطفاً با دستور `/start` ثبت نام کنید.', 
-            ephemeral: true 
-          });
-        }
-        return;
+      if (interaction instanceof Message) {
+        await interaction.reply({ embeds: [errorEmbed] });
+      } else if (interaction.deferred) {
+        await interaction.editReply({ embeds: [errorEmbed] });
+      } else {
+        await interaction.reply({ embeds: [errorEmbed], ephemeral: true });
       }
+      return;
     }
-    
-    // دریافت دستاوردهای کاربر از دیتابیس - نیاز به استفاده از شناسه کاربر
-    let userId = parseInt(discordId);
-    
-    // بررسی کاربر با استفاده از getUserByDiscordId
-    const userCheck = await storage.getUserByDiscordId(discordId);
-    if (userCheck) {
-      // اگر کاربر با شناسه دیسکورد پیدا شد، از آیدی آن استفاده می‌کنیم
-      userId = userCheck.id;
-    }
-    
-    const userAchievements = await storage.getUserAchievements(userId);
-    
-    // محاسبه آمار کلی دستاوردها
-    const totalAchievements = userAchievements.length;
-    const completedAchievements = userAchievements.filter(a => a.userAchievement.progress >= a.achievement.targetAmount).length;
-    const completionRate = totalAchievements > 0 ? Math.round((completedAchievements / totalAchievements) * 100) : 0;
-    
-    // دسته‌بندی دستاوردها
-    const categories = {
-      'general': { title: '🌟 عمومی', count: 0, completed: 0 },
-      'economy': { title: '💰 اقتصادی', count: 0, completed: 0 },
-      'games': { title: '🎮 بازی‌ها', count: 0, completed: 0 },
-      'social': { title: '👥 اجتماعی', count: 0, completed: 0 },
-      'adventure': { title: '🗺️ ماجراجویی', count: 0, completed: 0 },
-      'seasonal': { title: '🎭 فصلی', count: 0, completed: 0 }
-    };
-    
-    // شمارش دستاوردها به تفکیک دسته
-    userAchievements.forEach(a => {
-      const category = a.achievement.category as keyof typeof categories;
-      if (categories[category]) {
-        categories[category].count++;
-        if (a.userAchievement.progress >= a.achievement.targetAmount) {
-          categories[category].completed++;
-        }
-      }
+
+    // دریافت تمام دستاوردهای سیستم
+    const allAchievements = await AchievementModel.find({
+      // دستاوردهای مخفی را نمایش نمی‌دهیم مگر اینکه کاربر آنها را کسب کرده باشد
+      isHidden: false 
+    }).sort({ category: 1, rarityLevel: 1 }).lean();
+
+    // دریافت دستاوردهای کاربر
+    const userAchievements = await UserAchievementModel.find({
+      userId: userId
+    }).lean();
+
+    // شمارش تعداد دستاوردهای کسب شده و کل دستاوردها
+    const earnedCount = userAchievements.length;
+    const totalCount = allAchievements.length;
+    const earnedPercentage = Math.round((earnedCount / totalCount) * 100);
+
+    // نقشه‌ای از دستاوردهای کاربر برای دسترسی سریع‌تر
+    const userAchievementMap = new Map();
+    userAchievements.forEach(ua => {
+      userAchievementMap.set(ua.achievementId, ua);
     });
-    
-    // ایجاد Embed برای نمایش خلاصه دستاوردها
+
+    // ایجاد منوی دسته‌بندی‌ها
+    const categoryMenu = new StringSelectMenuBuilder()
+      .setCustomId('achievement_category')
+      .setPlaceholder('🏆 انتخاب دسته‌بندی دستاوردها')
+      .addOptions([
+        {
+          label: '🌟 همه دستاوردها',
+          description: `نمایش تمام دستاوردهای سیستم`,
+          value: 'all',
+          default: true
+        },
+        ...Object.entries(CATEGORIES).map(([key, category]) => ({
+          label: category.name,
+          description: `نمایش دستاوردهای ${category.name}`,
+          value: key,
+          emoji: category.emoji,
+          default: false
+        }))
+      ]);
+
+    // ساخت امبد اصلی دستاوردها
     const embed = new EmbedBuilder()
-      .setColor('#9B59B6')
-      .setTitle('🏆 دستاوردهای Ccoin')
-      .setDescription('نشان‌های افتخاری که با فعالیت در سیستم Ccoin کسب کرده‌اید!')
-      .setThumbnail('https://img.icons8.com/fluency/96/medal2.png')
+      .setColor(0xF1C40F)
+      .setTitle(`🏆 دستاوردهای ${user.username}`)
+      .setDescription(
+        `در این بخش می‌توانید دستاوردهای خود را مشاهده کرده و برای کسب آنها تلاش کنید!\n` +
+        `هر دستاورد به شما پاداش‌های مختلفی مانند سکه، کریستال و تجربه می‌دهد.`
+      )
+      .setThumbnail('https://cdn.discordapp.com/emojis/1001359395133456434.webp?size=96&quality=lossless')
       .addFields(
-        { 
-          name: '📊 آمار کلی دستاوردهای شما', 
-          value: `تکمیل شده: ${completedAchievements}/${totalAchievements} (${completionRate}%)`,
-          inline: false
-        }
-      );
-    
-    // افزودن فیلدهای دسته‌بندی
-    Object.values(categories).forEach(category => {
-      const percent = category.count > 0 ? Math.round((category.completed / category.count) * 100) : 0;
-      embed.addFields({
-        name: category.title,
-        value: `${category.completed}/${category.count} (${percent}%) تکمیل شده`,
-        inline: true
-      });
-    });
-    
-    // تعیین جایزه کلی بر اساس درصد تکمیل
-    let totalReward = '';
-    if (completionRate >= 100) totalReward = '🏆 مدال طلای دستاوردها + 10,000 سکه';
-    else if (completionRate >= 75) totalReward = '🥈 مدال نقره دستاوردها + 5,000 سکه';
-    else if (completionRate >= 50) totalReward = '🥉 مدال برنز دستاوردها + 2,500 سکه';
-    else if (completionRate >= 25) totalReward = '1,000 سکه';
-    else totalReward = '250 سکه';
-    
-    embed.addFields({
-      name: '🎁 جایزه فعلی پیشرفت دستاوردها',
-      value: totalReward,
-      inline: false
-    });
-    
-    // دکمه‌های تعاملی
-    const row1 = new ActionRowBuilder<ButtonBuilder>()
+        { name: '🌟 پیشرفت کلی', value: `\`${earnedCount}/${totalCount}\` (${earnedPercentage}%)`, inline: true },
+        { name: '💰 جمع پاداش‌ها', value: calculateTotalRewards(userAchievements, allAchievements), inline: true }
+      )
+      .setFooter({ text: 'با کلیک روی دکمه‌ها می‌توانید دستاوردهای بیشتری را مشاهده کنید!' });
+
+    // ایجاد دکمه‌های کنترلی
+    const controlRow = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
-          .setCustomId('achievements_general')
-          .setLabel('🌟 عمومی')
-          .setStyle(ButtonStyle.Primary),
-        new ButtonBuilder()
-          .setCustomId('achievements_economy')
-          .setLabel('💰 اقتصادی')
-          .setStyle(ButtonStyle.Primary),
-        new ButtonBuilder()
-          .setCustomId('achievements_games')
-          .setLabel('🎮 بازی‌ها')
-          .setStyle(ButtonStyle.Primary)
-      );
-    
-    const row2 = new ActionRowBuilder<ButtonBuilder>()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId('achievements_social')
-          .setLabel('👥 اجتماعی')
-          .setStyle(ButtonStyle.Primary),
-        new ButtonBuilder()
-          .setCustomId('achievements_adventure')
-          .setLabel('🗺️ ماجراجویی')
-          .setStyle(ButtonStyle.Primary),
-        new ButtonBuilder()
-          .setCustomId('achievements_seasonal')
-          .setLabel('🎭 فصلی')
-          .setStyle(ButtonStyle.Primary)
-      );
-    
-    const row3 = new ActionRowBuilder<ButtonBuilder>()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId('achievements_claim')
-          .setLabel('🎁 دریافت جایزه پیشرفت')
+          .setCustomId('achievements_earned')
+          .setLabel(`🏆 دستاوردهای من (${earnedCount})`)
           .setStyle(ButtonStyle.Success),
         new ButtonBuilder()
+          .setCustomId('achievements_progress')
+          .setLabel('📊 در حال پیشرفت')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
           .setCustomId('menu')
-          .setLabel('🔙 بازگشت به منوی اصلی')
-          .setStyle(ButtonStyle.Danger)
+          .setLabel('🔙 بازگشت')
+          .setStyle(ButtonStyle.Secondary)
       );
-    
-    // ارسال یا بروزرسانی پیام
-    if ('update' in interaction && typeof interaction.update === 'function') {
+
+    // دسته‌بندی منوی انتخاب
+    const selectRow = new ActionRowBuilder<StringSelectMenuBuilder>()
+      .addComponents(categoryMenu);
+
+    // نمایش منو
+    if (interaction instanceof Message) {
+      await interaction.reply({ embeds: [embed], components: [selectRow, controlRow] });
+    } else if (interaction.deferred) {
+      await interaction.editReply({ embeds: [embed], components: [selectRow, controlRow] });
+    } else if (followUp) {
+      await interaction.followUp({ embeds: [embed], components: [selectRow, controlRow], ephemeral: true });
+    } else if ('update' in interaction && typeof interaction.update === 'function') {
       try {
-        await interaction.update({ 
-          embeds: [embed], 
-          components: [row1, row2, row3] 
-        });
+        await interaction.update({ embeds: [embed], components: [selectRow, controlRow] });
       } catch (e) {
         if (!interaction.replied && !interaction.deferred) {
-          await interaction.reply({ 
-            embeds: [embed], 
-            components: [row1, row2, row3], 
-            ephemeral: true 
-          });
+          await interaction.reply({ embeds: [embed], components: [selectRow, controlRow], ephemeral: true });
         } else {
-          await interaction.followUp({ 
-            embeds: [embed], 
-            components: [row1, row2, row3], 
-            ephemeral: true 
-          });
+          await interaction.followUp({ embeds: [embed], components: [selectRow, controlRow], ephemeral: true });
         }
       }
     } else {
-      if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply({ 
-          embeds: [embed], 
-          components: [row1, row2, row3], 
-          ephemeral: true 
-        });
-      } else {
-        await interaction.followUp({ 
-          embeds: [embed], 
-          components: [row1, row2, row3], 
-          ephemeral: true 
-        });
-      }
+      await interaction.reply({ embeds: [embed], components: [selectRow, controlRow], ephemeral: true });
     }
-    
   } catch (error) {
     console.error('Error in achievements menu:', error);
     
-    try {
-      const errorMessage = 'خطایی در نمایش منوی دستاوردها رخ داد! لطفاً دوباره تلاش کنید.';
-      
-      if ('update' in interaction && typeof interaction.update === 'function') {
-        try {
-          await interaction.update({ content: errorMessage, embeds: [], components: [] });
-        } catch (e) {
-          if (!interaction.replied && !interaction.deferred) {
-            await interaction.reply({ content: errorMessage, ephemeral: true });
-          } else {
-            await interaction.followUp({ content: errorMessage, ephemeral: true });
-          }
-        }
-      } else {
-        if (!interaction.replied && !interaction.deferred) {
-          await interaction.reply({ content: errorMessage, ephemeral: true });
-        } else {
-          await interaction.followUp({ content: errorMessage, ephemeral: true });
-        }
-      }
-    } catch (e) {
-      console.error('Error handling achievements menu failure:', e);
+    const errorMessage = '❌ متأسفانه در نمایش منوی دستاوردها خطایی رخ داد! لطفاً دوباره تلاش کنید.';
+    
+    if (interaction instanceof Message) {
+      await interaction.reply({ content: errorMessage });
+    } else if (interaction.deferred) {
+      await interaction.editReply({ content: errorMessage });
+    } else if (interaction.replied) {
+      await interaction.followUp({ content: errorMessage, ephemeral: true });
+    } else {
+      await interaction.reply({ content: errorMessage, ephemeral: true });
     }
   }
 }
 
 /**
- * نمایش دستاوردهای دسته‌بندی خاص
+ * نمایش دستاوردهای یک دسته‌بندی خاص
+ * @param interaction تعامل کاربر
+ * @param category دسته‌بندی مورد نظر (یا 'all' برای همه)
  */
 export async function showCategoryAchievements(
-  interaction: MessageComponentInteraction,
-  category: string
+  interaction: ButtonInteraction,
+  category: string = 'all'
 ) {
   try {
-    // دریافت اطلاعات کاربر از دیتابیس - اصلاح مشکل ObjectId
-    // در اینجا interaction.user.id را مستقیم به عنوان string به تابع getUserByDiscordId می‌دهیم
-    const discordId = interaction.user.id;
-    const user = await storage.getUserByDiscordId(discordId);
+    const userId = interaction.user.id;
     
-    if (!user) {
-      // در صورت عدم موفقیت، تلاش دوم با متد getUser با تبدیل به عدد
-      const userId = parseInt(discordId);
-      const userById = await storage.getUser(userId);
-      
-      if (!userById) {
-        await interaction.reply({ 
-          content: 'حساب شما در سیستم یافت نشد! لطفاً با دستور `/start` ثبت نام کنید.', 
-          ephemeral: true 
+    // ساخت کوئری برای دریافت دستاوردها
+    const query: any = {};
+    if (category !== 'all') {
+      query.category = category;
+    }
+    query.isHidden = false; // دستاوردهای مخفی را نمایش نمی‌دهیم مگر اینکه کاربر آنها را کسب کرده باشد
+
+    // دریافت دستاوردهای دسته‌بندی
+    const achievements = await AchievementModel.find(query)
+      .sort({ rarityLevel: 1 })
+      .lean();
+
+    // دریافت دستاوردهای کاربر
+    const userAchievements = await UserAchievementModel.find({
+      userId: userId,
+      achievementId: { $in: achievements.map(a => a.id) }
+    }).lean();
+
+    // نقشه‌ای از دستاوردهای کاربر برای دسترسی سریع‌تر
+    const userAchievementMap = new Map();
+    userAchievements.forEach(ua => {
+      userAchievementMap.set(ua.achievementId, ua);
+    });
+
+    // ساخت امبد دستاوردها
+    const embed = new EmbedBuilder()
+      .setColor(0xF1C40F)
+      .setTitle(category === 'all' 
+        ? '🏆 همه دستاوردها' 
+        : `${CATEGORIES[category]?.emoji || '🏆'} دستاوردهای ${CATEGORIES[category]?.name || category}`)
+      .setDescription('لیست دستاوردهای قابل کسب در این دسته‌بندی:');
+
+    // گروه‌بندی و افزودن دستاوردها به امبد
+    const groupedByRarity = achievements.reduce((acc, achievement) => {
+      const level = achievement.rarityLevel;
+      if (!acc[level]) acc[level] = [];
+      acc[level].push(achievement);
+      return acc;
+    }, {});
+
+    // اضافه کردن دستاوردها به امبد براساس سطح کمیابی
+    for (let rarity = 1; rarity <= 5; rarity++) {
+      if (groupedByRarity[rarity]?.length > 0) {
+        let fieldText = '';
+        for (const achievement of groupedByRarity[rarity]) {
+          const hasEarned = userAchievementMap.has(achievement.id);
+          const prefix = hasEarned ? '✅' : '❌';
+          fieldText += `${prefix} ${achievement.emoji} **${achievement.title}**\n`;
+          
+          // اگر کاربر دستاورد را کسب کرده، جزئیات بیشتر نشان می‌دهیم
+          if (hasEarned) {
+            const earnedAt = new Date(userAchievementMap.get(achievement.id).earnedAt);
+            fieldText += `> ${achievement.description}\n`;
+            fieldText += `> 📅 کسب شده: ${earnedAt.toLocaleDateString('fa-IR')}\n`;
+          } else {
+            fieldText += `> ${achievement.description}\n`;
+          }
+          fieldText += `> 🎁 پاداش: ${formatReward(achievement.reward)}\n\n`;
+        }
+        
+        embed.addFields({ 
+          name: RARITY_NAMES[rarity], 
+          value: fieldText || 'هیچ دستاوردی در این سطح کمیابی یافت نشد.' 
         });
-        return;
       }
     }
-    
-    // دریافت دستاوردهای کاربر در دسته مورد نظر
-    let userId = parseInt(discordId);
-    
-    // بررسی کاربر با استفاده از getUserByDiscordId
-    const userCheck = await storage.getUserByDiscordId(discordId);
-    if (userCheck) {
-      // اگر کاربر با شناسه دیسکورد پیدا شد، از آیدی آن استفاده می‌کنیم
-      userId = userCheck.id;
+
+    // اگر دستاوردی وجود نداشت
+    if (Object.keys(groupedByRarity).length === 0) {
+      embed.addFields({ 
+        name: '😔 دستاوردی یافت نشد', 
+        value: 'در این دسته‌بندی هیچ دستاوردی وجود ندارد.' 
+      });
     }
     
-    const userAchievements = await storage.getUserAchievements(userId);
-    const categoryAchievements = userAchievements.filter(a => a.achievement.category === category);
-    
-    if (categoryAchievements.length === 0) {
-      await interaction.reply({ 
-        content: 'هیچ دستاوردی در این دسته یافت نشد!', 
-        ephemeral: true 
-      });
-      return;
-    }
-    
-    // عنوان دسته
-    const categoryTitles: { [key: string]: string } = {
-      'general': '🌟 دستاوردهای عمومی',
-      'economy': '💰 دستاوردهای اقتصادی',
-      'games': '🎮 دستاوردهای بازی‌ها',
-      'social': '👥 دستاوردهای اجتماعی',
-      'adventure': '🗺️ دستاوردهای ماجراجویی',
-      'seasonal': '🎭 دستاوردهای فصلی'
-    };
-    
-    // ایجاد Embed برای نمایش دستاوردهای دسته
-    const embed = new EmbedBuilder()
-      .setColor('#9B59B6')
-      .setTitle(categoryTitles[category] || '🏆 دستاوردهای Ccoin')
-      .setDescription('پیشرفت شما در دستاوردهای این دسته')
-      .setThumbnail('https://img.icons8.com/fluency/96/medal2.png');
-    
-    // افزودن فیلد برای هر دستاورد
-    categoryAchievements.forEach(achievement => {
-      const a = achievement.achievement;
-      const ua = achievement.userAchievement;
-      
-      // محاسبه درصد پیشرفت
-      const progress = Math.min(ua.progress, a.targetAmount);
-      const percent = Math.round((progress / a.targetAmount) * 100);
-      
-      // ایجاد نوار پیشرفت
-      let progressBar = '';
-      const filledSquares = Math.floor(percent / 10);
-      const emptySquares = 10 - filledSquares;
-      progressBar = '█'.repeat(filledSquares) + '░'.repeat(emptySquares);
-      
-      // وضعیت تکمیل
-      const status = progress >= a.targetAmount ? '✅ تکمیل شده' : `⏳ در حال پیشرفت (${percent}%)`;
-      
-      embed.addFields({
-        name: a.title,
-        value: `${a.description}\n${status}\n${progressBar} ${progress}/${a.targetAmount}\n💰 جایزه: ${a.reward}`,
-        inline: false
-      });
-    });
-    
-    // دکمه بازگشت به منوی دستاوردها
-    const row = new ActionRowBuilder<ButtonBuilder>()
+    // دکمه‌های کنترلی
+    const controlRow = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
           .setCustomId('achievements')
-          .setLabel('🔙 بازگشت به لیست دستاوردها')
-          .setStyle(ButtonStyle.Primary)
+          .setLabel('🔙 بازگشت به منوی دستاوردها')
+          .setStyle(ButtonStyle.Secondary)
       );
-    
-    await interaction.reply({ 
-      embeds: [embed], 
-      components: [row], 
-      ephemeral: true 
-    });
-    
+
+    await interaction.update({ embeds: [embed], components: [controlRow] });
   } catch (error) {
-    console.error(`Error in show ${category} achievements:`, error);
-    
-    await interaction.reply({ 
-      content: 'خطایی در نمایش دستاوردها رخ داد! لطفاً دوباره تلاش کنید.', 
-      ephemeral: true 
+    console.error('Error showing category achievements:', error);
+    await interaction.update({ 
+      content: '❌ متأسفانه در نمایش دستاوردهای این دسته‌بندی خطایی رخ داد! لطفاً دوباره تلاش کنید.',
+      embeds: [],
+      components: []
     });
   }
+}
+
+/**
+ * نمایش دستاوردهای کسب شده کاربر
+ * @param interaction تعامل کاربر
+ */
+export async function showEarnedAchievements(
+  interaction: ButtonInteraction
+) {
+  try {
+    const userId = interaction.user.id;
+
+    // دریافت دستاوردهای کاربر
+    const userAchievements = await UserAchievementModel.find({
+      userId: userId
+    }).lean();
+
+    if (userAchievements.length === 0) {
+      const embed = new EmbedBuilder()
+        .setColor(0xF1C40F)
+        .setTitle('🏆 دستاوردهای من')
+        .setDescription('شما هنوز هیچ دستاوردی کسب نکرده‌اید!\n\nبا استفاده از امکانات مختلف ربات می‌توانید دستاوردهای جدید را کسب کنید.');
+
+      const controlRow = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('achievements')
+            .setLabel('🔙 بازگشت به منوی دستاوردها')
+            .setStyle(ButtonStyle.Secondary)
+        );
+
+      await interaction.update({ embeds: [embed], components: [controlRow] });
+      return;
+    }
+
+    // دریافت اطلاعات دستاوردهای کسب شده
+    const achievementIds = userAchievements.map(ua => ua.achievementId);
+    const achievements = await AchievementModel.find({
+      id: { $in: achievementIds }
+    }).lean();
+
+    // نقشه‌ای از دستاوردها برای دسترسی سریع‌تر
+    const achievementsMap = new Map();
+    achievements.forEach(a => {
+      achievementsMap.set(a.id, a);
+    });
+
+    // ساخت امبد دستاوردهای کسب شده
+    const embed = new EmbedBuilder()
+      .setColor(0xF1C40F)
+      .setTitle('✅ دستاوردهای کسب شده')
+      .setDescription(`شما تاکنون ${userAchievements.length} دستاورد را کسب کرده‌اید:`);
+
+    // گروه‌بندی دستاوردها بر اساس دسته‌بندی
+    const groupedByCategory = userAchievements.reduce((acc, ua) => {
+      const achievement = achievementsMap.get(ua.achievementId);
+      if (!achievement) return acc;
+      
+      const category = achievement.category;
+      if (!acc[category]) acc[category] = [];
+      
+      acc[category].push({
+        ...achievement,
+        earnedAt: ua.earnedAt
+      });
+      
+      return acc;
+    }, {});
+
+    // اضافه کردن دستاوردها به امبد براساس دسته‌بندی
+    for (const [category, catAchievements] of Object.entries(groupedByCategory)) {
+      const categoryInfo = CATEGORIES[category] || { name: category, emoji: '🏆' };
+      let fieldText = '';
+      
+      for (const achievement of catAchievements) {
+        const rarityName = RARITY_NAMES[achievement.rarityLevel] || '🔹 معمولی';
+        fieldText += `${achievement.emoji} **${achievement.title}** (${rarityName})\n`;
+        fieldText += `> ${achievement.description}\n`;
+        fieldText += `> 📅 کسب شده: ${new Date(achievement.earnedAt).toLocaleDateString('fa-IR')}\n`;
+        fieldText += `> 🎁 پاداش: ${formatReward(achievement.reward)}\n\n`;
+      }
+      
+      embed.addFields({ 
+        name: `${categoryInfo.emoji} ${categoryInfo.name} (${catAchievements.length})`, 
+        value: fieldText 
+      });
+    }
+
+    // دکمه‌های کنترلی
+    const controlRow = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('achievements')
+          .setLabel('🔙 بازگشت به منوی دستاوردها')
+          .setStyle(ButtonStyle.Secondary)
+      );
+
+    await interaction.update({ embeds: [embed], components: [controlRow] });
+  } catch (error) {
+    console.error('Error showing earned achievements:', error);
+    await interaction.update({ 
+      content: '❌ متأسفانه در نمایش دستاوردهای کسب شده خطایی رخ داد! لطفاً دوباره تلاش کنید.',
+      embeds: [],
+      components: []
+    });
+  }
+}
+
+/**
+ * نمایش دستاوردهای در حال پیشرفت کاربر
+ * @param interaction تعامل کاربر
+ */
+export async function showProgressAchievements(
+  interaction: ButtonInteraction
+) {
+  try {
+    const userId = interaction.user.id;
+
+    // در اینجا منطق واقعی برای نمایش دستاوردهای در حال پیشرفت قرار می‌گیرد
+    // اما برای نمونه یک امبد ساده نمایش می‌دهیم
+
+    const embed = new EmbedBuilder()
+      .setColor(0x3498DB)
+      .setTitle('📊 دستاوردهای در حال پیشرفت')
+      .setDescription(
+        'در این بخش می‌توانید دستاوردهایی که در حال پیشرفت به سمت آنها هستید را مشاهده کنید:\n\n' +
+        '🎮 **قهرمان بازی‌ها**\n' +
+        '> برنده شدن در 10 بازی مختلف\n' +
+        '> پیشرفت: `3/10` (30%)\n\n' +
+        '💰 **سرمایه‌گذار حرفه‌ای**\n' +
+        '> خرید 5 سهام مختلف\n' +
+        '> پیشرفت: `2/5` (40%)\n\n' +
+        '👥 **مردم‌دار**\n' +
+        '> افزودن 20 دوست\n' +
+        '> پیشرفت: `7/20` (35%)'
+      );
+
+    const controlRow = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('achievements')
+          .setLabel('🔙 بازگشت به منوی دستاوردها')
+          .setStyle(ButtonStyle.Secondary)
+      );
+
+    await interaction.update({ embeds: [embed], components: [controlRow] });
+  } catch (error) {
+    console.error('Error showing progress achievements:', error);
+    await interaction.update({ 
+      content: '❌ متأسفانه در نمایش دستاوردهای در حال پیشرفت خطایی رخ داد! لطفاً دوباره تلاش کنید.',
+      embeds: [],
+      components: []
+    });
+  }
+}
+
+/**
+ * محاسبه مجموع پاداش‌های دریافتی از دستاوردها
+ * @param userAchievements دستاوردهای کاربر
+ * @param allAchievements همه دستاوردهای سیستم
+ * @returns متن فرمت شده پاداش‌ها
+ */
+function calculateTotalRewards(userAchievements: any[], allAchievements: any[]): string {
+  // نقشه‌ای از دستاوردها برای دسترسی سریع‌تر
+  const achievementsMap = new Map();
+  allAchievements.forEach(a => {
+    achievementsMap.set(a.id, a);
+  });
+
+  // محاسبه مجموع پاداش‌ها
+  let totalCoins = 0;
+  let totalCrystals = 0;
+  let totalXP = 0;
+
+  userAchievements.forEach(ua => {
+    const achievement = achievementsMap.get(ua.achievementId);
+    if (!achievement) return;
+
+    totalCoins += achievement.reward?.coins || 0;
+    totalCrystals += achievement.reward?.crystals || 0;
+    totalXP += achievement.reward?.xp || 0;
+  });
+
+  // ساخت متن نهایی
+  let rewardText = '';
+  if (totalCoins > 0) rewardText += `💰 ${formatNumber(totalCoins)} سکه `;
+  if (totalCrystals > 0) rewardText += `💎 ${formatNumber(totalCrystals)} کریستال `;
+  if (totalXP > 0) rewardText += `✨ ${formatNumber(totalXP)} تجربه`;
+
+  return rewardText || 'هیچ پاداشی دریافت نشده';
+}
+
+/**
+ * فرمت‌بندی پاداش دستاورد
+ * @param reward اطلاعات پاداش
+ * @returns متن فرمت شده پاداش
+ */
+function formatReward(reward: any): string {
+  if (!reward) return 'بدون پاداش';
+
+  let rewardText = '';
+  if (reward.coins > 0) rewardText += `💰 ${formatNumber(reward.coins)} سکه `;
+  if (reward.crystals > 0) rewardText += `💎 ${formatNumber(reward.crystals)} کریستال `;
+  if (reward.xp > 0) rewardText += `✨ ${formatNumber(reward.xp)} تجربه `;
+  if (reward.items?.length > 0) rewardText += `🎁 ${reward.items.length} آیتم `;
+
+  return rewardText || 'بدون پاداش';
 }

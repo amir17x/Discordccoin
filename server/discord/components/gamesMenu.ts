@@ -291,17 +291,17 @@ export async function gamesMenu(
       const groupGameRow2 = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
           new ButtonBuilder()
+            .setCustomId('game:quiz:create')
+            .setLabel('❓ مسابقه اطلاعات عمومی')
+            .setStyle(ButtonStyle.Success), // سبز برای بازی‌های دانشی
+          new ButtonBuilder()
             .setCustomId('kings')
             .setLabel('👑 کوییز آو کینگز')
             .setStyle(ButtonStyle.Success), // سبز برای بازی‌های دانشی
           new ButtonBuilder()
             .setCustomId('game:uno:create')
             .setLabel('🃏 اونو')
-            .setStyle(ButtonStyle.Primary), // آبی برای بازی‌های کارتی
-          new ButtonBuilder()
-            .setCustomId('game:pictionary:create')
-            .setLabel('🎨 نقاشی حدس بزن')
-            .setStyle(ButtonStyle.Success) // سبز برای بازی‌های خلاقانه
+            .setStyle(ButtonStyle.Primary) // آبی برای بازی‌های کارتی
         );
       
       const groupGameRow3 = new ActionRowBuilder<ButtonBuilder>()
@@ -315,9 +315,9 @@ export async function gamesMenu(
             .setLabel('📝 زنجیره کلمات')
             .setStyle(ButtonStyle.Success), // سبز برای بازی‌های فکری
           new ButtonBuilder()
-            .setCustomId('bingo')
-            .setLabel('🎲 بینگو')
-            .setStyle(ButtonStyle.Primary) // آبی برای بازی‌های شانسی
+            .setCustomId('game:pictionary:create')
+            .setLabel('🎨 نقاشی حدس بزن')
+            .setStyle(ButtonStyle.Success) // سبز برای بازی‌های خلاقانه
         );
       
       const groupGameRow4 = new ActionRowBuilder<ButtonBuilder>()
