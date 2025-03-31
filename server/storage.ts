@@ -17,13 +17,10 @@ import {
   Game,
   InventoryItem,
   Transaction,
-  TransactionType,
   TransferStats,
-  InsertStock,
   Pet,
   Investment,
   UserStock,
-  StockData
 } from "@shared/schema";
 
 // وارد کردن مدل شغل از فایل Job.ts
@@ -4687,24 +4684,33 @@ export class MongoStorage implements IStorage {
   }
   
   // خرید سهام توسط کاربر
-  async buyStock(userId: number, stockId: number, quantity: number): Promise<boolean> {
+  async buyStock(userId: number | string, stockId: number, quantity: number): Promise<boolean> {
     try {
       // دریافت اطلاعات سهام و کاربر
       const stock = await this.getStockById(stockId);
-      let user = await UserModel.findOne({ id: userId });
       
-      // اگر کاربر پیدا نشد با id، امتحان کن با discordId
-      if (!user && typeof userId === 'string') {
+      // پیدا کردن کاربر با شناسه عددی یا شناسه دیسکورد
+      let user;
+      if (typeof userId === 'number') {
+        user = await UserModel.findOne({ id: userId });
+      } else {
         user = await UserModel.findOne({ discordId: userId });
       }
       
-      if (!stock || !user) return false;
+      // اگر سهام یا کاربر یافت نشد، خطا بده
+      if (!stock || !user) {
+        console.log(`خرید سهام ناموفق: سهام یا کاربر یافت نشد. userId=${userId}, stockId=${stockId}`);
+        return false;
+      }
       
       // محاسبه هزینه خرید
       const cost = stock.currentPrice * quantity;
       
       // بررسی کافی بودن موجودی
-      if (user.wallet < cost) return false;
+      if (user.wallet < cost) {
+        console.log(`خرید سهام ناموفق: موجودی ناکافی. نیاز=${cost}, موجودی=${user.wallet}`);
+        return false;
+      }
       
       // کم کردن هزینه از کیف پول کاربر
       user.wallet -= cost;
@@ -4713,7 +4719,10 @@ export class MongoStorage implements IStorage {
       if (!user.stockPortfolio) user.stockPortfolio = [];
       
       // بررسی اگر کاربر از قبل این سهام را دارد
-      const existingStock = user.stockPortfolio.find((s: any) => s.stockId === stockId);
+      const existingStock = user.stockPortfolio.find((s: any) => {
+        // تبدیل stockId به رشته برای مقایسه
+        return s.stockId.toString() === stockId.toString();
+      });
       
       if (existingStock) {
         // افزایش تعداد سهام
@@ -4735,11 +4744,15 @@ export class MongoStorage implements IStorage {
         type: 'stock_purchase',
         amount: -cost,
         fee: 0,
+        stockId: stockId,
+        stockSymbol: stock.symbol,
+        quantity: quantity,
         timestamp: new Date()
       });
       
       // ذخیره تغییرات
       await user.save();
+      console.log(`خرید سهام موفق: ${quantity} سهم ${stock.symbol} برای کاربر ${user.username || userId}`);
       
       return true;
     } catch (error) {
@@ -4749,23 +4762,33 @@ export class MongoStorage implements IStorage {
   }
   
   // فروش سهام توسط کاربر
-  async sellStock(userId: number, stockId: number, quantity: number): Promise<boolean> {
+  async sellStock(userId: number | string, stockId: number, quantity: number): Promise<boolean> {
     try {
       // دریافت اطلاعات سهام و کاربر
       const stock = await this.getStockById(stockId);
-      let user = await UserModel.findOne({ id: userId });
       
-      // اگر کاربر پیدا نشد با id، امتحان کن با discordId
-      if (!user && typeof userId === 'string') {
+      // پیدا کردن کاربر با شناسه عددی یا شناسه دیسکورد
+      let user;
+      if (typeof userId === 'number') {
+        user = await UserModel.findOne({ id: userId });
+      } else {
         user = await UserModel.findOne({ discordId: userId });
       }
       
-      if (!stock || !user || !user.stockPortfolio) return false;
+      if (!stock || !user || !user.stockPortfolio) {
+        console.log(`فروش سهام ناموفق: سهام یا کاربر یافت نشد. userId=${userId}, stockId=${stockId}`);
+        return false;
+      }
       
       // یافتن سهام در پورتفولیو کاربر
-      const userStock = user.stockPortfolio.find((s: any) => s.stockId === stockId);
+      const userStock = user.stockPortfolio.find((s: any) => {
+        return s.stockId.toString() === stockId.toString();
+      });
       
-      if (!userStock || userStock.quantity < quantity) return false;
+      if (!userStock || userStock.quantity < quantity) {
+        console.log(`فروش سهام ناموفق: سهام کافی نیست. موجودی=${userStock?.quantity || 0}, درخواست=${quantity}`);
+        return false;
+      }
       
       // محاسبه مبلغ دریافتی از فروش
       const revenue = stock.currentPrice * quantity;
@@ -4775,7 +4798,9 @@ export class MongoStorage implements IStorage {
       
       // اگر تعداد به صفر رسید، حذف از پورتفولیو
       if (userStock.quantity === 0) {
-        user.stockPortfolio = user.stockPortfolio.filter((s: any) => s.stockId !== stockId);
+        user.stockPortfolio = user.stockPortfolio.filter((s: any) => {
+          return s.stockId.toString() !== stockId.toString();
+        });
       }
       
       // اضافه کردن مبلغ به کیف پول کاربر
@@ -4787,11 +4812,15 @@ export class MongoStorage implements IStorage {
         type: 'stock_sale',
         amount: revenue,
         fee: 0,
+        stockId: stockId,
+        stockSymbol: stock.symbol,
+        quantity: quantity,
         timestamp: new Date()
       });
       
       // ذخیره تغییرات
       await user.save();
+      console.log(`فروش سهام موفق: ${quantity} سهم ${stock.symbol} توسط کاربر ${user.username || userId}`);
       
       return true;
     } catch (error) {

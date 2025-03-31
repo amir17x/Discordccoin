@@ -197,9 +197,9 @@ export async function gamesMenu(
             .setLabel('🎯 دارت رقابتی')
             .setStyle(ButtonStyle.Success), // سبز برای بازی‌های دقت و مهارت
           new ButtonBuilder()
-            .setCustomId('game:mafia:start')
-            .setLabel('🕵️‍♂️ مافیا')
-            .setStyle(ButtonStyle.Danger) // قرمز برای بازی‌های استراتژیک و مخفی‌کاری
+            .setCustomId('game:quiz:start')
+            .setLabel('❓ اطلاعات عمومی')
+            .setStyle(ButtonStyle.Primary) // آبی برای بازی‌های دانشی رقابتی
         );
 
       // Row 3 (third set of 3 games)
@@ -291,8 +291,8 @@ export async function gamesMenu(
       const groupGameRow2 = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
           new ButtonBuilder()
-            .setCustomId('game:quiz:create')
-            .setLabel('❓ مسابقه اطلاعات عمومی')
+            .setCustomId('kings')
+            .setLabel('👑 کوییز آو کینگز')
             .setStyle(ButtonStyle.Success), // سبز برای بازی‌های دانشی
           new ButtonBuilder()
             .setCustomId('game:uno:create')

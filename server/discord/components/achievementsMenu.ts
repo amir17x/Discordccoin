@@ -15,34 +15,50 @@ export async function achievementsMenu(
   interaction: MessageComponentInteraction
 ) {
   try {
-    // دریافت اطلاعات کاربر از دیتابیس
-    const userId = parseInt(interaction.user.id);
-    const user = await storage.getUser(userId);
+    // دریافت اطلاعات کاربر از دیتابیس - اصلاح مشکل ObjectId
+    // در اینجا interaction.user.id را مستقیم به عنوان string به تابع getUserByDiscordId می‌دهیم
+    const discordId = interaction.user.id;
+    const user = await storage.getUserByDiscordId(discordId);
     
     if (!user) {
-      if ('update' in interaction && typeof interaction.update === 'function') {
-        try {
-          await interaction.update({ 
-            content: 'حساب شما در سیستم یافت نشد! لطفاً با دستور `/start` ثبت نام کنید.', 
-            embeds: [], 
-            components: [] 
-          });
-        } catch (e) {
+      // در صورت عدم موفقیت، تلاش دوم با متد getUser با تبدیل به عدد
+      const userId = parseInt(discordId);
+      const userById = await storage.getUser(userId);
+      
+      if (!userById) {
+        if ('update' in interaction && typeof interaction.update === 'function') {
+          try {
+            await interaction.update({ 
+              content: 'حساب شما در سیستم یافت نشد! لطفاً با دستور `/start` ثبت نام کنید.', 
+              embeds: [], 
+              components: [] 
+            });
+          } catch (e) {
+            await interaction.reply({ 
+              content: 'حساب شما در سیستم یافت نشد! لطفاً با دستور `/start` ثبت نام کنید.', 
+              ephemeral: true 
+            });
+          }
+        } else {
           await interaction.reply({ 
             content: 'حساب شما در سیستم یافت نشد! لطفاً با دستور `/start` ثبت نام کنید.', 
             ephemeral: true 
           });
         }
-      } else {
-        await interaction.reply({ 
-          content: 'حساب شما در سیستم یافت نشد! لطفاً با دستور `/start` ثبت نام کنید.', 
-          ephemeral: true 
-        });
+        return;
       }
-      return;
     }
     
-    // دریافت دستاوردهای کاربر از دیتابیس
+    // دریافت دستاوردهای کاربر از دیتابیس - نیاز به استفاده از شناسه کاربر
+    let userId = parseInt(discordId);
+    
+    // بررسی کاربر با استفاده از getUserByDiscordId
+    const userCheck = await storage.getUserByDiscordId(discordId);
+    if (userCheck) {
+      // اگر کاربر با شناسه دیسکورد پیدا شد، از آیدی آن استفاده می‌کنیم
+      userId = userCheck.id;
+    }
+    
     const userAchievements = await storage.getUserAchievements(userId);
     
     // محاسبه آمار کلی دستاوردها
@@ -229,19 +245,35 @@ export async function showCategoryAchievements(
   category: string
 ) {
   try {
-    // دریافت اطلاعات کاربر از دیتابیس
-    const userId = parseInt(interaction.user.id);
-    const user = await storage.getUser(userId);
+    // دریافت اطلاعات کاربر از دیتابیس - اصلاح مشکل ObjectId
+    // در اینجا interaction.user.id را مستقیم به عنوان string به تابع getUserByDiscordId می‌دهیم
+    const discordId = interaction.user.id;
+    const user = await storage.getUserByDiscordId(discordId);
     
     if (!user) {
-      await interaction.reply({ 
-        content: 'حساب شما در سیستم یافت نشد!', 
-        ephemeral: true 
-      });
-      return;
+      // در صورت عدم موفقیت، تلاش دوم با متد getUser با تبدیل به عدد
+      const userId = parseInt(discordId);
+      const userById = await storage.getUser(userId);
+      
+      if (!userById) {
+        await interaction.reply({ 
+          content: 'حساب شما در سیستم یافت نشد! لطفاً با دستور `/start` ثبت نام کنید.', 
+          ephemeral: true 
+        });
+        return;
+      }
     }
     
     // دریافت دستاوردهای کاربر در دسته مورد نظر
+    let userId = parseInt(discordId);
+    
+    // بررسی کاربر با استفاده از getUserByDiscordId
+    const userCheck = await storage.getUserByDiscordId(discordId);
+    if (userCheck) {
+      // اگر کاربر با شناسه دیسکورد پیدا شد، از آیدی آن استفاده می‌کنیم
+      userId = userCheck.id;
+    }
+    
     const userAchievements = await storage.getUserAchievements(userId);
     const categoryAchievements = userAchievements.filter(a => a.achievement.category === category);
     

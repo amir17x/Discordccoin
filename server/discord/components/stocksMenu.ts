@@ -14,6 +14,48 @@ import { StockData, UserStockData } from '@shared/schema';
 import { getAIStockAnalysis, generateMarketManipulationNews } from '../utils/aiMarketDynamics';
 
 /**
+ * تبدیل کد بخش اقتصادی به نام فارسی
+ */
+function getSectorName(sector: string): string {
+  const sectorNames: Record<string, string> = {
+    'tech': 'فناوری',
+    'technology': 'فناوری',
+    'finance': 'مالی',
+    'banking': 'بانکداری',
+    'energy': 'انرژی',
+    'oil': 'نفت و گاز',
+    'consumer': 'مصرفی',
+    'food': 'صنایع غذایی',
+    'industrial': 'صنعتی',
+    'automotive': 'خودروسازی',
+    'mining': 'معدن'
+  };
+  
+  return sectorNames[sector.toLowerCase()] || sector;
+}
+
+/**
+ * تبدیل کد بخش اقتصادی به ایموجی متناسب
+ */
+function getSectorEmoji(sector: string): string {
+  const sectorEmojis: Record<string, string> = {
+    'tech': '💻',
+    'technology': '💻',
+    'finance': '💹',
+    'banking': '🏦',
+    'energy': '⚡',
+    'oil': '🛢️',
+    'consumer': '🛒',
+    'food': '🍔',
+    'industrial': '🏭',
+    'automotive': '🚗',
+    'mining': '⛏️'
+  };
+  
+  return sectorEmojis[sector.toLowerCase()] || '🏢';
+}
+
+/**
  * سیستم معاملات سهام
  * امکان خرید و فروش سهام شرکت‌های مختلف با قیمت‌های متغیر
  */
@@ -198,34 +240,44 @@ export async function stocksMenu(
           // Create a select menu for the stocks
           const selectMenu = new StringSelectMenuBuilder()
             .setCustomId('stocks_select_buy')
-            .setPlaceholder('یک سهام برای خرید انتخاب کنید')
+            .setPlaceholder('✨ یک سهام برای خرید انتخاب کنید ✨')
             .setMinValues(1)
             .setMaxValues(1);
 
           // Add options for each stock
           stocks.forEach(stock => {
+            // تعیین آیکون روند قیمت
             const priceTrend = stock.currentPrice > stock.previousPrice 
               ? '📈' 
               : (stock.currentPrice < stock.previousPrice ? '📉' : '📊');
             
+            // محاسبه درصد تغییر قیمت
             const priceChange = stock.previousPrice > 0 
               ? ((stock.currentPrice - stock.previousPrice) / stock.previousPrice * 100).toFixed(2) 
               : '0.00';
-              
+            
+            // تعیین رنگ و نشانگر تغییر قیمت
+            const changeIndicator = parseFloat(priceChange) > 0 
+              ? `🟢 +${priceChange}%` 
+              : (parseFloat(priceChange) < 0 ? `🔴 ${priceChange}%` : `⚪ ${priceChange}%`);
+            
+            // ایموجی مخصوص هر صنعت
+            const sectorEmoji = getSectorEmoji(stock.sector);
+            
             selectMenu.addOptions(
               new StringSelectMenuOptionBuilder()
                 .setLabel(`${stock.symbol} - ${stock.name}`)
-                .setDescription(`${stock.currentPrice} Ccoin (${priceTrend} ${priceChange}%)`)
+                .setDescription(`${stock.currentPrice} Ccoin (${changeIndicator})`)
                 .setValue(`buy_stock_${stock.id}`)
             );
             
-            // Add stock details to embed
+            // Add stock details to embed with improved formatting and emojis
             embed.addFields({
               name: `${priceTrend} ${stock.symbol} - ${stock.name}`,
-              value: `💰 قیمت: ${stock.currentPrice} Ccoin\n` +
-                     `📊 تغییر: ${priceChange}%\n` +
-                     `🏭 صنعت: ${getSectorName(stock.sector)}\n` +
-                     `📋 موجودی: ${stock.availableShares} سهم`,
+              value: `${sectorEmoji} **صنعت**: ${getSectorName(stock.sector)}\n` +
+                     `💵 **قیمت**: ${stock.currentPrice} Ccoin\n` +
+                     `${parseFloat(priceChange) >= 0 ? '📈' : '📉'} **تغییر**: ${changeIndicator}\n` +
+                     `🏛️ **موجودی**: ${stock.availableShares} سهم`,
               inline: true
             });
           });
@@ -261,7 +313,7 @@ export async function stocksMenu(
           // Create a select menu for selling stocks
           const sellMenu = new StringSelectMenuBuilder()
             .setCustomId('stocks_select_sell')
-            .setPlaceholder('یک سهام برای فروش انتخاب کنید')
+            .setPlaceholder('✨ یک سهام برای فروش انتخاب کنید ✨')
             .setMinValues(1)
             .setMaxValues(1);
 
@@ -277,11 +329,12 @@ export async function stocksMenu(
               
               embed.addFields({
                 name: `${stock.symbol} - ${stock.name}`,
-                value: `🔢 تعداد: ${userStock.quantity} سهم\n` + 
-                       `💵 قیمت خرید: ${userStock.purchasePrice} Ccoin\n` +
-                       `💰 قیمت فعلی: ${stock.currentPrice} Ccoin\n` +
-                       `${profitIcon} سود/ضرر: ${Math.floor(stockProfit)} Ccoin (${profitPercent}%)\n` +
-                       `📅 تاریخ خرید: ${new Date(userStock.purchaseDate).toLocaleDateString('fa-IR')}`,
+                value: `${getSectorEmoji(stock.sector)} **صنعت**: ${getSectorName(stock.sector)}\n` +
+                       `🔢 **تعداد**: ${userStock.quantity} سهم\n` + 
+                       `💵 **قیمت خرید**: ${userStock.purchasePrice} Ccoin\n` +
+                       `💰 **قیمت فعلی**: ${stock.currentPrice} Ccoin\n` +
+                       `${profitIcon} **سود/ضرر**: ${Math.floor(stockProfit)} Ccoin (${profitPercent}%)\n` +
+                       `📅 **تاریخ خرید**: ${new Date(userStock.purchaseDate).toLocaleDateString('fa-IR')}`,
                 inline: true
               });
 
@@ -392,21 +445,6 @@ export async function stocksMenu(
       console.error('Error replying with error message:', e);
     }
   }
-}
-
-/**
- * تبدیل کد بخش اقتصادی به نام فارسی
- */
-function getSectorName(sector: string): string {
-  const sectorNames: Record<string, string> = {
-    'tech': 'فناوری',
-    'finance': 'مالی',
-    'energy': 'انرژی',
-    'consumer': 'مصرفی',
-    'industrial': 'صنعتی'
-  };
-  
-  return sectorNames[sector] || sector;
 }
 
 /**
