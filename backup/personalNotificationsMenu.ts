@@ -12,7 +12,7 @@ export async function personalNotificationsMenu(
 ) {
   try {
     const userId = interaction.user.id;
-    const user = await storage.getUserByDiscordId(userId);
+    const user = await storage.getUser(userId);
 
     if (!user) {
       try {
@@ -118,7 +118,7 @@ export async function toggleNotifications(
 ) {
   try {
     const userId = interaction.user.id;
-    const user = await storage.getUserByDiscordId(userId);
+    const user = await storage.getUser(userId);
 
     if (!user) {
       return await interaction.reply({
@@ -182,7 +182,7 @@ export async function showAdvancedNotificationSettings(
 ) {
   try {
     const userId = interaction.user.id;
-    const user = await storage.getUserByDiscordId(userId);
+    const user = await storage.getUser(userId);
 
     if (!user) {
       return await interaction.reply({
@@ -448,7 +448,7 @@ export async function sendNotification(
     });
     
     // ارسال اعلان به کاربر
-    const user = await storage.getUserByDiscordId(userId);
+    const user = await storage.getUser(userId);
     if (!user) {
       return false;
     }
@@ -624,7 +624,7 @@ function getToggleStatusText(settings: Partial<NotificationSettings>, type: Noti
 export async function sendTestNotification(interaction: ButtonInteraction) {
   try {
     const userId = interaction.user.id;
-    const user = await storage.getUserByDiscordId(userId);
+    const user = await storage.getUser(userId);
 
     if (!user) {
       return await interaction.reply({
