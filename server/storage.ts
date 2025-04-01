@@ -8,8 +8,6 @@ import {
   UserQuest,
   Achievement,
   UserAchievement,
-} from '../shared/schema';
-import { convertToUser } from './discord/utils/helpers';
   NotificationSettings,
   NotificationType,
   Notification,
@@ -22,7 +20,8 @@ import { convertToUser } from './discord/utils/helpers';
   Pet,
   Investment,
   UserStock,
-} from "@shared/schema";
+} from '../shared/schema';
+import { convertToUser } from './discord/utils/helpers';
 
 // Import Transaction type separately to avoid duplicate import error
 import type { Transaction as SchemaTransaction } from "@shared/schema";
@@ -199,7 +198,8 @@ export interface TipChannelSettings {
 }
 
 // کلاس‌های موقت برای استاک که بعدا باید با اسکیما جایگزین شوند
-type JobData = {
+// ساختار داده شغل از قبل با interface تعریف شده است
+/* type JobData = {
   id: string;
   userId: number;
   jobType: string;
@@ -210,7 +210,7 @@ type JobData = {
   xp: number;
   xpRequired: number;
   hiredAt: Date;
-};
+}; */
 
 type StockData = {
   id: number;

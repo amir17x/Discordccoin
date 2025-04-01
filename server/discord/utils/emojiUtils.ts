@@ -54,7 +54,12 @@ export const GENERAL_EMOJI = {
   TICKET: '🎟️',
   KEY: '🔑',
   HOME: '🏠',
-  JOIN: '🎮'
+  JOIN: '🎮',
+  USER: '👤',
+  HISTORY: '📜',
+  GAME: '🎮',
+  TURN: '↪️',
+  CANCEL: '🚫'
 };
 
 // اقتصاد (Economy)
@@ -174,7 +179,8 @@ export const DUEL_EMOJI = {
   SURRENDER: '🏳️',
   TIMEOUT: '⏱️',
   READY: '👍',
-  VS: '🆚'
+  VS: '🆚',
+  PLAYER: '🧙‍♂️'
 };
 
 // حیوانات خانگی (Pets)
@@ -316,7 +322,8 @@ export const TIME_EMOJI = {
   DAILY: '📆',
   WEEKLY: '🗓️',
   MONTHLY: '📅',
-  YEARLY: '🗓️'
+  YEARLY: '🗓️',
+  TIMER: '⏲️'
 };
 
 // مدیریت (Admin)

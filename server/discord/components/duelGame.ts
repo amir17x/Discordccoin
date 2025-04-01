@@ -345,7 +345,7 @@ export async function handleDuelOpponentModal(interaction: ModalSubmitInteractio
 
     // ایجاد امبد دعوت به دوئل
     const inviteEmbed = new EmbedBuilder()
-      .setTitle(`${DUEL_EMOJI.SWORDS} دعوت به دوئل!`)
+      .setTitle(`${DUEL_EMOJI.SWORD} دعوت به دوئل!`)
       .setDescription(`<@${challenger.discordId}> شما را به یک دوئل هیجان‌انگیز دعوت کرده است!`)
       .setColor(Colors.Gold)
       .addFields(
@@ -551,7 +551,7 @@ export async function acceptDuel(interaction: ButtonInteraction) {
 
     // به‌روزرسانی پیام دوئل
     await interaction.update({
-      content: `⚔️ **دوئل شروع شد!** نوبت <@${duelGame.currentTurnPlayerId}> است.`,
+      content: `${DUEL_EMOJI.DUEL} **دوئل شروع شد!** ${GENERAL_EMOJI.TURN} نوبت <@${duelGame.currentTurnPlayerId}> است.`,
       embeds: [gameEmbed],
       components: actionButtons
     });

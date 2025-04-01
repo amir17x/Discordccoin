@@ -20,7 +20,7 @@ import {
   Colors
 } from 'discord.js';
 
-import { WEREWOLF_EMOJI, GENERAL_EMOJI, ECONOMY_EMOJI, TIME_EMOJI, GAME_EMOJI, ADMIN_EMOJI, AI_EMOJI, ITEM_EMOJI } from '../utils/emojiUtils';
+import { WEREWOLF_EMOJI, GENERAL_EMOJI, ECONOMY_EMOJI, TIME_EMOJI, GAME_EMOJI, ADMIN_EMOJI, AI_EMOJI, ITEM_EMOJI, FRIENDSHIP_EMOJI } from '../utils/emojiUtils';
 import { v4 as uuidv4 } from 'uuid';
 import { storage } from '../../storage';
 import { log } from '../../vite';
@@ -438,7 +438,7 @@ export async function showWerewolfRules(interaction: ButtonInteraction) {
           inline: false 
         },
         { 
-          name: `${GENERAL_EMOJI.IDEA} نکات استراتژیک`, 
+          name: `${AI_EMOJI.IDEA} نکات استراتژیک`, 
           value: `• ${GENERAL_EMOJI.SEARCH} به رفتار مشکوک بازیکنان توجه کنید!\n• ${GENERAL_EMOJI.MESSAGE} از دفاعیات و استدلال‌های خود به خوبی استفاده کنید.\n• ${WEREWOLF_EMOJI.WEREWOLF} اگر گرگینه هستید، سعی کنید نقش دیگری را بازی کنید.\n• ${GAME_EMOJI.PUZZLE} اطلاعات پراکنده را کنار هم بگذارید تا به یک نتیجه منطقی برسید.\n• ${FRIENDSHIP_EMOJI.FRIEND} اتحاد بین روستاییان کلید پیروزی است!`,
           inline: false 
         }
