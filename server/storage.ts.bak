@@ -8,8 +8,6 @@ import {
   UserQuest,
   Achievement,
   UserAchievement,
-} from '../shared/schema';
-import { convertToUser } from './discord/utils/helpers';
   NotificationSettings,
   NotificationType,
   Notification,
@@ -332,7 +330,7 @@ export interface IStorage {
   createQuest(quest: InsertQuest): Promise<Quest>;
   
   // Job operations
-  getUserJob(userId: number | string | any): Promise<JobData | undefined>;
+  getUserJob(userId: number): Promise<JobData | undefined>;
   getAvailableJobs(): Promise<{id: string, name: string, income: number, cyclePeriod: number, requirements: any}[]>;
   assignJob(userId: number, jobType: string): Promise<JobData>;
   collectJobIncome(userId: number): Promise<{amount: number, xpEarned: number, leveledUp: boolean}>;
@@ -421,7 +419,7 @@ export interface IStorage {
   updateCreditScore(userId: number, amount: number): Promise<number>;
   
   // Job operations
-  getUserJob(userId: number | string | any): Promise<JobData | undefined>;
+  getUserJob(userId: number): Promise<JobData | undefined>;
   getAvailableJobs(): Promise<{id: string, name: string, income: number, cyclePeriod: number, requirements: any}[]>;
   assignJob(userId: number, jobType: string): Promise<JobData>;
   collectJobIncome(userId: number): Promise<{amount: number, xpEarned: number, leveledUp: boolean}>;
@@ -3643,7 +3641,7 @@ export class MemStorage implements IStorage {
   }
   
   // Job operations
-  async getUserJob(userId: number | string | any): Promise<JobData | undefined> {
+  async getUserJob(userId: number): Promise<JobData | undefined> {
     return Array.from(this.jobs.values()).find(job => job.userId === userId);
   }
   
@@ -5065,8 +5063,8 @@ export class MongoStorage implements IStorage {
 
   // متد کمکی برای تبدیل سند مانگو به ساختار User
   private convertMongoUserToUser(mongoUser: any): User {
-    // استفاده از تابع کمکی در utils/helpers
-    return convertToUser({
+    // تمام فیلدهای موجود در User را به شکل پیش‌فرض تنظیم می‌کنیم
+    const user: Partial<User> = {
       id: mongoUser._id,
       discordId: mongoUser.discordId,
       username: mongoUser.username,

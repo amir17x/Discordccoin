@@ -1,19 +1,19 @@
 {
   "service": "ccoinai",
-  "lastUsed": "2025-04-01T06:16:09.378Z",
-  "requestCount": 1,
+  "lastUsed": "2025-04-01T07:47:33.078Z",
+  "requestCount": 7,
   "providerStats": {
     "googleai": 0,
     "vertexai": 0,
-    "ccoinai": 1
+    "ccoinai": 7
   },
   "usageCounts": {
-    "statusMessages": 1,
+    "statusMessages": 6,
     "marketAnalysis": 0,
     "questStories": 0,
     "aiAssistant": 0,
-    "other": 0
+    "other": 1
   },
-  "averageLatency": 1364,
-  "totalLatency": 1364
+  "averageLatency": 1395,
+  "totalLatency": 9766
 }

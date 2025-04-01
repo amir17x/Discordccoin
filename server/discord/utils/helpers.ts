@@ -1,6 +1,32 @@
 /**
  * این فایل شامل توابع کمکی مختلف برای استفاده در سرتاسر پروژه است
  */
+import { User } from '@shared/schema';
+
+/**
+ * تبدیل اطلاعات کاربر به شکل استاندارد
+ * @param user اطلاعات کاربر
+ * @returns کاربر با فرمت استاندارد
+ */
+export function convertToUser(user: any): User {
+  if (!user) return null as any;
+  
+  return {
+    id: user.id || 0,
+    discordId: user.discordId || '',
+    username: user.username || '',
+    displayName: user.displayName || user.username || '',
+    wallet: user.wallet || 0,
+    bank: user.bank || 0,
+    level: user.level || 1,
+    experience: user.experience || 0,
+    points: user.points || 0,
+    economyLevel: user.economyLevel || 1,
+    crystals: user.crystals || 0,
+    lastActivity: user.lastActivity || null,
+    createdAt: user.createdAt || new Date()
+  };
+}
 
 /**
  * دریافت اموجی آیتم براساس نوع آیتم

@@ -2,7 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 // تعریف ساختار شغل
 export interface IJob extends Document {
-  userId: number;
+  userId: number | string;
   jobType: string;
   income: number;
   cyclePeriod: number; // ساعت
@@ -16,7 +16,7 @@ export interface IJob extends Document {
 // طرح اسکیما برای شغل
 const JobSchema = new Schema<IJob>(
   {
-    userId: { type: Number, required: true, unique: true },
+    userId: { type: Schema.Types.Mixed, required: true, unique: true }, // پشتیبانی از شناسه‌های عددی و رشته‌ای
     jobType: { type: String, required: true },
     income: { type: Number, required: true, min: 1 },
     cyclePeriod: { type: Number, required: true, min: 1 }, // ساعت

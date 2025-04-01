@@ -332,6 +332,10 @@ export async function mainMenu(
               .setLabel('📈 سهام')
               .setStyle(ButtonStyle.Success),
             new ButtonBuilder()
+              .setCustomId('market_menu')
+              .setLabel('🛒 بازار')
+              .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
               .setCustomId('other_options')
               .setLabel('✨ موارد دیگر')
               .setStyle(ButtonStyle.Secondary),
@@ -407,9 +411,13 @@ export async function mainMenu(
               .setLabel('🎟️ قرعه‌کشی')
               .setStyle(ButtonStyle.Success),
             new ButtonBuilder()
+              .setCustomId('market_menu')
+              .setLabel('🛒 بازار')
+              .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
               .setCustomId('help')
               .setLabel('📜 راهنما')
-              .setStyle(ButtonStyle.Primary),
+              .setStyle(ButtonStyle.Danger),
             new ButtonBuilder()
               .setCustomId('other_options')
               .setLabel('✨ موارد دیگر')

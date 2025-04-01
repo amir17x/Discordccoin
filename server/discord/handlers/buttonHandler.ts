@@ -19,6 +19,16 @@ import {
   handleQuizAnswer 
 } from '../components/groupGames';
 import { handleBingoInteraction } from '../components/bingoGame';
+import {
+  startDuel,
+  acceptDuel,
+  declineDuel,
+  performAttack,
+  performDefense,
+  surrenderDuel,
+  showItemsMenu,
+  cancelItemsMenu
+} from '../components/duelGame';
 import { 
   createMafiaGame, 
   joinMafiaGame, 
@@ -531,7 +541,42 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     return;
   }
   
-  // پردازش دکمه‌های بازی مافیا
+  // پردازش دکمه‌های بازی دوئل
+  if (customId === 'game:duel:start') {
+    // شروع بازی دوئل جدید
+    await startDuel(interaction);
+    return;
+  } else if (customId.startsWith('duel_accept_')) {
+    // پذیرش درخواست دوئل
+    await acceptDuel(interaction);
+    return;
+  } else if (customId.startsWith('duel_decline_')) {
+    // رد درخواست دوئل
+    await declineDuel(interaction);
+    return;
+  } else if (customId.startsWith('duel_attack_')) {
+    // انجام حمله در دوئل
+    await performAttack(interaction);
+    return;
+  } else if (customId.startsWith('duel_defense_')) {
+    // انجام دفاع در دوئل
+    await performDefense(interaction);
+    return;
+  } else if (customId.startsWith('duel_surrender_')) {
+    // تسلیم شدن در دوئل
+    await surrenderDuel(interaction);
+    return;
+  } else if (customId.startsWith('duel_items_')) {
+    // نمایش منوی آیتم‌ها
+    await showItemsMenu(interaction);
+    return;
+  } else if (customId.startsWith('duel_cancel_items_')) {
+    // بازگشت از منوی آیتم‌ها
+    await cancelItemsMenu(interaction);
+    return;
+  }
+  
+  // پردازش دکمه‌های بازی گرگینه
   if (customId === 'werewolf') {
     // ایجاد بازی گرگینه جدید
     await createWerewolfGame(interaction);
@@ -678,7 +723,7 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     }
     
     // Handle navigation buttons
-    if (action === 'menu') {
+    if (action === 'menu' || action === 'main_menu') {
       // اطمینان از اینکه از update استفاده می‌شود به جای reply جدید
       if ('update' in interaction && typeof interaction.update === 'function') {
         // اگر قابلیت update وجود دارد، تلاش برای به‌روزرسانی پیام فعلی
