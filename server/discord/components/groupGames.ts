@@ -199,27 +199,31 @@ export function getActivePlayersCount(): number {
  * @param interaction برهم‌کنش کاربر
  */
 /**
- * نمایش منوی جلسات فعال بازی‌های گروهی با امکانات پیشرفته، جزئیات بیشتر، و دسته‌بندی بر اساس نوع بازی
- * @param interaction برهم‌کنش کاربر
- */
-/**
  * نمایش منوی جلسات فعال بازی‌های گروهی با جزئیات بیشتر، امکانات پیشرفته و دسته‌بندی بر اساس نوع
  * @param interaction برهم‌کنش کاربر
+ * @param gameTypeFilter نوع بازی برای فیلتر کردن (اختیاری)
  */
-export async function showActiveSessionsMenu(interaction: ButtonInteraction) {
+export async function showActiveSessionsMenu(interaction: ButtonInteraction, gameTypeFilter?: string) {
   try {
     // دریافت بازی‌های فعال
-    const activeGamesList = Array.from(activeGames.values())
-      .filter(game => game.status !== 'ended')
-      .sort((a, b) => {
-        // مرتب‌سازی بر اساس وضعیت (در انتظار اول، سپس در حال انجام)
-        if (a.status === 'waiting' && b.status !== 'waiting') return -1;
-        if (a.status !== 'waiting' && b.status === 'waiting') return 1;
-        // سپس مرتب‌سازی بر اساس زمان شروع (تازه‌ترین اول)
-        const aTime = a.startedAt || new Date();
-        const bTime = b.startedAt || new Date();
-        return bTime.getTime() - aTime.getTime();
-      });
+    let activeGamesList = Array.from(activeGames.values())
+      .filter(game => game.status !== 'ended');
+    
+    // اعمال فیلتر نوع بازی اگر مشخص شده باشد
+    if (gameTypeFilter) {
+      activeGamesList = activeGamesList.filter(game => game.gameType === gameTypeFilter);
+    }
+    
+    // مرتب‌سازی بازی‌ها
+    activeGamesList = activeGamesList.sort((a, b) => {
+      // مرتب‌سازی بر اساس وضعیت (در انتظار اول، سپس در حال انجام)
+      if (a.status === 'waiting' && b.status !== 'waiting') return -1;
+      if (a.status !== 'waiting' && b.status === 'waiting') return 1;
+      // سپس مرتب‌سازی بر اساس زمان شروع (تازه‌ترین اول)
+      const aTime = a.startedAt || new Date();
+      const bTime = b.startedAt || new Date();
+      return bTime.getTime() - aTime.getTime();
+    });
 
     // دریافت تعداد کل بازیکنان فعال و آمار بازی‌ها
     const totalActivePlayers = getActivePlayersCount();
@@ -274,18 +278,6 @@ export async function showActiveSessionsMenu(interaction: ButtonInteraction) {
       gameTypeCounts[type] = gamesByType[type].length;
     });
     
-    // ایجاد Embed
-    const embed = new EmbedBuilder()
-      .setTitle('🎮 جلسات فعال بازی‌های گروهی')
-      .setDescription('لیست بازی‌های گروهی فعال در حال حاضر')
-      .setColor('#9B59B6')
-      .addFields(
-        { name: '🎲 کل جلسات فعال', value: `${gameTypeStats.total} جلسه`, inline: true },
-        { name: '👥 کل بازیکنان حاضر', value: `${totalActivePlayers} بازیکن`, inline: true }
-      )
-      .setFooter({ text: 'برای پیوستن به یک بازی، روی دکمه مربوطه کلیک کنید' })
-      .setTimestamp();
-    
     // تعیین نام و ایموجی انواع بازی‌ها
     const gameTypeNames: Record<string, string> = {
       'mafia': '🕵️‍♂️ مافیا',
@@ -293,10 +285,74 @@ export async function showActiveSessionsMenu(interaction: ButtonInteraction) {
       'quiz': '📚 مسابقه اطلاعات عمومی',
       'drawguess': '🎨 نقاشی حدس بزن',
       'truthordare': '🎯 جرات یا حقیقت',
+      'truth_or_dare': '🎯 جرات یا حقیقت',
       'bingo': '🎲 بینگو',
       'wordchain': '📝 زنجیره کلمات',
+      'word_chain': '📝 زنجیره کلمات',
       'spy': '🕴️ جاسوس مخفی'
     };
+    
+    // ایجاد عنوان مناسب بر اساس نوع بازی
+    let title = '🎮 جلسات فعال بازی‌های گروهی';
+    let description = 'لیست بازی‌های گروهی فعال در حال حاضر';
+    let color = '#9B59B6'; // رنگ پیش‌فرض بنفش
+    
+    if (gameTypeFilter) {
+      const gameTypeName = gameTypeNames[gameTypeFilter] || gameTypeFilter;
+      title = `${gameTypeName.split(' ')[0]} جلسات فعال ${gameTypeName.split(' ').slice(1).join(' ')}`;
+      
+      // توضیحات اختصاصی برای هر بازی
+      switch (gameTypeFilter) {
+        case 'mafia':
+          description = 'لیست جلسات فعال بازی مافیا. آیا می‌توانید مافیا را شناسایی کنید یا به عنوان مافیا، خود را مخفی نگه دارید؟';
+          color = '#E74C3C'; // قرمز
+          break;
+        case 'werewolf':
+          description = 'لیست جلسات فعال بازی گرگینه. با تیزهوشی گرگینه‌ها را شناسایی کنید یا به عنوان گرگینه افراد روستا را از بین ببرید!';
+          color = '#8E44AD'; // بنفش تیره
+          break;
+        case 'spy':
+          description = 'لیست جلسات فعال بازی جاسوس مخفی. آیا می‌توانید جاسوس را پیدا کنید؟ یا به عنوان جاسوس هویت خود را مخفی نگه دارید؟';
+          color = '#2C3E50'; // خاکستری تیره
+          break;
+        case 'quiz':
+          description = 'لیست جلسات فعال مسابقه اطلاعات عمومی. دانش خود را به چالش بکشید و با پاسخ سریع و دقیق برنده شوید!';
+          color = '#F1C40F'; // زرد
+          break;
+        case 'bingo':
+          description = 'لیست جلسات فعال بازی بینگو. آیا شانس با شما یار است؟ با استراتژی و کمی شانس برنده شوید!';
+          color = '#2ECC71'; // سبز
+          break;
+        case 'word_chain':
+        case 'wordchain':
+          description = 'لیست جلسات فعال بازی زنجیره کلمات. واژگان خود را به چالش بکشید و در این بازی کلامی پیروز شوید!';
+          color = '#3498DB'; // آبی
+          break;
+        case 'truth_or_dare':
+        case 'truthordare':
+          description = 'لیست جلسات فعال بازی جرأت یا حقیقت. جرأت انتخاب دارید یا ترجیح می‌دهید حقیقت را بگویید؟';
+          color = '#FF5722'; // نارنجی
+          break;
+        case 'drawguess':
+          description = 'لیست جلسات فعال بازی نقاشی و حدس. مهارت نقاشی یا حدس زدن خود را بسنجید و برنده شوید!';
+          color = '#4CAF50'; // سبز روشن
+          break;
+        default:
+          description = `لیست جلسات فعال بازی ${gameTypeName.split(' ').slice(1).join(' ')} در حال حاضر`;
+      }
+    }
+    
+    // ایجاد Embed
+    const embed = new EmbedBuilder()
+      .setTitle(title)
+      .setDescription(description)
+      .setColor(color as ColorResolvable)
+      .addFields(
+        { name: '🎲 کل جلسات فعال', value: `${gameTypeStats.total} جلسه`, inline: true },
+        { name: '👥 کل بازیکنان حاضر', value: `${totalActivePlayers} بازیکن`, inline: true }
+      )
+      .setFooter({ text: 'برای پیوستن به یک بازی، روی دکمه مربوطه کلیک کنید' })
+      .setTimestamp();
     
     // تبدیل وضعیت بازی به متن فارسی
     const gameStatusText: Record<string, string> = {
@@ -626,6 +682,25 @@ export async function handleGroupGamesMenu(interaction: ChatInputCommandInteract
 }
 
 /**
+ * تابع کمکی برای دکمه‌های مخفی برای بازی‌های گرگینه و جاسوس
+ * @param gameType نوع بازی (werewolf یا spy)
+ * @returns وضعیت نمایش دکمه‌های مخفی
+ */
+async function getGameHiddenButtonsStatus(gameType: 'werewolf' | 'spy'): Promise<boolean> {
+  try {
+    // دریافت تنظیمات از دیتابیس یا فایل پیکربندی
+    // در این پیاده‌سازی اولیه، به صورت تصادفی نمایش می‌دهیم
+    // (در نسخه نهایی باید از دیتابیس یا فایل تنظیمات خوانده شود)
+    
+    // احتمال ۳۰ درصد برای نمایش دکمه‌های مخفی
+    return Math.random() < 0.3;
+  } catch (error) {
+    log(`Error checking hidden buttons status: ${error}`, 'error');
+    return false; // در صورت خطا، دکمه‌های مخفی را نشان نمی‌دهیم
+  }
+}
+
+/**
  * مدیریت کلیک روی دکمه‌های منوی بازی‌های گروهی
  */
 export async function handleGroupGamesButton(interaction: ButtonInteraction) {
@@ -649,6 +724,104 @@ export async function handleGroupGamesButton(interaction: ButtonInteraction) {
       
       if (gameType === 'active_sessions') {
         await showActiveSessionsMenu(interaction);
+        return;
+      }
+      
+      // نمایش جلسات فعال یک نوع بازی خاص
+      if (gameType === 'mafia' && action === 'sessions') {
+        await showActiveSessionsMenu(interaction, 'mafia');
+        return;
+      }
+      
+      if (gameType === 'werewolf' && action === 'sessions') {
+        await showActiveSessionsMenu(interaction, 'werewolf');
+        return;
+      }
+      
+      if (gameType === 'spy' && action === 'sessions') {
+        await showActiveSessionsMenu(interaction, 'spy');
+        return;
+      }
+      
+      // دسترسی مستقیم به بازی‌های تعیین‌شده
+      if (gameType === 'quiz' && action === 'sessions') {
+        await showActiveSessionsMenu(interaction, 'quiz');
+        return;
+      }
+      
+      if (gameType === 'bingo' && action === 'sessions') {
+        await showActiveSessionsMenu(interaction, 'bingo');
+        return;
+      }
+      
+      if (gameType === 'word_chain' && action === 'sessions') {
+        await showActiveSessionsMenu(interaction, 'word_chain');
+        return;
+      }
+      
+      if (gameType === 'truth_or_dare' && action === 'sessions') {
+        await showActiveSessionsMenu(interaction, 'truth_or_dare');
+        return;
+      }
+      
+      if (gameType === 'drawguess' && action === 'sessions') {
+        await showActiveSessionsMenu(interaction, 'drawguess');
+        return;
+      }
+      
+      // دکمه‌های مخفی گرگینه
+      if (buttonId === 'werewolf_special_event') {
+        await interaction.reply({
+          content: '🌟 **رویداد ویژه گرگینه فعال شد!** شما به رویداد ویژه دسترسی پیدا کردید! در این حالت، نقش‌های ویژه‌ای مثل "گرگینه آلفا" و "محافظ جادویی" به بازی اضافه می‌شوند!',
+          ephemeral: false
+        });
+        return;
+      }
+      
+      if (buttonId === 'werewolf_bonus_coins') {
+        await interaction.reply({
+          content: '💰 **سکه‌های اضافی گرگینه فعال شد!** بازیکنان در این جلسه ۳ برابر سکه دریافت خواهند کرد! این پاداش برای جلسه فعلی فعال خواهد بود.',
+          ephemeral: false
+        });
+        return;
+      }
+      
+      if (buttonId === 'werewolf_special_roles') {
+        await interaction.reply({
+          content: '👑 **نقش‌های ویژه گرگینه فعال شد!** نقش‌های جدید و هیجان‌انگیزی به بازی اضافه شد! مراقب باشید، برخی از این نقش‌ها قدرت‌های خطرناکی دارند!',
+          ephemeral: false
+        });
+        return;
+      }
+      
+      // دکمه‌های مخفی جاسوس
+      if (buttonId === 'spy_special_locations') {
+        await interaction.reply({
+          content: '🏙️ **مکان‌های ویژه جاسوس فعال شد!** لیست مکان‌های جدید و هیجان‌انگیز به بازی اضافه شد! آیا می‌توانید جاسوس را در این مکان‌های عجیب پیدا کنید؟',
+          ephemeral: false
+        });
+        return;
+      }
+      
+      if (buttonId === 'spy_double_spy') {
+        await interaction.reply({
+          content: '🔍 **حالت جاسوس دوگانه فعال شد!** در این حالت، دو جاسوس در بازی وجود دارد! آیا می‌توانید هر دو را پیدا کنید؟ شناسایی هر جاسوس جوایز جداگانه‌ای دارد!',
+          ephemeral: false
+        });
+        return;
+      }
+      
+      if (buttonId === 'spy_secret_mission') {
+        await interaction.reply({
+          content: '🎭 **ماموریت مخفی فعال شد!** هر بازیکن یک ماموریت مخفی در کنار نقش اصلی خود دریافت می‌کند. تکمیل این ماموریت‌ها پاداش ویژه‌ای به همراه دارد!',
+          ephemeral: false
+        });
+        return;
+      }
+      
+      // پشتیبانی از فرمت قدیمی
+      if (buttonId === 'sessions_werewolf') {
+        await showActiveSessionsMenu(interaction, 'werewolf');
         return;
       }
       
@@ -3684,6 +3857,11 @@ export async function handleMafiaGame(interaction: ButtonInteraction) {
           .setEmoji('🎮')
           .setStyle(ButtonStyle.Success),
         new ButtonBuilder()
+          .setCustomId('mafia_help_guide')
+          .setLabel('راهنمای بازی')
+          .setEmoji('📚')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
           .setCustomId('show_active_mafia_sessions')
           .setLabel('جلسات فعال')
           .setEmoji('🔍')
@@ -4753,6 +4931,9 @@ async function handleWerewolfGame(interaction: ButtonInteraction) {
       return;
     }
     
+    // بررسی وضعیت دکمه‌های مخفی
+    const showHiddenButtons = await getGameHiddenButtonsStatus('werewolf');
+    
     // بازی گرگینه را شروع می‌کنیم
     const embed = new EmbedBuilder()
       .setTitle('🐺 بازی گرگینه')
@@ -4766,21 +4947,70 @@ async function handleWerewolfGame(interaction: ButtonInteraction) {
       )
       .setFooter({ text: 'برای کسب اطلاعات بیشتر درباره نحوه بازی، روی دکمه "قوانین" کلیک کنید.' });
     
-    const row = new ActionRowBuilder<ButtonBuilder>()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId('werewolf')
-          .setLabel('ایجاد بازی جدید')
-          .setEmoji('🎮')
-          .setStyle(ButtonStyle.Primary),
-        new ButtonBuilder()
-          .setCustomId('group_games')
-          .setLabel('بازگشت به منوی بازی‌ها')
-          .setEmoji('🔙')
-          .setStyle(ButtonStyle.Secondary)
-      );
+    // ایجاد دکمه‌های اصلی
+    const mainButtons = [
+      new ButtonBuilder()
+        .setCustomId('werewolf')
+        .setLabel('ایجاد بازی جدید')
+        .setEmoji('🎮')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('werewolf_help_guide')
+        .setLabel('راهنمای بازی')
+        .setEmoji('📚')
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId('sessions_werewolf')
+        .setLabel('جلسات فعال')
+        .setEmoji('🔍')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('group_games')
+        .setLabel('بازگشت به منوی بازی‌ها')
+        .setEmoji('🔙')
+        .setStyle(ButtonStyle.Secondary)
+    ];
     
-    await interaction.reply({ embeds: [embed], components: [row], ephemeral: false });
+    // ردیف اول دکمه‌ها - همیشه نمایش داده می‌شود
+    const row = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(mainButtons);
+    
+    // آماده‌سازی کامپوننت‌های UI
+    const components = [row];
+    
+    // اگر دکمه‌های مخفی نمایش داده شوند
+    if (showHiddenButtons) {
+      // دکمه‌های مخفی را اضافه می‌کنیم
+      const hiddenRow = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('werewolf_special_event')
+            .setLabel('رویداد ویژه')
+            .setEmoji('🌟')
+            .setStyle(ButtonStyle.Danger),
+          new ButtonBuilder()
+            .setCustomId('werewolf_bonus_coins')
+            .setLabel('سکه‌های اضافی')
+            .setEmoji('💰')
+            .setStyle(ButtonStyle.Danger),
+          new ButtonBuilder()
+            .setCustomId('werewolf_special_roles')
+            .setLabel('نقش‌های ویژه')
+            .setEmoji('👑')
+            .setStyle(ButtonStyle.Danger)
+        );
+      
+      components.push(hiddenRow);
+      
+      // اضافه کردن توضیح مربوط به دکمه‌های مخفی به Embed
+      embed.addFields({
+        name: '🎁 ویژه‌های مخفی',
+        value: 'تبریک! شما دکمه‌های مخفی را پیدا کردید! این دکمه‌ها به شما امکان دسترسی به ویژگی‌های خاص را می‌دهند.',
+        inline: false
+      });
+    }
+    
+    await interaction.reply({ embeds: [embed], components, ephemeral: false });
   } catch (error) {
     log(`Error handling werewolf game: ${error}`, 'error');
     await interaction.reply({ content: '❌ خطایی در اجرای بازی رخ داد. لطفاً بعداً دوباره تلاش کنید.', ephemeral: true });
@@ -4795,6 +5025,9 @@ async function handleSpyGame(interaction: ButtonInteraction) {
     // وارد کردن ماژول جاسوس مخفی
     const { createSpyGame } = await import('./spyGame');
     
+    // بررسی وضعیت دکمه‌های مخفی
+    const showHiddenButtons = await getGameHiddenButtonsStatus('spy');
+    
     // ایجاد کامپوننت‌های UI
     const embed = new EmbedBuilder()
       .setTitle('🕵️‍♂️ جاسوس مخفی')
@@ -4806,22 +5039,68 @@ async function handleSpyGame(interaction: ButtonInteraction) {
       )
       .setColor(0x8855FF);
     
-    // ایجاد دکمه ایجاد جلسه
-    const row = new ActionRowBuilder<ButtonBuilder>()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId('create_spy_session')
-          .setLabel('تشکیل جلسه')
-          .setEmoji('🎮')
-          .setStyle(ButtonStyle.Primary),
-        new ButtonBuilder()
-          .setCustomId('game:active_sessions')
-          .setLabel('جلسات فعال')
-          .setEmoji('📋')
-          .setStyle(ButtonStyle.Secondary)
-      );
+    // ایجاد دکمه‌های اصلی
+    const mainButtons = [
+      new ButtonBuilder()
+        .setCustomId('create_spy_session')
+        .setLabel('تشکیل جلسه')
+        .setEmoji('🎮')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('spy_help_guide')
+        .setLabel('راهنمای بازی')
+        .setEmoji('📚')
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId('game:spy:sessions')
+        .setLabel('جلسات فعال')
+        .setEmoji('📋')
+        .setStyle(ButtonStyle.Secondary)
+    ];
     
-    await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+    // ردیف اول دکمه‌ها - همیشه نمایش داده می‌شود
+    const row = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(mainButtons);
+    
+    // آماده‌سازی کامپوننت‌های UI
+    const components = [row];
+    
+    // اگر دکمه‌های مخفی نمایش داده شوند
+    if (showHiddenButtons) {
+      // دکمه‌های مخفی را اضافه می‌کنیم
+      const hiddenRow = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('spy_special_locations')
+            .setLabel('مکان‌های ویژه')
+            .setEmoji('🏙️')
+            .setStyle(ButtonStyle.Danger),
+          new ButtonBuilder()
+            .setCustomId('spy_double_spy')
+            .setLabel('جاسوس دوگانه')
+            .setEmoji('🔍')
+            .setStyle(ButtonStyle.Danger),
+          new ButtonBuilder()
+            .setCustomId('spy_secret_mission')
+            .setLabel('ماموریت مخفی')
+            .setEmoji('🎭')
+            .setStyle(ButtonStyle.Danger)
+        );
+      
+      components.push(hiddenRow);
+      
+      // اضافه کردن توضیح مربوط به دکمه‌های مخفی به Embed
+      embed.addFields({
+        name: '🎁 ویژه‌های مخفی',
+        value: 'تبریک! شما دکمه‌های مخفی را پیدا کردید! این دکمه‌ها به شما امکان دسترسی به ویژگی‌های خاص بازی را می‌دهند.',
+        inline: false
+      });
+    }
+    
+    // حالت ephemeral را به false تغییر می‌دهیم چون دکمه‌های مخفی برای همه قابل مشاهده باشند
+    const ephemeralMode = !showHiddenButtons; // اگر دکمه‌های مخفی هست، پیام عمومی باشد
+    
+    await interaction.reply({ embeds: [embed], components, ephemeral: ephemeralMode });
   } catch (error) {
     log(`Error handling spy game: ${error}`, 'error');
     await interaction.reply({ content: '❌ خطایی در اجرای بازی رخ داد. لطفاً بعداً دوباره تلاش کنید.', ephemeral: true });

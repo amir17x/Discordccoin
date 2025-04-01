@@ -303,6 +303,11 @@ export async function createMafiaGame(interaction: ButtonInteraction | ChatInput
           .setStyle(ButtonStyle.Secondary)
           .setEmoji('📜'),
         new ButtonBuilder()
+          .setCustomId(`sessions_mafia`)
+          .setLabel('جلسات فعال')
+          .setStyle(ButtonStyle.Secondary)
+          .setEmoji('🎮'),
+        new ButtonBuilder()
           .setCustomId(`cancel_mafia_${gameId}`)
           .setLabel('لغو بازی')
           .setStyle(ButtonStyle.Danger)
