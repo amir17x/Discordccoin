@@ -59,6 +59,13 @@ export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
   try {
     const customId = interaction.customId;
     
+    // پردازش مودال دعوت به بازی جاسوس مخفی
+    if (customId.startsWith('spy_invite_modal_')) {
+      const { processSpyInviteModal } = await import('../components/spyGame');
+      await processSpyInviteModal(interaction);
+      return;
+    }
+    
     // Handle admin item creation form
     if (customId === 'add_item_modal') {
       const name = interaction.fields.getTextInputValue('item_name');

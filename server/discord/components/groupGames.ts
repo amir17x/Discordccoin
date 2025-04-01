@@ -4792,12 +4792,36 @@ async function handleWerewolfGame(interaction: ButtonInteraction) {
  */
 async function handleSpyGame(interaction: ButtonInteraction) {
   try {
+    // وارد کردن ماژول جاسوس مخفی
+    const { createSpyGame } = await import('./spyGame');
+    
+    // ایجاد کامپوننت‌های UI
     const embed = new EmbedBuilder()
       .setTitle('🕵️‍♂️ جاسوس مخفی')
-      .setDescription('این بازی به زودی در دسترس قرار خواهد گرفت. لطفاً صبور باشید!')
+      .setDescription('بازی جاسوس مخفی یک بازی گروهی استراتژیک است. یک بازیکن به عنوان جاسوس انتخاب می‌شود و بقیه بازیکنان باید او را شناسایی کنند.')
+      .addFields(
+        { name: '👥 تعداد بازیکنان', value: 'حداقل 3 و حداکثر 10 بازیکن', inline: true },
+        { name: '⏱️ زمان بازی', value: 'حدود 10 الی 20 دقیقه', inline: true },
+        { name: '💰 جایزه', value: 'برندگان بازی سکه دریافت می‌کنند', inline: true }
+      )
       .setColor(0x8855FF);
     
-    await interaction.reply({ embeds: [embed], ephemeral: true });
+    // ایجاد دکمه ایجاد جلسه
+    const row = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('create_spy_session')
+          .setLabel('تشکیل جلسه')
+          .setEmoji('🎮')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('game:active_sessions')
+          .setLabel('جلسات فعال')
+          .setEmoji('📋')
+          .setStyle(ButtonStyle.Secondary)
+      );
+    
+    await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
   } catch (error) {
     log(`Error handling spy game: ${error}`, 'error');
     await interaction.reply({ content: '❌ خطایی در اجرای بازی رخ داد. لطفاً بعداً دوباره تلاش کنید.', ephemeral: true });

@@ -107,6 +107,15 @@ app.use((req, res, next) => {
       log(`Error initializing mafia game client: ${mafiaGameError}`, "error");
     }
     
+    // تنظیم client برای بازی جاسوس مخفی
+    try {
+      const { setClient: setSpyClient } = await import("./discord/components/spyGame");
+      setSpyClient(client);
+      log("Spy game client initialized successfully", "success");
+    } catch (spyGameError) {
+      log(`Error initializing spy game client: ${spyGameError}`, "error");
+    }
+    
     // سیستم نکات در رویداد ready بات دیسکورد راه‌اندازی می‌شود
     log("Tip system will be initialized when Discord bot is ready", "success");
     

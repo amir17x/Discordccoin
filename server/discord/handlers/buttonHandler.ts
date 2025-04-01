@@ -576,6 +576,25 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     }
   }
   
+  // پردازش دکمه‌های بازی جاسوس مخفی
+  if (customId === 'create_spy_session' || customId.includes('spy_')) {
+    // واردات متغیرها و توابع لازم از ماژول spyGame
+    const { spyHandlers } = await import('../components/spyGame');
+    
+    // بررسی الگوی دکمه با رجکس
+    for (const handler of spyHandlers) {
+      if (handler.regex) {
+        if (customId.match(new RegExp(handler.id))) {
+          await handler.handler(interaction);
+          return;
+        }
+      } else if (customId === handler.customId) {
+        await handler.handler(interaction);
+        return;
+      }
+    }
+  }
+  
   if (customId.startsWith('duel_accept_')) {
     // پذیرش درخواست دوئل
     await acceptDuel(interaction);
