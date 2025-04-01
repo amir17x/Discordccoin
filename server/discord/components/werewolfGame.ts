@@ -17,6 +17,7 @@ import {
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
+  ModalSubmitInteraction,
   Colors
 } from 'discord.js';
 
@@ -60,6 +61,7 @@ interface WerewolfGameData {
   messageId?: string;
   channelId: string;
   hostId: string;
+  guildId: string;
   voiceGeneralId?: string;
   voiceWerewolvesId?: string;
   voiceCategoryId?: string;
@@ -69,6 +71,32 @@ interface WerewolfGameData {
   seerChecks: Record<string, string>; // night_playerId -> checkedId
   doctorProtects: Record<string, string>; // night_playerId -> protectedId
   killedTonight?: string;
+  // فیلدهای جدید برای سیستم مدیریت جلسه
+  status: 'waiting' | 'active' | 'ended';
+  createdAt: Date;
+  lastActionTime: Date;
+  invitedPlayers: string[]; // لیست بازیکنان دعوت شده
+  autoStartTime: Date | null; // زمان شروع خودکار
+  settings: {
+    maxPlayers: number;
+    minPlayers: number;
+    timePerDay: number;  // زمان به دقیقه
+    timePerNight: number; // زمان به دقیقه 
+    prizeCoin: number;
+    autoStartEnabled: boolean;
+    autoStartDelay: number; // تاخیر به دقیقه
+    inviteOnly: boolean;
+  };
+  timers: {
+    phase?: NodeJS.Timeout;
+    autoStart?: NodeJS.Timeout | null;
+    idle?: NodeJS.Timeout;
+  };
+  messages: {
+    main?: string; // پیام اصلی لابی
+    dayAnnouncement?: string;
+    nightAnnouncement?: string;
+  };
 }
 
 // Define available roles with enhanced emojis and descriptions 
@@ -122,6 +150,33 @@ const activeWerewolfGames = new Map<string, WerewolfGameData>();
  * ایجاد بازی جدید گرگینه
  * @param interaction برهم‌کنش دکمه
  */
+/**
+ * تنظیم کلاینت دیسکورد
+ * @param discordClient کلاینت دیسکورد
+ */
+export function setClient(discordClient: Client) {
+  client = discordClient;
+}
+
+/**
+ * ایجاد دکمه ساخت جلسه بازی گرگینه
+ * @returns ردیف دکمه برای ساخت جلسه
+ */
+export function createWerewolfSessionButton(): ActionRowBuilder<ButtonBuilder> {
+  return new ActionRowBuilder<ButtonBuilder>()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId('create_werewolf_session')
+        .setLabel('ساخت جلسه جدید گرگینه')
+        .setEmoji(WEREWOLF_EMOJI.WEREWOLF)
+        .setStyle(ButtonStyle.Success)
+    );
+}
+
+/**
+ * ساخت جلسه بازی گرگینه جدید
+ * @param interaction برهم‌کنش دکمه
+ */
 export async function createWerewolfGame(interaction: ButtonInteraction) {
   try {
     // بررسی دسترسی‌های لازم
@@ -140,6 +195,7 @@ export async function createWerewolfGame(interaction: ButtonInteraction) {
     
     // ایجاد شناسه یکتا برای بازی
     const gameId = `werewolf_${uuidv4().slice(0, 8)}`;
+    const now = new Date();
     
     // ایجاد داده‌های بازی گرگینه
     const werewolfGame: WerewolfGameData = {
@@ -149,11 +205,31 @@ export async function createWerewolfGame(interaction: ButtonInteraction) {
       day: 0,
       channelId: channel.id,
       hostId: interaction.user.id,
+      guildId: interaction.guildId!,
       dayVotes: {},
       nightActions: {},
       werewolfVotes: {},
       seerChecks: {},
-      doctorProtects: {}
+      doctorProtects: {},
+      
+      // فیلدهای جدید برای سیستم مدیریت جلسه
+      status: 'waiting',
+      createdAt: now,
+      lastActionTime: now,
+      invitedPlayers: [], 
+      autoStartTime: null,
+      settings: {
+        maxPlayers: 12,
+        minPlayers: 6,
+        timePerDay: 5,  // 5 دقیقه
+        timePerNight: 3, // 3 دقیقه
+        prizeCoin: 500,
+        autoStartEnabled: true,
+        autoStartDelay: 5, // 5 دقیقه
+        inviteOnly: false
+      },
+      timers: {},
+      messages: {}
     };
     
     // ایجاد جلسه بازی در دیتابیس
@@ -2084,3 +2160,402 @@ export async function handleWerewolfKill(interaction: StringSelectMenuInteractio
 export function setWerewolfClient(discordClient: Client) {
   client = discordClient;
 }
+
+/**
+ * دعوت از بازیکن به بازی گرگینه
+ * @param interaction برهم‌کنش دکمه
+ */
+export async function inviteToWerewolfGame(interaction: ButtonInteraction) {
+  try {
+    // استخراج شناسه بازی از شناسه دکمه
+    const gameId = interaction.customId.split('_')[2];
+    const game = activeWerewolfGames.get(gameId);
+    
+    if (!game) {
+      return await interaction.reply({
+        content: '❌ بازی مورد نظر یافت نشد یا به پایان رسیده است.',
+        ephemeral: true
+      });
+    }
+    
+    // بررسی اینکه فقط میزبان می‌تواند دعوت کند
+    if (game.hostId !== interaction.user.id) {
+      return await interaction.reply({
+        content: '❌ فقط میزبان بازی می‌تواند بازیکنان را دعوت کند.',
+        ephemeral: true
+      });
+    }
+    
+    // ایجاد مدال برای دریافت آیدی کاربر
+    const modal = new ModalBuilder()
+      .setCustomId(`invite_werewolf_modal_${gameId}`)
+      .setTitle('دعوت به بازی گرگینه');
+    
+    const userIdInput = new TextInputBuilder()
+      .setCustomId('userId')
+      .setLabel('آیدی کاربر مورد نظر را وارد کنید')
+      .setPlaceholder('1234567890')
+      .setRequired(true)
+      .setStyle(TextInputStyle.Short);
+    
+    const actionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(userIdInput);
+    modal.addComponents(actionRow);
+    
+    await interaction.showModal(modal);
+    
+  } catch (error) {
+    log(`Error inviting to werewolf game: ${error}`, 'error');
+    await interaction.reply({
+      content: '❌ خطایی در دعوت به بازی رخ داد. لطفاً دوباره تلاش کنید.',
+      ephemeral: true
+    });
+  }
+}
+
+/**
+ * پردازش فرم دعوت از کاربر به بازی گرگینه
+ * @param interaction برهم‌کنش فرم ارسالی
+ */
+export async function processWerewolfInviteModal(interaction: ModalSubmitInteraction) {
+  try {
+    // استخراج اطلاعات
+    const gameId = interaction.customId.replace('invite_werewolf_modal_', '');
+    const userId = interaction.fields.getTextInputValue('userId');
+    
+    // بررسی وجود بازی
+    const game = activeWerewolfGames.get(gameId);
+    if (!game) {
+      return await interaction.reply({
+        content: '❌ بازی مورد نظر یافت نشد یا به پایان رسیده است.',
+        ephemeral: true
+      });
+    }
+    
+    // بررسی وضعیت بازی
+    if (game.phase !== 'lobby') {
+      return await interaction.reply({
+        content: '❌ این بازی قبلاً شروع شده است و نمی‌توانید بازیکن جدید دعوت کنید.',
+        ephemeral: true
+      });
+    }
+    
+    try {
+      // دریافت اطلاعات کاربر
+      const guild = await client.guilds.fetch(game.guildId);
+      const member = await guild.members.fetch(userId);
+      
+      // افزودن به لیست دعوت‌شدگان اگر قبلاً دعوت نشده
+      if (game.invitedPlayers.includes(userId)) {
+        return await interaction.reply({
+          content: `❌ کاربر ${member.user.username} قبلاً به این بازی دعوت شده است.`,
+          ephemeral: true
+        });
+      }
+      
+      // بررسی آیا قبلاً به بازی پیوسته است
+      if (game.players.some(p => p.id === userId)) {
+        return await interaction.reply({
+          content: `❌ کاربر ${member.user.username} قبلاً به این بازی پیوسته است.`,
+          ephemeral: true
+        });
+      }
+      
+      // افزودن به لیست دعوت‌شدگان
+      game.invitedPlayers.push(userId);
+      
+      // به‌روزرسانی بازی در حافظه
+      activeWerewolfGames.set(gameId, game);
+      
+      // به‌روزرسانی در دیتابیس
+      await storage.updateGameSession(gameId, {
+        data: game
+      });
+      
+      // ارسال پیام دعوت به کاربر
+      try {
+        const dmChannel = await member.createDM();
+        const inviteEmbed = new EmbedBuilder()
+          .setTitle(`${WEREWOLF_EMOJI.WEREWOLF} دعوت به بازی گرگینه`)
+          .setDescription(`شما توسط ${interaction.user.username} به یک بازی گرگینه دعوت شده‌اید! برای پیوستن به بازی، به کانال مربوطه مراجعه کنید.`)
+          .setColor(Colors.DarkBlue)
+          .addFields(
+            { name: 'میزبان بازی', value: interaction.user.username, inline: true },
+            { name: 'کانال بازی', value: `<#${game.channelId}>`, inline: true }
+          )
+          .setFooter({ text: 'با کلیک روی لینک کانال بالا، به محل بازی بروید.' });
+        
+        await dmChannel.send({ embeds: [inviteEmbed] });
+        
+        // پاسخ به تعامل
+        await interaction.reply({
+          content: `✅ دعوت‌نامه بازی گرگینه با موفقیت برای ${member.user.username} ارسال شد.`,
+          ephemeral: true
+        });
+      } catch (error) {
+        log(`Error sending DM to invited user: ${error}`, 'error');
+        await interaction.reply({
+          content: `⚠️ دعوت‌نامه برای ${member.user.username} ارسال نشد. ممکن است دریافت پیام خصوصی را غیرفعال کرده باشد.`,
+          ephemeral: true
+        });
+      }
+      
+    } catch (error) {
+      log(`Error fetching user for werewolf invite: ${error}`, 'error');
+      await interaction.reply({
+        content: '❌ کاربر مورد نظر یافت نشد. لطفاً مطمئن شوید آیدی صحیح است.',
+        ephemeral: true
+      });
+    }
+    
+  } catch (error) {
+    log(`Error processing werewolf invite modal: ${error}`, 'error');
+    await interaction.reply({
+      content: '❌ خطایی در پردازش دعوت رخ داد. لطفاً دوباره تلاش کنید.',
+      ephemeral: true
+    });
+  }
+}
+
+/**
+ * اخراج بازیکن از بازی گرگینه
+ * @param interaction برهم‌کنش دکمه
+ */
+export async function kickFromWerewolfGame(interaction: ButtonInteraction) {
+  try {
+    // استخراج شناسه بازی از شناسه دکمه
+    const gameId = interaction.customId.split('_')[2];
+    const game = activeWerewolfGames.get(gameId);
+    
+    if (!game) {
+      return await interaction.reply({
+        content: '❌ بازی مورد نظر یافت نشد یا به پایان رسیده است.',
+        ephemeral: true
+      });
+    }
+    
+    // بررسی اینکه فقط میزبان می‌تواند بازیکن را اخراج کند
+    if (game.hostId !== interaction.user.id) {
+      return await interaction.reply({
+        content: '❌ فقط میزبان بازی می‌تواند بازیکنان را اخراج کند.',
+        ephemeral: true
+      });
+    }
+    
+    // بررسی وضعیت بازی
+    if (game.phase !== 'lobby') {
+      return await interaction.reply({
+        content: '❌ این بازی قبلاً شروع شده است و نمی‌توانید بازیکنان را اخراج کنید.',
+        ephemeral: true
+      });
+    }
+    
+    // ساخت لیست بازیکنان برای منوی انتخاب
+    if (game.players.length <= 1) {
+      return await interaction.reply({
+        content: '❌ بازیکن دیگری در بازی نیست که بتوانید اخراج کنید.',
+        ephemeral: true
+      });
+    }
+    
+    const otherPlayers = game.players.filter(p => p.id !== game.hostId);
+    
+    if (otherPlayers.length === 0) {
+      return await interaction.reply({
+        content: '❌ بازیکن دیگری در بازی نیست که بتوانید اخراج کنید.',
+        ephemeral: true
+      });
+    }
+    
+    // ساخت منوی انتخاب
+    const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId(`kick_werewolf_select_${gameId}`)
+      .setPlaceholder('بازیکن مورد نظر برای اخراج را انتخاب کنید')
+      .setMinValues(1)
+      .setMaxValues(1);
+      
+    // افزودن گزینه‌ها به منو
+    otherPlayers.forEach(player => {
+      selectMenu.addOptions({
+        label: player.username,
+        value: player.id,
+        description: `اخراج ${player.username} از بازی گرگینه`,
+        emoji: '🚫'
+      });
+    });
+    
+    const actionRow = new ActionRowBuilder<StringSelectMenuBuilder>()
+      .addComponents(selectMenu);
+    
+    // ارسال منو
+    await interaction.reply({
+      content: '👮‍♂️ بازیکن مورد نظر برای اخراج از بازی گرگینه را انتخاب کنید:',
+      components: [actionRow],
+      ephemeral: true
+    });
+    
+  } catch (error) {
+    log(`Error kicking from werewolf game: ${error}`, 'error');
+    await interaction.reply({
+      content: '❌ خطایی در اخراج بازیکن رخ داد. لطفاً دوباره تلاش کنید.',
+      ephemeral: true
+    });
+  }
+}
+
+/**
+ * پردازش انتخاب بازیکن برای اخراج از بازی گرگینه
+ * @param interaction برهم‌کنش منوی انتخاب
+ */
+export async function processWerewolfKickSelection(interaction: StringSelectMenuInteraction) {
+  try {
+    // استخراج اطلاعات
+    const gameId = interaction.customId.replace('kick_werewolf_select_', '');
+    const selectedPlayerId = interaction.values[0];
+    
+    // بررسی وجود بازی
+    const game = activeWerewolfGames.get(gameId);
+    if (!game) {
+      return await interaction.reply({
+        content: '❌ بازی مورد نظر یافت نشد یا به پایان رسیده است.',
+        ephemeral: true
+      });
+    }
+    
+    // بررسی وضعیت بازی
+    if (game.phase !== 'lobby') {
+      return await interaction.reply({
+        content: '❌ این بازی قبلاً شروع شده است و نمی‌توانید بازیکنان را اخراج کنید.',
+        ephemeral: true
+      });
+    }
+    
+    // حذف بازیکن از لیست بازیکنان
+    const playerIndex = game.players.findIndex(p => p.id === selectedPlayerId);
+    if (playerIndex === -1) {
+      return await interaction.reply({
+        content: '❌ بازیکن مورد نظر یافت نشد.',
+        ephemeral: true
+      });
+    }
+    
+    const kickedPlayer = game.players[playerIndex];
+    game.players.splice(playerIndex, 1);
+    
+    // به‌روزرسانی بازی در حافظه
+    activeWerewolfGames.set(gameId, game);
+    
+    // به‌روزرسانی در دیتابیس
+    await storage.updateGameSession(gameId, {
+      players: game.players.map(p => p.id),
+      data: game
+    });
+    
+    // به‌روزرسانی پیام بازی
+    await updateWerewolfGameMessage(gameId);
+    
+    // پاسخ به تعامل
+    await interaction.reply({
+      content: `✅ کاربر ${kickedPlayer.username} با موفقیت از بازی گرگینه اخراج شد.`,
+      ephemeral: true
+    });
+    
+  } catch (error) {
+    log(`Error processing werewolf kick selection: ${error}`, 'error');
+    await interaction.reply({
+      content: '❌ خطایی در پردازش اخراج بازیکن رخ داد. لطفاً دوباره تلاش کنید.',
+      ephemeral: true
+    });
+  }
+}
+
+/**
+ * به‌روزرسانی پیام بازی گرگینه
+ * @param gameId شناسه بازی
+ */
+export async function updateWerewolfGameMessage(gameId: string) {
+  try {
+    // دریافت اطلاعات بازی
+    const game = activeWerewolfGames.get(gameId);
+    if (!game || !game.messageId) return;
+    
+    // دریافت کانال و پیام
+    const channel = await client.channels.fetch(game.channelId) as TextChannel;
+    const message = await channel.messages.fetch(game.messageId);
+    
+    if (!message) return;
+    
+    // دریافت تنظیمات از دیتابیس
+    const gameSession = await storage.getGameSession(gameId);
+    if (!gameSession) return;
+    
+    // ایجاد Embed جدید با اطلاعات به‌روز شده
+    const embed = EmbedBuilder.from(message.embeds[0])
+      .setFields(
+        { name: `${WEREWOLF_EMOJI.ROLES} تعداد بازیکنان`, value: `${game.players.length}/${gameSession.settings.maxPlayers}`, inline: true },
+        { name: `${TIME_EMOJI.CLOCK} زمان هر روز`, value: '5 دقیقه', inline: true },
+        { name: `${WEREWOLF_EMOJI.NIGHT} زمان هر شب`, value: '3 دقیقه', inline: true },
+        { name: `${GENERAL_EMOJI.INFO} حداقل بازیکنان`, value: `${gameSession.settings.minPlayers} نفر`, inline: true },
+        { name: `${ECONOMY_EMOJI.COIN} جایزه بازی`, value: 'برنده 500 کوین 🤑', inline: true },
+        { name: `${WEREWOLF_EMOJI.HOST} میزبان`, value: `${(await client.users.fetch(game.hostId)).username}`, inline: true }
+      );
+    
+    // بازسازی دکمه‌ها با توجه به تعداد بازیکنان
+    const canStartGame = game.players.length >= gameSession.settings.minPlayers;
+    
+    const row = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId(`join_werewolf_${gameId}`)
+          .setLabel('ورود به بازی')
+          .setEmoji('🎮')
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId(`start_werewolf_${gameId}`)
+          .setLabel('شروع بازی')
+          .setEmoji('▶️')
+          .setStyle(ButtonStyle.Primary)
+          .setDisabled(!canStartGame),
+        new ButtonBuilder()
+          .setCustomId(`invite_werewolf_${gameId}`)
+          .setLabel('دعوت بازیکن')
+          .setEmoji('📧')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId(`kick_werewolf_${gameId}`)
+          .setLabel('اخراج بازیکن')
+          .setEmoji('🚫')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId(`cancel_werewolf_${gameId}`)
+          .setLabel('لغو بازی')
+          .setEmoji('❌')
+          .setStyle(ButtonStyle.Danger)
+      );
+    
+    // به‌روزرسانی پیام
+    await message.edit({ embeds: [embed], components: [row] });
+    
+  } catch (error) {
+    log(`Error updating werewolf game message: ${error}`, 'error');
+  }
+}
+
+// تعریف تابع ثبت handler
+export function registerWerewolfHandler(customId: string, handler: (interaction: ButtonInteraction) => Promise<void>) {
+  return { customId, handler };
+}
+
+// تعریف لیست handlers
+export const werewolfHandlers = [
+  // کنترل کننده‌های اصلی
+  { customId: 'create_werewolf_session', handler: createWerewolfGame },
+  // کنترل کننده‌های قدیمی
+  { id: 'join_werewolf', handler: joinWerewolfGame, regex: true },
+  { id: 'rules_werewolf', handler: showWerewolfRules, regex: true },
+  { id: 'back_to_werewolf', handler: backToWerewolfMenu, regex: true },
+  { id: 'cancel_werewolf', handler: cancelWerewolfGame, regex: true },
+  { id: 'start_werewolf', handler: startWerewolfGame, regex: true },
+  // کنترل کننده‌های جدید سیستم مدیریت جلسه
+  { id: 'invite_werewolf', handler: inviteToWerewolfGame, regex: true },
+  { id: 'kick_werewolf', handler: kickFromWerewolfGame, regex: true }
+];

@@ -1,0 +1,148 @@
+3:13:30 PM [info] ارسال درخواست به CCOIN AI: به عنوان CCOIN AI که دستیار هوشمند و کول ربات Ccoi...
+3:13:30 PM [info] ارسال درخواست به CCOIN AI: به عنوان CCOIN AI که دستیار هوشمند و کول ربات Ccoi...
+3:13:31 PM [info] پاسخ از CCOIN AI دریافت شد (32 کاراکتر) ✨
+3:13:31 PM [success] تولید پیام طنز برای تم "فناوری‌های نوین" با هوش مصنوعی: "🤖 آینده رو دانلود می‌کنم... 🚀
+"
+3:13:31 PM [info] وضعیت ربات به‌روزرسانی شد: 🤖 آینده رو دانلود می‌کنم... 🚀
+
+3:13:31 PM [info] سیستم به‌روزرسانی خودکار وضعیت با فاصله 20 دقیقه راه‌اندازی شد
+3:13:33 PM [info] پاسخ از CCOIN AI دریافت شد (235 کاراکتر) ✨
+3:13:33 PM [discord] ✅ نکته هوشمند برای موضوع "ارتقاء کلن و افزایش سطح" با موفقیت تولید شد
+3:13:33 PM [express] 🤖 نکته هوشمند با موضوع ارتقاء کلن و افزایش سطح با استفاده از CCOIN AI تولید شد.
+3:13:33 PM [discord] ✅ نکته هوشمند با موفقیت تولید شد: 💫 بچه‌ها! 💥 آیا می‌دونستی با...
+🤖 نکته هوشمند با استفاده از CCOIN AI تولید شد.
+✅ نکته به کانال 1352999622552977559 در سرور 1343951143625293867 ارسال شد.
+⏱️ تنظیم تایمر نکات برای سرور 1343951143625293867 - ارسال بعدی در 59 دقیقه دیگر
+3:14:01 PM [info] قیمت سهام Ccoin Technologies از 1074 به 1101 تغییر کرد (2.51%)
+3:14:01 PM [info] قیمت سهام Persian Gold Resources از 1175 به 1108 تغییر کرد (-5.70%)
+3:14:01 PM [info] قیمت سهام Oil Company of Persia از 6481 به 6888 تغییر کرد (6.28%)
+3:14:02 PM [info] قیمت سهام Persian Banking Group از 3430 به 3944 تغییر کرد (14.99%)
+3:14:02 PM [info] قیمت سهام Persian Tech Solutions از 1073 به 1146 تغییر کرد (6.80%)
+3:14:02 PM [info] قیمت سهام Persian Food Industries از 1257 به 1217 تغییر کرد (-3.18%)
+3:14:02 PM [info] قیمت سهام Persian Automotive از 1561 به 1442 تغییر کرد (-7.62%)
+3:14:02 PM [info] قیمت 7 سهام به‌روزرسانی شد. وضعیت بازار: ثبات
+3:14:13 PM [discord] Executing command: ping
+3:14:13 PM [info] ارسال درخواست به CCOIN AI: سلام، لطفاً پاسخ خیلی کوتاهی بده: 1+1 چند می‌شود؟...
+3:14:14 PM [info] پاسخ از CCOIN AI دریافت شد (5 کاراکتر) ✨
+3:14:14 PM [discord] Successfully executed command: ping
+3:14:22 PM [discord] Executing command: menu
+(node:322) Warning: Supplying "ephemeral" for interaction response options is deprecated. Utilize flags instead.
+3:14:22 PM [discord] Successfully executed command: menu
+3:14:23 PM [info] اعلانات شخصی کاربر 700031045231182005 منقضی شده است. تولید اعلانات جدید...
+3:14:23 PM [info] تولید اعلانات جدید برای کاربر 700031045231182005
+Error getting user quests from MongoDB: CastError: Cast to ObjectId failed for value "NaN" (type number) at path "_id" for model "User"
+    at SchemaObjectId.cast (/home/runner/workspace/node_modules/mongoose/lib/schema/objectId.js:251:11)
+    at SchemaType.applySetters (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1255:12)
+    at SchemaType.castForQuery (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1673:17)
+    at cast (/home/runner/workspace/node_modules/mongoose/lib/cast.js:390:32)
+    at Query.cast (/home/runner/workspace/node_modules/mongoose/lib/query.js:4907:12)
+    at Query._castConditions (/home/runner/workspace/node_modules/mongoose/lib/query.js:2325:10)
+    at model.Query._findOne (/home/runner/workspace/node_modules/mongoose/lib/query.js:2648:8)
+    at model.Query.exec (/home/runner/workspace/node_modules/mongoose/lib/query.js:4456:80)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async MongoStorage.getUserQuests (/home/runner/workspace/server/storage.ts:6560:20) {
+  stringValue: '"NaN"',
+  messageFormat: undefined,
+  kind: 'ObjectId',
+  value: NaN,
+  path: '_id',
+  reason: BSONError: input must be a 24 character hex string, 12 byte Uint8Array, or an integer
+      at new ObjectId (/home/runner/workspace/node_modules/bson/src/objectid.ts:120:15)
+      at castObjectId (/home/runner/workspace/node_modules/mongoose/lib/cast/objectid.js:25:12)
+      at SchemaObjectId.cast (/home/runner/workspace/node_modules/mongoose/lib/schema/objectId.js:249:12)
+      at SchemaType.applySetters (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1255:12)
+      at SchemaType.castForQuery (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1673:17)
+      at cast (/home/runner/workspace/node_modules/mongoose/lib/cast.js:390:32)
+      at Query.cast (/home/runner/workspace/node_modules/mongoose/lib/query.js:4907:12)
+      at Query._castConditions (/home/runner/workspace/node_modules/mongoose/lib/query.js:2325:10)
+      at model.Query._findOne (/home/runner/workspace/node_modules/mongoose/lib/query.js:2648:8)
+      at model.Query.exec (/home/runner/workspace/node_modules/mongoose/lib/query.js:4456:80),
+  valueType: 'number'
+}
+Error getting inventory items from MongoDB: CastError: Cast to ObjectId failed for value "NaN" (type number) at path "_id" for model "User"
+    at SchemaObjectId.cast (/home/runner/workspace/node_modules/mongoose/lib/schema/objectId.js:251:11)
+    at SchemaType.applySetters (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1255:12)
+    at SchemaType.castForQuery (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1673:17)
+    at cast (/home/runner/workspace/node_modules/mongoose/lib/cast.js:390:32)
+    at Query.cast (/home/runner/workspace/node_modules/mongoose/lib/query.js:4907:12)
+    at Query._castConditions (/home/runner/workspace/node_modules/mongoose/lib/query.js:2325:10)
+    at model.Query._findOne (/home/runner/workspace/node_modules/mongoose/lib/query.js:2648:8)
+    at model.Query.exec (/home/runner/workspace/node_modules/mongoose/lib/query.js:4456:80)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async MongoStorage.getInventoryItems (/home/runner/workspace/server/storage.ts:6224:20) {
+  stringValue: '"NaN"',
+  messageFormat: undefined,
+  kind: 'ObjectId',
+  value: NaN,
+  path: '_id',
+  reason: BSONError: input must be a 24 character hex string, 12 byte Uint8Array, or an integer
+      at new ObjectId (/home/runner/workspace/node_modules/bson/src/objectid.ts:120:15)
+      at castObjectId (/home/runner/workspace/node_modules/mongoose/lib/cast/objectid.js:25:12)
+      at SchemaObjectId.cast (/home/runner/workspace/node_modules/mongoose/lib/schema/objectId.js:249:12)
+      at SchemaType.applySetters (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1255:12)
+      at SchemaType.castForQuery (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1673:17)
+      at cast (/home/runner/workspace/node_modules/mongoose/lib/cast.js:390:32)
+      at Query.cast (/home/runner/workspace/node_modules/mongoose/lib/query.js:4907:12)
+      at Query._castConditions (/home/runner/workspace/node_modules/mongoose/lib/query.js:2325:10)
+      at model.Query._findOne (/home/runner/workspace/node_modules/mongoose/lib/query.js:2648:8)
+      at model.Query.exec (/home/runner/workspace/node_modules/mongoose/lib/query.js:4456:80),
+  valueType: 'number'
+}
+3:14:23 PM [info] ارسال درخواست به CCOIN AI: تو یک سیستم اعلانات هوشمند برای بازی اقتصادی دیسکو...
+3:14:23 PM [info] ارسال درخواست به CCOIN AI: تو یک سیستم اعلانات هوشمند برای بازی اقتصادی دیسکو...
+3:14:24 PM [error] خطا در فراخوانی سرویس CCOIN AI: Error: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent: [429 Too Many Requests] You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. [{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerMinutePerProjectPerModel-FreeTier","quotaDimensions":{"model":"gemini-1.5-pro","location":"global"},"quotaValue":"2"}]},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"35s"}]
+3:14:24 PM [warn] خطا در سرویس CCOIN AI: Error: محدودیت نرخ سرویس CCOIN AI: تعداد درخواست‌ها بیش از حد مجاز است. استفاده از سرویس پشتیبان CCOIN AI...
+3:14:24 PM [info] ارسال درخواست به سرویس CCOIN AI جایگزین: تو یک سیستم اعلانات هوشمند برای بازی اقتصادی دیسکو...
+3:14:24 PM [error] خطا در فراخوانی سرویس CCOIN AI جایگزین: AxiosError: Request failed with status code 429
+3:14:24 PM [error] Error generating AI response: Error: محدودیت نرخ سرویس CCOIN AI جایگزین: تعداد درخواست‌ها بیش از حد مجاز است
+3:14:24 PM [info] ارسال درخواست به CCOIN AI: تو یک سیستم اعلانات هوشمند برای بازی اقتصادی دیسکو...
+3:14:24 PM [info] ارسال درخواست به CCOIN AI: تو یک سیستم اعلانات هوشمند برای بازی اقتصادی دیسکو...
+3:14:24 PM [error] خطا در فراخوانی سرویس CCOIN AI: Error: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent: [429 Too Many Requests] You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. [{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerMinutePerProjectPerModel-FreeTier","quotaDimensions":{"location":"global","model":"gemini-1.5-pro"},"quotaValue":"2"}]},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"35s"}]
+3:14:24 PM [warn] خطا در سرویس CCOIN AI: Error: محدودیت نرخ سرویس CCOIN AI: تعداد درخواست‌ها بیش از حد مجاز است. استفاده از سرویس پشتیبان CCOIN AI...
+3:14:24 PM [info] ارسال درخواست به سرویس CCOIN AI جایگزین: تو یک سیستم اعلانات هوشمند برای بازی اقتصادی دیسکو...
+3:14:24 PM [error] خطا در فراخوانی سرویس CCOIN AI جایگزین: AxiosError: Request failed with status code 429
+3:14:24 PM [error] Error generating AI response: Error: محدودیت نرخ سرویس CCOIN AI جایگزین: تعداد درخواست‌ها بیش از حد مجاز است
+3:14:24 PM [info] ارسال درخواست به CCOIN AI: تو یک سیستم اعلانات هوشمند برای بازی اقتصادی دیسکو...
+3:14:24 PM [info] ارسال درخواست به CCOIN AI: تو یک سیستم اعلانات هوشمند برای بازی اقتصادی دیسکو...
+3:14:24 PM [error] خطا در فراخوانی سرویس CCOIN AI: Error: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent: [429 Too Many Requests] You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. [{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerMinutePerProjectPerModel-FreeTier","quotaDimensions":{"location":"global","model":"gemini-1.5-pro"},"quotaValue":"2"}]},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"35s"}]
+3:14:24 PM [warn] خطا در سرویس CCOIN AI: Error: محدودیت نرخ سرویس CCOIN AI: تعداد درخواست‌ها بیش از حد مجاز است. استفاده از سرویس پشتیبان CCOIN AI...
+3:14:24 PM [info] ارسال درخواست به سرویس CCOIN AI جایگزین: تو یک سیستم اعلانات هوشمند برای بازی اقتصادی دیسکو...
+3:14:24 PM [error] خطا در فراخوانی سرویس CCOIN AI جایگزین: AxiosError: Request failed with status code 429
+3:14:24 PM [error] Error generating AI response: Error: محدودیت نرخ سرویس CCOIN AI جایگزین: تعداد درخواست‌ها بیش از حد مجاز است
+3:14:24 PM [success] 3 اعلان شخصی‌سازی شده برای کاربر 700031045231182005 تولید شد.
+3:14:24 PM [info] استفاده از اعلانات کش شده برای کاربر 700031045231182005 در دسته quests
+3:14:24 PM [info] استفاده از اعلانات کش شده برای کاربر 700031045231182005 در دسته quests
+3:14:25 PM [success] اعلانات شخصی برای کاربر 700031045231182005 با موفقیت در دیتابیس ذخیره شد.
+Looking for job with userId type: object value: new ObjectId('67e69fb12f788d00cce28f7e')
+Invalid userId format for job lookup: new ObjectId('67e69fb12f788d00cce28f7e')
+3:14:48 PM [info] استفاده از اعلانات ذخیره شده در دیتابیس برای کاربر 700031045231182005
+Error creating game session in MongoDB: MongoServerError: E11000 duplicate key error collection: test.gamesessions index: id_1 dup key: { id: null }
+    at InsertOneOperation.execute (/home/runner/workspace/node_modules/mongodb/src/operations/insert.ts:88:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async tryOperation (/home/runner/workspace/node_modules/mongodb/src/operations/execute_operation.ts:283:14)
+    at async executeOperation (/home/runner/workspace/node_modules/mongodb/src/operations/execute_operation.ts:115:12)
+    at async Collection.insertOne (/home/runner/workspace/node_modules/mongodb/src/collection.ts:285:12) {
+  errorLabelSet: Set(0) {},
+  errorResponse: {
+    index: 0,
+    code: 11000,
+    errmsg: 'E11000 duplicate key error collection: test.gamesessions index: id_1 dup key: { id: null }',
+    keyPattern: { id: 1 },
+    keyValue: { id: null }
+  },
+  index: 0,
+  code: 11000,
+  keyPattern: { id: 1 },
+  keyValue: { id: null }
+}
+15:15:09 [info] بازی مافیا با شناسه e2507afd-eb36-4c8c-b0ab-3ab09e57c262 توسط whysiks ایجاد شد.
+No loans to confiscate.
+3:15:30 PM [discord] بررسی اولیه وام‌های معوق با موفقیت انجام شد
+Error updating game session in MongoDB: TypeError: Cannot read properties of undefined (reading 'updatedAt')
+    at MongoStorage.updateGameSession (/home/runner/workspace/server/storage.ts:7033:20)
+    at cancelMafiaGame (/home/runner/workspace/server/discord/components/mafiaGame.ts:516:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async handleButtonInteraction (/home/runner/workspace/server/discord/handlers/buttonHandler.ts:630:5)
+    at async <anonymous> (/home/runner/workspace/server/discord/client.ts:307:27)
+    at async executeWithTimeout (/home/runner/workspace/server/discord/client.ts:79:7)
+    at async Client.<anonymous> (/home/runner/workspace/server/discord/client.ts:305:11)

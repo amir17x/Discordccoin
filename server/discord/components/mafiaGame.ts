@@ -28,6 +28,8 @@ import {
   Guild,
   GuildMember,
   PermissionFlagsBits,
+  StringSelectMenuBuilder,
+  StringSelectMenuInteraction,
   Collection,
   Message,
   CategoryChannel,
@@ -115,6 +117,11 @@ interface MafiaGame {
   doctorSaves: string[]; // تاریخچه نجات‌های دکتر
   detectiveChecks: Record<string, { target: string, result: 'mafia' | 'village' }>; // تاریخچه بررسی‌های کارآگاه
   eliminatedPlayers: string[];
+  // فیلدهای جدید برای سیستم دعوت و مدیریت جلسه
+  invitedPlayers: string[]; // لیست بازیکنان دعوت شده
+  createdAt: Date; // زمان ایجاد جلسه
+  autoStartTime: Date | null; // زمان شروع خودکار (در صورت فعال بودن)
+  lastPlayerJoinTime: Date; // زمان پیوستن آخرین بازیکن
   category?: string; // کتگوری کانال‌های ویس
   generalVoice?: string; // کانال ویس عمومی
   mafiaVoice?: string; // کانال ویس مافیا
@@ -131,9 +138,14 @@ interface MafiaGame {
     timePerDay: number;
     timePerNight: number;
     prizeCoin: number;
+    autoStartEnabled: boolean; // فعال بودن شروع خودکار
+    autoStartDelay: number; // تاخیر شروع خودکار به دقیقه
+    inviteOnly: boolean; // آیا بازی فقط با دعوت قابل پیوستن است
   };
   timers: {
     phase?: NodeJS.Timeout;
+    autoStart?: NodeJS.Timeout | null; // تایمر شروع خودکار
+    idle?: NodeJS.Timeout; // تایمر بررسی غیرفعالی
   };
 }
 
@@ -182,7 +194,7 @@ export async function createMafiaGame(interaction: ButtonInteraction | ChatInput
       });
     }
 
-    // ایجاد اطلاعات بازی جدید
+    // ایجاد اطلاعات بازی جدید با امکانات و فیلدهای جدید
     const newGame: MafiaGame = {
       id: gameId,
       channelId: interaction.channelId,
@@ -202,14 +214,24 @@ export async function createMafiaGame(interaction: ButtonInteraction | ChatInput
       roleAssigned: false,
       lastActionTime: new Date(),
       messages: {},
+      // اضافه کردن گزینه‌های جدید
+      invitedPlayers: [], // لیست بازیکنان دعوت شده
+      createdAt: new Date(), // زمان ایجاد جلسه
+      autoStartTime: null, // زمان شروع خودکار (در صورت فعال بودن)
+      lastPlayerJoinTime: new Date(), // زمان پیوستن آخرین بازیکن 
       settings: {
         maxPlayers: 12,
         minPlayers: 6,
         timePerDay: 5, // دقیقه
         timePerNight: 3, // دقیقه
-        prizeCoin: 500
+        prizeCoin: 500,
+        autoStartEnabled: true, // فعال بودن شروع خودکار
+        autoStartDelay: 5, // تاخیر شروع خودکار به دقیقه
+        inviteOnly: false // آیا بازی فقط با دعوت قابل پیوستن است
       },
-      timers: {}
+      timers: {
+        autoStart: null // تایمر برای شروع خودکار بازی
+      }
     };
 
     // ذخیره بازی جدید در حافظه
@@ -229,13 +251,13 @@ export async function createMafiaGame(interaction: ButtonInteraction | ChatInput
 
     // ارسال پیام تأیید به کاربر
     await interaction.reply({
-      content: '✅ بازی مافیا با موفقیت ایجاد شد!',
+      content: '✅ جلسه بازی مافیا با موفقیت ایجاد شد!',
       ephemeral: true
     });
 
     // ایجاد و ارسال منوی بازی مافیا
     const gameEmbed = new EmbedBuilder()
-      .setTitle('🕵️‍♂️ بازی مافیا')
+      .setTitle('🕵️‍♂️ جلسه بازی مافیا')
       .setDescription('به دنیای پر از رمز و راز مافیا خوش اومدی! تو این بازی باید با زیرکی و همکاری، مافیا رو شناسایی کنی یا اگه خودت مافیا هستی، همه رو گول بزنی! 🖤')
       .setColor(MAFIA_COLORS.primary)
       .addFields(
@@ -243,11 +265,12 @@ export async function createMafiaGame(interaction: ButtonInteraction | ChatInput
         { name: '⏱️ زمان هر روز', value: `${newGame.settings.timePerDay} دقیقه`, inline: true },
         { name: '🌃 زمان هر شب', value: `${newGame.settings.timePerNight} دقیقه`, inline: true },
         { name: '👤 حداقل بازیکنان', value: `${newGame.settings.minPlayers} نفر`, inline: true },
-        { name: '💰 جایزه بازی', value: `برنده ${newGame.settings.prizeCoin} کوین 🤑`, inline: true }
+        { name: '💰 جایزه بازی', value: `برنده ${newGame.settings.prizeCoin} کوین 🤑`, inline: true },
+        { name: '👑 میزبان', value: `<@${interaction.user.id}>`, inline: true }
       )
       .setFooter({ text: 'برای شرکت تو بازی، روی دکمه ورود کلیک کن! 🎮' });
 
-    // دکمه‌های کنترل بازی
+    // دکمه‌های کنترل بازی - با دکمه‌های جدید برای دعوت و اخراج بازیکنان
     const gameButtons = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
@@ -260,6 +283,20 @@ export async function createMafiaGame(interaction: ButtonInteraction | ChatInput
           .setLabel('شروع بازی')
           .setStyle(ButtonStyle.Primary)
           .setEmoji('▶️'),
+        new ButtonBuilder()
+          .setCustomId(`invite_mafia_${gameId}`)
+          .setLabel('دعوت از دوستان')
+          .setStyle(ButtonStyle.Primary)
+          .setEmoji('📧')
+      );
+      
+    const secondRow = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId(`kick_mafia_${gameId}`)
+          .setLabel('اخراج بازیکن')
+          .setStyle(ButtonStyle.Danger)
+          .setEmoji('👢'),
         new ButtonBuilder()
           .setCustomId(`rules_mafia_${gameId}`)
           .setLabel('قوانین بازی')
@@ -276,7 +313,7 @@ export async function createMafiaGame(interaction: ButtonInteraction | ChatInput
     const channel = await client.channels.fetch(interaction.channelId) as TextChannel;
     const mainMessage = await channel.send({
       embeds: [gameEmbed],
-      components: [gameButtons]
+      components: [gameButtons, secondRow]
     });
     
     // ذخیره شناسه پیام برای استفاده بعدی
@@ -286,10 +323,11 @@ export async function createMafiaGame(interaction: ButtonInteraction | ChatInput
     // ذخیره در پایگاه داده
     await saveGame(newGame, true);
 
-    // راه‌اندازی سیستم بررسی زمان غیرفعالی
+    // راه‌اندازی سیستم بررسی زمان غیرفعالی و شروع خودکار
     setupInactivityCheck(gameId);
+    setupAutoStartCheck(gameId);
     
-    log(`بازی مافیا با شناسه ${gameId} توسط ${interaction.user.username} ایجاد شد.`, 'info');
+    log(`جلسه بازی مافیا با شناسه ${gameId} توسط ${interaction.user.username} ایجاد شد.`, 'info');
   } catch (error) {
     log(`Error creating mafia game: ${error}`, 'error');
     
@@ -300,6 +338,475 @@ export async function createMafiaGame(interaction: ButtonInteraction | ChatInput
         ephemeral: true
       });
     }
+  }
+}
+
+/**
+ * سیستم بررسی شروع خودکار بازی
+ * @param gameId شناسه بازی
+ */
+function setupAutoStartCheck(gameId: string) {
+  const game = activeMafiaGames.get(gameId);
+  if (!game || game.status !== 'waiting') return;
+  
+  // اگر شروع خودکار غیرفعال است، کاری انجام نشود
+  if (!game.settings.autoStartEnabled) return;
+  
+  // اگر تایمر قبلی وجود دارد، آن را پاک کن
+  if (game.timers.autoStart) {
+    clearTimeout(game.timers.autoStart);
+  }
+  
+  // بررسی شروع خودکار هر دقیقه
+  game.timers.autoStart = setInterval(async () => {
+    try {
+      const currentGame = activeMafiaGames.get(gameId);
+      if (!currentGame || currentGame.status !== 'waiting') {
+        clearInterval(game.timers.autoStart as NodeJS.Timeout);
+        return;
+      }
+      
+      // اگر تعداد بازیکنان به حد نصاب رسیده باشد
+      if (currentGame.players.length >= currentGame.settings.minPlayers) {
+        // محاسبه زمان گذشته از آخرین پیوستن بازیکن
+        const now = new Date();
+        const lastJoinTime = currentGame.lastPlayerJoinTime || currentGame.createdAt;
+        const minutesPassed = Math.floor((now.getTime() - lastJoinTime.getTime()) / (60 * 1000));
+        
+        // اگر زمان کافی گذشته باشد، هشدار شروع خودکار بازی را نمایش بده
+        if (minutesPassed >= currentGame.settings.autoStartDelay - 2) { // 2 دقیقه قبل از شروع خودکار
+          // هشدار به کاربران
+          if (!currentGame.autoStartTime) {
+            currentGame.autoStartTime = new Date(now.getTime() + 2 * 60 * 1000); // 2 دقیقه دیگر
+            
+            // بروزرسانی در حافظه
+            activeMafiaGames.set(gameId, currentGame);
+            
+            // ارسال هشدار
+            const channel = await client.channels.fetch(currentGame.channelId) as TextChannel;
+            await channel.send({
+              content: `⚠️ **توجه:** بازی مافیا با حضور ${currentGame.players.length} بازیکن در **2 دقیقه** آینده به صورت خودکار شروع خواهد شد!\n<@${currentGame.hostId}> (میزبان بازی) می‌تواند قبل از آن روی دکمه شروع بازی کلیک کند.`,
+              components: [
+                new ActionRowBuilder<ButtonBuilder>()
+                  .addComponents(
+                    new ButtonBuilder()
+                      .setCustomId(`start_mafia_${gameId}`)
+                      .setLabel('شروع بازی')
+                      .setStyle(ButtonStyle.Primary)
+                      .setEmoji('▶️')
+                  )
+              ]
+            });
+          } else if (minutesPassed >= currentGame.settings.autoStartDelay) {
+            // زمان شروع خودکار فرا رسیده
+            clearInterval(game.timers.autoStart as NodeJS.Timeout);
+            
+            // شروع خودکار بازی
+            const channel = await client.channels.fetch(currentGame.channelId) as TextChannel;
+            await channel.send(`🎮 شروع خودکار بازی مافیا با حضور ${currentGame.players.length} بازیکن...`);
+            
+            // ایجاد تعامل مجازی برای شروع بازی
+            const message = await channel.messages.fetch(currentGame.messages.main as string);
+            if (message) {
+              const fakeInteraction = {
+                customId: `start_mafia_${gameId}`,
+                user: await client.users.fetch(currentGame.hostId),
+                reply: async (options: any) => {
+                  return await channel.send(options);
+                },
+                editReply: async (options: any) => {
+                  return await channel.send(options);
+                },
+                update: async (options: any) => {
+                  return await message.edit(options);
+                },
+                deferUpdate: async () => { return; },
+                channelId: currentGame.channelId,
+                guildId: currentGame.guildId,
+              } as unknown as ButtonInteraction;
+              
+              // فراخوانی تابع شروع بازی
+              await startMafiaGame(fakeInteraction);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      log(`Error in auto start check for game ${gameId}: ${error}`, 'error');
+    }
+  }, 60000); // هر دقیقه بررسی شود
+  
+  // ذخیره تایمر
+  game.timers.autoStart = game.timers.autoStart;
+  activeMafiaGames.set(gameId, game);
+}
+
+/**
+ * مدیریت دعوت از بازیکنان به بازی مافیا
+ * @param interaction برهم‌کنش کاربر
+ */
+export async function inviteToMafiaGame(interaction: ButtonInteraction) {
+  try {
+    // استخراج شناسه بازی از شناسه دکمه
+    const gameId = interaction.customId.split('_')[2];
+    const game = activeMafiaGames.get(gameId);
+    
+    if (!game) {
+      return await interaction.reply({
+        content: '❌ بازی مورد نظر یافت نشد یا به پایان رسیده است.',
+        ephemeral: true
+      });
+    }
+    
+    // بررسی اینکه فقط میزبان می‌تواند دعوت کند
+    if (game.hostId !== interaction.user.id) {
+      return await interaction.reply({
+        content: '❌ فقط میزبان بازی می‌تواند بازیکنان را دعوت کند.',
+        ephemeral: true
+      });
+    }
+    
+    // بررسی وضعیت بازی
+    if (game.status !== 'waiting') {
+      return await interaction.reply({
+        content: '❌ بازی در حال اجراست و دیگر نمی‌توانید بازیکن جدید دعوت کنید.',
+        ephemeral: true
+      });
+    }
+    
+    // بررسی ظرفیت بازی
+    if (game.players.length >= game.settings.maxPlayers) {
+      return await interaction.reply({
+        content: '❌ ظرفیت بازی تکمیل است!',
+        ephemeral: true
+      });
+    }
+    
+    // ایجاد مودال برای دعوت از کاربر
+    const modal = new ModalBuilder()
+      .setCustomId(`invite_mafia_modal_${gameId}`)
+      .setTitle('دعوت به بازی مافیا');
+    
+    // افزودن فیلد ورودی برای وارد کردن نام کاربر
+    const userInput = new TextInputBuilder()
+      .setCustomId('user_to_invite')
+      .setLabel('نام کاربری یا آیدی کاربر')
+      .setPlaceholder('نام کاربری یا آیدی را وارد کنید (مثال: Player#1234 یا 123456789)')
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
+    
+    // افزودن پیام شخصی
+    const messageInput = new TextInputBuilder()
+      .setCustomId('invite_message')
+      .setLabel('پیام شخصی (اختیاری)')
+      .setPlaceholder('می‌توانید پیام شخصی برای دعوت کاربر وارد کنید')
+      .setStyle(TextInputStyle.Paragraph)
+      .setRequired(false);
+    
+    // افزودن فیلدها به مودال
+    const firstActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(userInput);
+    const secondActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(messageInput);
+    
+    modal.addComponents(firstActionRow, secondActionRow);
+    
+    // نمایش مودال به کاربر
+    await interaction.showModal(modal);
+  } catch (error) {
+    log(`Error inviting to mafia game: ${error}`, 'error');
+    
+    await interaction.reply({
+      content: '❌ خطایی در فرایند دعوت رخ داد. لطفاً بعداً دوباره تلاش کنید.',
+      ephemeral: true
+    });
+  }
+}
+
+/**
+ * پردازش فرم دعوت از کاربر به بازی مافیا
+ * @param interaction برهم‌کنش فرم ارسالی
+ */
+export async function processMafiaInviteModal(interaction: ModalSubmitInteraction) {
+  try {
+    // استخراج شناسه بازی از شناسه مودال
+    const gameId = interaction.customId.split('_')[3];
+    const game = activeMafiaGames.get(gameId);
+    
+    if (!game) {
+      return await interaction.reply({
+        content: '❌ بازی مورد نظر یافت نشد یا به پایان رسیده است.',
+        ephemeral: true
+      });
+    }
+    
+    // دریافت مقادیر وارد شده
+    const userToInvite = interaction.fields.getTextInputValue('user_to_invite');
+    const inviteMessage = interaction.fields.getTextInputValue('invite_message') || 'شما به بازی مافیا دعوت شده‌اید!';
+    
+    // جستجوی کاربر بر اساس نام یا آیدی
+    let targetUser: User | null = null;
+    
+    // بررسی اگر ورودی یک آیدی عددی است
+    if (/^\d+$/.test(userToInvite)) {
+      targetUser = await client.users.fetch(userToInvite).catch(() => null);
+    } else {
+      // جستجو بر اساس نام کاربری
+      const guild = await client.guilds.fetch(game.guildId);
+      const members = await guild.members.fetch();
+      
+      targetUser = members.find(member => 
+        member.user.username.toLowerCase() === userToInvite.toLowerCase() ||
+        `${member.user.username}#${member.user.discriminator}`.toLowerCase() === userToInvite.toLowerCase()
+      )?.user || null;
+    }
+    
+    if (!targetUser) {
+      return await interaction.reply({
+        content: '❌ کاربر مورد نظر یافت نشد. لطفاً نام کاربری یا آیدی صحیح را وارد کنید.',
+        ephemeral: true
+      });
+    }
+    
+    // بررسی اینکه کاربر قبلاً در بازی شرکت کرده باشد
+    if (game.players.includes(targetUser.id)) {
+      return await interaction.reply({
+        content: '❌ این کاربر قبلاً به بازی پیوسته است!',
+        ephemeral: true
+      });
+    }
+    
+    // بررسی اینکه کاربر قبلاً دعوت شده باشد
+    if (game.invitedPlayers.includes(targetUser.id)) {
+      return await interaction.reply({
+        content: '❌ این کاربر قبلاً به بازی دعوت شده است!',
+        ephemeral: true
+      });
+    }
+    
+    // اضافه کردن کاربر به لیست دعوت شده‌ها
+    game.invitedPlayers.push(targetUser.id);
+    activeMafiaGames.set(gameId, game);
+    
+    // ارسال اعلان DM به کاربر دعوت شده
+    try {
+      const inviteEmbed = new EmbedBuilder()
+        .setTitle('🕵️‍♂️ دعوت به بازی مافیا')
+        .setDescription(`${interaction.user.username} شما را به بازی مافیا دعوت کرده است! ${inviteMessage}`)
+        .setColor(MAFIA_COLORS.primary)
+        .addFields(
+          { name: '👥 تعداد بازیکنان', value: `${game.players.length}/${game.settings.maxPlayers}`, inline: true },
+          { name: '🌍 سرور', value: (await client.guilds.fetch(game.guildId)).name, inline: true },
+          { name: '📝 پیام شخصی', value: inviteMessage, inline: false }
+        )
+        .setFooter({ text: 'برای پیوستن به بازی، روی دکمه زیر کلیک کنید.' });
+      
+      // ایجاد دکمه پیوستن
+      const joinButton = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setLabel('پیوستن به بازی')
+            .setStyle(ButtonStyle.Link)
+            .setURL(`https://discord.com/channels/${game.guildId}/${game.channelId}`)
+            .setEmoji('🎮')
+        );
+      
+      // ارسال پیام DM
+      await targetUser.send({
+        embeds: [inviteEmbed],
+        components: [joinButton]
+      });
+      
+      // تأیید ارسال دعوت به میزبان
+      await interaction.reply({
+        content: `✅ دعوت‌نامه با موفقیت برای ${targetUser.username} ارسال شد!`,
+        ephemeral: true
+      });
+      
+      // اطلاع‌رسانی در کانال بازی
+      const channel = await client.channels.fetch(game.channelId) as TextChannel;
+      await channel.send({
+        content: `📨 ${interaction.user.username} کاربر ${targetUser.username} را به بازی مافیا دعوت کرد.`
+      });
+    } catch (dmError) {
+      // در صورت بسته بودن DM کاربر
+      await interaction.reply({
+        content: `⚠️ خطا در ارسال دعوت‌نامه: امکان ارسال پیام خصوصی به ${targetUser.username} وجود ندارد. ممکن است تنظیمات حریم خصوصی این کاربر اجازه دریافت پیام از ربات را نمی‌دهد.`,
+        ephemeral: true
+      });
+      
+      // حذف کاربر از لیست دعوت شده‌ها
+      game.invitedPlayers = game.invitedPlayers.filter(id => id !== targetUser!.id);
+      activeMafiaGames.set(gameId, game);
+    }
+  } catch (error) {
+    log(`Error processing mafia invite modal: ${error}`, 'error');
+    
+    await interaction.reply({
+      content: '❌ خطایی در پردازش فرم دعوت رخ داد. لطفاً بعداً دوباره تلاش کنید.',
+      ephemeral: true
+    });
+  }
+}
+
+/**
+ * مدیریت اخراج بازیکن از بازی مافیا
+ * @param interaction برهم‌کنش کاربر
+ */
+export async function kickFromMafiaGame(interaction: ButtonInteraction) {
+  try {
+    // استخراج شناسه بازی از شناسه دکمه
+    const gameId = interaction.customId.split('_')[2];
+    const game = activeMafiaGames.get(gameId);
+    
+    if (!game) {
+      return await interaction.reply({
+        content: '❌ بازی مورد نظر یافت نشد یا به پایان رسیده است.',
+        ephemeral: true
+      });
+    }
+    
+    // بررسی اینکه فقط میزبان می‌تواند بازیکن را اخراج کند
+    if (game.hostId !== interaction.user.id) {
+      return await interaction.reply({
+        content: '❌ فقط میزبان بازی می‌تواند بازیکنان را اخراج کند.',
+        ephemeral: true
+      });
+    }
+    
+    // بررسی وضعیت بازی
+    if (game.status !== 'waiting') {
+      return await interaction.reply({
+        content: '❌ بازی در حال اجراست و نمی‌توانید بازیکنان را اخراج کنید.',
+        ephemeral: true
+      });
+    }
+    
+    // اگر فقط یک بازیکن (میزبان) در بازی حضور دارد
+    if (game.players.length <= 1) {
+      return await interaction.reply({
+        content: '❌ هیچ بازیکنی برای اخراج وجود ندارد!',
+        ephemeral: true
+      });
+    }
+    
+    // ایجاد منوی کشویی برای انتخاب بازیکن
+    const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId(`kick_mafia_select_${gameId}`)
+      .setPlaceholder('بازیکن مورد نظر برای اخراج را انتخاب کنید')
+      .setMinValues(1)
+      .setMaxValues(1);
+    
+    // اضافه کردن گزینه‌ها - همه بازیکنان غیر از میزبان
+    const players = game.players.filter(playerId => playerId !== game.hostId);
+    
+    for (const playerId of players) {
+      try {
+        const playerUser = await client.users.fetch(playerId);
+        selectMenu.addOptions({
+          label: playerUser.username,
+          value: playerId,
+          description: `اخراج ${playerUser.username} از بازی`
+        });
+      } catch (error) {
+        // اگر کاربر یافت نشد، از آن صرف نظر می‌کنیم
+        continue;
+      }
+    }
+    
+    // اگر هیچ بازیکنی برای انتخاب نباشد
+    if (selectMenu.options.length === 0) {
+      return await interaction.reply({
+        content: '❌ هیچ بازیکنی برای اخراج وجود ندارد!',
+        ephemeral: true
+      });
+    }
+    
+    // ساخت و ارسال منوی انتخاب
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
+    
+    await interaction.reply({
+      content: '👢 لطفاً بازیکن مورد نظر برای اخراج را انتخاب کنید:',
+      components: [row],
+      ephemeral: true
+    });
+  } catch (error) {
+    log(`Error kicking from mafia game: ${error}`, 'error');
+    
+    await interaction.reply({
+      content: '❌ خطایی در فرایند اخراج رخ داد. لطفاً بعداً دوباره تلاش کنید.',
+      ephemeral: true
+    });
+  }
+}
+
+/**
+ * پردازش انتخاب بازیکن برای اخراج از بازی مافیا
+ * @param interaction برهم‌کنش منوی انتخاب
+ */
+export async function processMafiaKickSelection(interaction: StringSelectMenuInteraction) {
+  try {
+    // استخراج شناسه بازی از شناسه منو
+    const gameId = interaction.customId.split('_')[3];
+    const game = activeMafiaGames.get(gameId);
+    
+    if (!game) {
+      return await interaction.reply({
+        content: '❌ بازی مورد نظر یافت نشد یا به پایان رسیده است.',
+        ephemeral: true
+      });
+    }
+    
+    // دریافت آیدی بازیکن انتخاب شده
+    const playerToKick = interaction.values[0];
+    
+    // حذف بازیکن از لیست بازیکنان
+    game.players = game.players.filter(playerId => playerId !== playerToKick);
+    
+    // به‌روزرسانی بازی در حافظه
+    activeMafiaGames.set(gameId, game);
+    
+    // به‌روزرسانی لیست بازی‌های فعال
+    const activeGame = activeGames.get(gameId);
+    if (activeGame) {
+      activeGame.players = game.players;
+      activeGames.set(gameId, activeGame);
+    }
+    
+    // به‌روزرسانی منوی بازی
+    await updateGameMenu(game);
+    
+    // ذخیره در پایگاه داده
+    await saveGame(game);
+    
+    // دریافت اطلاعات کاربر اخراج شده
+    const kickedUser = await client.users.fetch(playerToKick);
+    
+    // ارسال پیام تأیید اخراج
+    await interaction.reply({
+      content: `✅ کاربر ${kickedUser.username} با موفقیت از بازی اخراج شد.`,
+      ephemeral: true
+    });
+    
+    // اطلاع‌رسانی در کانال بازی
+    const channel = await client.channels.fetch(game.channelId) as TextChannel;
+    await channel.send({
+      content: `👢 کاربر ${kickedUser.username} توسط ${interaction.user.username} (میزبان) از بازی مافیا اخراج شد.`
+    });
+    
+    // اطلاع‌رسانی به کاربر اخراج شده
+    try {
+      await kickedUser.send({
+        content: `⚠️ شما توسط ${interaction.user.username} (میزبان) از بازی مافیا در سرور ${(await client.guilds.fetch(game.guildId)).name} اخراج شدید.`
+      });
+    } catch (dmError) {
+      // در صورت بسته بودن DM کاربر، نادیده می‌گیریم
+    }
+  } catch (error) {
+    log(`Error processing mafia kick selection: ${error}`, 'error');
+    
+    await interaction.reply({
+      content: '❌ خطایی در پردازش اخراج رخ داد. لطفاً بعداً دوباره تلاش کنید.',
+      ephemeral: true
+    });
   }
 }
 
@@ -513,28 +1020,7 @@ export async function cancelMafiaGame(interaction: ButtonInteraction) {
     activeGames.delete(gameId);
     
     // ذخیره در پایگاه داده
-    await storage.updateGameSession({
-      gameId: game.id,
-      gameType: 'mafia' as any,
-      guildId: game.guildId,
-      channelId: game.channelId,
-      hostId: game.hostId,
-      players: game.players,
-      scores: [],
-      status: 'ended',
-      settings: {
-        timePerTurn: game.settings.timePerDay * 60,
-        isPrivate: false,
-        allowSpectators: true,
-        maxPlayers: game.settings.maxPlayers,
-        minPlayers: game.settings.minPlayers,
-        prizeCoin: game.settings.prizeCoin,
-        language: 'fa' as 'fa'
-      },
-      startedAt: game.lastActionTime,
-      endedAt: new Date(),
-      updatedAt: new Date()
-    });
+    await saveGame(game, false);
     
     // به‌روزرسانی منوی بازی
     const channel = await client.channels.fetch(game.channelId) as TextChannel;
@@ -2167,19 +2653,26 @@ async function saveGame(game: MafiaGame, isNew: boolean = false) {
       players: game.players,
       scores: [],
       status: game.status,
+      // اضافه کردن فیلدهای جدید مربوط به سیستم دعوت و شروع خودکار
+      invitedPlayers: game.invitedPlayers || [],
+      createdAt: game.createdAt || new Date(),
+      lastPlayerJoinTime: game.lastPlayerJoinTime || new Date(),
       settings: {
         timePerTurn: game.settings.timePerDay * 60,
-        isPrivate: false,
+        isPrivate: game.settings.inviteOnly || false,
         allowSpectators: true,
         maxPlayers: game.settings.maxPlayers,
         minPlayers: game.settings.minPlayers,
         prizeCoin: game.settings.prizeCoin,
-        language: 'fa' as 'fa'
+        language: 'fa' as 'fa',
+        // اضافه کردن تنظیمات جدید
+        autoStartEnabled: game.settings.autoStartEnabled,
+        autoStartDelay: game.settings.autoStartDelay
       },
-      startedAt: game.status === 'active' ? game.lastActionTime : undefined,
-      endedAt: game.status === 'ended' ? game.lastActionTime : undefined,
-      createdAt: game.lastActionTime,
-      updatedAt: new Date()
+      startedAt: game.status === 'active' ? game.lastActionTime : null,
+      endedAt: game.status === 'ended' ? game.lastActionTime : null,
+      data: game,
+      createdAt: game.createdAt || game.lastActionTime
     };
     
     if (isNew) {
@@ -2241,29 +2734,9 @@ function setupInactivityCheck(gameId: string) {
         activeMafiaGames.delete(gameId);
         activeGames.delete(gameId);
         
-        // به‌روزرسانی بازی در پایگاه داده
-        await storage.updateGameSession({
-          gameId: game.id,
-          gameType: 'mafia' as any,
-          guildId: game.guildId,
-          channelId: game.channelId,
-          hostId: game.hostId,
-          players: game.players,
-          scores: [],
-          status: 'ended',
-          settings: {
-            timePerTurn: game.settings.timePerDay * 60,
-            isPrivate: false,
-            allowSpectators: true,
-            maxPlayers: game.settings.maxPlayers,
-            minPlayers: game.settings.minPlayers,
-            prizeCoin: game.settings.prizeCoin,
-            language: 'fa' as 'fa'
-          },
-          startedAt: game.status === 'active' ? game.lastActionTime : undefined,
-          endedAt: now,
-          updatedAt: new Date()
-        });
+        // به‌روزرسانی وضعیت بازی و ذخیره در پایگاه داده
+        game.status = 'ended';
+        await saveGame(game);
         
         // پایان تایمر بررسی غیرفعالی
         clearInterval(inactivityTimer);
@@ -2280,7 +2753,9 @@ export function registerHandler(customId: string, handler: (interaction: ButtonI
 }
 
 export const handlers = [
-  { customId: 'mafia', handler: createMafiaGame },
+  // کنترل کننده‌های اصلی
+  { customId: 'create_mafia_session', handler: createMafiaGame },
+  // کنترل کننده‌های قدیمی با شناسه رجکس
   { id: 'join_mafia', handler: joinMafiaGame, regex: true },
   { id: 'rules_mafia', handler: showMafiaRules, regex: true },
   { id: 'back_to_mafia', handler: backToMafiaMenu, regex: true },
@@ -2293,5 +2768,8 @@ export const handlers = [
   { id: 'detective_check', handler: detectiveCheck, regex: true },
   { id: 'check_target', handler: checkTarget, regex: true },
   { id: 'doctor_save', handler: doctorSave, regex: true },
-  { id: 'save_target', handler: saveTarget, regex: true }
+  { id: 'save_target', handler: saveTarget, regex: true },
+  // کنترل کننده‌های جدید برای سیستم مدیریت جلسه
+  { id: 'invite_mafia', handler: inviteToMafiaGame, regex: true },
+  { id: 'kick_mafia', handler: kickFromMafiaGame, regex: true }
 ];

@@ -6221,7 +6221,8 @@ export class MongoStorage implements IStorage {
         return cachedItems;
       }
       
-      const user = await UserModel.findById(userId);
+      // استفاده از _id به جای id برای جستجو در MongoDB
+      const user = await UserModel.findOne({ _id: userId });
       if (!user || !user.inventory || !Array.isArray(user.inventory)) {
         return [];
       }
@@ -6251,7 +6252,8 @@ export class MongoStorage implements IStorage {
   
   async addItemToInventory(userId: number, itemId: number, quantity: number = 1): Promise<InventoryItem | undefined> {
     try {
-      const user = await UserModel.findById(userId);
+      // استفاده از _id به جای id برای جستجو در MongoDB
+      const user = await UserModel.findOne({ _id: userId });
       if (!user) return undefined;
       
       // یافتن آیتم در دیتابیس
@@ -6313,7 +6315,8 @@ export class MongoStorage implements IStorage {
   
   async buyItem(userId: number, itemId: number): Promise<{ success: boolean; item?: Item; inventoryItem?: InventoryItem; message?: string }> {
     try {
-      const user = await UserModel.findById(userId);
+      // استفاده از _id به جای id برای جستجو در MongoDB
+      const user = await UserModel.findOne({ _id: userId });
       if (!user) {
         return { success: false, message: 'کاربر یافت نشد.' };
       }
@@ -6383,7 +6386,8 @@ export class MongoStorage implements IStorage {
   
   async useItem(userId: number, inventoryItemId: string): Promise<{ success: boolean; message?: string }> {
     try {
-      const user = await UserModel.findById(userId);
+      // استفاده از _id به جای id برای جستجو در MongoDB
+      const user = await UserModel.findOne({ _id: userId });
       if (!user || !user.inventory) {
         return { success: false, message: 'کاربر یا انبار یافت نشد.' };
       }
@@ -6445,7 +6449,8 @@ export class MongoStorage implements IStorage {
         return cachedFriends;
       }
       
-      const user = await UserModel.findById(userId);
+      // استفاده از _id به جای id برای جستجو در MongoDB
+      const user = await UserModel.findOne({ _id: userId });
       if (!user || !user.friends || !Array.isArray(user.friends)) {
         return [];
       }
@@ -6472,7 +6477,8 @@ export class MongoStorage implements IStorage {
   
   async recordFriendshipActivity(userId: number, friendId: number, type: string, details: string, xpEarned: number): Promise<boolean> {
     try {
-      const user = await UserModel.findById(userId);
+      // استفاده از _id به جای id برای جستجو در MongoDB
+      const user = await UserModel.findOne({ _id: userId });
       if (!user) return false;
       
       if (!user.friendActivities) {
@@ -6505,7 +6511,8 @@ export class MongoStorage implements IStorage {
   
   async updateFriendshipXP(userId: number, friendId: string, xp: number): Promise<{ leveledUp: boolean, newLevel?: number }> {
     try {
-      const user = await UserModel.findById(userId);
+      // استفاده از _id به جای id برای جستجو در MongoDB
+      const user = await UserModel.findOne({ _id: userId });
       if (!user || !user.friends) {
         return { leveledUp: false };
       }
@@ -6557,7 +6564,8 @@ export class MongoStorage implements IStorage {
         return cachedUserQuests;
       }
       
-      const user = await UserModel.findById(userId);
+      // استفاده از _id به جای id برای جستجو در MongoDB
+      const user = await UserModel.findOne({ _id: userId });
       if (!user || !user.quests || !Array.isArray(user.quests)) {
         return [];
       }
@@ -6604,7 +6612,8 @@ export class MongoStorage implements IStorage {
   
   async updateQuestProgress(userId: number, questId: number, progress: number): Promise<boolean> {
     try {
-      const user = await UserModel.findById(userId);
+      // استفاده از _id به جای id برای جستجو در MongoDB
+      const user = await UserModel.findOne({ _id: userId });
       if (!user) return false;
       
       // دریافت ماموریت برای بررسی هدف
@@ -6664,7 +6673,8 @@ export class MongoStorage implements IStorage {
   // این امکان را می‌دهد که در آینده به تدریج به MongoDB منتقل شوند
   async addCrystals(userId: number, amount: number): Promise<User | undefined> {
     try {
-      const user = await UserModel.findById(userId);
+      // استفاده از _id به جای id برای جستجو در MongoDB
+      const user = await UserModel.findOne({ _id: userId });
       if (!user) return undefined;
       
       user.crystals = (user.crystals || 0) + amount;
@@ -6679,8 +6689,9 @@ export class MongoStorage implements IStorage {
 
   async transferCoin(fromUserId: number, toUserId: number, amount: number): Promise<boolean> {
     try {
-      const fromUser = await UserModel.findById(fromUserId);
-      const toUser = await UserModel.findById(toUserId);
+      // استفاده از _id به جای id برای جستجو در MongoDB
+      const fromUser = await UserModel.findOne({ _id: fromUserId });
+      const toUser = await UserModel.findOne({ _id: toUserId });
       
       if (!fromUser || !toUser) return false;
       

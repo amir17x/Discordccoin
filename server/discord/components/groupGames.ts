@@ -3657,106 +3657,52 @@ interface MafiaGameData {
 /**
  * مدیریت بازی مافیا
  */
-async function handleMafiaGame(interaction: ButtonInteraction) {
+export async function handleMafiaGame(interaction: ButtonInteraction) {
   try {
-    // بررسی اینکه آیا بازی در کانال فعلی در حال اجراست
-    const existingGame = await MafiaGame.findOne({
-      channelId: interaction.channelId,
-      state: 'waiting'
-    });
+    // نمایش منوی بازی مافیا بدون ایجاد جلسه
+    // در این منو دکمه تشکیل جلسه به کاربر نمایش داده می‌شود
     
-    if (existingGame) {
-      return await interaction.reply({ 
-        content: '❌ یک بازی مافیا در حال حاضر در این کانال در حال اجراست!', 
-        ephemeral: true 
-      });
-    }
-    
-    // Create new Mafia game
-    const gameId = `mafia_${Date.now()}`;
-    const mafiaGame = new MafiaGame({
-      gameId,
-      channelId: interaction.channelId,
-      hostId: interaction.user.id,
-      players: [],
-      state: 'waiting',
-      settings: {
-        dayDuration: 300,
-        nightDuration: 180,
-        minPlayers: 6,
-        maxPlayers: 12,
-        prizeCoin: 500
-      }
-    });
-    
-    const newGame: GameSession = {
-      id: gameId,
-      gameType: 'mafia',
-      channelId: interaction.channelId,
-      createdBy: interaction.user.id,
-      players: [],
-      status: 'waiting',
-      data: mafiaGame
-    };
-    
-    // ذخیره در لیست بازی‌ها
-    activeGames.set(gameId, newGame);
-    
-    // ایجاد Embed برای نمایش اطلاعات بازی
     const embed = new EmbedBuilder()
-      .setTitle('🕵️ بازی مافیا')
-      .setDescription('به بازی مافیا خوش آمدید! در این بازی، شما در نقش‌های مختلف قرار می‌گیرید و باید با استفاده از مهارت‌های استراتژیک و اجتماعی خود، دشمنان را شناسایی کرده و از شهر محافظت کنید.')
-      .setColor(0xFF5555)
+      .setTitle('🕵️‍♂️ بازی مافیا')
+      .setDescription('به دنیای پر از رمز و راز مافیا خوش آمدید! در این بازی شما در نقش‌های مختلف قرار می‌گیرید و باید با استفاده از مهارت‌های استراتژیک و اجتماعی خود، دشمنان را شناسایی کرده و از شهر محافظت کنید.')
+      .setColor(0x9B59B6) // رنگ بنفش
       .addFields(
-        { name: '👥 تعداد بازیکنان', value: '0/12', inline: true },
+        { name: '👥 تعداد بازیکنان', value: '1/12', inline: true },
         { name: '⏱️ زمان هر روز', value: '5 دقیقه', inline: true },
-        { name: '⏱️ زمان هر شب', value: '3 دقیقه', inline: true },
+        { name: '🌃 زمان هر شب', value: '3 دقیقه', inline: true },
         { name: '👤 حداقل بازیکنان', value: '6 نفر', inline: true },
         { name: '🏆 جایزه بازی', value: 'برنده: 500 کوین', inline: true }
       )
-      .setImage('https://img.icons8.com/color/452/mafia-game.png')
-      .setFooter({ text: 'برای شرکت در بازی روی دکمه "ورود به بازی" کلیک کنید' });
+      .setFooter({ text: 'برای شروع بازی جدید روی دکمه "تشکیل جلسه" کلیک کنید' });
     
-    // دکمه‌های بازی
-    const joinButton = new ButtonBuilder()
-      .setCustomId('mafia_join')
-      .setLabel('ورود به بازی')
-      .setEmoji('🎮')
-      .setStyle(ButtonStyle.Success);
-    
-    const startButton = new ButtonBuilder()
-      .setCustomId('mafia_start')
-      .setLabel('شروع بازی')
-      .setEmoji('▶️')
-      .setStyle(ButtonStyle.Primary);
-      
-    const rulesButton = new ButtonBuilder()
-      .setCustomId('mafia_rules')
-      .setLabel('قوانین بازی')
-      .setEmoji('📜')
-      .setStyle(ButtonStyle.Secondary);
-    
-    const row = new ActionRowBuilder<ButtonBuilder>()
-      .addComponents(joinButton, startButton, rulesButton);
-    
-    // ارسال پیام و ذخیره شناسه آن
-    const response = await interaction.reply({ 
+    // دکمه‌های کنترلی جدید
+    const controlRow = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('create_mafia_session')
+          .setLabel('تشکیل جلسه')
+          .setEmoji('🎮')
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId('show_active_mafia_sessions')
+          .setLabel('جلسات فعال')
+          .setEmoji('🔍')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('group_games')
+          .setLabel('بازگشت')
+          .setEmoji('🔙')
+          .setStyle(ButtonStyle.Secondary)
+      );
+          
+    // ارسال پیام
+    await interaction.reply({ 
       embeds: [embed], 
-      components: [row],
-      fetchReply: true
+      components: [controlRow],
+      ephemeral: true
     });
     
-    // ذخیره شناسه پیام در داده‌های بازی
-    newGame.data.messageId = response.id;
-    activeGames.set(gameId, newGame);
-    
-    // در صورت امکان، ذخیره در دیتابیس
-    try {
-      await storage.saveGameSession(newGame);
-    } catch (dbError) {
-      log(`Error saving mafia game to database: ${dbError}`, 'warn');
-      // عدم ذخیره در دیتابیس، روند بازی را متوقف نمی‌کند
-    }
+    // اینجا هیچ جلسه‌ای ذخیره نمی‌شود چون تا کلیک روی دکمه "تشکیل جلسه" جلسه‌ای ایجاد نمی‌شود
     
   } catch (error) {
     log(`Error handling mafia game: ${error}`, 'error');

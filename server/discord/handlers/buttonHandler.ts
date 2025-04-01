@@ -16,7 +16,9 @@ import { achievementsMenu, showCategoryAchievements, showEarnedAchievements, sho
 import { 
   handleGroupGamesButton, 
   handleQuizQuestionModalSubmit, 
-  handleQuizAnswer 
+  handleQuizAnswer,
+  handleMafiaGame,
+  showActiveSessionsMenu
 } from '../components/groupGames';
 import { handleBingoInteraction } from '../components/bingoGame';
 import {
@@ -546,7 +548,35 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     // شروع بازی دوئل جدید
     await startDuel(interaction);
     return;
-  } else if (customId.startsWith('duel_accept_')) {
+  }
+  
+  // پردازش دکمه‌های بازی گرگینه - سیستم مدیریت جلسه
+  if (customId === 'create_werewolf_session') {
+    // ایجاد جلسه جدید گرگینه
+    await createWerewolfGame(interaction);
+    return;
+  }
+  
+  // پردازش دکمه‌های با الگوی werewolf در آن‌ها
+  if (customId.includes('werewolf')) {
+    // واردات متغیرها و توابع لازم از ماژول werewolfGame
+    const { werewolfHandlers } = await import('../components/werewolfGame');
+    
+    // بررسی الگوی دکمه با رجکس
+    for (const handler of werewolfHandlers) {
+      if (handler.regex) {
+        if (customId.match(new RegExp(handler.id))) {
+          await handler.handler(interaction);
+          return;
+        }
+      } else if (customId === handler.customId) {
+        await handler.handler(interaction);
+        return;
+      }
+    }
+  }
+  
+  if (customId.startsWith('duel_accept_')) {
     // پذیرش درخواست دوئل
     await acceptDuel(interaction);
     return;
@@ -610,8 +640,16 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     await werewolfVotePlayer(interaction as unknown as StringSelectMenuInteraction);
     return;
   } else if (customId === 'mafia') {
-    // ایجاد بازی مافیا جدید
+    // نمایش منوی بازی مافیا بدون ایجاد جلسه
+    await handleMafiaGame(interaction);
+    return;
+  } else if (customId === 'create_mafia_session') {
+    // ایجاد جلسه جدید مافیا با کلیک روی دکمه "تشکیل جلسه"
     await createMafiaGame(interaction);
+    return;
+  } else if (customId === 'show_active_mafia_sessions') {
+    // نمایش لیست جلسات فعال مافیا
+    await showActiveSessionsMenu(interaction);
     return;
   } else if (customId.startsWith('join_mafia_')) {
     // پیوستن به بازی مافیا
