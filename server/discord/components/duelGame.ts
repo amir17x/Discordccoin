@@ -31,6 +31,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { storage } from '../../storage';
 import { log } from '../../vite';
 import { convertToUser } from '../utils/helpers';
+import { DUEL_EMOJI, ECONOMY_EMOJI, GENERAL_EMOJI, GAME_EMOJI, TIME_EMOJI } from '../utils/emojiUtils';
 
 /**
  * انواع حملات در بازی دوئل
@@ -344,15 +345,15 @@ export async function handleDuelOpponentModal(interaction: ModalSubmitInteractio
 
     // ایجاد امبد دعوت به دوئل
     const inviteEmbed = new EmbedBuilder()
-      .setTitle('⚔️ دعوت به دوئل!')
+      .setTitle(`${DUEL_EMOJI.SWORDS} دعوت به دوئل!`)
       .setDescription(`<@${challenger.discordId}> شما را به یک دوئل هیجان‌انگیز دعوت کرده است!`)
       .setColor(Colors.Gold)
       .addFields(
-        { name: '💰 مقدار شرط', value: `${betAmount} سکه`, inline: true },
-        { name: '🎮 نوع بازی', value: 'دوئل مبارزه‌ای', inline: true },
-        { name: '⏱️ زمان انقضا', value: '2 دقیقه', inline: true }
+        { name: `${ECONOMY_EMOJI.COIN} مقدار شرط`, value: `${betAmount} سکه`, inline: true },
+        { name: `${GAME_EMOJI.GAME} نوع بازی`, value: 'دوئل مبارزه‌ای', inline: true },
+        { name: `${TIME_EMOJI.TIMER} زمان انقضا`, value: '2 دقیقه', inline: true }
       )
-      .setFooter({ text: 'برای شروع یا رد درخواست، از دکمه‌های زیر استفاده کنید.' })
+      .setFooter({ text: `برای شروع یا رد درخواست، از دکمه‌های زیر استفاده کنید. ${GENERAL_EMOJI.INFO}` })
       .setTimestamp();
 
     // ایجاد دکمه‌های پذیرش یا رد درخواست
@@ -398,9 +399,10 @@ export async function handleDuelOpponentModal(interaction: ModalSubmitInteractio
         try {
           // به‌روزرسانی پیام
           const expiredEmbed = new EmbedBuilder()
-            .setTitle('⏱️ درخواست دوئل منقضی شد')
+            .setTitle(`${TIME_EMOJI.TIMER} درخواست دوئل منقضی شد`)
             .setDescription(`درخواست دوئل از طرف <@${challenger.discordId}> به <@${opponent.discordId}> به دلیل عدم پاسخ منقضی شد.`)
             .setColor(Colors.Grey)
+            .setFooter({ text: `زمان انتظار برای پاسخ به پایان رسید. ${GENERAL_EMOJI.INFO}` })
             .setTimestamp();
 
           if (game.messageId) {
@@ -614,9 +616,10 @@ export async function declineDuel(interaction: ButtonInteraction) {
 
     // به‌روزرسانی پیام
     const declineEmbed = new EmbedBuilder()
-      .setTitle('❌ درخواست دوئل رد شد')
+      .setTitle(`${GENERAL_EMOJI.ERROR} درخواست دوئل رد شد`)
       .setDescription(`<@${duelGame.player2.id}> درخواست دوئل <@${duelGame.player1.id}> را رد کرد.`)
       .setColor(Colors.Red)
+      .setFooter({ text: `درخواست دوئل توسط بازیکن رد شد. ${GENERAL_EMOJI.INFO}` })
       .setTimestamp();
 
     await interaction.update({
@@ -659,26 +662,26 @@ function createDuelGameEmbed(duelGame: DuelGame): EmbedBuilder {
   const lastActions = duelGame.actionHistory.slice(-5).join('\n');
 
   const embed = new EmbedBuilder()
-    .setTitle(`⚔️ دوئل حماسی: ${player1.username} در برابر ${player2.username}`)
-    .setDescription(`💰 جایزه: **${duelGame.betAmount * 2} سکه**\n⏱️ نوبت فعلی: **${duelGame.turn + 1}**\n👤 نوبت بازی: <@${duelGame.currentTurnPlayerId}>`)
+    .setTitle(`${DUEL_EMOJI.DUEL} دوئل حماسی: ${player1.username} ${DUEL_EMOJI.VS} ${player2.username}`)
+    .setDescription(`${ECONOMY_EMOJI.COIN} جایزه: **${duelGame.betAmount * 2} سکه**\n${TIME_EMOJI.CLOCK} نوبت فعلی: **${duelGame.turn + 1}**\n${GENERAL_EMOJI.USER} نوبت بازی: <@${duelGame.currentTurnPlayerId}>`)
     .setColor(Colors.Gold)
     .addFields(
       { 
-        name: `🧙‍♂️ ${player1.username}`,
-        value: `❤️ جان: ${player1.health}/${player1.maxHealth} ${p1HealthBar}\n⚡ استقامت: ${player1.stamina}/${player1.maxStamina} ${p1StaminaBar}\n⚔️ قدرت حمله: ${player1.attack}\n🛡️ قدرت دفاعی: ${player1.defense}\n${p1Effects}`,
+        name: `${DUEL_EMOJI.PLAYER} ${player1.username}`,
+        value: `${DUEL_EMOJI.HEALTH} جان: ${player1.health}/${player1.maxHealth} ${p1HealthBar}\n${DUEL_EMOJI.STAMINA} استقامت: ${player1.stamina}/${player1.maxStamina} ${p1StaminaBar}\n${DUEL_EMOJI.ATTACK} قدرت حمله: ${player1.attack}\n${DUEL_EMOJI.DEFENSE} قدرت دفاعی: ${player1.defense}\n${p1Effects}`,
         inline: true 
       },
       { 
-        name: `🧙‍♂️ ${player2.username}`,
-        value: `❤️ جان: ${player2.health}/${player2.maxHealth} ${p2HealthBar}\n⚡ استقامت: ${player2.stamina}/${player2.maxStamina} ${p2StaminaBar}\n⚔️ قدرت حمله: ${player2.attack}\n🛡️ قدرت دفاعی: ${player2.defense}\n${p2Effects}`,
+        name: `${DUEL_EMOJI.PLAYER} ${player2.username}`,
+        value: `${DUEL_EMOJI.HEALTH} جان: ${player2.health}/${player2.maxHealth} ${p2HealthBar}\n${DUEL_EMOJI.STAMINA} استقامت: ${player2.stamina}/${player2.maxStamina} ${p2StaminaBar}\n${DUEL_EMOJI.ATTACK} قدرت حمله: ${player2.attack}\n${DUEL_EMOJI.DEFENSE} قدرت دفاعی: ${player2.defense}\n${p2Effects}`,
         inline: true 
       },
       {
-        name: '📜 تاریخچه نبرد',
+        name: `${GENERAL_EMOJI.HISTORY} تاریخچه نبرد`,
         value: lastActions || 'هنوز اقدامی انجام نشده است...'
       }
     )
-    .setFooter({ text: 'بازی‌های رقابتی ربات CCoin' })
+    .setFooter({ text: `بازی‌های رقابتی ربات CCoin ${GENERAL_EMOJI.GAME}` })
     .setTimestamp();
 
   return embed;

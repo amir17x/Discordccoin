@@ -18,16 +18,15 @@ import {
   TextInputBuilder,
   TextInputStyle,
   Colors
-
-import { WEREWOLF_EMOJI, GENERAL_EMOJI, ECONOMY_EMOJI, TIME_EMOJI } from '../utils/emojiUtils';
 } from 'discord.js';
+
+import { WEREWOLF_EMOJI, GENERAL_EMOJI, ECONOMY_EMOJI, TIME_EMOJI, GAME_EMOJI, ADMIN_EMOJI, AI_EMOJI, ITEM_EMOJI } from '../utils/emojiUtils';
 import { v4 as uuidv4 } from 'uuid';
 import { storage } from '../../storage';
 import { log } from '../../vite';
 import { GameSession } from '../../models/GameSession';
 
 // کلاینت دیسکورد
-import { WEREWOLF_EMOJI, GENERAL_EMOJI, ECONOMY_EMOJI, TIME_EMOJI } from '../utils/emojiUtils';
 
 let client: Client;
 
@@ -1034,10 +1033,10 @@ async function startNightPhase(gameData: WerewolfGameData, interaction: ButtonIn
     
     // ارسال پیام شروع شب
     const nightEmbed = new EmbedBuilder()
-      .setTitle(`🌙 شب ${gameData.day} فرا رسید!`)
-      .setDescription('همه به خواب رفتند. گرگینه‌ها بیدار شدند و در حال انتخاب قربانی هستند...')
+      .setTitle(`${WEREWOLF_EMOJI.NIGHT} شب ${gameData.day} فرا رسید!`)
+      .setDescription(`همه به خواب رفتند. ${WEREWOLF_EMOJI.WEREWOLF} گرگینه‌ها بیدار شدند و در حال انتخاب قربانی هستند...`)
       .setColor(Colors.DarkBlue)
-      .setFooter({ text: 'کاربران با نقش‌های ویژه پیام خصوصی دریافت می‌کنند.' })
+      .setFooter({ text: `کاربران با نقش‌های ویژه پیام خصوصی دریافت می‌کنند. ${GENERAL_EMOJI.MESSAGE}` })
       .setTimestamp();
     
     await channel.send({ embeds: [nightEmbed] });
@@ -1341,10 +1340,10 @@ async function startDayPhase(gameData: WerewolfGameData) {
     
     // ارسال پیام شروع روز
     const dayEmbed = new EmbedBuilder()
-      .setTitle(`☀️ روز ${gameData.day} فرا رسید!`)
+      .setTitle(`${WEREWOLF_EMOJI.DAY} روز ${gameData.day} فرا رسید!`)
       .setDescription(getLastNightEvents(gameData))
       .setColor(Colors.Gold)
-      .setFooter({ text: 'اکنون زمان بحث و رای‌گیری است!' })
+      .setFooter({ text: `اکنون زمان بحث و رای‌گیری است! ${WEREWOLF_EMOJI.VOTE}` })
       .setTimestamp();
     
     await channel.send({ embeds: [dayEmbed] });
@@ -1430,7 +1429,7 @@ async function processDayVotes(gameData: WerewolfGameData) {
     
     // ارسال نتیجه رای‌گیری
     const voteResultEmbed = new EmbedBuilder()
-      .setTitle(`🗳️ نتیجه رای‌گیری روز ${gameData.day}`)
+      .setTitle(`${WEREWOLF_EMOJI.VOTE} نتیجه رای‌گیری روز ${gameData.day}`)
       .setDescription(votingResult)
       .setColor(Colors.Yellow)
       .setTimestamp();
@@ -1647,10 +1646,10 @@ export async function werewolfDayVoting(interaction: ButtonInteraction) {
     }));
     
     const voteEmbed = new EmbedBuilder()
-      .setTitle('🗳️ رای‌گیری')
-      .setDescription(`روز ${gameData.day}: به کسی که فکر می‌کنید گرگینه است رای دهید.`)
+      .setTitle(`${WEREWOLF_EMOJI.VOTE} رای‌گیری`)
+      .setDescription(`${WEREWOLF_EMOJI.DAY} روز ${gameData.day}: به کسی که فکر می‌کنید گرگینه است رای دهید.`)
       .setColor(Colors.Yellow)
-      .setFooter({ text: 'رای شما مخفیانه است. شما فقط یک بار می‌توانید رای دهید، اما می‌توانید رای خود را تغییر دهید.' });
+      .setFooter({ text: `رای شما مخفیانه است. شما فقط یک بار می‌توانید رای دهید، اما می‌توانید رای خود را تغییر دهید. ${GENERAL_EMOJI.INFO}` });
     
     const selectMenu = new ActionRowBuilder<StringSelectMenuBuilder>()
       .addComponents(
@@ -1811,16 +1810,16 @@ export async function handleSeerCheck(interaction: StringSelectMenuInteraction) 
     const isWerewolf = target.role === 'werewolf';
     
     const resultEmbed = new EmbedBuilder()
-      .setTitle('🔮 نتیجه پیشگویی')
+      .setTitle(`${WEREWOLF_EMOJI.SEER} نتیجه پیشگویی`)
       .setDescription(`شما هویت ${target.username} را بررسی کردید.`)
       .setColor(isWerewolf ? Colors.Red : Colors.Green)
       .addFields({
-        name: 'نتیجه',
+        name: `${WEREWOLF_EMOJI.CHECK} نتیجه`,
         value: isWerewolf ? 
-          `${target.username} یک 🐺 **گرگینه** است!` : 
-          `${target.username} یک روستایی است (نه گرگینه).`
+          `${target.username} یک ${WEREWOLF_EMOJI.WEREWOLF} **گرگینه** است!` : 
+          `${target.username} یک ${WEREWOLF_EMOJI.VILLAGER} روستایی است (نه گرگینه).`
       })
-      .setFooter({ text: 'این اطلاعات فقط برای شما قابل مشاهده است.' });
+      .setFooter({ text: `این اطلاعات فقط برای شما قابل مشاهده است. ${GENERAL_EMOJI.LOCK}` });
     
     await interaction.reply({ 
       embeds: [resultEmbed], 
