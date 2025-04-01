@@ -1042,12 +1042,14 @@ export async function performDefense(interaction: ButtonInteraction) {
       defenseEmoji = '🛡️';
     } else if (defenseType === DefenseType.DODGE) {
       // افزایش شانس جاخالی برای نوبت بعدی
-      currentPlayer.effects.dodge = (currentPlayer.effects.dodge || 0) + 1;
+      if (!currentPlayer.effects.dodge) currentPlayer.effects.dodge = 0;
+      currentPlayer.effects.dodge = currentPlayer.effects.dodge + 1;
       defenseText = 'آماده جاخالی از حمله بعدی شد';
       defenseEmoji = '💨';
     } else if (defenseType === DefenseType.COUNTER) {
       // آماده ضد حمله
-      currentPlayer.effects.counter = (currentPlayer.effects.counter || 0) + 1;
+      if (!currentPlayer.effects.counter) currentPlayer.effects.counter = 0;
+      currentPlayer.effects.counter = currentPlayer.effects.counter + 1;
       defenseText = 'آماده ضد حمله شد';
       defenseEmoji = '↩️';
     } else if (defenseType === DefenseType.HEAL) {

@@ -275,6 +275,10 @@ type UserStockData = {
 };
 
 export interface IStorage {
+  // Game Settings operations
+  getGameSettings(): Promise<any>;
+  updateUserWallet(user: User, amount: number, type: string, description: string): Promise<User | undefined>;
+  
   // User operations
   getUser(id: number | string): Promise<User | undefined>;
   getUserByDiscordId(discordId: string): Promise<User | undefined>;
@@ -554,6 +558,48 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
+  // Game Settings operations
+  getGameSettings(): Promise<any> {
+    return Promise.resolve({
+      duelBetAmount: 100,
+      robberyMinAmount: 50,
+      robberyMaxAmount: 500,
+      dailyReward: 200,
+      dailyStreakBonus: 50,
+      maxGambleAmount: 5000,
+      lotteryTicketPrice: 50,
+      blackMarketPriceMultiplier: 2
+    });
+  }
+  
+  // Wallet Update operation
+  async updateUserWallet(user: User, amount: number, type: string, description: string): Promise<User | undefined> {
+    const userId = typeof user === 'object' && 'id' in user ? user.id : user;
+    const userObj = await this.getUser(userId);
+    
+    if (!userObj) return undefined;
+    
+    userObj.wallet += amount;
+    
+    // Log the transaction for debugging
+    console.log(`Updated wallet for user ${userObj.username} (${userObj.id}): ${amount > 0 ? '+' : ''}${amount}, new balance: ${userObj.wallet}`);
+    
+    // Save transaction to history
+    await this.saveTransaction({
+      userId: userObj.id,
+      amount,
+      type: type as any,
+      description,
+      timestamp: new Date(),
+      balance: userObj.wallet
+    });
+    
+    // Update user in memory storage
+    this.users.set(userObj.id, userObj);
+    
+    return userObj;
+  }
+
   async getUsersWithRobberyNotificationsEnabled(): Promise<User[]> {
     return Array.from(this.users.values()).filter(user => 
       user.robberyNotifications && user.robberyNotifications.enabled === true
@@ -4033,6 +4079,56 @@ import MarketListingModel from './models/MarketListing';
 import { GlobalSettingModel } from './models/GlobalSetting';
 
 export class MongoStorage implements IStorage {
+  getGameSettings(): Promise<any> {
+    return Promise.resolve({
+      duelBetAmount: 100,
+      robberyMinAmount: 50,
+      robberyMaxAmount: 500,
+      dailyReward: 200,
+      dailyStreakBonus: 50,
+      maxGambleAmount: 5000,
+      lotteryTicketPrice: 50,
+      blackMarketPriceMultiplier: 2
+    });
+  }
+
+  // Update user wallet and create transaction record
+  async updateUserWallet(user: User, amount: number, type: string, description: string): Promise<User | undefined> {
+    try {
+      // Handle id or object
+      const userId = typeof user === 'object' && 'id' in user ? user.id : user;
+      
+      // Find user
+      const userDoc = await UserModel.findOne({ id: userId });
+      if (!userDoc) {
+        console.error(`User not found for updateUserWallet: ${userId}`);
+        return undefined;
+      }
+      
+      // Update wallet
+      userDoc.wallet += amount;
+      
+      // Create transaction
+      await this.saveTransaction({
+        userId: userDoc.id,
+        amount,
+        type: type as any, // Type casting to handle type incompatibility
+        description,
+        timestamp: new Date(),
+        balance: userDoc.wallet
+      });
+      
+      // Save user
+      await userDoc.save();
+      
+      return this.convertMongoUserToUser(userDoc);
+    } catch (error) {
+      console.error(`Error updating user wallet: ${error}`);
+      // Fallback to memory storage
+      return memStorage.updateUserWallet(user, amount, type, description);
+    }
+  }
+  
   async getUsersWithRobberyNotificationsEnabled(): Promise<User[]> {
     try {
       const users = await UserModel.find({ 'robberyNotifications.enabled': true });
@@ -5066,7 +5162,7 @@ export class MongoStorage implements IStorage {
   // متد کمکی برای تبدیل سند مانگو به ساختار User
   private convertMongoUserToUser(mongoUser: any): User {
     // استفاده از تابع کمکی در utils/helpers
-    return convertToUser({
+    const user = {
       id: mongoUser._id,
       discordId: mongoUser.discordId,
       username: mongoUser.username,
