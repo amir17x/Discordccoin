@@ -1,0 +1,557 @@
+خیلی خوبه که می‌خوای بخش مدیریت شغل‌ها رو هم به‌روز کنیم! من این بخش رو با TypeScript و با همون سبک منوهای زیبا، دکمه‌های تعاملی و Embedهای جذاب طراحی می‌کنم. تمام تعاملات با دکمه‌ها انجام می‌شه و نیازی به کامندهای اضافی نیست. بریم مرحله به مرحله:
+
+---
+
+### ۱. **به‌روزرسانی بخش مدیریت شغل‌ها**
+شغل‌ها رو با همون لیست ادغام‌شده و به‌روز شده که قبلاً طراحی کردیم نگه می‌داریم، ولی کد و منوها رو با TypeScript و سبک جدید به‌روز می‌کنیم.
+
+#### **لیست شغل‌ها (به‌روز شده):**
+- **حسابدار (Accountant)** 🧾  
+  - **وظیفه:** تراکنش‌های کاربران رو بررسی می‌کنه و موارد مشکوک رو به ادمین‌ها گزارش می‌ده.  
+  - **درآمد روزانه:** ۷۰۰ Ccoin  
+  - **پیش‌نیاز:** حساب الماسی 💎 + تأیید ادمین  
+  - **محدودیت:** فقط گزارش می‌فرسته و نمی‌تونه تراکنش‌ها رو تغییر بده.
+
+- **طراح سؤالات (Quiz Designer)** ❓  
+  - **وظیفه:** سؤالات اطلاعات عمومی برای بازی کوییز اف گینز طراحی می‌کنه.  
+  - **درآمد روزانه:** ۵۰۰ Ccoin  
+  - **پیش‌نیاز:** حساب نقره‌ای 🥈  
+  - **محدودیت:** سؤالات باید توسط ادمین تأیید بشن.
+
+- **تاجر (Trader)** 🏪  
+  - **وظیفه:** توی بازار سیاه معامله می‌کنه و پیشنهاداتش رو توی کانال بازار سیاه نمایش می‌ده.  
+  - **درآمد روزانه:** ۸۰۰ Ccoin  
+  - **پیش‌نیاز:** حساب طلایی 🥇  
+  - **محدودیت:** فقط پیشنهاد می‌ده و ربات معامله رو مدیریت می‌کنه.
+
+- **مشاور سهام (Stock Advisor)** 📊  
+  - **وظیفه:** توصیه‌های سرمایه‌گذاری می‌فرسته.  
+  - **درآمد روزانه:** ۷۰۰ Ccoin  
+  - **پیش‌نیاز:** حساب طلایی 🥇  
+  - **محدودیت:** فقط توصیه می‌ده.
+
+- **کارمند پشتیبانی (Support Agent)** 📞  
+  - **وظیفه:** به کاربران جدید کمک می‌کنه.  
+  - **درآمد روزانه:** ۴۰۰ Ccoin  
+  - **پیش‌نیاز:** ندارد  
+  - **محدودیت:** به اطلاعات حساب کاربران دسترسی نداره.
+
+- **بازاریاب (Marketer)** 📢  
+  - **وظیفه:** تبلیغات برای جذب کاربران جدید می‌فرسته.  
+  - **درآمد روزانه:** ۶۰۰ Ccoin  
+  - **پیش‌نیاز:** حساب نقره‌ای 🥈  
+  - **محدودیت:** فقط پیام تبلیغاتی می‌فرسته.
+
+---
+
+#### **قوانین شغل‌ها (به‌روز شده):**
+1. **حداقل مدت زمان شغل:** کاربر نمی‌تونه تا ۷ روز شغلش رو تغییر بده.  
+2. **پیش‌نیازها:** هر شغل به سطح حساب خاص نیاز داره. حسابدار نیاز به تأیید ادمین داره.  
+3. **دریافت درآمد:** درآمد روزانه فقط با فعالیت روزانه (مثلاً ارسال پیام) داده می‌شه.  
+4. **هزینه تغییر شغل:** ۱۰۰ کریستال 💎  
+5. **محدودیت‌ها:** وظایف حساس (مثل گزارش حسابدار و سؤالات طراح) نیاز به تأیید ادمین دارن.
+
+---
+
+#### **منوی مدیریت شغل‌ها (به‌روز شده):**
+
+**عنوان:**  
+💼 مدیریت شغل‌ها 💼
+
+**توضیحات:**  
+شغل خودت رو انتخاب کن و به اقتصاد سرور کمک کن! 💰  
+شغل فعلی شما: **کارمند پشتیبانی 📞**  
+درآمد روزانه: **400 Ccoin**  
+مدت زمان باقی‌مانده تا تغییر شغل: **5 روز**
+
+**شغل‌های در دسترس:**  
+🧾 **حسابدار**  
+- درآمد روزانه: 700 Ccoin  
+- پیش‌نیاز: حساب الماسی 💎 + تأیید ادمین  
+[دکمه: انتخاب 🧾]
+
+❓ **طراح سؤالات**  
+- درآمد روزانه: 500 Ccoin  
+- پیش‌نیاز: حساب نقره‌ای 🥈  
+[دکمه: انتخاب ❓]
+
+🏪 **تاجر**  
+- درآمد روزانه: 800 Ccoin  
+- پیش‌نیاز: حساب طلایی 🥇  
+[دکمه: انتخاب 🏪]
+
+📊 **مشاور سهام**  
+- درآمد روزانه: 700 Ccoin  
+- پیش‌نیاز: حساب طلایی 🥇  
+[دکمه: انتخاب 📊]
+
+📞 **کارمند پشتیبانی**  
+- درآمد روزانه: 400 Ccoin  
+- پیش‌نیاز: ندارد  
+[دکمه: انتخاب 📞]
+
+📢 **بازاریاب**  
+- درآمد روزانه: 600 Ccoin  
+- پیش‌نیاز: حساب نقره‌ای 🥈  
+[دکمه: انتخاب 📢]
+
+**فوتر:**  
+برای انجام وظایف شغلی یا بازگشت:  
+[دکمه: انجام وظایف شغلی ⚙️] [دکمه: بازگشت 🔙]
+
+---
+
+#### **منوی وظایف شغلی (مثال برای طراح سؤالات):**
+
+**عنوان:**  
+❓ وظایف طراح سؤالات ❓
+
+**توضیحات:**  
+سؤال جدید برای بازی کوییز اف گینز طراحی کن! سؤالاتت بعد از تأیید ادمین توی بازی استفاده می‌شه.  
+[دکمه: ارسال سؤال جدید 📝]
+
+**فوتر:**  
+برای بازگشت به منوی شغل‌ها: [دکمه: بازگشت 🔙]
+
+---
+
+#### **کد به‌روز شده با TypeScript:**
+
+```typescript
+import { Client, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, ButtonInteraction, SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+
+// فرض می‌کنیم یه دیتابیس داری
+interface UserData {
+    job: string;
+    job_start_time: Date;
+    level: string;
+    crystals: number;
+    accountant_approved: boolean;
+}
+
+const userData: { [key: string]: UserData } = {
+    "user_id": {
+        job: "Support Agent",
+        job_start_time: new Date(),
+        level: "Basic",
+        crystals: 2000,
+        accountant_approved: false
+    }
+};
+
+// تعریف شغل‌ها
+const jobs: { [key: string]: { emoji: string, income: number, requirements: string[], role: string } } = {
+    "Accountant": { emoji: "🧾", income: 700, requirements: ["Diamond", "Legendary"], role: "Accountant" },
+    "Quiz Designer": { emoji: "❓", income: 500, requirements: ["Silver", "Gold", "Diamond", "Legendary"], role: "Quiz Designer" },
+    "Trader": { emoji: "🏪", income: 800, requirements: ["Gold", "Diamond", "Legendary"], role: "Trader" },
+    "Stock Advisor": { emoji: "📊", income: 700, requirements: ["Gold", "Diamond", "Legendary"], role: "Stock Advisor" },
+    "Support Agent": { emoji: "📞", income: 400, requirements: ["Basic", "Silver", "Gold", "Diamond", "Legendary"], role: "Support Agent" },
+    "Marketer": { emoji: "📢", income: 600, requirements: ["Silver", "Gold", "Diamond", "Legendary"], role: "Marketer" }
+};
+
+// منوی انتخاب شغل
+class JobView extends discord.View {
+    private userId: string;
+
+    constructor(userId: string) {
+        super({ timeout: null });
+        this.userId = userId;
+    }
+
+    private async checkConditions(interaction: ButtonInteraction, targetJob: string): Promise<boolean> {
+        const user = userData[this.userId];
+        const jobData = jobs[targetJob];
+        const timeSinceJobStart = (new Date().getTime() - user.job_start_time.getTime()) / (1000 * 60 * 60 * 24);
+
+        if (timeSinceJobStart < 7) {
+            const daysLeft = 7 - Math.floor(timeSinceJobStart);
+            await interaction.reply({ content: `⚠️ شما نمی‌تونید شغلتون رو تغییر بدید! ${daysLeft} روز دیگه صبر کنید.`, ephemeral: true });
+            return false;
+        }
+
+        if (!jobData.requirements.includes(user.level)) {
+            await interaction.reply({ content: `⚠️ برای این شغل، حساب شما باید حداقل ${jobData.requirements[0]} باشه!`, ephemeral: true });
+            return false;
+        }
+
+        if (user.crystals < 100) {
+            await interaction.reply({ content: "⚠️ شما به 100 کریستال برای تغییر شغل نیاز دارید!", ephemeral: true });
+            return false;
+        }
+
+        if (targetJob === "Accountant" && !user.accountant_approved) {
+            const adminChannel = interaction.client.channels.cache.get("ADMIN_CHANNEL_ID") as discord.TextChannel; // جای ADMIN_CHANNEL_ID باید آیدی کانال ادمین رو بذاری
+            const view = new AdminApprovalView(this.userId);
+            await adminChannel.send({ content: `کاربر ${interaction.user.toString()} می‌خواد حسابدار بشه. تأیید می‌کنید؟`, components: [view.toActionRow()] });
+            await interaction.reply({ content: "درخواست شما برای شغل حسابدار به ادمین‌ها ارسال شد. لطفاً منتظر تأیید باشید! 🧾", ephemeral: true });
+            return false;
+        }
+
+        return true;
+    }
+
+    @discord.button({ label: "انتخاب 🧾", style: ButtonStyle.Primary })
+    async accountantButton(interaction: ButtonInteraction) {
+        if (!(await this.checkConditions(interaction, "Accountant"))) return;
+
+        const user = userData[this.userId];
+        user.crystals -= 100;
+        user.job = "Accountant";
+        user.job_start_time = new Date();
+        userData[this.userId] = user;
+
+        const role = interaction.guild?.roles.cache.find(r => r.name === "Accountant");
+        if (role) await interaction.guild?.members.cache.get(this.userId)?.roles.add(role);
+
+        await interaction.reply({ content: "🎉 تبریک! شما حالا یه **حسابدار 🧾** هستید!\nدرآمد روزانه شما: **700 Ccoin**", ephemeral: true });
+    }
+
+    @discord.button({ label: "انتخاب ❓", style: ButtonStyle.Primary })
+    async quizDesignerButton(interaction: ButtonInteraction) {
+        if (!(await this.checkConditions(interaction, "Quiz Designer"))) return;
+
+        const user = userData[this.userId];
+        user.crystals -= 100;
+        user.job = "Quiz Designer";
+        user.job_start_time = new Date();
+        userData[this.userId] = user;
+
+        const role = interaction.guild?.roles.cache.find(r => r.name === "Quiz Designer");
+        if (role) await interaction.guild?.members.cache.get(this.userId)?.roles.add(role);
+
+        await interaction.reply({ content: "🎉 تبریک! شما حالا یه **طراح سؤالات ❓** هستید!\nدرآمد روزانه شما: **500 Ccoin**", ephemeral: true });
+    }
+
+    @discord.button({ label: "انتخاب 🏪", style: ButtonStyle.Primary })
+    async traderButton(interaction: ButtonInteraction) {
+        if (!(await this.checkConditions(interaction, "Trader"))) return;
+
+        const user = userData[this.userId];
+        user.crystals -= 100;
+        user.job = "Trader";
+        user.job_start_time = new Date();
+        userData[this.userId] = user;
+
+        const role = interaction.guild?.roles.cache.find(r => r.name === "Trader");
+        if (role) await interaction.guild?.members.cache.get(this.userId)?.roles.add(role);
+
+        await interaction.reply({ content: "🎉 تبریک! شما حالا یه **تاجر 🏪** هستید!\nدرآمد روزانه شما: **800 Ccoin**", ephemeral: true });
+    }
+
+    @discord.button({ label: "انتخاب 📊", style: ButtonStyle.Primary })
+    async stockAdvisorButton(interaction: ButtonInteraction) {
+        if (!(await this.checkConditions(interaction, "Stock Advisor"))) return;
+
+        const user = userData[this.userId];
+        user.crystals -= 100;
+        user.job = "Stock Advisor";
+        user.job_start_time = new Date();
+        userData[this.userId] = user;
+
+        const role = interaction.guild?.roles.cache.find(r => r.name === "Stock Advisor");
+        if (role) await interaction.guild?.members.cache.get(this.userId)?.roles.add(role);
+
+        await interaction.reply({ content: "🎉 تبریک! شما حالا یه **مشاور سهام 📊** هستید!\nدرآمد روزانه شما: **700 Ccoin**", ephemeral: true });
+    }
+
+    @discord.button({ label: "انتخاب 📞", style: ButtonStyle.Primary })
+    async supportAgentButton(interaction: ButtonInteraction) {
+        if (!(await this.checkConditions(interaction, "Support Agent"))) return;
+
+        const user = userData[this.userId];
+        user.crystals -= 100;
+        user.job = "Support Agent";
+        user.job_start_time = new Date();
+        userData[this.userId] = user;
+
+        const role = interaction.guild?.roles.cache.find(r => r.name === "Support Agent");
+        if (role) await interaction.guild?.members.cache.get(this.userId)?.roles.add(role);
+
+        await interaction.reply({ content: "🎉 تبریک! شما حالا یه **کارمند پشتیبانی 📞** هستید!\nدرآمد روزانه شما: **400 Ccoin**", ephemeral: true });
+    }
+
+    @discord.button({ label: "انتخاب 📢", style: ButtonStyle.Primary })
+    async marketerButton(interaction: ButtonInteraction) {
+        if (!(await this.checkConditions(interaction, "Marketer"))) return;
+
+        const user = userData[this.userId];
+        user.crystals -= 100;
+        user.job = "Marketer";
+        user.job_start_time = new Date();
+        userData[this.userId] = user;
+
+        const role = interaction.guild?.roles.cache.find(r => r.name === "Marketer");
+        if (role) await interaction.guild?.members.cache.get(this.userId)?.roles.add(role);
+
+        await interaction.reply({ content: "🎉 تبریک! شما حالا یه **بازاریاب 📢** هستید!\nدرآمد روزانه شما: **600 Ccoin**", ephemeral: true });
+    }
+
+    @discord.button({ label: "انجام وظایف شغلی ⚙️", style: ButtonStyle.Success })
+    async dutiesButton(interaction: ButtonInteraction) {
+        const user = userData[this.userId];
+        if (user.job === "Quiz Designer") {
+            const embed = new EmbedBuilder()
+                .setTitle("❓ وظایف طراح سؤالات ❓")
+                .setDescription("سؤال جدید برای بازی کوییز اف گینز طراحی کن! سؤالاتت بعد از تأیید ادمین توی بازی استفاده می‌شه.\n")
+                .setColor("Blue")
+                .setFooter({ text: "برای بازگشت به منوی شغل‌ها:" });
+            const view = new QuizDesignerDutiesView(this.userId);
+            await interaction.reply({ embeds: [embed], components: [view.toActionRow()], ephemeral: true });
+        } else if (user.job === "Accountant") {
+            const embed = new EmbedBuilder()
+                .setTitle("🧾 وظایف حسابدار 🧾")
+                .setDescription("تراکنش‌های مشکوک رو بررسی کن و به ادمین‌ها گزارش بده.\n")
+                .setColor("Blue")
+                .setFooter({ text: "برای بازگشت به منوی شغل‌ها:" });
+            const view = new AccountantDutiesView(this.userId);
+            await interaction.reply({ embeds: [embed], components: [view.toActionRow()], ephemeral: true });
+        }
+        // وظایف بقیه شغل‌ها به همین شکل اضافه می‌شه
+    }
+
+    @discord.button({ label: "بازگشت 🔙", style: ButtonStyle.Secondary })
+    async backButton(interaction: ButtonInteraction) {
+        await interaction.reply({ content: "به منوی اصلی بازگشتید.", ephemeral: true });
+    }
+
+    toActionRow(): ActionRowBuilder<ButtonBuilder> {
+        return new ActionRowBuilder<ButtonBuilder>().addComponents(
+            new ButtonBuilder().setCustomId("accountant").setLabel("انتخاب 🧾").setStyle(ButtonStyle.Primary),
+            new ButtonBuilder().setCustomId("quiz_designer").setLabel("انتخاب ❓").setStyle(ButtonStyle.Primary),
+            new ButtonBuilder().setCustomId("trader").setLabel("انتخاب 🏪").setStyle(ButtonStyle.Primary),
+            new ButtonBuilder().setCustomId("stock_advisor").setLabel("انتخاب 📊").setStyle(ButtonStyle.Primary),
+            new ButtonBuilder().setCustomId("support_agent").setLabel("انتخاب 📞").setStyle(ButtonStyle.Primary),
+            new ButtonBuilder().setCustomId("marketer").setLabel("انتخاب 📢").setStyle(ButtonStyle.Primary),
+            new ButtonBuilder().setCustomId("duties").setLabel("انجام وظایف شغلی ⚙️").setStyle(ButtonStyle.Success),
+            new ButtonBuilder().setCustomId("back").setLabel("بازگشت 🔙").setStyle(ButtonStyle.Secondary)
+        );
+    }
+}
+
+// منوی تأیید ادمین برای حسابدار
+class AdminApprovalView extends discord.View {
+    private userId: string;
+
+    constructor(userId: string) {
+        super({ timeout: null });
+        this.userId = userId;
+    }
+
+    @discord.button({ label: "تأیید ✅", style: ButtonStyle.Success })
+    async approveButton(interaction: ButtonInteraction) {
+        const user = userData[this.userId];
+        user.accountant_approved = true;
+        user.job = "Accountant";
+        user.job_start_time = new Date();
+        userData[this.userId] = user;
+
+        const role = interaction.guild?.roles.cache.find(r => r.name === "Accountant");
+        if (role) await interaction.guild?.members.cache.get(this.userId)?.roles.add(role);
+
+        await interaction.reply({ content: "شغل حسابدار برای کاربر تأیید شد! 🧾", ephemeral: true });
+        const userObj = await interaction.client.users.fetch(this.userId);
+        await userObj.send("🎉 تبریک! شما حالا یه **حسابدار 🧾** هستید!\nدرآمد روزانه شما: **700 Ccoin**");
+    }
+
+    @discord.button({ label: "رد ❌", style: ButtonStyle.Danger })
+    async rejectButton(interaction: ButtonInteraction) {
+        await interaction.reply({ content: "درخواست رد شد.", ephemeral: true });
+        const userObj = await interaction.client.users.fetch(this.userId);
+        await userObj.send("⚠️ درخواست شما برای شغل حسابدار رد شد.");
+    }
+
+    toActionRow(): ActionRowBuilder<ButtonBuilder> {
+        return new ActionRowBuilder<ButtonBuilder>().addComponents(
+            new ButtonBuilder().setCustomId("approve").setLabel("تأیید ✅").setStyle(ButtonStyle.Success),
+            new ButtonBuilder().setCustomId("reject").setLabel("رد ❌").setStyle(ButtonStyle.Danger)
+        );
+    }
+}
+
+// منوی وظایف طراح سؤالات
+class QuizDesignerDutiesView extends discord.View {
+    private userId: string;
+
+    constructor(userId: string) {
+        super({ timeout: null });
+        this.userId = userId;
+    }
+
+    @discord.button({ label: "ارسال سؤال جدید 📝", style: ButtonStyle.Primary })
+    async submitQuestionButton(interaction: ButtonInteraction) {
+        const modal = new ModalBuilder()
+            .setCustomId("submit_question")
+            .setTitle("ارسال سؤال جدید")
+            .addComponents(
+                new ActionRowBuilder<TextInputBuilder>().addComponents(
+                    new TextInputBuilder()
+                        .setCustomId("question")
+                        .setLabel("سؤال")
+                        .setPlaceholder("سؤال خود را وارد کنید")
+                        .setStyle(TextInputStyle.Short)
+                        .setRequired(true)
+                ),
+                new ActionRowBuilder<TextInputBuilder>().addComponents(
+                    new TextInputBuilder()
+                        .setCustomId("answer")
+                        .setLabel("جواب")
+                        .setPlaceholder("جواب سؤال را وارد کنید")
+                        .setStyle(TextInputStyle.Short)
+                        .setRequired(true)
+                )
+            );
+        await interaction.showModal(modal);
+    }
+
+    @discord.button({ label: "بازگشت 🔙", style: ButtonStyle.Secondary })
+    async backButton(interaction: ButtonInteraction) {
+        const user = userData[this.userId];
+        const timeSinceJobStart = (new Date().getTime() - user.job_start_time.getTime()) / (1000 * 60 * 60 * 24);
+        const daysLeft = Math.max(0, 7 - Math.floor(timeSinceJobStart));
+
+        const embed = new EmbedBuilder()
+            .setTitle("💼 مدیریت شغل‌ها 💼")
+            .setDescription(
+                "شغل خودت رو انتخاب کن و به اقتصاد سرور کمک کن! 💰\n" +
+                `شغل فعلی شما: **${user.job} ${jobs[user.job].emoji}**\n` +
+                `درآمد روزانه: **${jobs[user.job].income} Ccoin**\n` +
+                `مدت زمان باقی‌مانده تا تغییر شغل: **${daysLeft} روز**\n\n` +
+                "🧾 **حسابدار**\n- درآمد روزانه: 700 Ccoin\n- پیش‌نیاز: حساب الماسی 💎 + تأیید ادمین\n\n" +
+                "❓ **طراح سؤالات**\n- درآمد روزانه: 500 Ccoin\n- پیش‌نیاز: حساب نقره‌ای 🥈\n\n" +
+                "🏪 **تاجر**\n- درآمد روزانه: 800 Ccoin\n- پیش‌نیاز: حساب طلایی 🥇\n\n" +
+                "📊 **مشاور سهام**\n- درآمد روزانه: 700 Ccoin\n- پیش‌نیاز: حساب طلایی 🥇\n\n" +
+                "📞 **کارمند پشتیبانی**\n- درآمد روزانه: 400 Ccoin\n- پیش‌نیاز: ندارد\n\n" +
+                "📢 **بازاریاب**\n- درآمد روزانه: 600 Ccoin\n- پیش‌نیاز: حساب نقره‌ای 🥈"
+            )
+            .setColor("Blue")
+            .setFooter({ text: "برای انجام وظایف شغلی یا بازگشت:" });
+
+        const view = new JobView(this.userId);
+        await interaction.update({ embeds: [embed], components: [view.toActionRow()] });
+    }
+
+    toActionRow(): ActionRowBuilder<ButtonBuilder> {
+        return new ActionRowBuilder<ButtonBuilder>().addComponents(
+            new ButtonBuilder().setCustomId("submit_question").setLabel("ارسال سؤال جدید 📝").setStyle(ButtonStyle.Primary),
+            new ButtonBuilder().setCustomId("back").setLabel("بازگشت 🔙").setStyle(ButtonStyle.Secondary)
+        );
+    }
+}
+
+// منوی وظایف حسابدار
+class AccountantDutiesView extends discord.View {
+    private userId: string;
+
+    constructor(userId: string) {
+        super({ timeout: null });
+        this.userId = userId;
+    }
+
+    @discord.button({ label: "بررسی تراکنش‌ها 📋", style: ButtonStyle.Primary })
+    async checkTransactionsButton(interaction: ButtonInteraction) {
+        const adminChannel = interaction.client.channels.cache.get("ADMIN_CHANNEL_ID") as discord.TextChannel; // جای ADMIN_CHANNEL_ID باید آیدی کانال ادمین رو بذاری
+        await adminChannel.send(`حسابدار ${interaction.user.toString()} گزارش داد: تراکنش مشکوک شناسایی شد! لطفاً بررسی کنید. 🚨`);
+        await interaction.reply({ content: "گزارش شما به ادمین‌ها ارسال شد! 🧾", ephemeral: true });
+    }
+
+    @discord.button({ label: "بازگشت 🔙", style: ButtonStyle.Secondary })
+    async backButton(interaction: ButtonInteraction) {
+        const user = userData[this.userId];
+        const timeSinceJobStart = (new Date().getTime() - user.job_start_time.getTime()) / (1000 * 60 * 60 * 24);
+        const daysLeft = Math.max(0, 7 - Math.floor(timeSinceJobStart));
+
+        const embed = new EmbedBuilder()
+            .setTitle("💼 مدیریت شغل‌ها 💼")
+            .setDescription(
+                "شغل خودت رو انتخاب کن و به اقتصاد سرور کمک کن! 💰\n" +
+                `شغل فعلی شما: **${user.job} ${jobs[user.job].emoji}**\n` +
+                `درآمد روزانه: **${jobs[user.job].income} Ccoin**\n` +
+                `مدت زمان باقی‌مانده تا تغییر شغل: **${daysLeft} روز**\n\n` +
+                "🧾 **حسابدار**\n- درآمد روزانه: 700 Ccoin\n- پیش‌نیاز: حساب الماسی 💎 + تأیید ادمین\n\n" +
+                "❓ **طراح سؤالات**\n- درآمد روزانه: 500 Ccoin\n- پیش‌نیاز: حساب نقره‌ای 🥈\n\n" +
+                "🏪 **تاجر**\n- درآمد روزانه: 800 Ccoin\n- پیش‌نیاز: حساب طلایی 🥇\n\n" +
+                "📊 **مشاور سهام**\n- درآمد روزانه: 700 Ccoin\n- پیش‌نیاز: حساب طلایی 🥇\n\n" +
+                "📞 **کارمند پشتیبانی**\n- درآمد روزانه: 400 Ccoin\n- پیش‌نیاز: ندارد\n\n" +
+                "📢 **بازاریاب**\n- درآمد روزانه: 600 Ccoin\n- پیش‌نیاز: حساب نقره‌ای 🥈"
+            )
+            .setColor("Blue")
+            .setFooter({ text: "برای انجام وظایف شغلی یا بازگشت:" });
+
+        const view = new JobView(this.userId);
+        await interaction.update({ embeds: [embed], components: [view.toActionRow()] });
+    }
+
+    toActionRow(): ActionRowBuilder<ButtonBuilder> {
+        return new ActionRowBuilder<ButtonBuilder>().addComponents(
+            new ButtonBuilder().setCustomId("check_transactions").setLabel("بررسی تراکنش‌ها 📋").setStyle(ButtonStyle.Primary),
+            new ButtonBuilder().setCustomId("back").setLabel("بازگشت 🔙").setStyle(ButtonStyle.Secondary)
+        );
+    }
+}
+
+// مدیریت مدال‌ها
+export async function handleInteraction(interaction: discord.Interaction, bot: Client) {
+    if (!interaction.isModalSubmit()) return;
+
+    if (interaction.customId === "submit_question") {
+        const question = interaction.fields.getTextInputValue("question");
+        const answer = interaction.fields.getTextInputValue("answer");
+        const adminChannel = bot.channels.cache.get("ADMIN_CHANNEL_ID") as discord.TextChannel; // جای ADMIN_CHANNEL_ID باید آیدی کانال ادمین رو بذاری
+        await adminChannel.send(`سؤال جدید از ${interaction.user.toString()}:\n**سؤال:** ${question}\n**جواب:** ${answer}\nلطفاً تأیید یا رد کنید.`);
+        await interaction.reply({ content: "سؤالتون برای تأیید ارسال شد! ❓", ephemeral: true });
+    }
+}
+
+// دستور مدیریت شغل‌ها
+export const data = new SlashCommandBuilder()
+    .setName("jobs")
+    .setDescription("مدیریت شغل‌های شما");
+
+export async function execute(interaction: discord.CommandInteraction, bot: Client) {
+    const userId = interaction.user.id.toString();
+    if (!userData[userId]) {
+        userData[userId] = { job: "Support Agent", job_start_time: new Date(), level: "Basic", crystals: 2000, accountant_approved: false };
+    }
+
+    const user = userData[userId];
+    const timeSinceJobStart = (new Date().getTime() - user.job_start_time.getTime()) / (1000 * 60 * 60 * 24);
+    const daysLeft = Math.max(0, 7 - Math.floor(timeSinceJobStart));
+
+    const embed = new EmbedBuilder()
+        .setTitle("💼 مدیریت شغل‌ها 💼")
+        .setDescription(
+            "شغل خودت رو انتخاب کن و به اقتصاد سرور کمک کن! 💰\n" +
+            `شغل فعلی شما: **${user.job} ${jobs[user.job].emoji}**\n` +
+            `درآمد روزانه: **${jobs[user.job].income} Ccoin**\n` +
+            `مدت زمان باقی‌مانده تا تغییر شغل: **${daysLeft} روز**\n\n` +
+            "🧾 **حسابدار**\n- درآمد روزانه: 700 Ccoin\n- پیش‌نیاز: حساب الماسی 💎 + تأیید ادمین\n\n" +
+            "❓ **طراح سؤالات**\n- درآمد روزانه: 500 Ccoin\n- پیش‌نیاز: حساب نقره‌ای 🥈\n\n" +
+            "🏪 **تاجر**\n- درآمد روزانه: 800 Ccoin\n- پیش‌نیاز: حساب طلایی 🥇\n\n" +
+            "📊 **مشاور سهام**\n- درآمد روزانه: 700 Ccoin\n- پیش‌نیاز: حساب طلایی 🥇\n\n" +
+            "📞 **کارمند پشتیبانی**\n- درآمد روزانه: 400 Ccoin\n- پیش‌نیاز: ندارد\n\n" +
+            "📢 **بازاریاب**\n- درآمد روزانه: 600 Ccoin\n- پیش‌نیاز: حساب نقره‌ای 🥈"
+        )
+        .setColor("Blue")
+        .setFooter({ text: "برای انجام وظایف شغلی یا بازگشت:" });
+
+    const view = new JobView(userId);
+    await interaction.reply({ embeds: [embed], components: [view.toActionRow()], ephemeral: true });
+}
+```
+
+---
+
+#### **توضیحات کد:**
+- **TypeScript:** کد با TypeScript نوشته شده و تایپ‌ها به‌درستی تعریف شدن. از `discord.js` برای ساخت منوها و دکمه‌ها استفاده شده.
+- **دیتابیس:** از یه دیکشنری ساده برای ذخیره اطلاعات کاربر (شغل، زمان انتخاب شغل، سطح حساب و کریستال‌ها) استفاده کردم. توی پروژه واقعی، از دیتابیس استفاده کن.
+- **دکمه‌ها:** تمام تعاملات با دکمه‌ها و مدال‌ها انجام می‌شه. دکمه‌ها برای انتخاب شغل، انجام وظایف و بازگشت تعریف شدن.
+- **نقش‌ها:** بعد از انتخاب شغل، نقش مربوط به شغل (مثلاً "Quiz Designer") به کاربر داده می‌شه.
+- **امنیت:** وظایف حساس (مثل گزارش حسابدار و سؤالات طراح) نیاز به تأیید ادمین دارن. قبل از تغییر شغل، زمان، کریستال‌ها و سطح حساب چک می‌شه.
+- **زیبایی:** منوها با Embed و ایموجی‌ها طراحی شدن تا کاربرپسند و جذاب باشن.
+
+---
+
+### ۲. **نتیجه نهایی**
+بخش مدیریت شغل‌ها با TypeScript به‌روز شد و حالا با همون سبک منوهای زیبا و دکمه‌های تعاملی کار می‌کنه. تمام تعاملات با دکمه‌ها انجام می‌شه و وظایف حساس نیاز به تأیید ادمین دارن. شغل‌ها هم به اقتصاد سرور کمک می‌کنن و هم کاربرپسند طراحی شدن.
+
+اگر سوالی داری یا می‌خوای بخش دیگه‌ای رو تغییر بدم، بگو! 😊

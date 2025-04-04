@@ -1,6 +1,5 @@
 import {
-  User,
-  InsertUser,
+  // تایپ‌های مورد نیاز از shared/schema
   Clan,
   InsertClan,
   Quest,
@@ -22,8 +21,7 @@ import {
   UserStock,
 } from '../shared/schema';
 
-// تعریف نوع UserData برای استفاده در متد upgradeUserBankAccount
-export type UserData = User;
+import { IUser } from './models/User';
 import { convertToUser } from './discord/utils/helpers';
 
 // Import Transaction type separately to avoid duplicate import error
@@ -280,21 +278,21 @@ type UserStockData = {
 export interface IStorage {
   // Game Settings operations
   getGameSettings(): Promise<any>;
-  updateUserWallet(user: User, amount: number, type: string, description: string): Promise<User | undefined>;
+  updateUserWallet(user: IUser, amount: number, type: string, description: string): Promise<IUser | undefined>;
   
   // Bank Account Upgrade operations
-  upgradeUserBankAccount(userId: number | string, tier: number): Promise<UserData | undefined>;
+  upgradeUserBankAccount(userId: number | string, tier: number): Promise<IUser | undefined>;
   
   // User operations
-  getUser(id: number | string): Promise<User | undefined>;
-  getUserByDiscordId(discordId: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-  updateUser(id: number, updates: Partial<User>): Promise<User | undefined>;
-  getAllUsers(limit?: number): Promise<User[]>;
+  getUser(id: number | string): Promise<IUser | undefined>;
+  getUserByDiscordId(discordId: string): Promise<IUser | undefined>;
+  createUser(user: InsertUser): Promise<IUser>;
+  updateUser(id: number, updates: Partial<IUser>): Promise<IUser | undefined>;
+  getAllUsers(limit?: number): Promise<IUser[]>;
   getUserCount(): Promise<number>;
   getUserTransactions(userId: number): Promise<SchemaTransaction[]>;
-  getUsersWithRobberyNotificationsEnabled(): Promise<User[]>;
-  getUsersWithMinWalletAmount(minAmount: number): Promise<User[]>;
+  getUsersWithRobberyNotificationsEnabled(): Promise<IUser[]>;
+  getUsersWithMinWalletAmount(minAmount: number): Promise<IUser[]>;
   
   // Game statistics
   incrementTotalGamesWon(userId: number): Promise<void>;
@@ -311,11 +309,11 @@ export interface IStorage {
   getUserEconomicActivity(userId: number): Promise<number>;
   
   // Economy operations
-  addToWallet(userId: number, amount: number): Promise<User | undefined>;
-  addToBank(userId: number, amount: number): Promise<User | undefined>;
-  transferToBank(userId: number, amount: number): Promise<User | undefined>;
-  transferToWallet(userId: number, amount: number): Promise<User | undefined>;
-  addCrystals(userId: number, amount: number): Promise<User | undefined>;
+  addToWallet(userId: number, amount: number): Promise<IUser | undefined>;
+  addToBank(userId: number, amount: number): Promise<IUser | undefined>;
+  transferToBank(userId: number, amount: number): Promise<IUser | undefined>;
+  transferToWallet(userId: number, amount: number): Promise<IUser | undefined>;
+  addCrystals(userId: number, amount: number): Promise<IUser | undefined>;
   transferCoin(fromUserId: number, toUserId: number, amount: number): Promise<boolean>;
   saveTransaction(transaction: SchemaTransaction): Promise<SchemaTransaction>;
   
@@ -420,7 +418,7 @@ export interface IStorage {
   // User interests operations
   getUserInterests(userId: number): Promise<UserInterests | undefined>;
   updateUserInterests(userId: number, interests: Partial<UserInterests>): Promise<boolean>;
-  findSimilarUsers(userId: number, limit?: number): Promise<User[]>;
+  findSimilarUsers(userId: number, limit?: number): Promise<IUser[]>;
   
   // Loan operations
   getUserLoans(userId: number): Promise<Loan[]>;
@@ -579,7 +577,7 @@ export class MemStorage implements IStorage {
   }
   
   // Bank Account Upgrade operations
-  async upgradeUserBankAccount(userId: number | string, tier: number): Promise<UserData | undefined> {
+  async upgradeUserBankAccount(userId: number | string, tier: number): Promise<IUser | undefined> {
     const user = await this.getUser(userId);
     if (!user) return undefined;
     
@@ -609,7 +607,7 @@ export class MemStorage implements IStorage {
   }
   
   // Wallet Update operation
-  async updateUserWallet(user: User, amount: number, type: string, description: string): Promise<User | undefined> {
+  async updateUserWallet(user: IUser, amount: number, type: string, description: string): Promise<IUser | undefined> {
     const userId = typeof user === 'object' && 'id' in user ? user.id : user;
     const userObj = await this.getUser(userId);
     
@@ -636,18 +634,18 @@ export class MemStorage implements IStorage {
     return userObj;
   }
 
-  async getUsersWithRobberyNotificationsEnabled(): Promise<User[]> {
+  async getUsersWithRobberyNotificationsEnabled(): Promise<IUser[]> {
     return Array.from(this.users.values()).filter(user => 
       user.robberyNotifications && user.robberyNotifications.enabled === true
     );
   }
 
-  async getUsersWithMinWalletAmount(minAmount: number): Promise<User[]> {
+  async getUsersWithMinWalletAmount(minAmount: number): Promise<IUser[]> {
     return Array.from(this.users.values()).filter(user => 
       user.wallet >= minAmount
     );
   }
-  private users: Map<number, User> = new Map();
+  private users: Map<number, IUser> = new Map();
   private items: Map<number, Item> = new Map();
   private clans: Map<number, Clan> = new Map();
   private quests: Map<number, Quest> = new Map();
@@ -838,11 +836,11 @@ export class MemStorage implements IStorage {
   }
 
   // User operations
-  async getUser(id: number): Promise<User | undefined> {
+  async getUser(id: number): Promise<IUser | undefined> {
     return this.users.get(id);
   }
 
-  async getUserByDiscordId(discordId: string): Promise<User | undefined> {
+  async getUserByDiscordId(discordId: string): Promise<IUser | undefined> {
     for (const user of this.users.values()) {
       if (user.discordId === discordId) {
         return user;
@@ -851,7 +849,7 @@ export class MemStorage implements IStorage {
     return undefined;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async createUser(insertUser: InsertUser): Promise<IUser> {
     const id = this.currentUserId++;
     const now = new Date();
     
@@ -891,7 +889,7 @@ export class MemStorage implements IStorage {
     return user;
   }
 
-  async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
+  async updateUser(id: number, updates: Partial<IUser>): Promise<IUser | undefined> {
     const user = this.users.get(id);
     if (!user) return undefined;
 
@@ -900,7 +898,7 @@ export class MemStorage implements IStorage {
     return updatedUser;
   }
 
-  async getAllUsers(): Promise<User[]> {
+  async getAllUsers(): Promise<IUser[]> {
     return Array.from(this.users.values());
   }
   
@@ -966,7 +964,7 @@ export class MemStorage implements IStorage {
   }
 
   // Economy operations
-  async addToWallet(userId: number, amount: number, transactionType: string = 'deposit', metadata: any = {}): Promise<User | undefined> {
+  async addToWallet(userId: number, amount: number, transactionType: string = 'deposit', metadata: any = {}): Promise<IUser | undefined> {
     const user = this.users.get(userId);
     if (!user) return undefined;
 
@@ -985,7 +983,7 @@ export class MemStorage implements IStorage {
     return user;
   }
 
-  async addToBank(userId: number, amount: number, transactionType: string = 'deposit', metadata: any = {}): Promise<User | undefined> {
+  async addToBank(userId: number, amount: number, transactionType: string = 'deposit', metadata: any = {}): Promise<IUser | undefined> {
     const user = this.users.get(userId);
     if (!user) return undefined;
 
@@ -1004,7 +1002,7 @@ export class MemStorage implements IStorage {
     return user;
   }
 
-  async transferToBank(userId: number, amount: number): Promise<User | undefined> {
+  async transferToBank(userId: number, amount: number): Promise<IUser | undefined> {
     const user = this.users.get(userId);
     // امنیت بیشتر: بررسی اینکه مقدار معتبر است
     if (!user || user.wallet < amount || amount <= 0 || isNaN(amount)) return undefined;
@@ -1029,7 +1027,7 @@ export class MemStorage implements IStorage {
     return user;
   }
 
-  async transferToWallet(userId: number, amount: number, metadata: any = {}): Promise<User | undefined> {
+  async transferToWallet(userId: number, amount: number, metadata: any = {}): Promise<IUser | undefined> {
     const user = this.users.get(userId);
     // امنیت بیشتر: بررسی اینکه مقدار معتبر است
     if (!user || user.bank < amount || amount <= 0 || isNaN(amount)) return undefined;
@@ -1051,7 +1049,7 @@ export class MemStorage implements IStorage {
     return user;
   }
 
-  async addCrystals(userId: number, amount: number): Promise<User | undefined> {
+  async addCrystals(userId: number, amount: number): Promise<IUser | undefined> {
     const user = this.users.get(userId);
     if (!user) return undefined;
 
@@ -3022,12 +3020,12 @@ export class MemStorage implements IStorage {
     return true;
   }
 
-  async findSimilarUsers(userId: number, limit: number = 5): Promise<User[]> {
+  async findSimilarUsers(userId: number, limit: number = 5): Promise<IUser[]> {
     const user = this.users.get(userId);
     if (!user || !user.interests) return [];
     
     const userInterests = user.interests;
-    const similarUsers: {user: User, score: number}[] = [];
+    const similarUsers: {user: IUser, score: number}[] = [];
     
     // محاسبه امتیاز شباهت برای تمام کاربران
     for (const otherUser of this.users.values()) {
@@ -4116,7 +4114,7 @@ import { GlobalSettingModel } from './models/GlobalSetting';
 
 export class MongoStorage implements IStorage {
   // Bank Account Upgrade operations
-  async upgradeUserBankAccount(userId: number | string, tier: number): Promise<UserData | undefined> {
+  async upgradeUserBankAccount(userId: number | string, tier: number): Promise<IUser | undefined> {
     try {
       // دریافت کاربر
       const user = await User.findOne({ $or: [

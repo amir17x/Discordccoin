@@ -1,0 +1,84 @@
+
+> rest-express@1.0.0 dev
+> tsx server/index.ts
+
+(node:226) [MONGOOSE] Warning: Duplicate schema index on {"userId":1} found. This is often due to declaring an index using both "index: true" and "schema.index()". Please remove the duplicate index definition.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:226) [MONGOOSE] Warning: Duplicate schema index on {"userId":1} found. This is often due to declaring an index using both "index: true" and "schema.index()". Please remove the duplicate index definition.
+2:32:22 PM [info] سرویس CCOIN AI جایگزین با موفقیت راه‌اندازی شد
+2:32:22 PM [info] سرویس CCOIN AI با موفقیت راه‌اندازی شد 🧠✨
+2:32:22 PM [info] Starting server with full functionality...
+🗄️ اتصال به MongoDB با موفقیت برقرار شد
+2:32:23 PM [success] Connected to MongoDB database
+2:32:24 PM [info] سیستم بازار سهام: 7 سهم در سیستم یافت شد.
+2:32:24 PM [discord] Started refreshing application (/) commands.
+2:32:25 PM [discord] Successfully reloaded application (/) commands.
+2:32:25 PM [discord] Attempting to login with Discord token...
+2:32:25 PM [discord] Successfully logged in to Discord
+2:32:25 PM [success] Discord bot initialized successfully
+2:32:25 PM [success] Group games client initialized successfully
+2:32:25 PM [success] Werewolf game client initialized successfully
+2:32:25 PM [success] Mafia game client initialized successfully
+2:32:25 PM [success] Spy game client initialized successfully
+2:32:25 PM [success] Spy game client initialized successfully
+2:32:25 PM [success] Tip system will be initialized when Discord bot is ready
+🕵️ راه‌اندازی سرویس اطلاع‌رسانی دزدی...
+🕵️ سرویس اطلاع‌رسانی دزدی راه‌اندازی شد!
+2:32:25 PM [success] Robbery notification service initialized successfully
+2:32:25 PM [info] Admin panel temporarily disabled
+2:32:25 PM [express] Server is running on port 5000
+2:32:25 PM [discord] Logged in as Ccoin#1873!
+🔍 در حال راه‌اندازی سیستم نکات...
+🔄 در حال بارگذاری کانال‌های نکات فعال...
+✅ سیستم نکات با موفقیت راه‌اندازی شد.
+2:32:25 PM [discord] سیستم نکات با موفقیت راه‌اندازی شد
+2:32:25 PM [info] ارسال درخواست به CCOIN AI: یک پیام کوتاه و طنزآمیز برای نمایش در وضعیت "در حا...
+2:32:25 PM [info] ارسال درخواست به CCOIN AI: یک پیام کوتاه و طنزآمیز برای نمایش در وضعیت "در حا...
+2:32:25 PM [discord] سیستم جملات طنز هوش مصنوعی با موفقیت راه‌اندازی شد
+2:32:25 PM [discord] سیستم هوش مصنوعی بازار سهام با موفقیت راه‌اندازی شد
+2:32:25 PM [discord] سیستم مصادره اموال وام‌های معوق با موفقیت راه‌اندازی شد
+2:32:26 PM [info] پارامترهای بازار برای 7 سهم مقداردهی شد.
+2:32:26 PM [info] وضعیت فعلی بازار: رکود
+2:32:26 PM [info] سیستم پویای بازار سهام با فاصله 60 دقیقه راه‌اندازی شد
+📊 1 کانال نکات فعال یافت شد.
+⏱️ تنظیم تایمر نکات برای سرور 1343951143625293867 - ارسال بعدی در 0 دقیقه دیگر
+2:32:26 PM [info] پاسخ از CCOIN AI دریافت شد (26 کاراکتر) ✨
+2:32:26 PM [success] تولید پیام طنز برای تم "بازی‌ها و سرگرمی" با هوش مصنوعی: "🧠 لود شدن خوشبختی...  😄
+"
+2:32:26 PM [info] وضعیت ربات به‌روزرسانی شد: 🧠 لود شدن خوشبختی...  😄
+
+2:32:26 PM [info] سیستم به‌روزرسانی خودکار وضعیت با فاصله 20 دقیقه راه‌اندازی شد
+2:32:35 PM [discord] 🎲 موضوع اتفاقی برای تولید نکته: مزایای عضویت در کلن‌ها
+2:32:35 PM [info] ارسال درخواست به CCOIN AI: به عنوان CCOIN AI که دستیار هوشمند و کول ربات Ccoi...
+2:32:35 PM [info] ارسال درخواست به CCOIN AI: به عنوان CCOIN AI که دستیار هوشمند و کول ربات Ccoi...
+2:32:38 PM [info] پاسخ از CCOIN AI دریافت شد (257 کاراکتر) ✨
+2:32:38 PM [discord] ✅ نکته هوشمند برای موضوع "مزایای عضویت در کلن‌ها" با موفقیت تولید شد
+2:32:38 PM [express] 🤖 نکته هوشمند با موضوع مزایای عضویت در کلن‌ها با استفاده از CCOIN AI تولید شد.
+2:32:38 PM [discord] ✅ نکته هوشمند با موفقیت تولید شد: 🧠 بچه‌ها! تو دنیای CCOIN، با ...
+🤖 نکته هوشمند با استفاده از CCOIN AI تولید شد.
+✅ نکته به کانال 1352999622552977559 در سرور 1343951143625293867 ارسال شد.
+⏱️ تنظیم تایمر نکات برای سرور 1343951143625293867 - ارسال بعدی در 59 دقیقه دیگر
+(node:226) Warning: Supplying "ephemeral" for interaction response options is deprecated. Utilize flags instead.
+2:32:42 PM [info] استفاده از اعلانات ذخیره شده در دیتابیس برای کاربر 700031045231182005
+Looking for job with userId type: object value: new ObjectId('67e69fb12f788d00cce28f7e')
+Using id from user object: <Buffer 67 e6 9f b1 2f 78 8d 00 cc e2 8f 7e>
+Searching for job with processed userId: <Buffer 67 e6 9f b1 2f 78 8d 00 cc e2 8f 7e>
+2:32:56 PM [info] قیمت سهام Ccoin Technologies از 1518 به 1397 تغییر کرد (-7.97%)
+2:32:56 PM [info] قیمت سهام Persian Gold Resources از 899 به 764 تغییر کرد (-15.02%)
+2:32:57 PM [info] قیمت سهام Oil Company of Persia از 5237 به 5072 تغییر کرد (-3.15%)
+2:32:57 PM [info] قیمت سهام Persian Banking Group از 3947 به 4341 تغییر کرد (9.98%)
+2:32:57 PM [info] قیمت سهام Persian Tech Solutions از 778 به 754 تغییر کرد (-3.08%)
+2:32:58 PM [info] قیمت سهام Persian Food Industries از 3492 به 3596 تغییر کرد (2.98%)
+2:32:58 PM [info] قیمت سهام Persian Automotive از 1490 به 1668 تغییر کرد (11.95%)
+2:32:58 PM [info] قیمت 7 سهام به‌روزرسانی شد. وضعیت بازار: رکود
+Looking for job with userId type: object value: new ObjectId('67e69fb12f788d00cce28f7e')
+Using id from user object: <Buffer 67 e6 9f b1 2f 78 8d 00 cc e2 8f 7e>
+Searching for job with processed userId: <Buffer 67 e6 9f b1 2f 78 8d 00 cc e2 8f 7e>
+Looking for job with userId type: object value: new ObjectId('67e69fb12f788d00cce28f7e')
+Using id from user object: <Buffer 67 e6 9f b1 2f 78 8d 00 cc e2 8f 7e>
+Searching for job with processed userId: <Buffer 67 e6 9f b1 2f 78 8d 00 cc e2 8f 7e>
+User 67e69fb12f788d00cce28f7e not found in MongoDB when getting loans
+Looking for job with userId type: object value: new ObjectId('67e69fb12f788d00cce28f7e')
+Using id from user object: <Buffer 67 e6 9f b1 2f 78 8d 00 cc e2 8f 7e>
+Searching for job with processed userId: <Buffer 67 e6 9f b1 2f 78 8d 00 cc e2 8f 7e>
+No loans to confiscate.
