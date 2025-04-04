@@ -415,8 +415,8 @@ export async function mainMenu(
               .setLabel('🛒 بازار')
               .setStyle(ButtonStyle.Primary),
             new ButtonBuilder()
-              .setCustomId('help')
-              .setLabel('📜 راهنما')
+              .setCustomId('ccoin_ai')
+              .setLabel('🤖 CCOIN AI')
               .setStyle(ButtonStyle.Danger),
             new ButtonBuilder()
               .setCustomId('other_options')
@@ -502,8 +502,8 @@ export async function mainMenu(
       const row5Extra = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
           new ButtonBuilder()
-            .setCustomId('ai_assistant')
-            .setLabel('🧠 دستیار هوشمند')
+            .setCustomId('ccoin_ai')
+            .setLabel('🤖 CCOIN AI')
             .setStyle(ButtonStyle.Primary),
           new ButtonBuilder()
             .setCustomId('achievements')

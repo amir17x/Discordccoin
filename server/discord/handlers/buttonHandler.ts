@@ -912,9 +912,26 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       return;
     }
     
-    // مدیریت دکمه دستیار هوشمند
+    // مدیریت دکمه دستیار هوشمند و CCOIN AI
     // پردازش دکمه‌های مربوط به دستیار هوش مصنوعی
-    // (این قسمت در پایین فایل دوباره تعریف شده و کامل‌تر است)
+    
+    // پردازش دکمه منوی CCOIN AI
+    if (customId === 'ccoin_ai') {
+      try {
+        const { showCCOINAIMenu } = await import('../components/ccoinAIMenu');
+        await showCCOINAIMenu(interaction);
+        return;
+      } catch (error) {
+        console.error('خطا در اجرای منوی هوش مصنوعی CCOIN AI:', error);
+        await interaction.reply({
+          content: 'با عرض پوزش، در حال حاضر امکان دسترسی به منوی هوش مصنوعی وجود ندارد. لطفاً کمی بعد دوباره تلاش کنید.',
+          ephemeral: true
+        });
+        return;
+      }
+    }
+    
+    // (بخش‌های دیگر در پایین فایل دوباره تعریف شده و کامل‌تر است)
     
     // پردازش خرید اشتراک هفتگی دستیار هوش مصنوعی
     if (action === 'ai_sub_weekly') {
@@ -1914,6 +1931,7 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
           { name: '💎 موجودی کریستال', value: `${user.crystals}`, inline: true },
           { name: '📊 نرخ تبدیل', value: '1000 Ccoin = 10 کریستال', inline: true },
           { name: '💸 کارمزد تبدیل', value: '5%', inline: true },
+          { name: '🔥 تخفیف ویژه', value: '۱۰۰ کریستال با ۵٪ تخفیف: فقط ۱۱۸٬۷۵۰ سکه (به جای ۱۲۵٬۰۰۰)', inline: false },
           { name: '⚠️ نکته مهم', value: 'تبدیل سکه به کریستال غیرقابل بازگشت است!\nبا کریستال می‌توانید آیتم‌های ویژه از فروشگاه خریداری کنید.' }
         )
         .setFooter({ text: `${interaction.user.username} | کریستال‌ها قابل انتقال به کاربران دیگر نیستند` })
@@ -1926,12 +1944,17 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
             .setCustomId('exchange_10')
             .setLabel('💎 تبدیل به 10 کریستال')
             .setStyle(ButtonStyle.Primary)
-            .setDisabled(user.wallet < 1050), // 1000 + 5% fee
+            .setDisabled(user.wallet < 12500), // 12500 (نرخ جدید)
           new ButtonBuilder()
             .setCustomId('exchange_50')
             .setLabel('💎 تبدیل به 50 کریستال')
             .setStyle(ButtonStyle.Primary)
-            .setDisabled(user.wallet < 5250), // 5000 + 5% fee
+            .setDisabled(user.wallet < 62500), // 62500 (نرخ جدید)
+          new ButtonBuilder()
+            .setCustomId('exchange_100')
+            .setLabel('💎 تبدیل به 100 کریستال')
+            .setStyle(ButtonStyle.Success)
+            .setDisabled(user.wallet < 118750), // 125,000 - 5% تخفیف
           new ButtonBuilder()
             .setCustomId('economy')
             .setLabel('🔙 بازگشت')
@@ -3810,10 +3833,19 @@ async function handleExchange(interaction: ButtonInteraction, crystalAmount: num
     }
     
     // Calculate Ccoin cost with 5% fee
-    const ccoinPerCrystal = 100; // 100 Ccoin = 1 Crystal
-    const baseCost = crystalAmount * ccoinPerCrystal;
-    const fee = Math.ceil(baseCost * 0.05); // 5% fee
-    const totalCost = baseCost + fee;
+    const ccoinPerCrystal = 125; // 125 Ccoin = 1 Crystal (نرخ جدید)
+    let baseCost = crystalAmount * ccoinPerCrystal;
+    let fee = Math.ceil(baseCost * 0.05); // کارمزد 5%
+    let totalCost = baseCost + fee;
+    
+    // اعمال تخفیف 5% برای خرید 100 کریستال
+    if (crystalAmount === 100) {
+      // اعمال 5% تخفیف روی کل مبلغ (اصل + کارمزد)
+      totalCost = Math.floor(totalCost * 0.95);
+      // محاسبه کارمزد جدید برای نمایش در پیام
+      fee = totalCost - baseCost;
+      if (fee < 0) fee = 0; // برای اطمینان که کارمزد منفی نباشد
+    }
     
     // Check if user has enough Ccoin
     if (user.wallet < totalCost) {

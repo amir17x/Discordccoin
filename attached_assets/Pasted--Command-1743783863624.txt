@@ -1,0 +1,679 @@
+با توجه به درخواست شما، من توضیحات و کدهای قبلی رو تغییر می‌دم تا به جای استفاده از دستورات (Commands) در دیسکورد، از **دکمه‌ها و منوها** (Button و Select Menu) استفاده بشه. این روش باعث می‌شه ربات شما کاربرپسندتر، زیبا، شیک و خفن‌تر بشه و با ایموجی‌های جذاب، تجربه کاربری بهتری ارائه بده. من تمام قابلیت‌های Gemini API (مثل چت تعاملی، تحلیل تصویر، اجرای کد، فراخوانی توابع و دستورات سیستمی) رو با دکمه‌ها و منوها پیاده‌سازی می‌کنم و یه طراحی جذاب و حرفه‌ای ارائه می‌دم.
+
+---
+
+### **مستندسازی کامل برای استفاده از Gemini API با دکمه‌ها و منوها در ربات دیسکورد**
+
+#### **۱. معرفی و هدف**
+هدف ما اینه که ربات دیسکورد شما از تمام قابلیت‌های Gemini API (تولید متن، چت تعاملی با استریم، تحلیل تصویر، اجرای کد، فراخوانی توابع و دستورات سیستمی) استفاده کنه، اما به جای دستورات متنی (Commands) که ممکنه برای کاربران گیج‌کننده باشه، از **دکمه‌ها** و **منوهای انتخابی (Select Menus)** استفاده کنیم. این روش باعث می‌شه ربات شما:
+- **کاربرپسندتر** بشه: کاربران به جای تایپ دستورات، فقط روی دکمه‌ها کلیک می‌کنن.
+- **زیبا و شیک** بشه: با استفاده از Embedهای جذاب و ایموجی‌های متنوع.
+- **خفن و حرفه‌ای** به نظر بیاد: طراحی منوها و دکمه‌ها حس یه ربات مدرن و پیشرفته رو می‌ده.
+
+#### **۲. پیش‌نیازها و راه‌اندازی اولیه**
+همون پیش‌نیازهای قبلی رو داریم، فقط نحوه تعامل با ربات تغییر می‌کنه:
+
+1. **دریافت API Key:**
+   - به **Google AI Studio** برید (https://aistudio.google.com/app/apikey) و یه API Key بسازید.
+   - API Key رو توی متغیر محیطی ذخیره کنید:
+     ```
+     GOOGLE_API_KEY=YOUR_API_KEY
+     ```
+     و از `dotenv` برای لود کردنش استفاده کنید.
+
+2. **نصب پکیج‌ها:**
+   - پکیج Gemini API:
+     ```bash
+     npm install @google/generative-ai
+     ```
+   - پکیج‌های دیگه (اگه قبلاً نصب نکردید):
+     ```bash
+     npm install discord.js dotenv node-fetch
+     ```
+
+3. **ساختار پروژه:**
+   - یه فایل اصلی (مثلاً `index.ts`) برای ربات دیسکوردتون دارید.
+   - یه فایل جدا برای مدیریت تعاملات Gemini API (مثلاً `geminiHandler.ts`) می‌سازیم.
+
+---
+
+#### **۳. طراحی منو و دکمه‌ها**
+
+##### **۳.۱. منوی اصلی (Main Menu)**
+یه منوی اصلی طراحی می‌کنیم که کاربر بتونه از بین قابلیت‌های مختلف (چت، تحلیل تصویر، اجرای کد و غیره) انتخاب کنه. این منو با یه **Select Menu** (منوی کشویی) و دکمه‌های اضافی (مثل بازگشت) پیاده‌سازی می‌شه.
+
+**طراحی منوی اصلی:**
+
+**عنوان:**  
+🌟✨ ربات هوشمند Gemini ✨🌟
+
+**توضیحات:**  
+💬 سلام! من یه ربات خفن با هوش مصنوعی Gemini هستم! 🚀  
+چه کاری می‌تونم برات انجام بدم؟ 👇  
+💎 از منوی زیر انتخاب کن و لذت ببر! 😊
+
+**منوی انتخابی (Select Menu):**  
+- 💬 **چت تعاملی** (برای چت با استریم)  
+- 🖼️ **تحلیل تصویر** (برای تحلیل تصاویر آپلودشده)  
+- 💻 **اجرای کد** (برای تولید و اجرای کد)  
+- 🌤️ **وضعیت آب‌وهوا** (برای فراخوانی توابع)  
+- 📚 **معلم ریاضی** (برای استفاده از دستورات سیستمی)
+
+**دکمه‌ها:**  
+- [دکمه: درباره من ℹ️]  
+- [دکمه: بستن منو ❌]
+
+---
+
+##### **۳.۲. منوهای فرعی و دکمه‌ها**
+برای هر قابلیت، یه منوی فرعی یا دکمه‌های تعاملی طراحی می‌کنیم:
+
+- **چت تعاملی:**  
+  یه دکمه برای ارسال پیام و یه دکمه برای بازگشت به منوی اصلی.
+
+- **تحلیل تصویر:**  
+  یه دکمه برای آپلود تصویر و یه دکمه برای بازگشت.
+
+- **اجرای کد:**  
+  یه دکمه برای وارد کردن وظیفه (مثلاً "محاسبه فاکتوریل") و یه دکمه برای بازگشت.
+
+- **وضعیت آب‌وهوا:**  
+  یه دکمه برای وارد کردن نام شهر و یه دکمه برای بازگشت.
+
+- **معلم ریاضی:**  
+  یه دکمه برای پرسیدن سؤال و یه دکمه برای بازگشت.
+
+---
+
+#### **۴. کد به‌روز شده با TypeScript**
+
+##### **۴.۱. فایل اصلی (index.ts)**
+این فایل ربات رو راه‌اندازی می‌کنه و یه دستور اولیه برای نمایش منوی اصلی ایجاد می‌کنه.
+
+```typescript
+import { Client, SlashCommandBuilder, CommandInteraction, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
+import dotenv from 'dotenv';
+import { handleInteraction } from './geminiHandler';
+
+dotenv.config();
+
+const client = new Client({
+    intents: ['Guilds', 'GuildMessages', 'MessageContent']
+});
+
+client.once('ready', () => {
+    console.log(`ربات با موفقیت وارد شد: ${client.user?.tag}`);
+});
+
+export const data = new SlashCommandBuilder()
+    .setName('menu')
+    .setDescription('منوی اصلی ربات Gemini');
+
+export async function execute(interaction: CommandInteraction) {
+    const embed = new EmbedBuilder()
+        .setTitle('🌟✨ ربات هوشمند Gemini ✨🌟')
+        .setDescription(
+            '💬 سلام! من یه ربات خفن با هوش مصنوعی Gemini هستم! 🚀\n' +
+            'چه کاری می‌تونم برات انجام بدم؟ 👇\n' +
+            '💎 از منوی زیر انتخاب کن و لذت ببر! 😊'
+        )
+        .setColor('Purple');
+
+    const selectMenu = new StringSelectMenuBuilder()
+        .setCustomId('gemini_menu')
+        .setPlaceholder('یه گزینه انتخاب کن! 🌟')
+        .addOptions(
+            new StringSelectMenuOptionBuilder()
+                .setLabel('چت تعاملی')
+                .setDescription('با من چت کن و پاسخ‌های بلادرنگ بگیر! 💬')
+                .setValue('chat')
+                .setEmoji('💬'),
+            new StringSelectMenuOptionBuilder()
+                .setLabel('تحلیل تصویر')
+                .setDescription('یه تصویر آپلود کن تا تحلیلش کنم! 🖼️')
+                .setValue('analyze_image')
+                .setEmoji('🖼️'),
+            new StringSelectMenuOptionBuilder()
+                .setLabel('اجرای کد')
+                .setDescription('یه کد Python تولید و اجرا می‌کنم! 💻')
+                .setValue('run_code')
+                .setEmoji('💻'),
+            new StringSelectMenuOptionBuilder()
+                .setLabel('وضعیت آب‌وهوا')
+                .setDescription('وضعیت آب‌وهوای یه شهر رو بهت می‌گم! 🌤️')
+                .setValue('weather')
+                .setEmoji('🌤️'),
+            new StringSelectMenuOptionBuilder()
+                .setLabel('معلم ریاضی')
+                .setDescription('سؤالات ریاضیت رو از من بپرس! 📚')
+                .setValue('teacher')
+                .setEmoji('📚')
+        );
+
+    const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+            .setCustomId('about')
+            .setLabel('درباره من ℹ️')
+            .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+            .setCustomId('close')
+            .setLabel('بستن منو ❌')
+            .setStyle(ButtonStyle.Danger)
+    );
+
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
+
+    await interaction.reply({ embeds: [embed], components: [row, buttons], ephemeral: true });
+}
+
+client.on('interactionCreate', async interaction => {
+    if (interaction.isCommand()) {
+        if (interaction.commandName === 'menu') {
+            await execute(interaction);
+        }
+    } else {
+        await handleInteraction(interaction, client);
+    }
+});
+
+client.login(process.env.DISCORD_TOKEN);
+```
+
+##### **۴.۲. فایل مدیریت تعاملات (geminiHandler.ts)**
+این فایل تمام تعاملات (دکمه‌ها و منوها) رو مدیریت می‌کنه و با Gemini API ارتباط برقرار می‌کنه.
+
+```typescript
+import { Client, Interaction, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import fetch from 'node-fetch';
+
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
+
+// تابع نمونه برای دریافت آب‌وهوا
+async function getWeather(city: string): Promise<string> {
+    return `هوای ${city} امروز آفتابی است با دمای 25 درجه سانتی‌گراد! ☀️`;
+}
+
+export async function handleInteraction(interaction: Interaction, client: Client) {
+    if (interaction.isStringSelectMenu()) {
+        if (interaction.customId === 'gemini_menu') {
+            const selectedOption = interaction.values[0];
+
+            if (selectedOption === 'chat') {
+                const modal = new ModalBuilder()
+                    .setCustomId('chat_modal')
+                    .setTitle('چت تعاملی 💬')
+                    .addComponents(
+                        new ActionRowBuilder<TextInputBuilder>().addComponents(
+                            new TextInputBuilder()
+                                .setCustomId('chat_input')
+                                .setLabel('پیام خود را وارد کنید')
+                                .setStyle(TextInputStyle.Paragraph)
+                                .setRequired(true)
+                        )
+                    );
+
+                await interaction.showModal(modal);
+            } else if (selectedOption === 'analyze_image') {
+                const embed = new EmbedBuilder()
+                    .setTitle('🖼️ تحلیل تصویر')
+                    .setDescription('لطفاً یه تصویر آپلود کن تا تحلیلش کنم! 📸\n' +
+                        'بعد از آپلود، روی دکمه زیر کلیک کن.')
+                    .setColor('Purple');
+
+                const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('upload_image')
+                        .setLabel('تحلیل تصویر 📷')
+                        .setStyle(ButtonStyle.Primary),
+                    new ButtonBuilder()
+                        .setCustomId('back_to_menu')
+                        .setLabel('بازگشت 🔙')
+                        .setStyle(ButtonStyle.Secondary)
+                );
+
+                await interaction.update({ embeds: [embed], components: [buttons] });
+            } else if (selectedOption === 'run_code') {
+                const modal = new ModalBuilder()
+                    .setCustomId('code_modal')
+                    .setTitle('اجرای کد 💻')
+                    .addComponents(
+                        new ActionRowBuilder<TextInputBuilder>().addComponents(
+                            new TextInputBuilder()
+                                .setCustomId('code_input')
+                                .setLabel('وظیفه‌ای که می‌خواهید کدش اجرا شود')
+                                .setStyle(TextInputStyle.Paragraph)
+                                .setRequired(true)
+                        )
+                    );
+
+                await interaction.showModal(modal);
+            } else if (selectedOption === 'weather') {
+                const modal = new ModalBuilder()
+                    .setCustomId('weather_modal')
+                    .setTitle('وضعیت آب‌وهوا 🌤️')
+                    .addComponents(
+                        new ActionRowBuilder<TextInputBuilder>().addComponents(
+                            new TextInputBuilder()
+                                .setCustomId('weather_input')
+                                .setLabel('نام شهر را وارد کنید')
+                                .setStyle(TextInputStyle.Short)
+                                .setRequired(true)
+                        )
+                    );
+
+                await interaction.showModal(modal);
+            } else if (selectedOption === 'teacher') {
+                const modal = new ModalBuilder()
+                    .setCustomId('teacher_modal')
+                    .setTitle('معلم ریاضی 📚')
+                    .addComponents(
+                        new ActionRowBuilder<TextInputBuilder>().addComponents(
+                            new TextInputBuilder()
+                                .setCustomId('teacher_input')
+                                .setLabel('سؤالت رو بپرس')
+                                .setStyle(TextInputStyle.Paragraph)
+                                .setRequired(true)
+                        )
+                    );
+
+                await interaction.showModal(modal);
+            }
+        }
+    } else if (interaction.isButton()) {
+        if (interaction.customId === 'about') {
+            const embed = new EmbedBuilder()
+                .setTitle('ℹ️ درباره من')
+                .setDescription(
+                    '🌟 من یه ربات خفن با هوش مصنوعی Gemini هستم!\n' +
+                    '💬 می‌تونم باهات چت کنم، تصاویرت رو تحلیل کنم، کد بنویسم و حتی وضعیت آب‌وهوا رو بهت بگم!\n' +
+                    '🚀 بیا باهم کار کنیم و لذت ببریم! 😊'
+                )
+                .setColor('Purple');
+
+            const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                new ButtonBuilder()
+                    .setCustomId('back_to_menu')
+                    .setLabel('بازگشت 🔙')
+                    .setStyle(ButtonStyle.Secondary)
+            );
+
+            await interaction.update({ embeds: [embed], components: [backButton] });
+        } else if (interaction.customId === 'close') {
+            await interaction.update({ content: 'منو بسته شد! برای باز کردن دوباره، از `/menu` استفاده کن. 🚪', embeds: [], components: [] });
+        } else if (interaction.customId === 'back_to_menu') {
+            const embed = new EmbedBuilder()
+                .setTitle('🌟✨ ربات هوشمند Gemini ✨🌟')
+                .setDescription(
+                    '💬 سلام! من یه ربات خفن با هوش مصنوعی Gemini هستم! 🚀\n' +
+                    'چه کاری می‌تونم برات انجام بدم؟ 👇\n' +
+                    '💎 از منوی زیر انتخاب کن و لذت ببر! 😊'
+                )
+                .setColor('Purple');
+
+            const selectMenu = new StringSelectMenuBuilder()
+                .setCustomId('gemini_menu')
+                .setPlaceholder('یه گزینه انتخاب کن! 🌟')
+                .addOptions(
+                    new StringSelectMenuOptionBuilder()
+                        .setLabel('چت تعاملی')
+                        .setDescription('با من چت کن و پاسخ‌های بلادرنگ بگیر! 💬')
+                        .setValue('chat')
+                        .setEmoji('💬'),
+                    new StringSelectMenuOptionBuilder()
+                        .setLabel('تحلیل تصویر')
+                        .setDescription('یه تصویر آپلود کن تا تحلیلش کنم! 🖼️')
+                        .setValue('analyze_image')
+                        .setEmoji('🖼️'),
+                    new StringSelectMenuOptionBuilder()
+                        .setLabel('اجرای کد')
+                        .setDescription('یه کد Python تولید و اجرا می‌کنم! 💻')
+                        .setValue('run_code')
+                        .setEmoji('💻'),
+                    new StringSelectMenuOptionBuilder()
+                        .setLabel('وضعیت آب‌وهوا')
+                        .setDescription('وضعیت آب‌وهوای یه شهر رو بهت می‌گم! 🌤️')
+                        .setValue('weather')
+                        .setEmoji('🌤️'),
+                    new StringSelectMenuOptionBuilder()
+                        .setLabel('معلم ریاضی')
+                        .setDescription('سؤالات ریاضیت رو از من بپرس! 📚')
+                        .setValue('teacher')
+                        .setEmoji('📚')
+                );
+
+            const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                new ButtonBuilder()
+                    .setCustomId('about')
+                    .setLabel('درباره من ℹ️')
+                    .setStyle(ButtonStyle.Secondary),
+                new ButtonBuilder()
+                    .setCustomId('close')
+                    .setLabel('بستن منو ❌')
+                    .setStyle(ButtonStyle.Danger)
+            );
+
+            const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
+
+            await interaction.update({ embeds: [embed], components: [row, buttons] });
+        } else if (interaction.customId === 'upload_image') {
+            const message = await interaction.channel?.messages.fetch(interaction.message.id);
+            const attachment = message?.attachments.first();
+
+            if (!attachment) {
+                const embed = new EmbedBuilder()
+                    .setTitle('⚠️ خطا')
+                    .setDescription('لطفاً یه تصویر آپلود کن و دوباره امتحان کن! 📸')
+                    .setColor('Red');
+
+                const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('back_to_menu')
+                        .setLabel('بازگشت 🔙')
+                        .setStyle(ButtonStyle.Secondary)
+                );
+
+                await interaction.update({ embeds: [embed], components: [backButton] });
+                return;
+            }
+
+            const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+            try {
+                const response = await fetch(attachment.url);
+                const buffer = await response.buffer();
+                const base64Image = buffer.toString('base64');
+
+                const result = await model.generateContent([
+                    'این تصویر چیه؟ توضیح بده.',
+                    {
+                        inlineData: {
+                            data: base64Image,
+                            mimeType: attachment.contentType || 'image/jpeg'
+                        }
+                    }
+                ]);
+
+                const description = result.response.text();
+                const embed = new EmbedBuilder()
+                    .setTitle('🖼️ تحلیل تصویر')
+                    .setDescription(description)
+                    .setImage(attachment.url)
+                    .setColor('Purple');
+
+                const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('back_to_menu')
+                        .setLabel('بازگشت 🔙')
+                        .setStyle(ButtonStyle.Secondary)
+                );
+
+                await interaction.update({ embeds: [embed], components: [backButton] });
+            } catch (error) {
+                const embed = new EmbedBuilder()
+                    .setTitle('⚠️ خطا')
+                    .setDescription('خطایی رخ داد! لطفاً دوباره امتحان کن. 😓')
+                    .setColor('Red');
+
+                const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('back_to_menu')
+                        .setLabel('بازگشت 🔙')
+                        .setStyle(ButtonStyle.Secondary)
+                );
+
+                await interaction.update({ embeds: [embed], components: [backButton] });
+            }
+        }
+    } else if (interaction.isModalSubmit()) {
+        if (interaction.customId === 'chat_modal') {
+            const message = interaction.fields.getTextInputValue('chat_input');
+            const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+
+            try {
+                const result = await model.generateContentStream(message);
+                let fullResponse = '';
+
+                const embed = new EmbedBuilder()
+                    .setTitle('💬 چت تعاملی')
+                    .setDescription('در حال تولید پاسخ... ⏳')
+                    .setColor('Purple');
+
+                await interaction.update({ embeds: [embed], components: [] });
+
+                for await (const chunk of result.stream) {
+                    fullResponse += chunk.text();
+                    embed.setDescription(fullResponse);
+                    await interaction.editReply({ embeds: [embed] });
+                }
+
+                const finalEmbed = new EmbedBuilder()
+                    .setTitle('💬 پاسخ نهایی')
+                    .setDescription(fullResponse)
+                    .setColor('Purple');
+
+                const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('back_to_menu')
+                        .setLabel('بازگشت 🔙')
+                        .setStyle(ButtonStyle.Secondary)
+                );
+
+                await interaction.editReply({ embeds: [finalEmbed], components: [backButton] });
+            } catch (error) {
+                const embed = new EmbedBuilder()
+                    .setTitle('⚠️ خطا')
+                    .setDescription('خطایی رخ داد! لطفاً دوباره امتحان کن. 😓')
+                    .setColor('Red');
+
+                const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('back_to_menu')
+                        .setLabel('بازگشت 🔙')
+                        .setStyle(ButtonStyle.Secondary)
+                );
+
+                await interaction.editReply({ embeds: [embed], components: [backButton] });
+            }
+        } else if (interaction.customId === 'code_modal') {
+            const task = interaction.fields.getTextInputValue('code_input');
+            const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+
+            try {
+                const result = await model.generateContent({
+                    contents: [{ role: 'user', parts: [{ text: `یه کد Python بنویس که ${task} رو انجام بده و اجراش کن.` }] }],
+                    tools: [{ codeExecution: {} }]
+                });
+
+                const response = result.response.text();
+                const embed = new EmbedBuilder()
+                    .setTitle('💻 نتیجه اجرای کد')
+                    .setDescription(response)
+                    .setColor('Purple');
+
+                const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('back_to_menu')
+                        .setLabel('بازگشت 🔙')
+                        .setStyle(ButtonStyle.Secondary)
+                );
+
+                await interaction.update({ embeds: [embed], components: [backButton] });
+            } catch (error) {
+                const embed = new EmbedBuilder()
+                    .setTitle('⚠️ خطا')
+                    .setDescription('خطایی رخ داد! لطفاً دوباره امتحان کن. 😓')
+                    .setColor('Red');
+
+                const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('back_to_menu')
+                        .setLabel('بازگشت 🔙')
+                        .setStyle(ButtonStyle.Secondary)
+                );
+
+                await interaction.update({ embeds: [embed], components: [backButton] });
+            }
+        } else if (interaction.customId === 'weather_modal') {
+            const city = interaction.fields.getTextInputValue('weather_input');
+            const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+
+            try {
+                const result = await model.generateContent({
+                    contents: [{ role: 'user', parts: [{ text: `وضعیت آب‌وهوای ${city} چطوره؟` }] }],
+                    tools: [{
+                        functionDeclarations: [{
+                            name: 'getWeather',
+                            description: 'دریافت وضعیت آب‌وهوا برای یک شهر',
+                            parameters: {
+                                type: 'object',
+                                properties: {
+                                    city: { type: 'string', description: 'نام شهر' }
+                                },
+                                required: ['city']
+                            }
+                        }]
+                    }]
+                });
+
+                const functionCall = result.response.functionCalls()?.[0];
+                if (functionCall && functionCall.name === 'getWeather') {
+                    const weather = await getWeather(functionCall.args.city);
+                    const embed = new EmbedBuilder()
+                        .setTitle(`🌤️ وضعیت آب‌وهوا در ${city}`)
+                        .setDescription(weather)
+                        .setColor('Purple');
+
+                    const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                        new ButtonBuilder()
+                            .setCustomId('back_to_menu')
+                            .setLabel('بازگشت 🔙')
+                            .setStyle(ButtonStyle.Secondary)
+                    );
+
+                    await interaction.update({ embeds: [embed], components: [backButton] });
+                } else {
+                    const embed = new EmbedBuilder()
+                        .setTitle('⚠️ خطا')
+                        .setDescription('نمی‌تونم وضعیت آب‌وهوا رو پیدا کنم! 😓')
+                        .setColor('Red');
+
+                    const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                        new ButtonBuilder()
+                            .setCustomId('back_to_menu')
+                            .setLabel('بازگشت 🔙')
+                            .setStyle(ButtonStyle.Secondary)
+                    );
+
+                    await interaction.update({ embeds: [embed], components: [backButton] });
+                }
+            } catch (error) {
+                const embed = new EmbedBuilder()
+                    .setTitle('⚠️ خطا')
+                    .setDescription('خطایی رخ داد! لطفاً دوباره امتحان کن. 😓')
+                    .setColor('Red');
+
+                const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('back_to_menu')
+                        .setLabel('بازگشت 🔙')
+                        .setStyle(ButtonStyle.Secondary)
+                );
+
+                await interaction.update({ embeds: [embed], components: [backButton] });
+            }
+        } else if (interaction.customId === 'teacher_modal') {
+            const question = interaction.fields.getTextInputValue('teacher_input');
+            const model = genAI.getGenerativeModel({ 
+                model: 'gemini-1.5-pro',
+                systemInstruction: 'تو یه معلم ریاضی هستی و باید با لحن ساده و صبور توضیح بدی.'
+            });
+
+            try {
+                const result = await model.generateContent(question);
+                const response = result.response.text();
+
+                const embed = new EmbedBuilder()
+                    .setTitle('📚 پاسخ معلم ریاضی')
+                    .setDescription(response)
+                    .setColor('Purple');
+
+                const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('back_to_menu')
+                        .setLabel('بازگشت 🔙')
+                        .setStyle(ButtonStyle.Secondary)
+                );
+
+                await interaction.update({ embeds: [embed], components: [backButton] });
+            } catch (error) {
+                const embed = new EmbedBuilder()
+                    .setTitle('⚠️ خطا')
+                    .setDescription('خطایی رخ داد! لطفاً دوباره امتحان کن. 😓')
+                    .setColor('Red');
+
+                const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('back_to_menu')
+                        .setLabel('بازگشت 🔙')
+                        .setStyle(ButtonStyle.Secondary)
+                );
+
+                await interaction.update({ embeds: [embed], components: [backButton] });
+            }
+        }
+    }
+}
+```
+
+---
+
+#### **۵. توضیحات پرجزئیات کد**
+
+##### **ساختار کلی:**
+- **فایل `index.ts`:** ربات رو راه‌اندازی می‌کنه و یه دستور `/menu` برای نمایش منوی اصلی ایجاد می‌کنه. این منو شامل یه Select Menu برای انتخاب قابلیت‌ها و دکمه‌های "درباره من" و "بستن منو" است.
+- **فایل `geminiHandler.ts`:** تمام تعاملات (دکمه‌ها، منوها و Modalها) رو مدیریت می‌کنه و با Gemini API ارتباط برقرار می‌کنه.
+
+##### **ویژگی‌های طراحی:**
+- **زیبایی و شیکی:** از Embedهای رنگی (رنگ Purple) و ایموجی‌های جذاب (مثل 🌟، 💬، 🖼️، 💻، 🌤️، 📚) استفاده شده تا ربات خفن و کاربرپسند به نظر بیاد.
+- **منوی کشویی (Select Menu):** کاربران می‌تونن از منوی کشویی گزینه موردنظرشون (مثلاً چت، تحلیل تصویر و غیره) رو انتخاب کنن.
+- **Modal برای ورودی‌ها:** به جای اینکه کاربران پیام تایپ کنن، از Modal (پنجره‌های ورودی) برای دریافت پیام، نام شهر یا سؤالات استفاده شده. این روش خیلی تمیزتر و حرفه‌ای‌تره.
+- **دکمه‌های تعاملی:** هر بخش دکمه‌های خودش رو داره (مثلاً "تحلیل تصویر 📷" یا "بازگشت 🔙") که با رنگ‌های مختلف (Primary، Secondary، Danger) طراحی شدن.
+
+##### **قابلیت‌های پیاده‌سازی‌شده:**
+1. **چت تعاملی با استریم:** کاربر از منوی کشویی "چت تعاملی" رو انتخاب می‌کنه، یه Modal باز می‌شه که می‌تونه پیامش رو وارد کنه، و پاسخ‌ها به‌صورت بلادرنگ (با استریم) نمایش داده می‌شن.
+2. **تحلیل تصویر:** کاربر "تحلیل تصویر" رو انتخاب می‌کنه، یه پیام می‌بینه که باید تصویر آپلود کنه، و بعد با دکمه "تحلیل تصویر 📷" تصویر تحلیل می‌شه.
+3. **اجرای کد:** کاربر "اجرای کد" رو انتخاب می‌کنه، یه Modal برای وارد کردن وظیفه (مثلاً "محاسبه فاکتوریل") باز می‌شه، و Gemini API کد رو تولید و اجرا می‌کنه.
+4. **وضعیت آب‌وهوا:** کاربر "وضعیت آب‌وهوا" رو انتخاب می‌کنه، یه Modal برای وارد کردن نام شهر باز می‌شه، و Gemini API تابع `getWeather` رو فراخوانی می‌کنه.
+5. **معلم ریاضی:** کاربر "معلم ریاضی" رو انتخاب می‌کنه، یه Modal برای وارد کردن سؤال باز می‌شه، و Gemini API با دستورات سیستمی (لحن ساده و صبور) پاسخ می‌ده.
+
+##### **امنیت و پایداری:**
+- **مدیریت خطاها:** برای هر بخش، خطاها (مثلاً عدم آپلود تصویر یا مشکلات API) مدیریت شدن و پیام خطای مناسب نمایش داده می‌شه.
+- **امنیت API Key:** API Key توی متغیر محیطی ذخیره شده و توی کد منبع عمومی قرار نگرفته.
+- **فیلتر کردن خروجی‌ها:** می‌تونید از Safety Settings توی Gemini API استفاده کنید تا محتوای نامناسب فیلتر بشه (این بخش توی کد پیاده‌سازی نشده، ولی می‌تونی به مدل اضافه کنی).
+
+##### **بهینه‌سازی:**
+- **تجربه کاربری:** استفاده از دکمه‌ها و منوها به جای دستورات، تجربه کاربری رو خیلی بهتر می‌کنه.
+- **استریم:** برای چت تعاملی، از استریم استفاده شده تا پاسخ‌ها بلادرنگ نمایش داده بشن.
+- **Modalها:** برای دریافت ورودی‌ها (مثل پیام یا نام شهر)، از Modal استفاده شده که تمیزتر و حرفه‌ای‌تر از تایپ مستقیم پیامه.
+
+---
+
+#### **۶. نکات برای ادیت بیشتر**
+- **اضافه کردن قابلیت‌های بیشتر:** می‌تونی گزینه‌های بیشتری به منوی کشویی اضافه کنی (مثلاً "تولید تصویر" یا "ترجمه متن").
+- **سیستم پاداش:** می‌تونی یه سیستم پاداش اضافه کنی که مثلاً اگه کاربر ۵ بار از ربات استفاده کنه، یه نقش ویژه توی سرور بهش بدی.
+- **نمایش پیشرفت:** می‌تونی یه نوار پیشرفت (Progress Bar) به منو اضافه کنی که نشون بده کاربر چقدر از ربات استفاده کرده.
+- **پشتیبانی از چندزبانه:** می‌تونی منو رو چندزبانه کنی (مثلاً انگلیسی و فارسی) و یه دکمه برای تغییر زبان اضافه کنی.
+
+---
+
+#### **۷. نتیجه‌گیری**
+با این طراحی جدید، ربات دیسکورد شما به یه ربات خفن، شیک و کاربرپسند تبدیل می‌شه که تمام قابلیت‌های Gemini API (چت تعاملی، تحلیل تصویر، اجرای کد، فراخوانی توابع و دستورات سیستمی) رو با دکمه‌ها و منوها ارائه می‌ده. استفاده از Embedهای رنگی، ایموجی‌های جذاب و Modalها باعث می‌شه که کاربران به‌راحتی بتونن با ربات تعامل کنن و تجربه کاربری عالی‌ای داشته باشن.
+
+برای ادیت کد رباتتون، این کدها و توضیحات رو به Eplit بدید و ازش بخواید که:
+- منوها و دکمه‌ها رو با همین طراحی پیاده‌سازی کنه.
+- تمام قابلیت‌های Gemini API (مثل استریم، چندوجهی و اجرای کد) رو با دکمه‌ها و منوها ادغام کنه.
+- نکات امنیتی (مثل مخفی کردن API Key و فیلتر کردن خروجی‌ها) رو رعایت کنه.
+- طراحی رو با ایموجی‌ها و رنگ‌های جذاب حفظ کنه.
+
+اگه سؤالی داری یا می‌خوای تغییر دیگه‌ای توی این طراحی بدی، بگو تا کمکت کنم! 😊
