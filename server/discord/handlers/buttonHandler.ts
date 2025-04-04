@@ -3,6 +3,7 @@ import { storage } from '../../storage';
 import { Transaction } from '@shared/schema';
 import { mainMenu } from '../components/mainMenu';
 import { economyMenu, transferUser } from '../components/economyMenu';
+import { bankUpgradeMenu, processBankAccountUpgrade } from '../components/bankUpgradeMenu';
 import { gamesMenu } from '../components/gamesMenu';
 import { shopMenu } from '../components/shopMenu';
 import { inventoryMenu } from '../components/inventoryMenu';
@@ -64,6 +65,7 @@ import {
 import { handleSwitchAIService, handleTestAIService, handleViewAIStatus } from './aiHandlers';
 import { showAISettingsMenu, handleModelSelect, handleStyleSelect, handleTestAI, handleResetAI, handleAIHelp } from '../components/aiSettingsMenu';
 import { loanMenu, handleLoanRequest, handleLoanConfirmation, handleLoanApproval, handleLoanStatus, handleLoanRepayment, handleLoanCalculator, handleLoanHistory } from '../components/bankMenu/loanMenu';
+import { bankUpgradeMenu, processBankAccountUpgrade } from '../components/bankUpgradeMenu';
 import { 
   itemManagementMenu,
   questManagementMenu,
@@ -1639,6 +1641,19 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
     // Handle bank menu
     if (action === 'bank_menu') {
       await economyMenu(interaction);
+      return;
+    }
+    
+    // Handle bank account upgrade menu
+    if (action === 'bank_upgrade') {
+      await bankUpgradeMenu(interaction);
+      return;
+    }
+    
+    // Handle bank account upgrade process
+    if (action.startsWith('upgrade_bank_')) {
+      const targetTier = parseInt(action.replace('upgrade_bank_', ''));
+      await processBankAccountUpgrade(interaction, targetTier);
       return;
     }
     

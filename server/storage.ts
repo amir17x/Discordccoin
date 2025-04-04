@@ -4115,7 +4115,58 @@ import MarketListingModel from './models/MarketListing';
 import { GlobalSettingModel } from './models/GlobalSetting';
 
 export class MongoStorage implements IStorage {
-  // Bank Account Upgrade operations - using the implementation from MemStorage
+  // Bank Account Upgrade operations
+  async upgradeUserBankAccount(userId: number | string, tier: number): Promise<UserData | undefined> {
+    try {
+      // دریافت کاربر
+      const user = await User.findOne({ $or: [
+        { _id: typeof userId === 'string' ? userId : undefined },
+        { id: typeof userId === 'number' ? userId : undefined },
+        { discordId: userId }
+      ]});
+      
+      if (!user) return undefined;
+      
+      // بررسی اینکه tier معتبر باشد (بین 0 تا 4)
+      if (tier < 0 || tier > 4) return undefined;
+      
+      // دریافت اطلاعات سطح هدف و هزینه‌ی آن
+      const tierCosts = [0, 500, 1500, 3000, 5000];
+      const upgradeCost = tierCosts[tier];
+      
+      // بررسی کریستال کافی
+      if (user.crystals < upgradeCost) return undefined;
+      
+      // انجام ارتقاء
+      user.crystals -= upgradeCost;
+      user.bankAccountTier = tier;
+      user.bankAccountUpgradedAt = new Date();
+      
+      // ذخیره تغییرات
+      await user.save();
+      
+      return {
+        id: user.id,
+        discordId: user.discordId,
+        username: user.username,
+        displayName: user.displayName,
+        wallet: user.wallet,
+        bank: user.bank,
+        crystals: user.crystals,
+        economyLevel: user.economyLevel,
+        points: user.points,
+        level: user.level,
+        experience: user.experience,
+        bankAccountTier: user.bankAccountTier,
+        bankAccountUpgradedAt: user.bankAccountUpgradedAt,
+        createdAt: user.createdAt
+      };
+    } catch (error) {
+      console.error('Error in upgradeUserBankAccount:', error);
+      return undefined;
+    }
+  }
+  
   getGameSettings(): Promise<any> {
     return Promise.resolve({
       duelBetAmount: 100,
