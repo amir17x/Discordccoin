@@ -22,7 +22,7 @@ const GameSettingsSchema = new mongoose.Schema({
 
 // اسکیما جلسه بازی
 const GameSessionSchema = new mongoose.Schema({
-  gameId: { type: String, required: true, unique: true, index: true },
+  gameId: { type: String, required: true, unique: true },
   gameType: { 
     type: String, 
     required: true, 

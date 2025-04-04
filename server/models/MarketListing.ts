@@ -21,8 +21,7 @@ export interface IMarketListing extends Document {
 const MarketListingSchema: Schema = new Schema({
   sellerId: { 
     type: String, 
-    required: true,
-    index: true
+    required: true
   },
   sellerName: { 
     type: String, 
@@ -30,8 +29,7 @@ const MarketListingSchema: Schema = new Schema({
   },
   itemId: { 
     type: Number, 
-    required: true,
-    index: true
+    required: true
   },
   itemName: { 
     type: String, 
@@ -58,13 +56,11 @@ const MarketListingSchema: Schema = new Schema({
   listingType: { 
     type: String, 
     enum: ['regular', 'black_market'], 
-    default: 'regular',
-    index: true
+    default: 'regular'
   },
   active: { 
     type: Boolean, 
-    default: true,
-    index: true
+    default: true
   },
   createdAt: { 
     type: Date, 
@@ -76,10 +72,16 @@ const MarketListingSchema: Schema = new Schema({
   },
   expiresAt: { 
     type: Date, 
-    required: true,
-    index: true
+    required: true
   }
 });
+
+// Create explicit indices
+MarketListingSchema.index({ sellerId: 1 });
+MarketListingSchema.index({ itemId: 1 });
+MarketListingSchema.index({ listingType: 1 });
+MarketListingSchema.index({ active: 1 });
+MarketListingSchema.index({ expiresAt: 1 });
 
 // Create and export the model
 const MarketListingModel = mongoose.model<IMarketListing>('MarketListing', MarketListingSchema);

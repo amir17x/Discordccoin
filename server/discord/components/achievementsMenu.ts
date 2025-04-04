@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CommandInteraction, EmbedBuilder, Message, StringSelectMenuBuilder, ColorResolvable } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CommandInteraction, EmbedBuilder, Message, StringSelectMenuBuilder, ColorResolvable, MessageFlags } from 'discord.js';
 import { AchievementModel, UserAchievementModel, IAchievement, IUserAchievement } from '../../models/Achievement';
 import { getUserById } from '../utils/userUtils';
 import { formatNumber } from '../utils/formatters';
@@ -68,7 +68,7 @@ export async function achievementsMenu(
       } else if (interaction.deferred) {
         await interaction.editReply({ embeds: [errorEmbed] });
       } else {
-        await interaction.reply({ embeds: [errorEmbed], ephemeral: true });
+        await interaction.reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral });
       }
       return;
     }
@@ -157,19 +157,19 @@ export async function achievementsMenu(
     } else if (interaction.deferred) {
       await interaction.editReply({ embeds: [embed], components: [selectRow, controlRow] });
     } else if (followUp) {
-      await interaction.followUp({ embeds: [embed], components: [selectRow, controlRow], ephemeral: true });
+      await interaction.followUp({ embeds: [embed], components: [selectRow, controlRow], flags: MessageFlags.Ephemeral });
     } else if ('update' in interaction && typeof interaction.update === 'function') {
       try {
         await interaction.update({ embeds: [embed], components: [selectRow, controlRow] });
       } catch (e) {
         if (!interaction.replied && !interaction.deferred) {
-          await interaction.reply({ embeds: [embed], components: [selectRow, controlRow], ephemeral: true });
+          await interaction.reply({ embeds: [embed], components: [selectRow, controlRow], flags: MessageFlags.Ephemeral });
         } else {
-          await interaction.followUp({ embeds: [embed], components: [selectRow, controlRow], ephemeral: true });
+          await interaction.followUp({ embeds: [embed], components: [selectRow, controlRow], flags: MessageFlags.Ephemeral });
         }
       }
     } else {
-      await interaction.reply({ embeds: [embed], components: [selectRow, controlRow], ephemeral: true });
+      await interaction.reply({ embeds: [embed], components: [selectRow, controlRow], flags: MessageFlags.Ephemeral });
     }
   } catch (error) {
     console.error('Error in achievements menu:', error);
@@ -181,9 +181,9 @@ export async function achievementsMenu(
     } else if (interaction.deferred) {
       await interaction.editReply({ content: errorMessage });
     } else if (interaction.replied) {
-      await interaction.followUp({ content: errorMessage, ephemeral: true });
+      await interaction.followUp({ content: errorMessage, flags: MessageFlags.Ephemeral });
     } else {
-      await interaction.reply({ content: errorMessage, ephemeral: true });
+      await interaction.reply({ content: errorMessage, flags: MessageFlags.Ephemeral });
     }
   }
 }

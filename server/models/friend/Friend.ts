@@ -1,10 +1,29 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Document, Schema, Model } from 'mongoose';
 
 // تعریف ساختار تعامل دوستی
-interface IFriendshipInteraction {
+export interface IFriendshipInteraction {
   type: string;
   timestamp: Date;
   details?: string;
+}
+
+// تعریف متدهای استاتیک برای مدل دوستی
+interface IFriendModel extends Model<IFriend> {
+  areFriends(user1Id: string, user2Id: string): Promise<boolean>;
+  getFriendship(user1Id: string, user2Id: string): Promise<IFriend | null>;
+  getFriendshipFromUserPerspective(userId: string, friendId: string): Promise<IFriend | null>;
+  getFriends(userId: string, options?: any): Promise<IFriend[]>;
+  countFriends(userId: string, options?: any): Promise<number>;
+  getMutualFriends(user1Id: string, user2Id: string, limit?: number): Promise<string[]>;
+  addFriend(userId: string, friendId: string): Promise<IFriend>;
+  removeFriend(userId: string, friendId: string): Promise<boolean>;
+  updateFavoriteStatus(userId: string, friendId: string, favoriteStatus: boolean): Promise<IFriend | null>;
+  updateFriendshipLevel(userId: string, friendId: string): Promise<IFriend | null>;
+  recordInteraction(userId: string, friendId: string, interactionType: string, details?: string, xpAmount?: number): Promise<IFriend | null>;
+  getInteractionHistory(userId: string, friendId: string, limit?: number): Promise<IFriendshipInteraction[]>;
+  hasBestFriend(userId: string, friendId: string): Promise<boolean>;
+  getInactiveFriends(userId: string, daysThreshold?: number, limit?: number): Promise<IFriend[]>;
+  suggestFriends(userId: string, limit?: number): Promise<{ friendId: string; mutualFriends: number }[]>;
 }
 
 // تعریف ساختار دوستی
@@ -31,7 +50,7 @@ const FriendshipInteractionSchema = new Schema<IFriendshipInteraction>({
 // اسکیما برای دوستی
 const FriendSchema = new Schema<IFriend>(
   {
-    userId: { type: String, required: true },
+    userId: { type: String, required: true }, // بدون index: true
     friendId: { type: String, required: true },
     friendshipLevel: { type: Number, default: 1 },
     friendshipXP: { type: Number, default: 0 },
@@ -237,7 +256,7 @@ FriendSchema.statics.getMutualFriends = async function(
   const user2FriendIds = user2Friends.map((f: IFriend) => f.friendId);
   
   // یافتن اشتراک بین دو لیست
-  const mutualFriendIds = user1FriendIds.filter(id => user2FriendIds.includes(id));
+  const mutualFriendIds = user1FriendIds.filter((id: string) => user2FriendIds.includes(id));
   
   // محدود کردن تعداد نتایج
   return mutualFriendIds.slice(0, limit);
@@ -313,10 +332,24 @@ FriendSchema.statics.updateFavoriteStatus = async function(
   );
 };
 
-// متد استاتیک برای بروزرسانی سطح دوستی
+// متد استاتیک برای بروزرسانی سطح دوستی (حفظ شده برای سازگاری با کدهای قبلی)
 FriendSchema.statics.updateFriendshipLevel = async function(
   userId: string,
   friendId: string
+): Promise<IFriend | null> {
+  // دریافت اطلاعات دوستی
+  const friendship = await this.findOne({ userId, friendId });
+  // این متد دیگر استفاده نمی‌شود و منطق آن به recordInteraction منتقل شده است
+  return friendship;
+};
+
+// متد استاتیک برای ثبت تعامل بین دوستان و افزایش XP
+FriendSchema.statics.recordInteraction = async function(
+  userId: string,
+  friendId: string,
+  interactionType: string,
+  details?: string,
+  xpAmount: number = 10
 ): Promise<IFriend | null> {
   // دریافت اطلاعات دوستی
   const friendship = await this.findOne({ userId, friendId });
@@ -324,6 +357,37 @@ FriendSchema.statics.updateFriendshipLevel = async function(
   if (!friendship) {
     return null;
   }
+  
+  // بررسی محدودیت تعاملات روزانه
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const todayInteractions = friendship.recentInteractions.filter(
+    (interaction: IFriendshipInteraction) => interaction.timestamp >= today
+  );
+  
+  if (todayInteractions.length >= MAX_DAILY_INTERACTIONS) {
+    // محدودیت تعاملات روزانه رعایت شده، XP کمتری می‌دهیم
+    xpAmount = Math.floor(xpAmount / 2);
+  }
+  
+  // بروزرسانی آخرین تعامل
+  friendship.lastInteraction = new Date();
+  friendship.interactionCount += 1;
+  
+  // افزودن XP
+  friendship.friendshipXP += xpAmount;
+  
+  // افزودن تعامل به لیست تعاملات اخیر
+  if (friendship.recentInteractions.length >= MAX_RECENT_INTERACTIONS) {
+    friendship.recentInteractions.pop(); // حذف قدیمی‌ترین تعامل
+  }
+  
+  friendship.recentInteractions.unshift({
+    type: interactionType,
+    timestamp: new Date(),
+    details
+  });
   
   // محاسبه سطح جدید با توجه به XP
   let newLevel = 1;
@@ -367,63 +431,11 @@ FriendSchema.statics.updateFriendshipLevel = async function(
         });
       }
     }
-    
-    await friendship.save();
   }
-  
-  return friendship;
-};
-
-// متد استاتیک برای ثبت تعامل بین دوستان و افزایش XP
-FriendSchema.statics.recordInteraction = async function(
-  userId: string,
-  friendId: string,
-  interactionType: string,
-  details?: string,
-  xpAmount: number = 10
-): Promise<IFriend | null> {
-  // دریافت اطلاعات دوستی
-  const friendship = await this.findOne({ userId, friendId });
-  
-  if (!friendship) {
-    return null;
-  }
-  
-  // بررسی محدودیت تعاملات روزانه
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  const todayInteractions = friendship.recentInteractions.filter(
-    interaction => interaction.timestamp >= today
-  );
-  
-  if (todayInteractions.length >= MAX_DAILY_INTERACTIONS) {
-    // محدودیت تعاملات روزانه رعایت شده، XP کمتری می‌دهیم
-    xpAmount = Math.floor(xpAmount / 2);
-  }
-  
-  // بروزرسانی آخرین تعامل
-  friendship.lastInteraction = new Date();
-  friendship.interactionCount += 1;
-  
-  // افزودن XP
-  friendship.friendshipXP += xpAmount;
-  
-  // افزودن تعامل به لیست تعاملات اخیر
-  if (friendship.recentInteractions.length >= MAX_RECENT_INTERACTIONS) {
-    friendship.recentInteractions.pop(); // حذف قدیمی‌ترین تعامل
-  }
-  
-  friendship.recentInteractions.unshift({
-    type: interactionType,
-    timestamp: new Date(),
-    details
-  });
   
   await friendship.save();
   
-  // بررسی و بروزرسانی سطح دوستی
-  return await this.updateFriendshipLevel(userId, friendId);
+  return friendship;
 };
 
 // متد استاتیک برای دریافت تاریخچه تعاملات
@@ -479,7 +491,7 @@ FriendSchema.statics.suggestFriends = async function(
 ): Promise<{ friendId: string; mutualFriends: number }[]> {
   // دریافت دوستان فعلی کاربر
   const userFriends = await this.find({ userId });
-  const userFriendIds = userFriends.map(f => f.friendId);
+  const userFriendIds = userFriends.map((f: IFriend) => f.friendId);
   
   // اضافه کردن خود کاربر به لیست افرادی که نباید پیشنهاد شوند
   const excludeIds = [...userFriendIds, userId];
@@ -521,6 +533,6 @@ FriendSchema.statics.suggestFriends = async function(
 };
 
 // ایجاد و صادر کردن مدل
-export const FriendModel = mongoose.model<IFriend>('Friend', FriendSchema);
+export const FriendModel = mongoose.model<IFriend, IFriendModel>('Friend', FriendSchema);
 
 export default FriendModel;

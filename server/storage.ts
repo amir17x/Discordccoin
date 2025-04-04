@@ -7654,48 +7654,56 @@ export class MongoStorage implements IStorage {
 
   async getUserJob(userId: number | string | any): Promise<JobData | undefined> {
     try {
-      console.log('Looking for job with userId type:', typeof userId, 'value:', userId);
+      // به جای لاگ‌های طولانی از لاگر استفاده می‌کنیم
+      if (process.env.DEBUG_MODE) {
+        console.log('👔 Looking for job with userId:', userId);
+      }
       
-      // اگر userId از نوع شیء است، سعی می‌کنیم شناسه دیسکورد از آن استخراج کنیم
+      // اگر userId از نوع شیء است، سعی می‌کنیم شناسه مناسب از آن استخراج کنیم
       if (typeof userId === 'object') {
         if (userId && userId.discordId) {
-          console.log('Using discordId from user object:', userId.discordId);
           userId = userId.discordId;
+        } else if (userId && userId._id) {
+          userId = userId._id;
         } else if (userId && userId.id) {
-          console.log('Using id from user object:', userId.id);
           userId = userId.id;
         } else if (userId && userId.toString) {
           // اگر شیء یک ObjectId از مانگو است
-          console.log('Converting ObjectId to string:', userId.toString());
-          // در این مرحله، فقط به رشته تبدیل می‌کنیم، در مرحله بعد اگر عدد باشد، به عدد تبدیل خواهد شد
           userId = userId.toString();
         } else {
-          console.log('Invalid userId format for job lookup (object):', userId);
+          if (process.env.DEBUG_MODE) {
+            console.log('❌ Invalid userId format for job lookup');
+          }
           return undefined;
         }
       }
       
-      // تبدیل به عدد اگر امکان‌پذیر باشد
-      let userIdNumber;
-      if (typeof userId === 'string' && !isNaN(Number(userId))) {
-        userIdNumber = Number(userId);
-      } else {
-        userIdNumber = userId;
+      // جستجو با شناسه‌های متفاوت
+      let job;
+      
+      // جستجو به صورت دقیق با همان نوع (عدد یا رشته)
+      job = await JobModel.findOne({ userId: userId });
+      
+      // اگر با نوع اصلی پیدا نشد، سعی می‌کنیم حالت‌های دیگر را امتحان کنیم
+      if (!job) {
+        if (typeof userId === 'string' && !isNaN(Number(userId))) {
+          // اگر رشته عددی است، به عدد تبدیل و جستجو می‌کنیم
+          job = await JobModel.findOne({ userId: Number(userId) });
+        } else if (typeof userId === 'number') {
+          // اگر عدد است، به رشته تبدیل و جستجو می‌کنیم
+          job = await JobModel.findOne({ userId: userId.toString() });
+        }
       }
       
-      console.log('Searching for job with processed userId:', userIdNumber);
-      
-      // جستجو با شناسه‌های مختلف
-      let job = await JobModel.findOne({ userId: userIdNumber });
-      
-      // اگر با شناسه اصلی پیدا نشد، با شناسه دیسکورد جستجو کنیم
-      if (!job && typeof userId === 'string') {
-        job = await JobModel.findOne({ userId: userId });
+      if (process.env.DEBUG_MODE && job) {
+        console.log('✅ Found job for user:', job.jobType);
+      } else if (process.env.DEBUG_MODE) {
+        console.log('❌ No job found for user');
       }
       
       return job || undefined;
     } catch (error) {
-      console.error('Error getting user job from MongoDB:', error);
+      console.error('❌ Error getting user job from MongoDB:', error);
       return memStorage.getUserJob(userId);
     }
   }

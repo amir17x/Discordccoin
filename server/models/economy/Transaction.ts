@@ -52,7 +52,7 @@ export interface ITransaction extends Document {
 // طرح اسکیما برای تراکنش
 const TransactionSchema = new Schema<ITransaction>(
   {
-    userId: { type: Number, required: true },
+    userId: { type: Number, required: true }, // بدون index: true
     type: { 
       type: String, 
       required: true,
@@ -61,7 +61,7 @@ const TransactionSchema = new Schema<ITransaction>(
     amount: { type: Number, required: true },
     fee: { type: Number },
     description: { type: String },
-    timestamp: { type: Date, default: Date.now },
+    timestamp: { type: Date, default: Date.now }, // بدون index: true
     gameType: { type: String },
     targetUserId: { type: Number }
   },

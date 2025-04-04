@@ -3,8 +3,8 @@ import { Loan } from '../storage';
 
 // شمای مانگو برای وام‌ها
 const loanSchema = new mongoose.Schema({
-  id: { type: String, required: true, index: true },
-  userId: { type: Number, required: true, index: true },
+  id: { type: String, required: true },
+  userId: { type: Number, required: true },
   amount: { type: Number, required: true },
   interestRate: { type: Number, required: true },
   requestDate: { type: Date, required: true },
