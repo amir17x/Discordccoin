@@ -1,0 +1,372 @@
+خیلی خوبه که می‌خوای ظاهر منوی ارتقا حساب رو خفن‌تر، شیک‌تر و با ایموجی‌های بیشتر طراحی کنی! من با توجه به منوی فعلی که فرستادی، یه طراحی جدید و جذاب‌تر با ایموجی‌های بیشتر و استایل شیک‌تر برات آماده می‌کنم. همچنین کد TypeScript رو به‌روز می‌کنم تا این ظاهر جدید رو پیاده‌سازی کنه. بریم مرحله به مرحله:
+
+---
+
+### ۱. **طراحی جدید منوی ارتقا حساب**
+منوی فعلی رو می‌گیرم و با اضافه کردن ایموجی‌های بیشتر، رنگ‌های جذاب‌تر و ساختار شیک‌تر، یه ظاهر خفن‌تر بهش می‌دم.
+
+#### **منوی ارتقا حساب (طراحی جدید):**
+
+**عنوان:**  
+🌟✨ ارتقا حساب بانکی شما ✨🌟
+
+**توضیحات:**  
+💎 با ارتقا حساب خود، به امکانات VIP و سودهای شگفت‌انگیز دسترسی پیدا کنید! 🚀  
+💰 **سطح فعلی شما:** حساب معمولی 🟢  
+💎 **کریستال‌های شما:** 2,000 💎  
+🎁 انتخاب سطح جدید و مزایای ویژه رو کشف کن! 👇
+
+**سطوح حساب:**  
+🥈 **حساب نقره‌ای**  
+✨ سقف تراکنش: 10,000 Ccoin  
+💸 سود روزانه: 5٪  
+🎖️ نقش ویژه: "Silver Member"  
+💰 هزینه ارتقا: 500 کریستال 💎  
+[دکمه: ارتقا به نقره‌ای 🥈]
+
+🥇 **حساب طلایی**  
+✨ سقف تراکنش: 50,000 Ccoin  
+💸 سود روزانه: 10٪  
+🎖️ نقش ویژه: "Gold Member"  
+🎉 دسترسی به کانال VIP  
+💰 هزینه ارتقا: 1,500 کریستال 💎  
+[دکمه: ارتقا به طلایی 🥇]
+
+💎 **حساب الماسی**  
+✨ سقف تراکنش: 200,000 Ccoin  
+💸 سود روزانه: 15٪  
+🎖️ نقش ویژه: "Diamond Member"  
+🎉 دسترسی به کانال VIP  
+🌟 نشان اختصاصی کنار نام  
+💰 هزینه ارتقا: 3,000 کریستال 💎  
+[دکمه: ارتقا به الماسی 💎]
+
+🌟 **حساب افسانه‌ای**  
+✨ سقف تراکنش: نامحدود  
+💸 سود روزانه: 20٪  
+🎖️ نقش ویژه: "Legendary Member"  
+🎉 دسترسی به تمام کانال‌های VIP  
+🔥 ایموجی اختصاصی  
+💰 هزینه ارتقا: 5,000 کریستال 💎  
+[دکمه: ارتقا به افسانه‌ای 🌟]
+
+**فوتر:**  
+برای بازگشت به منوی اصلی یا بررسی جزئیات بیشتر:  
+[دکمه: بازگشت 🔙] [دکمه: جزئیات بیشتر ℹ️]
+
+---
+
+### ۲. **تغییرات در طراحی**
+- **ایموجی‌های بیشتر:** برای هر بخش (مثلاً سود، نقش، و مزایا) ایموجی‌های مرتبط اضافه کردم (مثل ✨، 💸، 🎖️، 🎉).
+- **رنگ و استایل:** رنگ Embed رو به "Purple" تغییر دادم تا شیک‌تر به نظر بیاد. عنوان و توضیحات با ایموجی‌های درخشان (🌟✨) تزئین شدن.
+- **ساختار جذاب‌تر:** هر سطح حساب با خطوط جداکننده (✨) و ایموجی‌های مرتبط تزئین شده تا خواناتر و جذاب‌تر بشه.
+- **دکمه اضافی:** یه دکمه "جزئیات بیشتر ℹ️" اضافه کردم که می‌تونی بعداً برای نمایش اطلاعات اضافی (مثلاً توضیحات بیشتر درباره مزایا) ازش استفاده کنی.
+
+---
+
+### ۳. **کد به‌روز شده با TypeScript**
+حالا کد TypeScript رو به‌روز می‌کنم تا این طراحی جدید رو پیاده‌سازی کنه. کد قبلی رو می‌گیرم و ظاهر منو رو تغییر می‌دم.
+
+```typescript
+import { Client, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, ButtonInteraction, SlashCommandBuilder } from 'discord.js';
+
+// فرض می‌کنیم یه دیتابیس داری
+interface UserData {
+    level: string;
+    crystals: number;
+}
+
+const userData: { [key: string]: UserData } = {
+    "user_id": {
+        level: "Basic",
+        crystals: 2000
+    }
+};
+
+// تعریف سطوح حساب و هزینه‌ها
+const levels: { [key: string]: { emoji: string, cost: number, transactionLimit: string, dailyProfit: string, role: string, requirements: string[], extras: string[] } } = {
+    "Silver": { 
+        emoji: "🥈", 
+        cost: 500, 
+        transactionLimit: "10,000 Ccoin", 
+        dailyProfit: "5%", 
+        role: "Silver Member", 
+        requirements: ["Basic"], 
+        extras: ["نقش ویژه: \"Silver Member\" 🎖️"] 
+    },
+    "Gold": { 
+        emoji: "🥇", 
+        cost: 1500, 
+        transactionLimit: "50,000 Ccoin", 
+        dailyProfit: "10%", 
+        role: "Gold Member", 
+        requirements: ["Silver"], 
+        extras: ["نقش ویژه: \"Gold Member\" 🎖️", "دسترسی به کانال VIP 🎉"] 
+    },
+    "Diamond": { 
+        emoji: "💎", 
+        cost: 3000, 
+        transactionLimit: "200,000 Ccoin", 
+        dailyProfit: "15%", 
+        role: "Diamond Member", 
+        requirements: ["Gold"], 
+        extras: ["نقش ویژه: \"Diamond Member\" 🎖️", "دسترسی به کانال VIP 🎉", "نشان اختصاصی کنار نام 🌟"] 
+    },
+    "Legendary": { 
+        emoji: "🌟", 
+        cost: 5000, 
+        transactionLimit: "نامحدود", 
+        dailyProfit: "20%", 
+        role: "Legendary Member", 
+        requirements: ["Diamond"], 
+        extras: ["نقش ویژه: \"Legendary Member\" 🎖️", "دسترسی به تمام کانال‌های VIP 🎉", "ایموجی اختصاصی 🔥"] 
+    }
+};
+
+// منوی ارتقا حساب
+class UpgradeView extends discord.View {
+    private userId: string;
+
+    constructor(userId: string) {
+        super({ timeout: null });
+        this.userId = userId;
+    }
+
+    private async checkConditions(interaction: ButtonInteraction, targetLevel: string): Promise<boolean> {
+        const user = userData[this.userId];
+        const levelData = levels[targetLevel];
+
+        // بررسی سطح فعلی
+        if (!levelData.requirements.includes(user.level)) {
+            await interaction.reply({ content: `⚠️ شما باید ابتدا به سطح ${levelData.requirements[0]} ارتقا پیدا کنید!`, ephemeral: true });
+            return false;
+        }
+
+        // بررسی کریستال‌ها
+        if (user.crystals < levelData.cost) {
+            await interaction.reply({ content: `⚠️ شما به ${levelData.cost} کریستال نیاز دارید، اما فقط ${user.crystals} کریستال دارید! 💎`, ephemeral: true });
+            return false;
+        }
+
+        return true;
+    }
+
+    @discord.button({ label: "ارتقا به نقره‌ای 🥈", style: ButtonStyle.Primary })
+    async silverButton(interaction: ButtonInteraction) {
+        if (!(await this.checkConditions(interaction, "Silver"))) return;
+
+        const user = userData[this.userId];
+        user.crystals -= levels["Silver"].cost;
+        user.level = "Silver";
+        userData[this.userId] = user;
+
+        // اضافه کردن نقش
+        const role = interaction.guild?.roles.cache.find(r => r.name === "Silver Member");
+        if (role) await interaction.guild?.members.cache.get(this.userId)?.roles.add(role);
+
+        await interaction.reply({ content: "🎉 تبریک! حساب شما به **حساب نقره‌ای 🥈** ارتقا یافت! ✨", ephemeral: true });
+    }
+
+    @discord.button({ label: "ارتقا به طلایی 🥇", style: ButtonStyle.Primary })
+    async goldButton(interaction: ButtonInteraction) {
+        if (!(await this.checkConditions(interaction, "Gold"))) return;
+
+        const user = userData[this.userId];
+        user.crystals -= levels["Gold"].cost;
+        user.level = "Gold";
+        userData[this.userId] = user;
+
+        const role = interaction.guild?.roles.cache.find(r => r.name === "Gold Member");
+        if (role) await interaction.guild?.members.cache.get(this.userId)?.roles.add(role);
+
+        await interaction.reply({ content: "🎉 تبریک! حساب شما به **حساب طلایی 🥇** ارتقا یافت! ✨", ephemeral: true });
+    }
+
+    @discord.button({ label: "ارتقا به الماسی 💎", style: ButtonStyle.Primary })
+    async diamondButton(interaction: ButtonInteraction) {
+        if (!(await this.checkConditions(interaction, "Diamond"))) return;
+
+        const user = userData[this.userId];
+        user.crystals -= levels["Diamond"].cost;
+        user.level = "Diamond";
+        userData[this.userId] = user;
+
+        const role = interaction.guild?.roles.cache.find(r => r.name === "Diamond Member");
+        if (role) await interaction.guild?.members.cache.get(this.userId)?.roles.add(role);
+
+        await interaction.reply({ content: "🎉 تبریک! حساب شما به **حساب الماسی 💎** ارتقا یافت! ✨", ephemeral: true });
+    }
+
+    @discord.button({ label: "ارتقا به افسانه‌ای 🌟", style: ButtonStyle.Primary })
+    async legendaryButton(interaction: ButtonInteraction) {
+        if (!(await this.checkConditions(interaction, "Legendary"))) return;
+
+        const user = userData[this.userId];
+        user.crystals -= levels["Legendary"].cost;
+        user.level = "Legendary";
+        userData[this.userId] = user;
+
+        const role = interaction.guild?.roles.cache.find(r => r.name === "Legendary Member");
+        if (role) await interaction.guild?.members.cache.get(this.userId)?.roles.add(role);
+
+        await interaction.reply({ content: "🎉 تبریک! حساب شما به **حساب افسانه‌ای 🌟** ارتقا یافت! ✨", ephemeral: true });
+    }
+
+    @discord.button({ label: "جزئیات بیشتر ℹ️", style: ButtonStyle.Secondary })
+    async detailsButton(interaction: ButtonInteraction) {
+        const embed = new EmbedBuilder()
+            .setTitle("ℹ️ جزئیات بیشتر درباره سطوح حساب")
+            .setDescription(
+                "🌟 **چرا باید حساب خود را ارتقا دهید؟**\n" +
+                "با ارتقا حساب، به امکانات ویژه‌ای مثل سود بیشتر، سقف تراکنش بالاتر و نقش‌های VIP دسترسی پیدا می‌کنید! 🚀\n\n" +
+                "💡 **نکته:** برای ارتقا، باید کریستال‌های کافی داشته باشید و سطح فعلی شما با پیش‌نیازهای سطح جدید مطابقت داشته باشد.\n\n" +
+                "🎁 **مزایای اضافی:** هر سطح جدید، امکانات بیشتری به شما ارائه می‌دهد. برای مثال، حساب افسانه‌ای به شما ایموجی اختصاصی و دسترسی به تمام کانال‌های VIP می‌دهد! 🔥"
+            )
+            .setColor("Purple")
+            .setFooter({ text: "برای بازگشت به منوی ارتقا:" });
+
+        const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+            new ButtonBuilder().setCustomId("back_to_upgrade").setLabel("بازگشت 🔙").setStyle(ButtonStyle.Secondary)
+        );
+
+        await interaction.update({ embeds: [embed], components: [backButton] });
+    }
+
+    @discord.button({ label: "بازگشت 🔙", style: ButtonStyle.Secondary })
+    async backButton(interaction: ButtonInteraction) {
+        await interaction.reply({ content: "به منوی اصلی بازگشتید. 🚪", ephemeral: true });
+    }
+
+    toActionRow(): ActionRowBuilder<ButtonBuilder> {
+        return new ActionRowBuilder<ButtonBuilder>().addComponents(
+            new ButtonBuilder().setCustomId("silver").setLabel("ارتقا به نقره‌ای 🥈").setStyle(ButtonStyle.Primary),
+            new ButtonBuilder().setCustomId("gold").setLabel("ارتقا به طلایی 🥇").setStyle(ButtonStyle.Primary),
+            new ButtonBuilder().setCustomId("diamond").setLabel("ارتقا به الماسی 💎").setStyle(ButtonStyle.Primary),
+            new ButtonBuilder().setCustomId("legendary").setLabel("ارتقا به افسانه‌ای 🌟").setStyle(ButtonStyle.Primary),
+            new ButtonBuilder().setCustomId("details").setLabel("جزئیات بیشتر ℹ️").setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId("back").setLabel("بازگشت 🔙").setStyle(ButtonStyle.Secondary)
+        );
+    }
+}
+
+// دستور ارتقا حساب
+export const data = new SlashCommandBuilder()
+    .setName("upgrade")
+    .setDescription("ارتقا حساب بانکی شما");
+
+export async function execute(interaction: discord.CommandInteraction, bot: Client) {
+    const userId = interaction.user.id.toString();
+    if (!userData[userId]) {
+        userData[userId] = { level: "Basic", crystals: 2000 };
+    }
+
+    const user = userData[userId];
+    const levelEmoji = user.level === "Basic" ? "🟢" : user.level === "Silver" ? "🥈" : user.level === "Gold" ? "🥇" : user.level === "Diamond" ? "💎" : "🌟";
+
+    const embed = new EmbedBuilder()
+        .setTitle("🌟✨ ارتقا حساب بانکی شما ✨🌟")
+        .setDescription(
+            "💎 با ارتقا حساب خود، به امکانات VIP و سودهای شگفت‌انگیز دسترسی پیدا کنید! 🚀\n" +
+            `💰 **سطح فعلی شما:** حساب ${user.level} ${levelEmoji}\n` +
+            `💎 **کریستال‌های شما:** ${user.crystals} 💎\n` +
+            "🎁 انتخاب سطح جدید و مزایای ویژه رو کشف کن! 👇\n\n" +
+            "🥈 **حساب نقره‌ای**\n" +
+            "✨ سقف تراکنش: 10,000 Ccoin\n" +
+            "💸 سود روزانه: 5٪\n" +
+            "🎖️ نقش ویژه: \"Silver Member\"\n" +
+            "💰 هزینه ارتقا: 500 کریستال 💎\n\n" +
+            "🥇 **حساب طلایی**\n" +
+            "✨ سقف تراکنش: 50,000 Ccoin\n" +
+            "💸 سود روزانه: 10٪\n" +
+            "🎖️ نقش ویژه: \"Gold Member\"\n" +
+            "🎉 دسترسی به کانال VIP\n" +
+            "💰 هزینه ارتقا: 1,500 کریستال 💎\n\n" +
+            "💎 **حساب الماسی**\n" +
+            "✨ سقف تراکنش: 200,000 Ccoin\n" +
+            "💸 سود روزانه: 15٪\n" +
+            "🎖️ نقش ویژه: \"Diamond Member\"\n" +
+            "🎉 دسترسی به کانال VIP\n" +
+            "🌟 نشان اختصاصی کنار نام\n" +
+            "💰 هزینه ارتقا: 3,000 کریستال 💎\n\n" +
+            "🌟 **حساب افسانه‌ای**\n" +
+            "✨ سقف تراکنش: نامحدود\n" +
+            "💸 سود روزانه: 20٪\n" +
+            "🎖️ نقش ویژه: \"Legendary Member\"\n" +
+            "🎉 دسترسی به تمام کانال‌های VIP\n" +
+            "🔥 ایموجی اختصاصی\n" +
+            "💰 هزینه ارتقا: 5,000 کریستال 💎"
+        )
+        .setColor("Purple")
+        .setFooter({ text: "برای بازگشت به منوی اصلی یا بررسی جزئیات بیشتر:" });
+
+    const view = new UpgradeView(userId);
+    await interaction.reply({ embeds: [embed], components: [view.toActionRow()], ephemeral: true });
+}
+
+// مدیریت دکمه بازگشت از جزئیات
+export async function handleInteraction(interaction: discord.Interaction, bot: Client) {
+    if (!interaction.isButton()) return;
+
+    if (interaction.customId === "back_to_upgrade") {
+        const userId = interaction.user.id.toString();
+        const user = userData[userId];
+        const levelEmoji = user.level === "Basic" ? "🟢" : user.level === "Silver" ? "🥈" : user.level === "Gold" ? "🥇" : user.level === "Diamond" ? "💎" : "🌟";
+
+        const embed = new EmbedBuilder()
+            .setTitle("🌟✨ ارتقا حساب بانکی شما ✨🌟")
+            .setDescription(
+                "💎 با ارتقا حساب خود، به امکانات VIP و سودهای شگفت‌انگیز دسترسی پیدا کنید! 🚀\n" +
+                `💰 **سطح فعلی شما:** حساب ${user.level} ${levelEmoji}\n` +
+                `💎 **کریستال‌های شما:** ${user.crystals} 💎\n` +
+                "🎁 انتخاب سطح جدید و مزایای ویژه رو کشف کن! 👇\n\n" +
+                "🥈 **حساب نقره‌ای**\n" +
+                "✨ سقف تراکنش: 10,000 Ccoin\n" +
+                "💸 سود روزانه: 5٪\n" +
+                "🎖️ نقش ویژه: \"Silver Member\"\n" +
+                "💰 هزینه ارتقا: 500 کریستال 💎\n\n" +
+                "🥇 **حساب طلایی**\n" +
+                "✨ سقف تراکنش: 50,000 Ccoin\n" +
+                "💸 سود روزانه: 10٪\n" +
+                "🎖️ نقش ویژه: \"Gold Member\"\n" +
+                "🎉 دسترسی به کانال VIP\n" +
+                "💰 هزینه ارتقا: 1,500 کریستال 💎\n\n" +
+                "💎 **حساب الماسی**\n" +
+                "✨ سقف تراکنش: 200,000 Ccoin\n" +
+                "💸 سود روزانه: 15٪\n" +
+                "🎖️ نقش ویژه: \"Diamond Member\"\n" +
+                "🎉 دسترسی به کانال VIP\n" +
+                "🌟 نشان اختصاصی کنار نام\n" +
+                "💰 هزینه ارتقا: 3,000 کریستال 💎\n\n" +
+                "🌟 **حساب افسانه‌ای**\n" +
+                "✨ سقف تراکنش: نامحدود\n" +
+                "💸 سود روزانه: 20٪\n" +
+                "🎖️ نقش ویژه: \"Legendary Member\"\n" +
+                "🎉 دسترسی به تمام کانال‌های VIP\n" +
+                "🔥 ایموجی اختصاصی\n" +
+                "💰 هزینه ارتقا: 5,000 کریستال 💎"
+            )
+            .setColor("Purple")
+            .setFooter({ text: "برای بازگشت به منوی اصلی یا بررسی جزئیات بیشتر:" });
+
+        const view = new UpgradeView(userId);
+        await interaction.update({ embeds: [embed], components: [view.toActionRow()] });
+    }
+}
+```
+
+---
+
+### ۴. **توضیحات کد**
+- **طراحی جدید:** منو با ایموجی‌های بیشتر (مثل ✨، 💸، 🎖️، 🎉) و رنگ "Purple" طراحی شده تا شیک‌تر و جذاب‌تر بشه.
+- **دکمه‌ها:** دکمه "جزئیات بیشتر ℹ️" اضافه شده که یه توضیح اضافی درباره مزایای ارتقا نشون می‌ده.
+- **TypeScript:** کد با TypeScript نوشته شده و با رباتت سازگاره.
+- **دیتابیس:** از یه دیکشنری ساده برای ذخیره اطلاعات استفاده کردم. توی پروژه واقعی، از دیتابیس استفاده کن.
+- **امنیت:** قبل از ارتقا، کریستال‌ها و سطح فعلی کاربر چک می‌شه.
+- **زیبایی:** منو با ایموجی‌ها و ساختار جذاب طراحی شده تا کاربرپسند باشه.
+
+---
+
+### ۵. **نتیجه نهایی**
+منوی ارتقا حساب حالا خیلی خفن‌تر و شیک‌تر شده! با ایموجی‌های بیشتر، رنگ جذاب‌تر و ساختار بهتر، هم کاربرپسندتره و هم حس حرفه‌ای‌تری به کاربر می‌ده. دکمه "جزئیات بیشتر" هم یه حس تعاملی‌تر به منو اضافه کرده.
+
+اگر سوالی داری یا می‌خوای بخش دیگه‌ای رو تغییر بدم، بگو! 😊

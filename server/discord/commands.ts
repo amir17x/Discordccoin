@@ -884,21 +884,48 @@ const hf = {
           statusCode = 400;
         }
         
+        // ایموجی و رنگ متناسب با نوع خطا
+        let errorIcon = '⚠️'; // ایموجی پیش‌فرض
+        let errorColor = '#FF0000'; // رنگ پیش‌فرض (قرمز)
+        let secondaryIcon = '🔄';
+        
+        // تنظیم ایموجی و رنگ بر اساس نوع خطا
+        if (statusCode === 429) {
+          errorIcon = '⏰';
+          secondaryIcon = '💸';
+          errorColor = '#FF9800'; // نارنجی
+        } else if (statusCode === 408) {
+          errorIcon = '⌛';
+          secondaryIcon = '🔌';
+          errorColor = '#795548'; // قهوه‌ای
+        } else if (statusCode === 401) {
+          errorIcon = '🔒';
+          secondaryIcon = '🔑';
+          errorColor = '#9C27B0'; // بنفش
+        } else if (statusCode === 500) {
+          errorIcon = '🔥';
+          secondaryIcon = '🛠️';
+          errorColor = '#F44336'; // قرمز روشن
+        }
+        
+        // خط تزئینی با ایموجی‌ها
+        const decorativeLine = `${secondaryIcon} ${secondaryIcon} ${secondaryIcon} ${errorIcon} ${secondaryIcon} ${secondaryIcon} ${secondaryIcon}`;
+        
         // نمایش خطا به کاربر
         const errorEmbed = new EmbedBuilder()
-          .setColor('#FF0000') // رنگ قرمز برای خطا
-          .setTitle('⚠️ سرویس هوش مصنوعی در دسترس نیست')
-          .setDescription(errorMessage)
+          .setColor(errorColor as ColorResolvable)
+          .setTitle(`${errorIcon} سرویس هوش مصنوعی در دسترس نیست ${errorIcon}`)
+          .setDescription(`${decorativeLine}\n\n${errorMessage}\n\n${decorativeLine}`)
           .addFields([
             {
-              name: '📝 راه حل پیشنهادی',
+              name: `${secondaryIcon} راه حل پیشنهادی ${secondaryIcon}`,
               value: statusCode === 429 
-                ? 'سهمیه API به پایان رسیده است. لطفاً با مدیر سیستم تماس بگیرید تا نسبت به شارژ یا تمدید حساب کاربری اقدام نماید.'
-                : 'لطفاً بعداً دوباره تلاش کنید یا با مدیر سیستم تماس بگیرید.'
+                ? '```سهمیه API به پایان رسیده است. لطفاً با مدیر سیستم تماس بگیرید تا نسبت به شارژ یا تمدید حساب کاربری اقدام نماید.```'
+                : '```لطفاً بعداً دوباره تلاش کنید یا با مدیر سیستم تماس بگیرید.```'
             }
           ])
           .setFooter({ 
-            text: `درخواست: ${interaction.user.username}`,
+            text: `درخواست: ${interaction.user.username} | از هوش مصنوعی Ccoin`,
             iconURL: interaction.user.displayAvatarURL() 
           })
           .setTimestamp();
@@ -915,30 +942,88 @@ const hf = {
       
       // بررسی اینکه آیا پاسخ حاوی پیام خطا است
       if (response.startsWith('⚠️')) {
+        // ایموجی و رنگ متناسب با نوع خطا
+        let errorIcon = '⚠️'; // ایموجی پیش‌فرض
+        let errorColor = '#FF0000'; // رنگ پیش‌فرض (قرمز)
+        let secondaryIcon = '🔄';
+        
+        // تعیین نوع خطا بر اساس محتوای پیام
+        if (response.includes('محدودیت') || response.includes('حداکثر')) {
+          errorIcon = '⏰';
+          secondaryIcon = '💸';
+          errorColor = '#FF9800'; // نارنجی
+        } else if (response.includes('زمان') || response.includes('تایم')) {
+          errorIcon = '⌛';
+          secondaryIcon = '🔌';
+          errorColor = '#795548'; // قهوه‌ای
+        } else if (response.includes('دسترسی') || response.includes('اجازه')) {
+          errorIcon = '🔒';
+          secondaryIcon = '🔑';
+          errorColor = '#9C27B0'; // بنفش
+        } else if (response.includes('سرور') || response.includes('خدمات')) {
+          errorIcon = '🔥';
+          secondaryIcon = '🛠️';
+          errorColor = '#F44336'; // قرمز روشن
+        }
+        
+        // خط تزئینی با ایموجی‌ها
+        const decorativeLine = `${secondaryIcon} ${secondaryIcon} ${secondaryIcon} ${errorIcon} ${secondaryIcon} ${secondaryIcon} ${secondaryIcon}`;
+        
         // اگر پیام با علامت خطا شروع شود، به عنوان خطا نمایش دهیم
         const errorEmbed = new EmbedBuilder()
-          .setColor('#FF0000') // رنگ قرمز برای خطا
-          .setTitle('⚠️ خطا در سرویس هوش مصنوعی')
-          .setDescription(response)
+          .setColor(errorColor as ColorResolvable)
+          .setTitle(`${errorIcon} خطا در سرویس هوش مصنوعی ${errorIcon}`)
+          .setDescription(`${decorativeLine}\n\n${response}\n\n${decorativeLine}`)
           .setFooter({ 
-            text: `درخواست: ${interaction.user.username}`,
+            text: `درخواست: ${interaction.user.username} | از هوش مصنوعی Ccoin`,
             iconURL: interaction.user.displayAvatarURL() 
           })
           .setTimestamp();
         
         await interaction.editReply({ embeds: [errorEmbed] });
       } else {
+        // تعیین ایموجی‌ها و رنگ متناسب با محتوای پاسخ
+        let mainEmoji = '🧠'; // ایموجی پیش‌فرض
+        let secondaryEmoji = '✨'; 
+        let embedColor = '#8A2BE2'; // رنگ پیش‌فرض (بنفش تیره)
+        
+        // تشخیص نوع محتوا و تنظیم ایموجی و رنگ مناسب
+        if (response.includes('اقتصاد') || response.includes('سکه') || response.includes('بانک') || response.includes('پول')) {
+          mainEmoji = '💰';
+          secondaryEmoji = '📊';
+          embedColor = '#FFD700'; // رنگ طلایی
+        } else if (response.includes('بازی') || response.includes('گرگینه') || response.includes('مافیا') || response.includes('بینگو')) {
+          mainEmoji = '🎮';
+          secondaryEmoji = '🎲';
+          embedColor = '#00CED1'; // فیروزه‌ای
+        } else if (response.includes('کلن') || response.includes('گروه') || response.includes('تیم')) {
+          mainEmoji = '🏰';
+          secondaryEmoji = '👥';
+          embedColor = '#A52A2A'; // قهوه‌ای
+        } else if (response.includes('دوست') || response.includes('اجتماعی') || response.includes('چت')) {
+          mainEmoji = '👥';
+          secondaryEmoji = '💌';
+          embedColor = '#FF1493'; // صورتی تیره
+        } else if (response.includes('دستور') || response.includes('کمک') || response.includes('راهنما')) {
+          mainEmoji = '📚';
+          secondaryEmoji = '❓';
+          embedColor = '#1E90FF'; // آبی روشن
+        }
+        
+        // افزودن خط تزئینی با ایموجی‌ها
+        const decorativeLine = `${secondaryEmoji} ${secondaryEmoji} ${secondaryEmoji} ${mainEmoji} ${secondaryEmoji} ${secondaryEmoji} ${secondaryEmoji}`;
+        
         // ایجاد Embed برای پاسخ با ظاهر جذاب‌تر
         const chatEmbed = new EmbedBuilder()
-          .setColor('#8A2BE2') // رنگ بنفش تیره
-          .setTitle(`🧠 هوش مصنوعی Ccoin (${aiServiceDisplayName})`)
-          .setDescription(response)
+          .setColor(embedColor as ColorResolvable)
+          .setTitle(`${mainEmoji} هوش مصنوعی Ccoin (${aiServiceDisplayName}) ${mainEmoji}`)
+          .setDescription(`${decorativeLine}\n\n${response}\n\n${decorativeLine}`)
           .addFields([{
-            name: '💬 پرسش شما',
+            name: `${secondaryEmoji} پرسش شما ${secondaryEmoji}`,
             value: `\`\`\`${prompt.length > 100 ? prompt.substring(0, 100) + '...' : prompt}\`\`\``
           }])
           .setFooter({ 
-            text: `درخواست توسط: ${interaction.user.username} | با قدرت هوش مصنوعی پیشرفته`,
+            text: `درخواست توسط: ${interaction.user.username} | با قدرت هوش مصنوعی پیشرفته Ccoin`,
             iconURL: interaction.user.displayAvatarURL() 
           })
           .setTimestamp();
@@ -970,13 +1055,41 @@ const hf = {
         }
       }
       
+      // ایموجی و رنگ متناسب با نوع خطا
+      let errorIcon = '⚠️'; // ایموجی پیش‌فرض
+      let errorColor = '#FF0000'; // رنگ پیش‌فرض (قرمز)
+      let secondaryIcon = '🔄';
+      
+      // تعیین ایموجی و رنگ بر اساس نوع خطا
+      const errorString = error.toString().toLowerCase();
+      if (errorString.includes('429') || errorString.includes('quota')) {
+        errorIcon = '⏰';
+        secondaryIcon = '💸';
+        errorColor = '#FF9800'; // نارنجی
+      } else if (errorString.includes('timeout') || errorString.includes('time')) {
+        errorIcon = '⌛';
+        secondaryIcon = '🔌';
+        errorColor = '#795548'; // قهوه‌ای
+      } else if (errorString.includes('401') || errorString.includes('403') || errorString.includes('auth')) {
+        errorIcon = '🔒';
+        secondaryIcon = '🔑';
+        errorColor = '#9C27B0'; // بنفش
+      } else if (errorString.includes('500')) {
+        errorIcon = '🔥';
+        secondaryIcon = '🛠️';
+        errorColor = '#F44336'; // قرمز روشن
+      }
+      
+      // خط تزئینی با ایموجی‌ها
+      const decorativeLine = `${secondaryIcon} ${secondaryIcon} ${secondaryIcon} ${errorIcon} ${secondaryIcon} ${secondaryIcon} ${secondaryIcon}`;
+      
       // ایجاد Embed برای خطا
       const errorEmbed = new EmbedBuilder()
-        .setColor('#FF0000') // رنگ قرمز برای خطا
-        .setTitle(errorTitle)
-        .setDescription(errorMessage)
+        .setColor(errorColor as ColorResolvable)
+        .setTitle(`${errorIcon} ${errorTitle} ${errorIcon}`)
+        .setDescription(`${decorativeLine}\n\n${errorMessage}\n\n${decorativeLine}`)
         .setFooter({ 
-          text: `درخواست: ${interaction.user.username}`,
+          text: `درخواست: ${interaction.user.username} | از هوش مصنوعی Ccoin`,
           iconURL: interaction.user.displayAvatarURL() 
         })
         .setTimestamp();

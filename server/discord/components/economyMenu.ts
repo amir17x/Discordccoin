@@ -552,17 +552,22 @@ export async function economyMenu(
     // Exchange menu with crystal image
     const exchangeEmbed = new EmbedBuilder()
       .setColor('#9932CC')
-      .setTitle('💎 تبدیل سکه به کریستال')
-      .setDescription('کریستال ارز ویژه Ccoin است که با آن می‌توانید آیتم‌های منحصر به فرد خریداری کنید')
-      .setThumbnail('https://img.icons8.com/fluency/48/exchange.png') // آیکون exchange برای بخش کریستال
+      .setTitle('💰✨ فروشگاه Ccoin ✨💰')
+      .setDescription('با کریستال‌هات Ccoin بخر و توی سرور پیشرفت کن! 🚀\nکریستال ارز ویژه Ccoin است که با آن می‌توانید آیتم‌های منحصر به فرد خریداری کنید')
+      .setThumbnail('https://img.icons8.com/fluency/48/diamond.png') // آیکون الماس برای نماد کریستال
       .addFields(
-        { name: '💳 موجودی کیف پول', value: `${user.wallet} Ccoin`, inline: true },
-        { name: '💎 موجودی کریستال', value: `${user.crystals}`, inline: true },
-        { name: '📊 نرخ تبدیل', value: '1000 Ccoin = 10 کریستال', inline: true },
-        { name: '💸 کارمزد تبدیل', value: '5%', inline: true },
-        { name: '⚠️ نکته مهم', value: 'تبدیل سکه به کریستال غیرقابل بازگشت است!\nبا کریستال می‌توانید آیتم‌های ویژه از فروشگاه خریداری کنید.' }
+        { name: '💳 موجودی کیف پول', value: `${user.wallet.toLocaleString('fa-IR')} Ccoin`, inline: true },
+        { name: '💎 موجودی کریستال', value: `${user.crystals.toLocaleString('fa-IR')}`, inline: true },
+        { name: '🎁 نرخ جدید', value: '1,250 Ccoin = 1 کریستال', inline: false },
+        { name: '📝 بسته‌های موجود', value: 
+          `💎 **10 کریستال = 12,500 Ccoin**\n` +
+          `💎 **50 کریستال = 62,500 Ccoin**\n` +
+          `💎 **100 کریستال = 125,000 Ccoin**\n` +
+          `🎉 **تخفیف ویژه:** برای خرید 100 کریستال، 5% تخفیف!`
+        },
+        { name: '⚠️ نکته مهم', value: 'تبدیل سکه به کریستال غیرقابل بازگشت است!\nبا کریستال می‌توانید آیتم‌های ویژه و منحصر به فرد از فروشگاه خریداری کنید.' }
       )
-      .setFooter({ text: `${interaction.user.username} | کریستال‌ها قابل انتقال به کاربران دیگر نیستند` })
+      .setFooter({ text: `${interaction.user.username} | با تبدیل سکه به کریستال، پیشرفت سریع‌تری خواهید داشت!` })
       .setTimestamp();
       
     // Exchange menu buttons
@@ -570,14 +575,19 @@ export async function economyMenu(
       .addComponents(
         new ButtonBuilder()
           .setCustomId('exchange_10')
-          .setLabel('💎 تبدیل به 10 کریستال')
+          .setLabel('💎 خرید 10 کریستال')
           .setStyle(ButtonStyle.Primary)
-          .setDisabled(user.wallet < 1050), // 1000 + 5% fee
+          .setDisabled(user.wallet < 12500), // 12500 (نرخ جدید)
         new ButtonBuilder()
           .setCustomId('exchange_50')
-          .setLabel('💎 تبدیل به 50 کریستال')
+          .setLabel('💎 خرید 50 کریستال')
           .setStyle(ButtonStyle.Primary)
-          .setDisabled(user.wallet < 5250), // 5000 + 5% fee
+          .setDisabled(user.wallet < 62500), // 62500 (نرخ جدید)
+        new ButtonBuilder()
+          .setCustomId('exchange_100')
+          .setLabel('💎 خرید 100 کریستال')
+          .setStyle(ButtonStyle.Success)
+          .setDisabled(user.wallet < 118750), // 125,000 - 5% تخفیف
         new ButtonBuilder()
           .setCustomId('economy')
           .setLabel('🔙 بازگشت')

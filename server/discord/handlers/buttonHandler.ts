@@ -1889,6 +1889,11 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
       return;
     }
     
+    if (action === 'exchange_100') {
+      await handleExchange(interaction, 100);
+      return;
+    }
+    
     // Handle exchange menu (تبدیل سکه به کریستال)
     if (action === 'exchange') {
       // دریافت کاربر

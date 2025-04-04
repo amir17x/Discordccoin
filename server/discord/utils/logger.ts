@@ -25,39 +25,77 @@ export enum LogType {
 }
 
 /**
- * ثبت و نمایش لاگ‌ها
- * @param message پیام لاگ
- * @param level سطح لاگ
+ * Log and display messages with category prefixes and emojis
+ * @param message Log message
+ * @param level Log level
+ * @param category Optional category for grouping related logs
  */
-export function log(message: string, level: LogLevel = 'info'): void {
+export function log(message: string, level: LogLevel = 'info', category?: string): void {
   const now = new Date();
   const timestamp = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
 
-  let prefix = '';
-  switch (level) {
-    case 'info':
-      prefix = '\x1b[36m[info]\x1b[0m'; // Cyan
-      break;
-    case 'success':
-      prefix = '\x1b[32m[success]\x1b[0m'; // Green
-      break;
-    case 'warn':
-      prefix = '\x1b[33m[warn]\x1b[0m'; // Yellow
-      break;
-    case 'error':
-      prefix = '\x1b[31m[error]\x1b[0m'; // Red
-      break;
-    case 'debug':
-      prefix = '\x1b[35m[debug]\x1b[0m'; // Magenta
-      break;
-  }
+  // Color and emoji mapping for log levels
+  const levelConfig = {
+    'info': { color: '\x1b[36m', emoji: '📝' },     // Cyan
+    'success': { color: '\x1b[32m', emoji: '✅' },  // Green
+    'warn': { color: '\x1b[33m', emoji: '⚠️' },     // Yellow
+    'error': { color: '\x1b[31m', emoji: '❌' },    // Red
+    'debug': { color: '\x1b[35m', emoji: '🔍' }     // Magenta
+  };
+  
+  // Category emoji mapping
+  const categoryEmoji = category ? getCategoryEmoji(category) : '';
+  
+  // Format: [Time] [Emoji+Level] [CategoryEmoji+Category] Message
+  const prefix = `${levelConfig[level].color}[${levelConfig[level].emoji} ${level}]\x1b[0m`;
+  const categoryPrefix = category ? ` ${categoryEmoji} [${category}]` : '';
+  
+  console.log(`${timestamp} ${prefix}${categoryPrefix} ${message}`);
+}
 
-  console.log(`${timestamp} ${prefix} ${message}`);
+/**
+ * Get appropriate emoji for log category
+ * @param category Log category name
+ * @returns Emoji character representing the category
+ */
+function getCategoryEmoji(category: string): string {
+  const categoryMap: Record<string, string> = {
+    'startup': '🚀',
+    'shutdown': '🛑',
+    'discord': '💬',
+    'ai': '🤖',
+    'economy': '💰',
+    'bank': '🏦',
+    'game': '🎮',
+    'mafia': '🎭',
+    'werewolf': '🐺',
+    'secret_spy': '🕵️',
+    'truth_or_dare': '🎯',
+    'word_chain': '🔤',
+    'bingo': '🎲',
+    'duel': '⚔️',
+    'robbery': '💰',
+    'user': '👤',
+    'clan': '🛡️',
+    'admin': '👑',
+    'stock': '📈',
+    'transaction': '💸',
+    'job': '💼',
+    'quest': '📜',
+    'inventory': '🎒',
+    'friend': '👥',
+    'moderation': '🔨',
+    'command': '⌨️',
+    'api': '🌐',
+    'database': '🗃️'
+  };
+  
+  return categoryMap[category.toLowerCase()] || '🔹';
 }
 
 /**
  * Discord Logger Class
- * این کلاس برای ارسال لاگ‌ها به کانال‌های دیسکورد استفاده می‌شود
+ * Sends logs to Discord channels with categorized formatting and emojis
  */
 class DiscordLogger {
   private client: Client;
@@ -69,29 +107,29 @@ class DiscordLogger {
   }
 
   /**
-   * تنظیم کانال پیش‌فرض برای لاگ‌ها
-   * @param channelId شناسه کانال دیسکورد
+   * Set default channel for logs
+   * @param channelId Discord channel ID
    */
   setDefaultChannel(channelId: string): void {
     this.defaultChannelId = channelId;
-    log(`Default log channel set to ${channelId}`, 'info');
+    log(`Default log channel set to ${channelId}`, 'info', 'config');
   }
 
   /**
-   * تنظیم کانال‌های مختلف برای انواع لاگ
-   * @param channels نگاشت نوع لاگ به شناسه کانال
+   * Set different channels for log types
+   * @param channels Mapping of log type to channel ID
    */
   setChannels(channels: Partial<Record<LogType, string>>): void {
     for (const [type, channelId] of Object.entries(channels)) {
       this.channelMap.set(type as LogType, channelId);
-      log(`Log channel for ${type} set to ${channelId}`, 'info');
+      log(`Log channel for ${type} set to ${channelId}`, 'info', 'config');
     }
   }
 
   /**
    * Get channel for log type
-   * @param type نوع لاگ
-   * @returns کانال متنی یا null
+   * @param type Log type
+   * @returns Text channel or null
    */
   private getChannel(type: LogType): TextChannel | null {
     try {
@@ -120,13 +158,13 @@ class DiscordLogger {
   }
 
   /**
-   * ثبت اقدام ادمین در سیستم
-   * @param adminId شناسه ادمین
-   * @param adminName نام ادمین
-   * @param action عملیات انجام شده
-   * @param targetId شناسه هدف (اختیاری)
-   * @param targetName نام هدف (اختیاری)
-   * @param details جزئیات بیشتر (اختیاری)
+   * Log admin actions in the system
+   * @param adminId Admin's ID
+   * @param adminName Admin's name
+   * @param action Action performed
+   * @param targetId Target ID (optional)
+   * @param targetName Target name (optional)
+   * @param details Additional details (optional)
    */
   logAdminAction(
     adminId: string, 
@@ -138,13 +176,13 @@ class DiscordLogger {
   ): void {
     const channel = this.getChannel(LogType.ADMIN);
     if (!channel) {
-      log(`No admin log channel configured, action not logged: ${action}`, 'warn');
+      log(`No admin log channel configured, action not logged: ${action}`, 'warn', 'admin');
       return;
     }
 
     const logEmbed = new EmbedBuilder()
       .setColor('#FF9900' as ColorResolvable)
-      .setTitle('🛡️ Admin Action Log')
+      .setTitle('👑 Admin Action Log')
       .setDescription(`Admin **${adminName}** performed action: **${action}**`)
       .addFields(
         { name: 'Admin ID', value: adminId, inline: true }
@@ -180,14 +218,14 @@ class DiscordLogger {
       });
     
     // Also log to console
-    log(`ADMIN ACTION: ${adminName} (${adminId}) performed ${action}${targetId ? ` on ${targetName} (${targetId})` : ''}${details ? `: ${details}` : ''}`, 'info');
+    log(`Admin ${adminName} (${adminId}) performed ${action}${targetId ? ` on ${targetName} (${targetId})` : ''}${details ? `: ${details}` : ''}`, 'info', 'admin');
   }
 
   /**
-   * ثبت لاگ سیستم
-   * @param title عنوان
-   * @param description توضیحات
-   * @param fields فیلدهای اضافی
+   * Log system information
+   * @param title Title of the log
+   * @param description Description/details
+   * @param fields Additional fields for the embed
    */
   logSystem(
     title: string,
@@ -196,13 +234,13 @@ class DiscordLogger {
   ): void {
     const channel = this.getChannel(LogType.SYSTEM);
     if (!channel) {
-      log(`No system log channel configured, log not sent: ${title}`, 'warn');
+      log(`No system log channel configured, log not sent: ${title}`, 'warn', 'system');
       return;
     }
 
     const logEmbed = new EmbedBuilder()
       .setColor('#3498db' as ColorResolvable)
-      .setTitle(`🖥️ ${title}`)
+      .setTitle(`🚀 ${title}`)
       .setDescription(description)
       .setTimestamp();
 
@@ -216,16 +254,16 @@ class DiscordLogger {
       });
 
     // Also log to console
-    log(`SYSTEM: ${title} - ${description}`, 'info');
+    log(`${title} - ${description}`, 'info', 'system');
   }
 
   /**
-   * ثبت لاگ اقتصادی
-   * @param userId شناسه کاربر
-   * @param username نام کاربر
-   * @param action عملیات انجام شده
-   * @param amount مقدار
-   * @param details جزئیات بیشتر
+   * Log economic transactions
+   * @param userId User's ID
+   * @param username User's name
+   * @param action Action performed
+   * @param amount Transaction amount
+   * @param details Additional details (optional)
    */
   logEconomy(
     userId: string,
@@ -236,7 +274,7 @@ class DiscordLogger {
   ): void {
     const channel = this.getChannel(LogType.ECONOMY);
     if (!channel) {
-      log(`No economy log channel configured, log not sent: ${action}`, 'warn');
+      log(`No economy log channel configured, log not sent: ${action}`, 'warn', 'economy');
       return;
     }
 
@@ -261,14 +299,14 @@ class DiscordLogger {
       });
 
     // Also log to console
-    log(`ECONOMY: ${username} (${userId}) ${action} ${isPositive ? '+' : ''}${amount} Ccoin${details ? ` - ${details}` : ''}`, 'info');
+    log(`User ${username} (${userId}) ${action} ${isPositive ? '+' : ''}${amount} Ccoin${details ? ` - ${details}` : ''}`, 'info', 'economy');
   }
 
   /**
-   * ثبت لاگ خطا
-   * @param title عنوان خطا
-   * @param error خطای رخ داده
-   * @param source منبع خطا
+   * Log errors in the system
+   * @param title Error title
+   * @param error Error object or message
+   * @param source Error source
    */
   logError(
     title: string,
@@ -277,7 +315,7 @@ class DiscordLogger {
   ): void {
     const channel = this.getChannel(LogType.ERROR);
     if (!channel) {
-      log(`No error log channel configured, error not sent: ${title}`, 'warn');
+      log(`No error log channel configured, error not sent: ${title}`, 'warn', 'error');
       return;
     }
 
@@ -286,7 +324,7 @@ class DiscordLogger {
 
     const logEmbed = new EmbedBuilder()
       .setColor('#e74c3c' as ColorResolvable)
-      .setTitle(`❌ ${title}`)
+      .setTitle(`⚠️ ${title}`)
       .setDescription(`\`\`\`\n${errorMessage}\n\`\`\``)
       .setTimestamp();
 
@@ -313,19 +351,19 @@ class DiscordLogger {
       });
 
     // Always log errors to console
-    log(`ERROR: ${title} - ${errorMessage}`, 'error');
+    log(`${title} - ${errorMessage}`, 'error', 'error');
     if (errorStack) {
       console.error(errorStack);
     }
   }
 
   /**
-   * ثبت لاگ بازی
-   * @param gameType نوع بازی
-   * @param action عملیات انجام شده
-   * @param playerName نام بازیکن
-   * @param playerId شناسه بازیکن
-   * @param details جزئیات بیشتر
+   * Log game activities
+   * @param gameType Type of game
+   * @param action Action performed
+   * @param playerName Player's name
+   * @param playerId Player's ID
+   * @param details Additional details (optional)
    */
   logGame(
     gameType: string,
@@ -336,7 +374,7 @@ class DiscordLogger {
   ): void {
     const channel = this.getChannel(LogType.GAME);
     if (!channel) {
-      log(`No game log channel configured, log not sent: ${gameType} ${action}`, 'warn');
+      log(`No game log channel configured, log not sent: ${gameType} ${action}`, 'warn', 'game');
       return;
     }
 
@@ -360,7 +398,7 @@ class DiscordLogger {
       });
 
     // Also log to console
-    log(`GAME: ${gameType} - ${playerName} (${playerId}) ${action}${details ? ` - ${details}` : ''}`, 'info');
+    log(`${gameType} - ${playerName} (${playerId}) ${action}${details ? ` - ${details}` : ''}`, 'info', 'game');
   }
 }
 

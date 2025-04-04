@@ -71,7 +71,7 @@ export async function setupAIMarketDynamics(updateIntervalMinutes: number = 60) 
       try {
         await updateStockPrices();
       } catch (e) {
-        log(`خطا در به‌روزرسانی قیمت‌های سهام: ${e}`, 'error');
+        log(`Error updating stock prices: ${e}`, 'error');
       }
     }, updateIntervalMinutes * 60 * 1000);
     
@@ -80,7 +80,7 @@ export async function setupAIMarketDynamics(updateIntervalMinutes: number = 60) 
       try {
         await generateRandomStockNews();
       } catch (e) {
-        log(`خطا در تولید اخبار سهام: ${e}`, 'error');
+        log(`Error generating stock news: ${e}`, 'error');
       }
     }, (updateIntervalMinutes * 2) * 60 * 1000); // هر دو سیکل یک خبر
     
@@ -89,14 +89,14 @@ export async function setupAIMarketDynamics(updateIntervalMinutes: number = 60) 
       try {
         await updateStockPrices();
       } catch (e) {
-        log(`خطا در به‌روزرسانی اولیه قیمت سهام: ${e}`, 'error');
+        log(`Error in initial stock price update: ${e}`, 'error');
       }
     }, 30000); // ۳۰ ثانیه پس از راه‌اندازی
     
-    log(`سیستم پویای بازار سهام با فاصله ${updateIntervalMinutes} دقیقه راه‌اندازی شد`, 'info');
+    log(`AI Market dynamics system started with ${updateIntervalMinutes} minute intervals`, 'info');
     return true;
   } catch (error) {
-    log(`خطا در راه‌اندازی سیستم پویای بازار سهام: ${error}`, 'error');
+    log(`Error in starting AI market dynamics system: ${error}`, 'error');
     return false;
   }
 }
@@ -109,7 +109,7 @@ async function initializeStockParams() {
     // استفاده از متد موجود در storage
     const stocks = await storage.getAllStocks();
     if (!stocks || stocks.length === 0) {
-      log('هیچ سهمی در سیستم یافت نشد.', 'error');
+      log('No stocks found in the system.', 'error');
       return;
     }
     
@@ -133,11 +133,11 @@ async function initializeStockParams() {
     // تنظیم وضعیت کلی بازار به صورت تصادفی
     globalMarketCondition = marketConditions[Math.floor(Math.random() * marketConditions.length)];
     
-    log(`پارامترهای بازار برای ${stocks.length} سهم مقداردهی شد.`, 'info');
-    log(`وضعیت فعلی بازار: ${globalMarketCondition}`, 'info');
+    log(`Market parameters initialized for ${stocks.length} stocks.`, 'info');
+    log(`Current market condition: ${globalMarketCondition}`, 'info');
     
   } catch (error) {
-    log(`خطا در مقداردهی پارامترهای بازار: ${error}`, 'error');
+    log(`Error in initializing market parameters: ${error}`, 'error');
   }
 }
 
@@ -152,7 +152,7 @@ async function updateStockPrices() {
     // دریافت اطلاعات سهام موجود
     const stocks = await storage.getAllStocks();
     if (!stocks || stocks.length === 0) {
-      log('هیچ سهمی برای به‌روزرسانی یافت نشد.', 'error');
+      log('No stocks found for update.', 'error');
       return;
     }
     
@@ -210,14 +210,14 @@ async function updateStockPrices() {
         log(`قیمت سهام ${stock.name} از ${stock.currentPrice} به ${newPrice} تغییر کرد (${changePercent.toFixed(2)}%)`, 'info');
       } 
       catch (updateError) {
-        log(`خطا در به‌روزرسانی قیمت سهام ${stock.name}: ${updateError}`, 'error');
+        log(`Error updating stock price for ${stock.name}: ${updateError}`, 'error');
       }
     }
     
     log(`قیمت ${stocks.length} سهام به‌روزرسانی شد. وضعیت بازار: ${globalMarketCondition}`, 'info');
     
   } catch (error) {
-    log(`خطا در به‌روزرسانی قیمت‌های سهام: ${error}`, 'error');
+    log(`Error updating stock prices: ${error}`, 'error');
   }
 }
 
@@ -317,7 +317,7 @@ async function generateRandomStockNews() {
     // دریافت لیست سهام
     const stocks = await storage.getAllStocks();
     if (!stocks || stocks.length === 0) {
-      log('هیچ سهمی برای تولید خبر یافت نشد.', 'error');
+      log('No stocks found for news generation.', 'error');
       return;
     }
     
@@ -397,7 +397,7 @@ async function generateRandomStockNews() {
         log(`تأثیر خبر: ${(impactValue * 100).toFixed(2)}%`, 'info');
       }
       catch (newsError) {
-        log(`خطا در ذخیره خبر برای سهام ${randomStock.name}: ${newsError}`, 'error');
+        log(`Error saving news for stock ${randomStock.name}: ${newsError}`, 'error');
       }
     }
     
@@ -493,70 +493,70 @@ export async function generateMarketManipulationNews(
         return newsContent;
       }
       catch (newsError) {
-        log(`خطا در ذخیره خبر دستکاری بازار برای سهام ${stock.name}: ${newsError}`, 'error');
+        log(`Error saving market manipulation news for stock ${stock.name}: ${newsError}`, 'error');
       }
     }
     
-    return newsContent; // حتی اگر ذخیره نشد، خبر را برگردان
+    return newsContent; // Return the news content even if it wasn't saved
   } catch (error) {
-    log(`خطا در تولید خبر دستکاری بازار: ${error}`, 'error');
+    log(`Error generating market manipulation news: ${error}`, 'error');
     return null;
   }
 }
 
 /**
- * دریافت تحلیل هوشمند برای یک سهام خاص
- * @param stockId شناسه سهام
- * @returns تحلیل هوشمند سهام
+ * Get intelligent analysis for a specific stock
+ * @param stockId stock identifier
+ * @returns intelligent stock analysis
  */
 export async function getAIStockAnalysis(stockId: number): Promise<string | null> {
   try {
-    // دریافت اطلاعات سهام با استفاده از متد موجود
+    // Get stock information using available method
     const stock = storage.getStock ? await storage.getStock(stockId) : null;
     if (!stock) return null;
     
-    // بررسی روند قیمت
-    let trend = 'نامشخص';
-    let performance = 'نامشخص';
+    // Analyze price trend
+    let trend = 'نامشخص'; // Unknown
+    let performance = 'نامشخص'; // Unknown
     
-    // استفاده از تاریخچه قیمت داخلی به جای فراخوانی API جداگانه
+    // Use internal price history instead of separate API call
     if (stock.priceHistory && stock.priceHistory.length >= 2) {
-      // محاسبه تغییرات قیمت در دوره
-      const latestPrice = stock.priceHistory[0].price;  // آخرین قیمت
-      const oldestPrice = stock.priceHistory[stock.priceHistory.length - 1].price;  // قدیمی‌ترین قیمت
+      // Calculate price changes over the period
+      const latestPrice = stock.priceHistory[0].price;  // Latest price
+      const oldestPrice = stock.priceHistory[stock.priceHistory.length - 1].price;  // Oldest price
       const changePercent = ((latestPrice - oldestPrice) / oldestPrice) * 100;
       
-      // تعیین روند
-      if (changePercent > 10) trend = 'صعودی قوی';
-      else if (changePercent > 3) trend = 'صعودی ملایم';
-      else if (changePercent >= -3) trend = 'نسبتاً ثابت';
-      else if (changePercent >= -10) trend = 'نزولی ملایم';
-      else trend = 'نزولی قوی';
+      // Determine trend
+      if (changePercent > 10) trend = 'صعودی قوی'; // Strong upward
+      else if (changePercent > 3) trend = 'صعودی ملایم'; // Mild upward
+      else if (changePercent >= -3) trend = 'نسبتاً ثابت'; // Relatively stable
+      else if (changePercent >= -10) trend = 'نزولی ملایم'; // Mild downward
+      else trend = 'نزولی قوی'; // Strong downward
       
-      // تعیین عملکرد
-      if (changePercent > 15) performance = 'عالی';
-      else if (changePercent > 5) performance = 'خوب';
-      else if (changePercent >= -5) performance = 'متوسط';
-      else if (changePercent >= -15) performance = 'ضعیف';
-      else performance = 'بسیار ضعیف';
+      // Determine performance
+      if (changePercent > 15) performance = 'عالی'; // Excellent
+      else if (changePercent > 5) performance = 'خوب'; // Good
+      else if (changePercent >= -5) performance = 'متوسط'; // Average
+      else if (changePercent >= -15) performance = 'ضعیف'; // Poor
+      else performance = 'بسیار ضعیف'; // Very poor
     }
     
-    // تهیه متن اخبار برای پرامپت
+    // Prepare news text for prompt
     let newsText = '';
     if (stock.news && stock.news.length > 0) {
-      newsText = 'اخبار اخیر:\n';
+      newsText = 'اخبار اخیر:\n'; // Recent news
       stock.news.slice(0, 3).forEach((news, index) => {
-        newsText += `${index + 1}. ${news.content} (تأثیر: ${news.effect === 'positive' ? 'مثبت' : 'منفی'})\n`;
+        newsText += `${index + 1}. ${news.content} (تأثیر: ${news.effect === 'positive' ? 'مثبت' : 'منفی'})\n`; // Impact: positive/negative
       });
     } else {
-      newsText = 'اخبار قابل توجهی برای این سهم وجود ندارد.';
+      newsText = 'اخبار قابل توجهی برای این سهم وجود ندارد.'; // No significant news exists for this stock
     }
     
-    // دریافت پارامترهای بازار
+    // Get market parameters
     const params = stockMarketParams.get(stockId);
-    const marketConditionText = `وضعیت کلی بازار: ${globalMarketCondition}`;
+    const marketConditionText = `وضعیت کلی بازار: ${globalMarketCondition}`; // General market condition
     
-    // ساخت پرامپت برای هوش مصنوعی
+    // Build AI prompt
     const prompt = `یک تحلیل کوتاه و تخصصی سهام به فارسی (حداکثر ۲۵۰ کاراکتر) برای شرکت "${stock.name}" که در زمینه "${stock.description}" فعالیت می‌کند ارائه بده.
     
     اطلاعات مهم:
@@ -573,12 +573,12 @@ export async function getAIStockAnalysis(stockId: number): Promise<string | null
     
     لحن تحلیل حرفه‌ای، تخصصی و مختصر باشد.`;
     
-    // دریافت پاسخ از هوش مصنوعی
+    // Get response from AI
     const analysis = await generateAIResponse(prompt, "marketAnalysis");
     
     return analysis;
   } catch (error) {
-    log(`خطا در تولید تحلیل هوشمند سهام: ${error}`, 'error');
+    log(`Error generating intelligent stock analysis: ${error}`, 'error');
     return null;
   }
 }
