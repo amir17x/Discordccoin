@@ -2,8 +2,8 @@ import path from 'path';
 import fs from 'fs';
 import { botConfig } from '../utils/config';
 import ccoinAIAltService from './ccoinAIAltService';
-import geminiService from './geminiService';
-import geminiSdkService from './geminiSdkService';
+import ccoinAIService from './ccoinAIService'; // سرویس بهینه‌شده جدید
+import ccoinAISDKService from './ccoinAISDKService';
 import { log } from '../../vite';
 
 // مسیر فایل آمار هوش مصنوعی
@@ -183,15 +183,28 @@ export async function generateAIResponse(
     let response: string;
     let serviceUsed: AIService = 'ccoinai';
     
-    // سرویس‌های Gemini/CCOIN AI
+    // سرویس‌های Gemini/CCOIN AI با بهینه‌سازی سرعت
     log(`ارسال درخواست به CCOIN AI: ${prompt.substring(0, 50)}...`, 'info');
-      
-    // سعی می‌کنیم ابتدا از سرویس SDK استفاده کنیم
+    
+    // بررسی اندازه درخواست - درخواست کوتاه زیر 200 کاراکتر است
+    const isShortRequest = prompt.length < 200;
+    
+    // سعی می‌کنیم ابتدا از سرویس Gemini بهینه‌شده استفاده کنیم
     try {
-      if (geminiSdkService.isAvailable()) {
-        response = await geminiSdkService.generateContent(prompt, 1000, temperature);
-      } else {
-        // اگر SDK در دسترس نبود، از سرویس جایگزین استفاده می‌کنیم
+      if (ccoinAIService.isAvailable()) {
+        // برای درخواست‌های کوتاه از متد سریع استفاده می‌کنیم
+        if (isShortRequest) {
+          response = await ccoinAIService.generateContentFast(prompt, 1000);
+        } else {
+          response = await ccoinAIService.generateContent(prompt, 1000, temperature);
+        }
+      } 
+      // fallback به سرویس SDK اصلی
+      else if (ccoinAISDKService.isAvailable()) {
+        response = await ccoinAISDKService.generateContent(prompt, 1000, temperature);
+      } 
+      // نهایتاً از سرویس جایگزین استفاده می‌کنیم
+      else {
         response = await ccoinAIAltService.generateContent(prompt, 1000, temperature);
       }
     } catch (e) {
@@ -270,18 +283,24 @@ export async function testAIService(
     // بررسی سرویس فعلی
     const currentService = botConfig.getAISettings().service;
     
-    // سرویس‌های Gemini/CCOIN AI
+    // سرویس‌های Gemini/CCOIN AI با بهینه‌سازی سرعت
     try {
-      if (geminiSdkService.isAvailable()) {
-        response = await geminiSdkService.generateContent(prompt, 200, temperature);
-      } else {
-        // اگر SDK در دسترس نبود، از سرویس جایگزین استفاده می‌کنیم
-        response = await ccoinAIAltService.generateContent(prompt, 200, temperature);
+      // استفاده از سرویس بهینه‌شده با متد سریع برای تست
+      if (ccoinAIService.isAvailable()) {
+        response = await ccoinAIService.generateContentFast(prompt, 100);
+      }
+      // fallback به سرویس SDK اصلی
+      else if (ccoinAISDKService.isAvailable()) {
+        response = await ccoinAISDKService.generateContent(prompt, 100, temperature);
+      } 
+      // نهایتاً از سرویس جایگزین استفاده می‌کنیم
+      else {
+        response = await ccoinAIAltService.generateContent(prompt, 100, temperature);
       }
     } catch (e) {
       // در صورت خطا در CCOIN AI به سرویس پشتیبان می‌رویم
       log(`خطا در سرویس CCOIN AI: ${e}. استفاده از سرویس پشتیبان CCOIN AI...`, 'warn');
-      response = await ccoinAIAltService.generateContent(prompt, 200, temperature);
+      response = await ccoinAIAltService.generateContent(prompt, 100, temperature);
     }
     
     // محاسبه زمان پاسخگویی
@@ -339,9 +358,19 @@ export async function pingCurrentAIService(): Promise<number> {
     // بررسی سرویس فعلی
     const currentService = botConfig.getAISettings().service;
     
-    // ابتدا سرویس CCOIN AI را تست می‌کنیم
-    if (geminiSdkService.isAvailable()) {
-      const sdkResult = await pingWithTimeout(() => geminiSdkService.testConnection(), 'ccoinai');
+    // ابتدا سرویس بهینه‌شده جدید را تست می‌کنیم
+    if (ccoinAIService.isAvailable()) {
+      const optimizedResult = await pingWithTimeout(() => ccoinAIService.testConnection(), 'ccoinai-optimized', 10000);
+      
+      // اگر با موفقیت پاسخ داد، نتیجه را برمی‌گردانیم
+      if (optimizedResult > 0) {
+        return optimizedResult;
+      }
+    }
+    
+    // اگر سرویس بهینه‌شده در دسترس نبود، سرویس SDK را تست می‌کنیم
+    if (ccoinAISDKService.isAvailable()) {
+      const sdkResult = await pingWithTimeout(() => ccoinAISDKService.testConnection(), 'ccoinai-sdk');
       
       // اگر CCOIN AI با موفقیت پاسخ داد، نتیجه را برمی‌گردانیم
       if (sdkResult > 0) {
@@ -349,7 +378,7 @@ export async function pingCurrentAIService(): Promise<number> {
       }
     }
     
-    // اگر CCOIN AI در دسترس نبود یا با خطا مواجه شد، از سرویس پشتیبان CCOIN AI استفاده می‌کنیم
+    // اگر هر دو سرویس در دسترس نبودند یا با خطا مواجه شدند، از سرویس پشتیبان CCOIN AI استفاده می‌کنیم
     return await pingWithTimeout(() => ccoinAIAltService.testConnection(), 'ccoinai-backup');
   } catch (error) {
     console.error('Error pinging AI services:', error);

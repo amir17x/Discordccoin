@@ -2,7 +2,7 @@ import path from 'path';
 import fs from 'fs';
 import { botConfig } from '../utils/config';
 import ccoinAIAltService from './ccoinAIAltService';
-import geminiService from './geminiService';
+import ccoinAIService from '../ccoinAIService';
 import geminiSdkService from './geminiSdkService';
 import { log } from '../../vite';
 

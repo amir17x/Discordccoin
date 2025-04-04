@@ -13,7 +13,7 @@ import {
   StringSelectMenuInteraction
 } from 'discord.js';
 import { botConfig } from '../utils/config';
-import { ccoinAIService } from '../services/ccoinAIService';
+import ccoinAIService from '../services/ccoinAIService';
 import { createBotAIPrompt } from '../utils/botGeminiPrompt';
 
 /**
@@ -26,7 +26,7 @@ export async function showAISettingsMenu(interaction: ButtonInteraction | ChatIn
     const aiSettings = botConfig.getAISettings();
     
     // بررسی وضعیت ارتباط با CCOIN AI
-    const pingResult = await ccoinAIService.pingCCOINAI();
+    const pingResult: number = await import('../services/aiService').then(m => m.pingCurrentAIService());
     let statusText = '';
     let statusColor = '';
     
@@ -202,7 +202,7 @@ export async function handleTestAI(interaction: ButtonInteraction) {
     // استفاده از پرامپت راهنما برای ایجاد پاسخ با سبک فعلی
     const aiSettings = botConfig.getAISettings();
     const responseStyle = aiSettings.responseStyle || 'متعادل';
-    const response = await ccoinAIService.generateResponse(testPrompt, responseStyle);
+    const response = await ccoinAIService.generateContent(testPrompt, 500, responseStyle === 'دقیق' ? 0.3 : responseStyle === 'خلاقانه' ? 0.9 : responseStyle === 'طنزآمیز' ? 1.0 : 0.7);
     
     const embed = new EmbedBuilder()
       .setTitle('🧪 تست هوش مصنوعی CCOIN AI')

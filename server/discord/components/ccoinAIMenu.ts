@@ -22,13 +22,13 @@ import {
   ComponentType
 } from 'discord.js';
 import { botConfig } from '../utils/config';
-import { GeminiService } from '../services/geminiService';
-import { CCOINAISDKService } from '../services/geminiSdkService';
+import ccoinAIService from '../services/ccoinAIService';
+import ccoinAISDKService from '../services/ccoinAISDKService';
 import { showAISettingsMenu } from './aiSettingsMenu';
 
 // فراخوانی سرویس‌های هوش مصنوعی
-const ccoinAI = new CCOINAISDKService();
-const geminiAPI = new GeminiService();
+const ccoinAI = ccoinAISDKService;
+const ccoinAPI = ccoinAIService;
 
 /**
  * نمایش منوی اصلی CCOIN AI
@@ -194,11 +194,11 @@ export async function handleAIChatModal(interaction: ModalSubmitInteraction) {
       // استفاده از سرویس هوش مصنوعی برای دریافت پاسخ
       const response = await ccoinAI.generateContent(prompt);
       
-      if (!response || !response.text) {
+      if (!response) {
         throw new Error('پاسخی از هوش مصنوعی دریافت نشد.');
       }
       
-      const aiResponse = response.text.trim();
+      const aiResponse = response.trim();
       
       // آماده سازی پاسخ نهایی
       const responseEmbed = new EmbedBuilder()
@@ -367,11 +367,11 @@ export async function handleContentCreationModal(interaction: ModalSubmitInterac
       // استفاده از سرویس هوش مصنوعی برای دریافت پاسخ
       const response = await ccoinAI.generateContent(enhancedPrompt);
       
-      if (!response || !response.text) {
+      if (!response) {
         throw new Error('پاسخی از هوش مصنوعی دریافت نشد.');
       }
       
-      const aiResponse = response.text.trim();
+      const aiResponse = response.trim();
       
       // آماده سازی پاسخ نهایی
       const responseEmbed = new EmbedBuilder()
@@ -490,11 +490,11 @@ export async function handleCodeAssistantModal(interaction: ModalSubmitInteracti
       // استفاده از سرویس هوش مصنوعی برای دریافت پاسخ
       const response = await ccoinAI.generateContent(enhancedPrompt);
       
-      if (!response || !response.text) {
+      if (!response) {
         throw new Error('پاسخی از هوش مصنوعی دریافت نشد.');
       }
       
-      const aiResponse = response.text.trim();
+      const aiResponse = response.trim();
       
       // آماده سازی پاسخ نهایی
       const responseEmbed = new EmbedBuilder()
@@ -613,11 +613,11 @@ export async function handleLearningAssistantModal(interaction: ModalSubmitInter
       // استفاده از سرویس هوش مصنوعی برای دریافت پاسخ
       const response = await ccoinAI.generateContent(enhancedPrompt);
       
-      if (!response || !response.text) {
+      if (!response) {
         throw new Error('پاسخی از هوش مصنوعی دریافت نشد.');
       }
       
-      const aiResponse = response.text.trim();
+      const aiResponse = response.trim();
       
       // آماده سازی پاسخ نهایی
       const responseEmbed = new EmbedBuilder()
@@ -692,7 +692,7 @@ export async function showAIInfo(interaction: ButtonInteraction | MessageCompone
       const result = await ccoinAI.generateContent("سلام");
       const endTime = Date.now();
       
-      if (result && result.text) {
+      if (result) {
         connectionStatus = "🟢 فعال";
         latency = `${endTime - startTime} میلی‌ثانیه`;
       }
