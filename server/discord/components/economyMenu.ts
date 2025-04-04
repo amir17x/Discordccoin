@@ -12,6 +12,7 @@ import {
   TextInputStyle
 } from 'discord.js';
 import { storage } from '../../storage';
+import { economicStatusMenu } from './economicStatusMenu';
 
 // تابع کمکی برای تبدیل ID شغل به نام نمایشی
 export function getJobNameById(jobId: string): string {
@@ -382,7 +383,11 @@ export async function economyMenu(
         new ButtonBuilder()
           .setCustomId('exchange')
           .setLabel('💎 تبدیل سکه')
-          .setStyle(ButtonStyle.Primary)
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('economic_status')
+          .setLabel('📊 وضعیت اقتصادی')
+          .setStyle(ButtonStyle.Success)
       );
     
     // Create deposit options menu

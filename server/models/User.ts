@@ -14,6 +14,21 @@ export interface IUser extends Document {
   bank: number;
   crystals: number;
   economyLevel: number;
+  economyScore: number;
+  economyStatus: string; // 'beginner', 'intermediate', 'professional', 'wealthy'
+  transactionVolume: number; // حجم کل تراکنش‌ها برای محاسبه گردش مالی
+  loanRepaymentHistory: { 
+    onTimePayments: number;
+    latePayments: number;
+    totalLoans: number;
+    punctualityRate: number; // درصد پرداخت‌های به موقع
+  };
+  jobActivity: {
+    totalTasksCompleted: number;
+    lastJobLevelUp: Date | null;
+    totalJobsHeld: number;
+    totalJobEarnings: number;
+  };
   points: number;
   level: number;
   experience: number;
@@ -112,6 +127,37 @@ const userSchema = new Schema<IUser>({
   bank: { type: Number, default: 0 },
   crystals: { type: Number, default: 0 },
   economyLevel: { type: Number, default: 1 },
+  economyScore: { type: Number, default: 0 },
+  economyStatus: { type: String, default: 'beginner' }, // 'beginner', 'intermediate', 'professional', 'wealthy'
+  transactionVolume: { type: Number, default: 0 }, // حجم کل تراکنش‌ها برای محاسبه گردش مالی
+  loanRepaymentHistory: { 
+    type: {
+      onTimePayments: { type: Number, default: 0 },
+      latePayments: { type: Number, default: 0 },
+      totalLoans: { type: Number, default: 0 },
+      punctualityRate: { type: Number, default: 100 } // درصد پرداخت‌های به موقع
+    },
+    default: () => ({
+      onTimePayments: 0,
+      latePayments: 0,
+      totalLoans: 0,
+      punctualityRate: 100
+    })
+  },
+  jobActivity: {
+    type: {
+      totalTasksCompleted: { type: Number, default: 0 },
+      lastJobLevelUp: { type: Date, default: null },
+      totalJobsHeld: { type: Number, default: 0 },
+      totalJobEarnings: { type: Number, default: 0 }
+    },
+    default: () => ({
+      totalTasksCompleted: 0,
+      lastJobLevelUp: null,
+      totalJobsHeld: 0,
+      totalJobEarnings: 0
+    })
+  },
   points: { type: Number, default: 0 },
   level: { type: Number, default: 1 },
   experience: { type: Number, default: 0 },

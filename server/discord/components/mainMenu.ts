@@ -415,8 +415,8 @@ export async function mainMenu(
               .setLabel('🛒 بازار')
               .setStyle(ButtonStyle.Primary),
             new ButtonBuilder()
-              .setCustomId('ccoin_ai')
-              .setLabel('🤖 CCOIN AI')
+              .setCustomId('help')
+              .setLabel('📚 راهنما')
               .setStyle(ButtonStyle.Danger),
             new ButtonBuilder()
               .setCustomId('other_options')
@@ -493,23 +493,16 @@ export async function mainMenu(
             .setLabel('🐾 پت‌های من')
             .setStyle(ButtonStyle.Success),
           new ButtonBuilder()
+            .setCustomId('ccoin_ai')
+            .setLabel('🤖 CCOIN AI')
+            .setStyle(ButtonStyle.Primary),
+          new ButtonBuilder()
             .setCustomId('donate')
             .setLabel('❤️ حمایت از ربات')
             .setStyle(ButtonStyle.Secondary),
         );
         
-      // Row 5: AI Assistant و دستاوردها
-      const row5Extra = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId('ccoin_ai')
-            .setLabel('🤖 CCOIN AI')
-            .setStyle(ButtonStyle.Primary),
-          new ButtonBuilder()
-            .setCustomId('achievements')
-            .setLabel('🏆 دستاوردهای من')
-            .setStyle(ButtonStyle.Success),
-        );
+      // Row 5: AI Assistant و دستاوردها - حذف این بخش و استفاده از row4 برای CCOIN AI
       
       // Row 5: دکمه بازگشت
       const row5 = new ActionRowBuilder<ButtonBuilder>()

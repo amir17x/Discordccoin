@@ -3,6 +3,7 @@ import { storage } from '../../storage';
 import { Transaction } from '@shared/schema';
 import { mainMenu } from '../components/mainMenu';
 import { economyMenu, transferUser } from '../components/economyMenu';
+import { economicStatusMenu, economicStatusDetail } from '../components/economicStatusMenu';
 import { bankUpgradeMenu, processBankAccountUpgrade } from '../components/bankUpgradeMenu';
 import { gamesMenu } from '../components/gamesMenu';
 import { shopMenu } from '../components/shopMenu';
@@ -1191,6 +1192,15 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
 
     if (action === 'economy') {
       await economyMenu(interaction);
+      return;
+    }
+    
+    // Handle economic status buttons
+    if (customId === 'economic_status') {
+      await economicStatusMenu(interaction);
+      return;
+    } else if (customId === 'economic_status_detail') {
+      await economicStatusDetail(interaction);
       return;
     }
 
