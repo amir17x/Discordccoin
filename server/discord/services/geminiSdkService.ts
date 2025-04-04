@@ -254,7 +254,8 @@ export class CCOINAISDKService {
    */
   async testConnection(): Promise<boolean> {
     try {
-      await this.generateContent('سلام، لطفاً پاسخ خیلی کوتاهی بده: 1+1 چند می‌شود؟', 10, 0.1);
+      // استفاده از یک پرسش بسیار ساده با تنظیمات سخت‌گیرانه‌تر برای کاهش زمان پاسخگویی
+      await this.generateContent('1+1', 5, 0.1);
       return true;
     } catch (error) {
       log('تست اتصال سرویس CCOIN AI با شکست مواجه شد: ' + error, 'error');

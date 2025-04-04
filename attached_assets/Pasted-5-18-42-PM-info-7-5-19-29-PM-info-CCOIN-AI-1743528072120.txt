@@ -1,0 +1,74 @@
+5:18:42 PM [info] قیمت 7 سهام به‌روزرسانی شد. وضعیت بازار: بحران
+5:19:29 PM [info] پاسخ از CCOIN AI دریافت شد (26 کاراکتر) ✨
+5:19:29 PM [success] تولید پیام طنز برای تم "قدرت و رقابت" با هوش مصنوعی: "💫 جهان رو فتح میکنم 💪😂
+"
+5:19:29 PM [info] وضعیت ربات به‌روزرسانی شد: 💫 جهان رو فتح میکنم 💪😂
+
+5:19:29 PM [info] سیستم به‌روزرسانی خودکار وضعیت با فاصله 20 دقیقه راه‌اندازی شد
+No loans to confiscate.
+5:20:10 PM [discord] بررسی اولیه وام‌های معوق با موفقیت انجام شد
+5:21:03 PM [discord] Executing command: menu
+(node:5439) Warning: Supplying "ephemeral" for interaction response options is deprecated. Utilize flags instead.
+5:21:03 PM [discord] Successfully executed command: menu
+5:21:03 PM [info] اعلانات شخصی کاربر 700031045231182005 منقضی شده است. تولید اعلانات جدید...
+5:21:03 PM [info] تولید اعلانات جدید برای کاربر 700031045231182005
+Error getting user quests from MongoDB: CastError: Cast to ObjectId failed for value "NaN" (type number) at path "_id" for model "User"
+    at SchemaObjectId.cast (/home/runner/workspace/node_modules/mongoose/lib/schema/objectId.js:251:11)
+    at SchemaType.applySetters (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1255:12)
+    at SchemaType.castForQuery (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1673:17)
+    at cast (/home/runner/workspace/node_modules/mongoose/lib/cast.js:390:32)
+    at Query.cast (/home/runner/workspace/node_modules/mongoose/lib/query.js:4907:12)
+    at Query._castConditions (/home/runner/workspace/node_modules/mongoose/lib/query.js:2325:10)
+    at model.Query._findOne (/home/runner/workspace/node_modules/mongoose/lib/query.js:2648:8)
+    at model.Query.exec (/home/runner/workspace/node_modules/mongoose/lib/query.js:4456:80)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async MongoStorage.getUserQuests (/home/runner/workspace/server/storage.ts:6568:20) {
+  stringValue: '"NaN"',
+  messageFormat: undefined,
+  kind: 'ObjectId',
+  value: NaN,
+  path: '_id',
+  reason: BSONError: input must be a 24 character hex string, 12 byte Uint8Array, or an integer
+      at new ObjectId (/home/runner/workspace/node_modules/bson/src/objectid.ts:120:15)
+      at castObjectId (/home/runner/workspace/node_modules/mongoose/lib/cast/objectid.js:25:12)
+      at SchemaObjectId.cast (/home/runner/workspace/node_modules/mongoose/lib/schema/objectId.js:249:12)
+      at SchemaType.applySetters (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1255:12)
+      at SchemaType.castForQuery (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1673:17)
+      at cast (/home/runner/workspace/node_modules/mongoose/lib/cast.js:390:32)
+      at Query.cast (/home/runner/workspace/node_modules/mongoose/lib/query.js:4907:12)
+      at Query._castConditions (/home/runner/workspace/node_modules/mongoose/lib/query.js:2325:10)
+      at model.Query._findOne (/home/runner/workspace/node_modules/mongoose/lib/query.js:2648:8)
+      at model.Query.exec (/home/runner/workspace/node_modules/mongoose/lib/query.js:4456:80),
+  valueType: 'number'
+}
+Error getting inventory items from MongoDB: CastError: Cast to ObjectId failed for value "NaN" (type number) at path "_id" for model "User"
+    at SchemaObjectId.cast (/home/runner/workspace/node_modules/mongoose/lib/schema/objectId.js:251:11)
+    at SchemaType.applySetters (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1255:12)
+    at SchemaType.castForQuery (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1673:17)
+    at cast (/home/runner/workspace/node_modules/mongoose/lib/cast.js:390:32)
+    at Query.cast (/home/runner/workspace/node_modules/mongoose/lib/query.js:4907:12)
+    at Query._castConditions (/home/runner/workspace/node_modules/mongoose/lib/query.js:2325:10)
+    at model.Query._findOne (/home/runner/workspace/node_modules/mongoose/lib/query.js:2648:8)
+    at model.Query.exec (/home/runner/workspace/node_modules/mongoose/lib/query.js:4456:80)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async MongoStorage.getInventoryItems (/home/runner/workspace/server/storage.ts:6225:20) {
+  stringValue: '"NaN"',
+  messageFormat: undefined,
+  kind: 'ObjectId',
+  value: NaN,
+  path: '_id',
+  reason: BSONError: input must be a 24 character hex string, 12 byte Uint8Array, or an integer
+      at new ObjectId (/home/runner/workspace/node_modules/bson/src/objectid.ts:120:15)
+      at castObjectId (/home/runner/workspace/node_modules/mongoose/lib/cast/objectid.js:25:12)
+      at SchemaObjectId.cast (/home/runner/workspace/node_modules/mongoose/lib/schema/objectId.js:249:12)
+      at SchemaType.applySetters (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1255:12)
+      at SchemaType.castForQuery (/home/runner/workspace/node_modules/mongoose/lib/schemaType.js:1673:17)
+      at cast (/home/runner/workspace/node_modules/mongoose/lib/cast.js:390:32)
+      at Query.cast (/home/runner/workspace/node_modules/mongoose/lib/query.js:4907:12)
+      at Query._castConditions (/home/runner/workspace/node_modules/mongoose/lib/query.js:2325:10)
+      at model.Query._findOne (/home/runner/workspace/node_modules/mongoose/lib/query.js:2648:8)
+      at model.Query.exec (/home/runner/workspace/node_modules/mongoose/lib/query.js:4456:80),
+  valueType: 'number'
+}
+5:21:04 PM [info] ارسال درخواست به CCOIN AI: تو یک سیستم اعلانات هوشمند برای بازی اقتصادی دیسکو...
+5:21:04 PM [info] ارسال درخواست به CCOIN AI: تو یک سیستم اعلانات هوشمند برای بازی اقتصادی دیسکو...

@@ -120,6 +120,11 @@ export const users = pgTable("users", {
     lastNotified: null
   }),
   
+  // سطح حساب بانکی
+  bankAccountTier: integer("bank_account_tier").default(0),
+  bankAccountUpgradedAt: timestamp("bank_account_upgraded_at"),
+  lastBankInterest: timestamp("last_bank_interest"),
+  
   // فیلدهای مدیریتی
   banned: boolean("banned").notNull().default(false), // وضعیت مسدودیت
   banReason: text("ban_reason"), // دلیل مسدودیت

@@ -21,6 +21,9 @@ import {
   Investment,
   UserStock,
 } from '../shared/schema';
+
+// تعریف نوع UserData برای استفاده در متد upgradeUserBankAccount
+export type UserData = User;
 import { convertToUser } from './discord/utils/helpers';
 
 // Import Transaction type separately to avoid duplicate import error
@@ -279,6 +282,9 @@ export interface IStorage {
   getGameSettings(): Promise<any>;
   updateUserWallet(user: User, amount: number, type: string, description: string): Promise<User | undefined>;
   
+  // Bank Account Upgrade operations
+  upgradeUserBankAccount(userId: number | string, tier: number): Promise<UserData | undefined>;
+  
   // User operations
   getUser(id: number | string): Promise<User | undefined>;
   getUserByDiscordId(discordId: string): Promise<User | undefined>;
@@ -425,7 +431,6 @@ export interface IStorage {
   updateCreditScore(userId: number, amount: number): Promise<number>;
   
   // Job operations
-  getUserJob(userId: number | string | any): Promise<JobData | undefined>;
   getAvailableJobs(): Promise<{id: string, name: string, income: number, cyclePeriod: number, requirements: any}[]>;
   assignJob(userId: number, jobType: string): Promise<JobData>;
   collectJobIncome(userId: number): Promise<{amount: number, xpEarned: number, leveledUp: boolean}>;
@@ -558,6 +563,7 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
+  // Bank Account Upgrade operations
   // Game Settings operations
   getGameSettings(): Promise<any> {
     return Promise.resolve({
@@ -570,6 +576,36 @@ export class MemStorage implements IStorage {
       lotteryTicketPrice: 50,
       blackMarketPriceMultiplier: 2
     });
+  }
+  
+  // Bank Account Upgrade operations
+  async upgradeUserBankAccount(userId: number | string, tier: number): Promise<UserData | undefined> {
+    const user = await this.getUser(userId);
+    if (!user) return undefined;
+    
+    // بررسی اینکه tier معتبر باشد (بین 0 تا 4)
+    if (tier < 0 || tier > 4) return undefined;
+    
+    // دریافت اطلاعات سطح هدف و هزینه‌ی آن
+    const tierCosts = [0, 500, 1500, 3000, 5000];
+    const upgradeCost = tierCosts[tier];
+    
+    // بررسی کریستال کافی
+    if (user.crystals < upgradeCost) return undefined;
+    
+    // انجام ارتقاء
+    user.crystals -= upgradeCost;
+    user.bankAccountTier = tier;
+    user.bankAccountUpgradedAt = new Date();
+    
+    // ذخیره تغییرات
+    const updatedUser = await this.updateUser(user.id, {
+      crystals: user.crystals,
+      bankAccountTier: tier,
+      bankAccountUpgradedAt: new Date()
+    });
+    
+    return updatedUser;
   }
   
   // Wallet Update operation
@@ -4079,6 +4115,7 @@ import MarketListingModel from './models/MarketListing';
 import { GlobalSettingModel } from './models/GlobalSetting';
 
 export class MongoStorage implements IStorage {
+  // Bank Account Upgrade operations - using the implementation from MemStorage
   getGameSettings(): Promise<any> {
     return Promise.resolve({
       duelBetAmount: 100,
@@ -7569,19 +7606,44 @@ export class MongoStorage implements IStorage {
   async getUserJob(userId: number | string | any): Promise<JobData | undefined> {
     try {
       console.log('Looking for job with userId type:', typeof userId, 'value:', userId);
-      // اگر userId از نوع رشته یا شیء است، باید آن را به عدد تبدیل کنیم
-      let userIdNumber;
       
+      // اگر userId از نوع شیء است، سعی می‌کنیم شناسه دیسکورد از آن استخراج کنیم
+      if (typeof userId === 'object') {
+        if (userId && userId.discordId) {
+          console.log('Using discordId from user object:', userId.discordId);
+          userId = userId.discordId;
+        } else if (userId && userId.id) {
+          console.log('Using id from user object:', userId.id);
+          userId = userId.id;
+        } else if (userId && userId.toString) {
+          // اگر شیء یک ObjectId از مانگو است
+          console.log('Converting ObjectId to string:', userId.toString());
+          // در این مرحله، فقط به رشته تبدیل می‌کنیم، در مرحله بعد اگر عدد باشد، به عدد تبدیل خواهد شد
+          userId = userId.toString();
+        } else {
+          console.log('Invalid userId format for job lookup (object):', userId);
+          return undefined;
+        }
+      }
+      
+      // تبدیل به عدد اگر امکان‌پذیر باشد
+      let userIdNumber;
       if (typeof userId === 'string' && !isNaN(Number(userId))) {
         userIdNumber = Number(userId);
-      } else if (typeof userId === 'object') {
-        console.log('Invalid userId format for job lookup:', userId);
-        return undefined;
       } else {
         userIdNumber = userId;
       }
       
-      const job = await JobModel.findOne({ userId: userIdNumber });
+      console.log('Searching for job with processed userId:', userIdNumber);
+      
+      // جستجو با شناسه‌های مختلف
+      let job = await JobModel.findOne({ userId: userIdNumber });
+      
+      // اگر با شناسه اصلی پیدا نشد، با شناسه دیسکورد جستجو کنیم
+      if (!job && typeof userId === 'string') {
+        job = await JobModel.findOne({ userId: userId });
+      }
+      
       return job || undefined;
     } catch (error) {
       console.error('Error getting user job from MongoDB:', error);

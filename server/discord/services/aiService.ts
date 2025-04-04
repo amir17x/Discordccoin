@@ -313,11 +313,11 @@ export async function testAIService(
 export async function pingCurrentAIService(): Promise<number> {
   try {
     // تابع کمکی برای اعمال تایم‌اوت روی پینگ
-    const pingWithTimeout = async (pingFunc: () => Promise<boolean>, service: string, timeout: number = 5000): Promise<number> => {
+    const pingWithTimeout = async (pingFunc: () => Promise<boolean>, service: string, timeout: number = 15000): Promise<number> => {
       return new Promise<number>((resolve) => {
         const startTime = Date.now();
         
-        // تنظیم تایمر برای تایم‌اوت
+        // تنظیم تایمر برای تایم‌اوت - افزایش به 15 ثانیه
         const timer = setTimeout(() => {
           console.log(`Ping timeout after ${timeout}ms for service ${service}`);
           resolve(-2); // کد -2 برای تایم‌اوت

@@ -35,6 +35,9 @@ export interface IUser extends Document {
   reputation: number;
   energyPoints: number;
   lastEnergyRefill: Date | null;
+  bankAccountTier: number; // سطح حساب بانکی: 0=پایه، 1=نقره‌ای، 2=طلایی، 3=الماسی، 4=افسانه‌ای
+  bankAccountUpgradedAt: Date | null; // تاریخ آخرین ارتقای حساب
+  lastBankInterest: Date | null; // زمان آخرین دریافت سود بانکی
   xpBooster: {
     active: boolean;
     multiplier: number;
@@ -130,6 +133,9 @@ const userSchema = new Schema<IUser>({
   reputation: { type: Number, default: 0 },
   energyPoints: { type: Number, default: 100 },
   lastEnergyRefill: { type: Date, default: null },
+  bankAccountTier: { type: Number, default: 0 }, // سطح حساب بانکی: 0=پایه، 1=نقره‌ای، 2=طلایی، 3=الماسی، 4=افسانه‌ای
+  bankAccountUpgradedAt: { type: Date, default: null }, // تاریخ آخرین ارتقای حساب
+  lastBankInterest: { type: Date, default: null }, // زمان آخرین دریافت سود بانکی
   xpBooster: {
     type: Object,
     default: {
