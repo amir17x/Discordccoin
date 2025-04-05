@@ -1,156 +1,85 @@
 /**
- * میان‌افزار احراز هویت برای پنل ادمین
+ * میدل‌ویر احراز هویت و مجوزها
+ * 
+ * این میدل‌ویرها مسئول بررسی احراز هویت کاربر و مجوزهای دسترسی هستند.
  */
 
 /**
- * بررسی ورود کاربر
- * @param {Object} req درخواست
- * @param {Object} res پاسخ
- * @param {Function} next تابع بعدی
+ * بررسی احراز هویت کاربر
+ * اگر کاربر وارد نشده باشد، به صفحه ورود هدایت می‌شود.
+ * 
+ * @param {Request} req درخواست اکسپرس
+ * @param {Response} res پاسخ اکسپرس
+ * @param {NextFunction} next تابع بعدی
+ * @returns {void}
  */
 export function authMiddleware(req, res, next) {
+  // بررسی وجود کاربر در جلسه
   if (!req.session.user) {
-    req.flash('error_msg', 'برای دسترسی به این صفحه باید وارد شوید');
+    req.flash('error', 'برای دسترسی به این بخش، ابتدا وارد شوید.');
     return res.redirect('/admin/login');
   }
+  
   next();
 }
 
 /**
- * بررسی دسترسی ادمین
- * @param {Object} req درخواست
- * @param {Object} res پاسخ
- * @param {Function} next تابع بعدی
+ * بررسی مجوزهای دسترسی کاربر
+ * 
+ * @param {string} permission مجوز مورد نیاز
+ * @returns {function} میدل‌ویر
  */
-export function checkAdmin(req, res, next) {
-  if (!req.session.user || req.session.user.role !== 'admin') {
-    req.flash('error_msg', 'شما دسترسی کافی برای این عملیات را ندارید');
+export function checkPermissions(permission) {
+  return (req, res, next) => {
+    // بررسی وجود کاربر در جلسه (اضافی برای اطمینان)
+    if (!req.session.user) {
+      req.flash('error', 'برای دسترسی به این بخش، ابتدا وارد شوید.');
+      return res.redirect('/admin/login');
+    }
+    
+    // بررسی وجود مجوز مورد نیاز
+    const userPermissions = req.session.user.permissions || [];
+    const isAdmin = req.session.user.role === 'admin';
+    
+    // اگر کاربر ادمین اصلی باشد، به همه‌چیز دسترسی دارد
+    if (isAdmin) {
+      return next();
+    }
+    
+    // بررسی دسترسی
+    if (userPermissions.includes(permission)) {
+      return next();
+    }
+    
+    // در صورت عدم دسترسی
+    req.flash('error', 'شما مجوز دسترسی به این بخش را ندارید.');
     return res.redirect('/admin/dashboard');
-  }
-  next();
+  };
 }
 
 /**
- * بررسی دسترسی عدم ورود (برای صفحات ورود)
- * @param {Object} req درخواست
- * @param {Object} res پاسخ
- * @param {Function} next تابع بعدی
+ * بررسی نقش کاربر
+ * 
+ * @param {string[]} roles نقش‌های مجاز
+ * @returns {function} میدل‌ویر
  */
-export function guestMiddleware(req, res, next) {
-  if (req.session.user) {
+export function checkRole(roles) {
+  return (req, res, next) => {
+    // بررسی وجود کاربر در جلسه
+    if (!req.session.user) {
+      req.flash('error', 'برای دسترسی به این بخش، ابتدا وارد شوید.');
+      return res.redirect('/admin/login');
+    }
+    
+    // بررسی نقش کاربر
+    const userRole = req.session.user.role || 'user';
+    
+    if (roles.includes(userRole)) {
+      return next();
+    }
+    
+    // در صورت عدم دسترسی
+    req.flash('error', 'شما مجوز دسترسی به این بخش را ندارید.');
     return res.redirect('/admin/dashboard');
-  }
-  next();
-}
-
-/**
- * بررسی دسترسی به بخش کاربران
- * @param {Object} req درخواست
- * @param {Object} res پاسخ
- * @param {Function} next تابع بعدی
- */
-export function checkUsersAccess(req, res, next) {
-  if (!req.session.user || (!req.session.user.permissions?.users && req.session.user.role !== 'admin')) {
-    req.flash('error_msg', 'شما دسترسی کافی برای مدیریت کاربران را ندارید');
-    return res.redirect('/admin/dashboard');
-  }
-  next();
-}
-
-/**
- * بررسی دسترسی به بخش اقتصاد
- * @param {Object} req درخواست
- * @param {Object} res پاسخ
- * @param {Function} next تابع بعدی
- */
-export function checkEconomyAccess(req, res, next) {
-  if (!req.session.user || (!req.session.user.permissions?.economy && req.session.user.role !== 'admin')) {
-    req.flash('error_msg', 'شما دسترسی کافی برای مدیریت اقتصاد را ندارید');
-    return res.redirect('/admin/dashboard');
-  }
-  next();
-}
-
-/**
- * بررسی دسترسی به بخش بازی‌ها
- * @param {Object} req درخواست
- * @param {Object} res پاسخ
- * @param {Function} next تابع بعدی
- */
-export function checkGamesAccess(req, res, next) {
-  if (!req.session.user || (!req.session.user.permissions?.games && req.session.user.role !== 'admin')) {
-    req.flash('error_msg', 'شما دسترسی کافی برای مدیریت بازی‌ها را ندارید');
-    return res.redirect('/admin/dashboard');
-  }
-  next();
-}
-
-/**
- * بررسی دسترسی به بخش هوش مصنوعی
- * @param {Object} req درخواست
- * @param {Object} res پاسخ
- * @param {Function} next تابع بعدی
- */
-export function checkAIAccess(req, res, next) {
-  if (!req.session.user || (!req.session.user.permissions?.ai && req.session.user.role !== 'admin')) {
-    req.flash('error_msg', 'شما دسترسی کافی برای مدیریت هوش مصنوعی را ندارید');
-    return res.redirect('/admin/dashboard');
-  }
-  next();
-}
-
-/**
- * بررسی دسترسی به بخش رویدادها
- * @param {Object} req درخواست
- * @param {Object} res پاسخ
- * @param {Function} next تابع بعدی
- */
-export function checkEventsAccess(req, res, next) {
-  if (!req.session.user || (!req.session.user.permissions?.events && req.session.user.role !== 'admin')) {
-    req.flash('error_msg', 'شما دسترسی کافی برای مدیریت رویدادها را ندارید');
-    return res.redirect('/admin/dashboard');
-  }
-  next();
-}
-
-/**
- * بررسی دسترسی به بخش فروشگاه
- * @param {Object} req درخواست
- * @param {Object} res پاسخ
- * @param {Function} next تابع بعدی
- */
-export function checkShopAccess(req, res, next) {
-  if (!req.session.user || (!req.session.user.permissions?.shop && req.session.user.role !== 'admin')) {
-    req.flash('error_msg', 'شما دسترسی کافی برای مدیریت فروشگاه را ندارید');
-    return res.redirect('/admin/dashboard');
-  }
-  next();
-}
-
-/**
- * بررسی دسترسی به بخش لاگ‌ها
- * @param {Object} req درخواست
- * @param {Object} res پاسخ
- * @param {Function} next تابع بعدی
- */
-export function checkLogsAccess(req, res, next) {
-  if (!req.session.user || (!req.session.user.permissions?.logs && req.session.user.role !== 'admin')) {
-    req.flash('error_msg', 'شما دسترسی کافی برای مشاهده لاگ‌ها را ندارید');
-    return res.redirect('/admin/dashboard');
-  }
-  next();
-}
-
-/**
- * بررسی دسترسی به بخش تنظیمات (فقط ادمین)
- * @param {Object} req درخواست
- * @param {Object} res پاسخ
- * @param {Function} next تابع بعدی
- */
-export function checkSettingsAccess(req, res, next) {
-  if (!req.session.user || req.session.user.role !== 'admin') {
-    req.flash('error_msg', 'فقط ادمین اصلی مجاز به تغییر تنظیمات است');
-    return res.redirect('/admin/dashboard');
-  }
-  next();
+  };
 }

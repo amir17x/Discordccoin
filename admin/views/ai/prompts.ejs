@@ -1,0 +1,600 @@
+<%- include('../partials/header') %>
+
+<div class="page-header d-flex justify-content-between align-items-center">
+  <div>
+    <h1><i class="fas fa-comment-alt"></i> مدیریت پرامپت‌ها</h1>
+    <p class="lead">الگوهای پرامپت را برای بهبود پاسخ‌های CCOIN AI مدیریت کنید.</p>
+  </div>
+  <button type="button" class="btn btn-success" id="createPromptBtn">
+    <i class="fas fa-plus"></i> ایجاد پرامپت جدید
+  </button>
+</div>
+
+<% if(messages.success.length > 0) { %>
+  <div class="alert alert-success">
+    <i class="fas fa-check-circle"></i> <%= messages.success %>
+  </div>
+<% } %>
+
+<% if(messages.error.length > 0) { %>
+  <div class="alert alert-danger">
+    <i class="fas fa-exclamation-circle"></i> <%= messages.error %>
+  </div>
+<% } %>
+
+<div class="row mb-4">
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="fas fa-filter"></i> فیلتر پرامپت‌ها</h5>
+      </div>
+      <div class="card-body">
+        <div class="form-group">
+          <label for="categoryFilter">دسته‌بندی</label>
+          <select id="categoryFilter" class="form-control">
+            <option value="all">همه دسته‌بندی‌ها</option>
+            <option value="عمومی">عمومی</option>
+            <option value="تصویر">تصویر</option>
+            <option value="تولید محتوا">تولید محتوا</option>
+            <option value="برنامه‌نویسی">برنامه‌نویسی</option>
+            <option value="آموزش">آموزش</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="statusFilter">وضعیت</label>
+          <select id="statusFilter" class="form-control">
+            <option value="all">همه وضعیت‌ها</option>
+            <option value="active">فعال</option>
+            <option value="inactive">غیرفعال</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="searchPrompt">جستجو</label>
+          <input type="text" id="searchPrompt" class="form-control" placeholder="نام یا توضیحات...">
+        </div>
+        <button type="button" id="applyFiltersBtn" class="btn btn-primary btn-block">
+          <i class="fas fa-search"></i> اعمال فیلترها
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="fas fa-list"></i> لیست پرامپت‌ها</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group prompt-list" id="promptList">
+          <% if(promptTemplates && promptTemplates.length > 0) { %>
+            <% promptTemplates.forEach(template => { %>
+              <div class="list-group-item list-group-item-action prompt-item" 
+                   data-id="<%= template.id %>"
+                   data-category="<%= template.category %>"
+                   data-active="<%= template.active ? 'active' : 'inactive' %>">
+                <div class="d-flex justify-content-between align-items-center">
+                  <h5 class="mb-1">
+                    <%= template.name %>
+                    <% if(template.active) { %>
+                      <span class="badge badge-success">فعال</span>
+                    <% } else { %>
+                      <span class="badge badge-secondary">غیرفعال</span>
+                    <% } %>
+                  </h5>
+                  <small class="text-muted"><%= template.category %></small>
+                </div>
+                <p class="mb-1 text-muted"><%= template.description %></p>
+                <div class="bg-light p-2 rounded mt-2">
+                  <code class="text-primary"><%= template.template.substring(0, 100) %><%= template.template.length > 100 ? '...' : '' %></code>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                  <div>
+                    <% if(template.variables && template.variables.length > 0) { %>
+                      <small class="text-muted">
+                        متغیرها: 
+                        <% template.variables.forEach((variable, index) => { %>
+                          <span class="badge badge-info"><%= variable.name %></span><%= index < template.variables.length - 1 ? ' ' : '' %>
+                        <% }); %>
+                      </small>
+                    <% } else { %>
+                      <small class="text-muted">بدون متغیر</small>
+                    <% } %>
+                  </div>
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-sm btn-outline-primary view-prompt" data-id="<%= template.id %>">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary edit-prompt" data-id="<%= template.id %>">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger delete-prompt" data-id="<%= template.id %>">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            <% }); %>
+          <% } else { %>
+            <div class="list-group-item">
+              <div class="alert alert-info mb-0">
+                هنوز هیچ الگوی پرامپتی تعریف نشده است. با کلیک بر روی دکمه "ایجاد پرامپت جدید" شروع کنید.
+              </div>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- مودال ایجاد/ویرایش پرامپت -->
+<div class="modal fade" id="promptModal" tabindex="-1" role="dialog" aria-labelledby="promptModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="promptModalLabel">ایجاد پرامپت جدید</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="بستن">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="promptForm">
+          <input type="hidden" id="promptId" name="id">
+          
+          <div class="form-group">
+            <label for="promptName">نام پرامپت</label>
+            <input type="text" id="promptName" name="name" class="form-control" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="promptCategory">دسته‌بندی</label>
+            <select id="promptCategory" name="category" class="form-control" required>
+              <option value="عمومی">عمومی</option>
+              <option value="تصویر">تصویر</option>
+              <option value="تولید محتوا">تولید محتوا</option>
+              <option value="برنامه‌نویسی">برنامه‌نویسی</option>
+              <option value="آموزش">آموزش</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="promptDescription">توضیحات</label>
+            <textarea id="promptDescription" name="description" class="form-control" rows="2" required></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label for="promptTemplate">متن پرامپت</label>
+            <textarea id="promptTemplate" name="template" class="form-control" rows="6" required></textarea>
+            <small class="form-text text-muted">از قالب {متغیر} برای جایگذاری متغیرها استفاده کنید.</small>
+          </div>
+          
+          <div class="form-group">
+            <label>متغیرها</label>
+            <div id="variablesContainer"></div>
+            
+            <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="addVariableBtn">
+              <i class="fas fa-plus"></i> افزودن متغیر
+            </button>
+          </div>
+          
+          <div class="form-group">
+            <div class="custom-control custom-switch">
+              <input type="checkbox" name="active" id="promptActive" class="custom-control-input" checked>
+              <label for="promptActive" class="custom-control-label">فعال</label>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">انصراف</button>
+        <button type="button" class="btn btn-primary" id="savePromptBtn">ذخیره</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- مودال نمایش پرامپت -->
+<div class="modal fade" id="viewPromptModal" tabindex="-1" role="dialog" aria-labelledby="viewPromptModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-info text-white">
+        <h5 class="modal-title" id="viewPromptModalLabel">مشاهده پرامپت</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="بستن">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="card mb-3">
+          <div class="card-header bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+              <h5 class="mb-0" id="viewPromptName"></h5>
+              <span class="badge badge-info" id="viewPromptCategory"></span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="text-muted" id="viewPromptDescription"></p>
+          </div>
+        </div>
+        
+        <div class="card mb-3">
+          <div class="card-header bg-light">متن پرامپت</div>
+          <div class="card-body bg-light">
+            <pre class="mb-0"><code id="viewPromptTemplate" class="text-primary"></code></pre>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-header bg-light">متغیرها</div>
+          <div class="card-body" id="viewPromptVariables">
+            <div class="alert alert-info">بدون متغیر</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">بستن</button>
+        <button type="button" class="btn btn-primary edit-prompt-from-view">ویرایش</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- مودال حذف پرامپت -->
+<div class="modal fade" id="deletePromptModal" tabindex="-1" role="dialog" aria-labelledby="deletePromptModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="deletePromptModalLabel">حذف پرامپت</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="بستن">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>آیا از حذف پرامپت "<span id="deletePromptName"></span>" اطمینان دارید؟</p>
+        <p class="text-danger">این عملیات غیرقابل بازگشت است!</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">انصراف</button>
+        <button type="button" class="btn btn-danger" id="confirmDeletePromptBtn">حذف</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // متغیرهای کلی
+  let promptTemplates = <%= JSON.stringify(promptTemplates) %>;
+  let currentPromptId = null;
+  
+  // فیلترها
+  const categoryFilter = document.getElementById('categoryFilter');
+  const statusFilter = document.getElementById('statusFilter');
+  const searchPrompt = document.getElementById('searchPrompt');
+  const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+  const promptList = document.getElementById('promptList');
+  
+  // اعمال فیلترها
+  applyFiltersBtn.addEventListener('click', function() {
+    const category = categoryFilter.value;
+    const status = statusFilter.value;
+    const search = searchPrompt.value.toLowerCase();
+    
+    document.querySelectorAll('.prompt-item').forEach(item => {
+      const itemCategory = item.getAttribute('data-category');
+      const itemStatus = item.getAttribute('data-active');
+      const itemName = item.querySelector('h5').textContent.toLowerCase();
+      const itemDescription = item.querySelector('p').textContent.toLowerCase();
+      
+      let show = true;
+      
+      if (category !== 'all' && itemCategory !== category) {
+        show = false;
+      }
+      
+      if (status !== 'all' && itemStatus !== status) {
+        show = false;
+      }
+      
+      if (search && !itemName.includes(search) && !itemDescription.includes(search)) {
+        show = false;
+      }
+      
+      item.style.display = show ? 'block' : 'none';
+    });
+  });
+  
+  // نمایش مودال ایجاد پرامپت
+  const createPromptBtn = document.getElementById('createPromptBtn');
+  createPromptBtn.addEventListener('click', function() {
+    resetPromptForm();
+    $('#promptModal').modal('show');
+  });
+  
+  // دکمه‌های مشاهده پرامپت
+  document.querySelectorAll('.view-prompt').forEach(button => {
+    button.addEventListener('click', function() {
+      const id = this.getAttribute('data-id');
+      viewPrompt(id);
+    });
+  });
+  
+  // دکمه‌های ویرایش پرامپت
+  document.querySelectorAll('.edit-prompt').forEach(button => {
+    button.addEventListener('click', function() {
+      const id = this.getAttribute('data-id');
+      editPrompt(id);
+    });
+  });
+  
+  // دکمه‌های حذف پرامپت
+  document.querySelectorAll('.delete-prompt').forEach(button => {
+    button.addEventListener('click', function() {
+      const id = this.getAttribute('data-id');
+      confirmDeletePrompt(id);
+    });
+  });
+  
+  // دکمه ویرایش از مودال نمایش
+  document.querySelector('.edit-prompt-from-view').addEventListener('click', function() {
+    $('#viewPromptModal').modal('hide');
+    editPrompt(currentPromptId);
+  });
+  
+  // افزودن متغیر
+  const addVariableBtn = document.getElementById('addVariableBtn');
+  addVariableBtn.addEventListener('click', function() {
+    addVariableField();
+  });
+  
+  // ذخیره پرامپت
+  const savePromptBtn = document.getElementById('savePromptBtn');
+  savePromptBtn.addEventListener('click', function() {
+    savePrompt();
+  });
+  
+  // تایید حذف پرامپت
+  const confirmDeletePromptBtn = document.getElementById('confirmDeletePromptBtn');
+  confirmDeletePromptBtn.addEventListener('click', function() {
+    deletePrompt();
+  });
+  
+  // ریست فرم پرامپت
+  function resetPromptForm() {
+    document.getElementById('promptModalLabel').textContent = 'ایجاد پرامپت جدید';
+    document.getElementById('promptId').value = '';
+    document.getElementById('promptName').value = '';
+    document.getElementById('promptCategory').value = 'عمومی';
+    document.getElementById('promptDescription').value = '';
+    document.getElementById('promptTemplate').value = '';
+    document.getElementById('promptActive').checked = true;
+    
+    const variablesContainer = document.getElementById('variablesContainer');
+    variablesContainer.innerHTML = '';
+    
+    currentPromptId = null;
+  }
+  
+  // افزودن فیلد متغیر
+  function addVariableField(name = '', description = '') {
+    const variablesContainer = document.getElementById('variablesContainer');
+    const index = variablesContainer.children.length;
+    
+    const variableRow = document.createElement('div');
+    variableRow.className = 'variable-row input-group mb-2';
+    variableRow.innerHTML = `
+      <input type="text" name="variables[${index}][name]" class="form-control" placeholder="نام متغیر" value="${name}" required>
+      <input type="text" name="variables[${index}][description]" class="form-control" placeholder="توضیحات متغیر" value="${description}">
+      <div class="input-group-append">
+        <button type="button" class="btn btn-outline-danger remove-variable">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    `;
+    
+    variablesContainer.appendChild(variableRow);
+    
+    // دکمه حذف متغیر
+    variableRow.querySelector('.remove-variable').addEventListener('click', function() {
+      variableRow.remove();
+      // بروزرسانی ایندکس‌های متغیرها
+      updateVariableIndexes();
+    });
+  }
+  
+  // بروزرسانی ایندکس‌های متغیرها
+  function updateVariableIndexes() {
+    const variableRows = document.querySelectorAll('.variable-row');
+    variableRows.forEach((row, index) => {
+      row.querySelectorAll('input').forEach(input => {
+        const name = input.getAttribute('name').replace(/\d+/, index);
+        input.setAttribute('name', name);
+      });
+    });
+  }
+  
+  // نمایش پرامپت
+  function viewPrompt(id) {
+    currentPromptId = id;
+    const template = promptTemplates.find(t => t.id === id);
+    
+    if (template) {
+      document.getElementById('viewPromptName').textContent = template.name;
+      document.getElementById('viewPromptCategory').textContent = template.category;
+      document.getElementById('viewPromptDescription').textContent = template.description;
+      document.getElementById('viewPromptTemplate').textContent = template.template;
+      
+      const variablesContainer = document.getElementById('viewPromptVariables');
+      
+      if (template.variables && template.variables.length > 0) {
+        let html = '<table class="table table-bordered table-hover">';
+        html += '<thead class="thead-light"><tr><th>نام متغیر</th><th>توضیحات</th></tr></thead><tbody>';
+        
+        template.variables.forEach(variable => {
+          html += `<tr><td><code>{${variable.name}}</code></td><td>${variable.description || '-'}</td></tr>`;
+        });
+        
+        html += '</tbody></table>';
+        variablesContainer.innerHTML = html;
+      } else {
+        variablesContainer.innerHTML = '<div class="alert alert-info">بدون متغیر</div>';
+      }
+      
+      $('#viewPromptModal').modal('show');
+    }
+  }
+  
+  // ویرایش پرامپت
+  function editPrompt(id) {
+    currentPromptId = id;
+    const template = promptTemplates.find(t => t.id === id);
+    
+    if (template) {
+      document.getElementById('promptModalLabel').textContent = 'ویرایش پرامپت';
+      document.getElementById('promptId').value = template.id;
+      document.getElementById('promptName').value = template.name;
+      document.getElementById('promptCategory').value = template.category;
+      document.getElementById('promptDescription').value = template.description;
+      document.getElementById('promptTemplate').value = template.template;
+      document.getElementById('promptActive').checked = template.active;
+      
+      const variablesContainer = document.getElementById('variablesContainer');
+      variablesContainer.innerHTML = '';
+      
+      if (template.variables && template.variables.length > 0) {
+        template.variables.forEach(variable => {
+          addVariableField(variable.name, variable.description);
+        });
+      }
+      
+      $('#promptModal').modal('show');
+    }
+  }
+  
+  // تایید حذف پرامپت
+  function confirmDeletePrompt(id) {
+    currentPromptId = id;
+    const template = promptTemplates.find(t => t.id === id);
+    
+    if (template) {
+      document.getElementById('deletePromptName').textContent = template.name;
+      $('#deletePromptModal').modal('show');
+    }
+  }
+  
+  // ذخیره پرامپت
+  function savePrompt() {
+    const form = document.getElementById('promptForm');
+    const formData = new FormData(form);
+    const data = {};
+    
+    // تبدیل FormData به آبجکت
+    formData.forEach((value, key) => {
+      if (key.includes('[')) {
+        // پردازش متغیرها
+        const matches = key.match(/variables\[(\d+)\]\[(\w+)\]/);
+        if (matches) {
+          const index = parseInt(matches[1]);
+          const field = matches[2];
+          
+          if (!data.variables) {
+            data.variables = [];
+          }
+          
+          if (!data.variables[index]) {
+            data.variables[index] = {};
+          }
+          
+          data.variables[index][field] = value;
+        }
+      } else {
+        data[key] = value;
+      }
+    });
+    
+    // تبدیل متغیرها به آرایه
+    if (data.variables) {
+      data.variables = Array.from(data.variables);
+    } else {
+      data.variables = [];
+    }
+    
+    // تبدیل active به boolean
+    data.active = !!formData.get('active');
+    
+    // اگر ویرایش است
+    if (currentPromptId) {
+      // در یک محیط واقعی، یک درخواست API برای بروزرسانی پرامپت ارسال می‌شود
+      fetch(`/admin/ai/prompts/${currentPromptId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      })
+      .then(response => {
+        if (response.ok) {
+          alert('پرامپت با موفقیت بروزرسانی شد.');
+          // در یک محیط واقعی، دیتا از سرور بروزرسانی می‌شود
+          // برای نمایش، صفحه را ریفرش می‌کنیم
+          window.location.reload();
+        } else {
+          throw new Error('خطا در بروزرسانی پرامپت');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('خطا در بروزرسانی پرامپت');
+      });
+    } else {
+      // در یک محیط واقعی، یک درخواست API برای ایجاد پرامپت جدید ارسال می‌شود
+      fetch('/admin/ai/prompts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      })
+      .then(response => {
+        if (response.ok) {
+          alert('پرامپت جدید با موفقیت ایجاد شد.');
+          // در یک محیط واقعی، دیتا از سرور بروزرسانی می‌شود
+          // برای نمایش، صفحه را ریفرش می‌کنیم
+          window.location.reload();
+        } else {
+          throw new Error('خطا در ایجاد پرامپت');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('خطا در ایجاد پرامپت');
+      });
+    }
+  }
+  
+  // حذف پرامپت
+  function deletePrompt() {
+    if (currentPromptId) {
+      // در یک محیط واقعی، یک درخواست API برای حذف پرامپت ارسال می‌شود
+      fetch(`/admin/ai/prompts/${currentPromptId}`, {
+        method: 'DELETE'
+      })
+      .then(response => {
+        if (response.ok) {
+          alert('پرامپت با موفقیت حذف شد.');
+          // در یک محیط واقعی، دیتا از سرور بروزرسانی می‌شود
+          // برای نمایش، صفحه را ریفرش می‌کنیم
+          window.location.reload();
+        } else {
+          throw new Error('خطا در حذف پرامپت');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('خطا در حذف پرامپت');
+      });
+    }
+  }
+});
+</script>
+
+<%- include('../partials/footer') %>

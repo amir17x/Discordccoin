@@ -1,135 +1,172 @@
 /**
  * کنترلر احراز هویت پنل ادمین
+ * 
+ * این کنترلر مسئول مدیریت ورود، خروج و سایر عملیات مرتبط با احراز هویت است.
  */
 
 import bcrypt from 'bcryptjs';
-import { getUserByUsername, createAdmin } from '../services/userService.js';
+import { getAdminByUsername, updateAdminPassword } from '../services/adminService.js';
 
 /**
  * نمایش صفحه ورود
- * @param {Object} req درخواست
- * @param {Object} res پاسخ
+ * 
+ * @param {Request} req درخواست اکسپرس
+ * @param {Response} res پاسخ اکسپرس
  */
-export function showLogin(req, res) {
-  res.render('login', {
+const showLoginPage = (req, res) => {
+  // اگر کاربر قبلاً وارد شده باشد، به داشبورد هدایت می‌شود
+  if (req.session.user) {
+    return res.redirect('/admin/dashboard');
+  }
+  
+  res.render('login', { 
     title: 'ورود به پنل مدیریت',
-    layout: 'layouts/auth'
+    layout: 'auth-layout'
   });
-}
+};
 
 /**
  * پردازش فرم ورود
- * @param {Object} req درخواست
- * @param {Object} res پاسخ
+ * 
+ * @param {Request} req درخواست اکسپرس
+ * @param {Response} res پاسخ اکسپرس
  */
-export async function processLogin(req, res) {
+const login = async (req, res) => {
   const { username, password } = req.body;
   
   try {
-    // بررسی اعتبار ورودی‌ها
+    // بررسی وجود نام کاربری و رمز عبور
     if (!username || !password) {
-      req.flash('error_msg', 'لطفاً نام کاربری و رمز عبور را وارد کنید');
+      req.flash('error', 'لطفاً نام کاربری و رمز عبور را وارد کنید.');
       return res.redirect('/admin/login');
     }
     
-    // جستجوی کاربر
-    const user = await getUserByUsername(username);
+    // دریافت اطلاعات ادمین از پایگاه داده
+    const admin = await getAdminByUsername(username);
     
-    if (!user) {
-      req.flash('error_msg', 'نام کاربری یا رمز عبور اشتباه است');
-      return res.redirect('/admin/login');
-    }
-    
-    // بررسی دسترسی ادمین
-    if (!user.isAdmin && user.role !== 'admin' && user.role !== 'moderator') {
-      req.flash('error_msg', 'شما دسترسی به پنل مدیریت را ندارید');
+    // بررسی وجود ادمین
+    if (!admin) {
+      req.flash('error', 'نام کاربری یا رمز عبور اشتباه است.');
       return res.redirect('/admin/login');
     }
     
     // بررسی رمز عبور
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await bcrypt.compare(password, admin.password);
     
     if (!isPasswordValid) {
-      req.flash('error_msg', 'نام کاربری یا رمز عبور اشتباه است');
+      req.flash('error', 'نام کاربری یا رمز عبور اشتباه است.');
       return res.redirect('/admin/login');
     }
     
-    // ایجاد جلسه کاربر
+    // ذخیره اطلاعات کاربر در جلسه
     req.session.user = {
-      id: user._id || user.id,
-      username: user.username,
-      displayName: user.displayName || user.username,
-      role: user.role || (user.isAdmin ? 'admin' : 'moderator'),
-      avatar: user.avatar || '/admin/public/img/default-avatar.png',
-      permissions: user.permissions || {}
+      id: admin.id,
+      username: admin.username,
+      role: admin.role,
+      permissions: admin.permissions || [],
+      name: admin.name || admin.username
     };
     
-    req.flash('success_msg', `خوش آمدید ${user.displayName || user.username}!`);
+    // ثبت رویداد ورود
+    console.log(`Admin login: ${username} at ${new Date().toISOString()}`);
+    
+    // هدایت به داشبورد
+    req.flash('success', `${admin.name || admin.username} عزیز، خوش آمدید!`);
     res.redirect('/admin/dashboard');
   } catch (error) {
-    console.error('خطا در ورود به سیستم:', error);
-    req.flash('error_msg', 'خطا در سیستم رخ داده است. لطفاً دوباره تلاش کنید');
+    console.error('Login error:', error);
+    req.flash('error', 'خطا در فرآیند ورود. لطفاً دوباره تلاش کنید.');
     res.redirect('/admin/login');
   }
-}
+};
 
 /**
- * پردازش خروج از سیستم
- * @param {Object} req درخواست
- * @param {Object} res پاسخ
+ * خروج از پنل مدیریت
+ * 
+ * @param {Request} req درخواست اکسپرس
+ * @param {Response} res پاسخ اکسپرس
  */
-export function processLogout(req, res) {
+const logout = (req, res) => {
+  const username = req.session.user?.username;
+  
+  // پاک کردن جلسه
   req.session.destroy(err => {
     if (err) {
-      console.error('خطا در خروج از سیستم:', err);
+      console.error('Logout error:', err);
+    } else {
+      console.log(`Admin logout: ${username} at ${new Date().toISOString()}`);
     }
+    
     res.redirect('/admin/login');
   });
-}
+};
 
 /**
- * ایجاد کاربر ادمین در صورت عدم وجود
- * @returns {Promise<boolean>} وضعیت موفقیت
+ * نمایش صفحه تغییر رمز عبور
+ * 
+ * @param {Request} req درخواست اکسپرس
+ * @param {Response} res پاسخ اکسپرس
  */
-export async function initializeAdmin() {
+const showChangePasswordPage = (req, res) => {
+  res.render('change-password', { 
+    title: 'تغییر رمز عبور',
+    user: req.session.user
+  });
+};
+
+/**
+ * پردازش فرم تغییر رمز عبور
+ * 
+ * @param {Request} req درخواست اکسپرس
+ * @param {Response} res پاسخ اکسپرس
+ */
+const changePassword = async (req, res) => {
+  const { currentPassword, newPassword, confirmPassword } = req.body;
+  const userId = req.session.user.id;
+  
   try {
-    // بررسی وجود ادمین
-    const adminExists = await getUserByUsername(process.env.ADMIN_USERNAME || 'admin');
-    
-    if (!adminExists) {
-      // ایجاد ادمین جدید
-      const adminData = {
-        username: process.env.ADMIN_USERNAME || 'admin',
-        password: process.env.ADMIN_PASSWORD || 'admin123',
-        displayName: 'مدیر سیستم',
-        role: 'admin',
-        isAdmin: true,
-        permissions: {
-          users: true,
-          economy: true,
-          games: true,
-          ai: true,
-          events: true,
-          shop: true,
-          logs: true,
-          settings: true
-        }
-      };
-      
-      const result = await createAdmin(adminData);
-      
-      if (result) {
-        console.log('ادمین پیش‌فرض با موفقیت ایجاد شد');
-        return true;
-      } else {
-        console.error('خطا در ایجاد ادمین پیش‌فرض');
-        return false;
-      }
+    // بررسی وجود تمام فیلدها
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      req.flash('error', 'لطفاً تمام فیلدها را پر کنید.');
+      return res.redirect('/admin/change-password');
     }
     
-    return true;
+    // بررسی تطابق رمز عبور جدید و تأیید آن
+    if (newPassword !== confirmPassword) {
+      req.flash('error', 'رمز عبور جدید و تأیید آن مطابقت ندارند.');
+      return res.redirect('/admin/change-password');
+    }
+    
+    // دریافت اطلاعات ادمین از پایگاه داده
+    const admin = await getAdminByUsername(req.session.user.username);
+    
+    // بررسی رمز عبور فعلی
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, admin.password);
+    
+    if (!isCurrentPasswordValid) {
+      req.flash('error', 'رمز عبور فعلی اشتباه است.');
+      return res.redirect('/admin/change-password');
+    }
+    
+    // رمزنگاری رمز عبور جدید
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    
+    // بروزرسانی رمز عبور
+    await updateAdminPassword(userId, hashedPassword);
+    
+    req.flash('success', 'رمز عبور با موفقیت تغییر یافت.');
+    res.redirect('/admin/dashboard');
   } catch (error) {
-    console.error('خطا در بررسی یا ایجاد ادمین:', error);
-    return false;
+    console.error('Change password error:', error);
+    req.flash('error', 'خطا در تغییر رمز عبور. لطفاً دوباره تلاش کنید.');
+    res.redirect('/admin/change-password');
   }
-}
+};
+
+export const authController = {
+  showLoginPage,
+  login,
+  logout,
+  showChangePasswordPage,
+  changePassword
+};

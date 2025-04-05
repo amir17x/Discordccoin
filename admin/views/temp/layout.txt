@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> | پنل مدیریت CCOIN</title>
+    
+    <!-- فونت‌ها -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- فونت آیکون -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- استایل‌های اصلی -->
+    <link rel="stylesheet" href="/admin/css/style.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- استایل‌های اضافی هر صفحه -->
+    <% if (typeof extraStyles !== 'undefined') { %>
+        <%- extraStyles %>
+    <% } %>
+</head>
+<body>
+    <div class="admin-container">
+        <!-- سایدبار -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <img src="/admin/images/logo.svg" alt="CCOIN Logo" class="logo">
+                <span>پنل مدیریت</span>
+            </div>
+            
+            <div class="sidebar-menu">
+                <h5>مدیریت عمومی</h5>
+                <ul>
+                    <li>
+                        <a href="/admin/dashboard">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>داشبورد</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/users">
+                            <i class="fas fa-users"></i>
+                            <span>کاربران</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/servers">
+                            <i class="fas fa-server"></i>
+                            <span>سرورها</span>
+                        </a>
+                    </li>
+                </ul>
+                
+                <h5>سیستم اقتصادی</h5>
+                <ul>
+                    <li>
+                        <a href="/admin/economy">
+                            <i class="fas fa-coins"></i>
+                            <span>مدیریت اقتصاد</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/economy/transactions">
+                            <i class="fas fa-exchange-alt"></i>
+                            <span>تراکنش‌ها</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/economy/banks">
+                            <i class="fas fa-university"></i>
+                            <span>بانک‌ها</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/economy/shops">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span>فروشگاه‌ها</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/economy/stocks">
+                            <i class="fas fa-chart-line"></i>
+                            <span>سهام</span>
+                        </a>
+                    </li>
+                </ul>
+                
+                <h5>بازی‌ها و سرگرمی</h5>
+                <ul>
+                    <li>
+                        <a href="/admin/games">
+                            <i class="fas fa-gamepad"></i>
+                            <span>مدیریت بازی‌ها</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/games/stats">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>آمار بازی‌ها</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/games/rewards">
+                            <i class="fas fa-gift"></i>
+                            <span>جوایز و پاداش‌ها</span>
+                        </a>
+                    </li>
+                </ul>
+                
+                <h5>هوش مصنوعی</h5>
+                <ul>
+                    <li>
+                        <a href="/admin/ai">
+                            <i class="fas fa-robot"></i>
+                            <span>تنظیمات CCOIN AI</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/ai/tuning">
+                            <i class="fas fa-sliders-h"></i>
+                            <span>Fine-tuning مدل‌ها</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/ai/usage">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>آمار استفاده</span>
+                        </a>
+                    </li>
+                </ul>
+                
+                <h5>سیستم مدیریت</h5>
+                <ul>
+                    <li>
+                        <a href="/admin/events">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>رویدادها</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/logs">
+                            <i class="fas fa-clipboard-list"></i>
+                            <span>لاگ‌ها</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/settings">
+                            <i class="fas fa-cog"></i>
+                            <span>تنظیمات</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- هدر و محتوای اصلی -->
+        <div class="main-content">
+            <!-- هدر -->
+            <div class="header">
+                <div class="header-left">
+                    <button id="sidebar-toggle" class="btn-icon d-md-none">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <button id="expand-toggle" class="btn-icon d-none d-md-block d-lg-none">
+                        <i class="fas fa-arrows-alt-h"></i>
+                    </button>
+                    <div class="header-title d-none d-sm-block"><%= title %></div>
+                </div>
+                
+                <div class="header-actions">
+                    <a href="/admin/notifications" class="btn-icon" data-tooltip="اعلان‌ها">
+                        <i class="fas fa-bell"></i>
+                        <% if (typeof notificationCount !== 'undefined' && notificationCount > 0) { %>
+                            <span class="notification-badge"><%= notificationCount %></span>
+                        <% } %>
+                    </a>
+                    
+                    <div class="user-menu">
+                        <button class="user-menu-btn">
+                            <img src="/admin/images/avatar.jpg" alt="تصویر کاربر">
+                            <span class="d-none d-md-block"><%= user.username %></span>
+                        </button>
+                        
+                        <div class="user-menu-dropdown">
+                            <a href="/admin/profile">
+                                <i class="fas fa-user-circle"></i>
+                                پروفایل
+                            </a>
+                            <a href="/admin/settings/account">
+                                <i class="fas fa-cog"></i>
+                                تنظیمات حساب
+                            </a>
+                            <hr>
+                            <a href="/admin/logout">
+                                <i class="fas fa-sign-out-alt"></i>
+                                خروج
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- پیام‌های فلش -->
+            <% if (typeof messages !== 'undefined' && messages.success) { %>
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    <%= messages.success %>
+                    <button class="close">&times;</button>
+                </div>
+            <% } %>
+            
+            <% if (typeof messages !== 'undefined' && messages.error) { %>
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <%= messages.error %>
+                    <button class="close">&times;</button>
+                </div>
+            <% } %>
+            
+            <% if (typeof messages !== 'undefined' && messages.warning) { %>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <%= messages.warning %>
+                    <button class="close">&times;</button>
+                </div>
+            <% } %>
+            
+            <% if (typeof messages !== 'undefined' && messages.info) { %>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <%= messages.info %>
+                    <button class="close">&times;</button>
+                </div>
+            <% } %>
+            
+            <!-- محتوای اصلی -->
+            <%- body %>
+        </div>
+    </div>
+    
+    <!-- اسکریپت‌های اصلی -->
+    <script src="/admin/js/admin.js"></script>
+    
+    <!-- اسکریپت‌های اضافی هر صفحه -->
+    <% if (typeof extraScripts !== 'undefined') { %>
+        <%- extraScripts %>
+    <% } %>
+</body>
+</html>

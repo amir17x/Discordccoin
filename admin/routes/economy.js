@@ -1,197 +1,77 @@
 /**
- * مسیرهای مدیریت اقتصادی پنل ادمین
+ * مسیرهای مدیریت اقتصاد
+ * 
+ * این فایل شامل مسیرهای مربوط به مدیریت سیستم اقتصادی و تنظیمات آن است.
  */
 
 import express from 'express';
-import { getEconomyStats, getRecentTransactions, getAllTransactions, 
-         setExchangeRate, setDailyReward, setBankInterestRate, 
-         setTransferFee, getUserTransactions } from '../services/economyService.js';
+import { economyController } from '../controllers/economyController.js';
 
 const router = express.Router();
 
-/**
- * صفحه اصلی مدیریت اقتصادی
- */
-router.get('/', async (req, res) => {
-  try {
-    const stats = await getEconomyStats();
-    const transactions = await getRecentTransactions(5);
-    
-    res.render('economy/index', {
-      title: 'مدیریت اقتصادی',
-      stats,
-      transactions
-    });
-  } catch (error) {
-    req.flash('error_msg', `خطا در بارگیری اطلاعات اقتصادی: ${error.message}`);
-    res.redirect('/admin/dashboard');
-  }
-});
+// صفحه اصلی مدیریت اقتصاد
+router.get('/', economyController.showDashboard);
 
-/**
- * صفحه مدیریت تراکنش‌ها
- */
-router.get('/transactions', async (req, res) => {
-  try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const type = req.query.type || '';
-    const userId = req.query.userId || '';
-    const startDate = req.query.startDate || '';
-    const endDate = req.query.endDate || '';
-    
-    const options = {
-      page,
-      limit,
-      type,
-      userId,
-      startDate: startDate ? new Date(startDate) : null,
-      endDate: endDate ? new Date(endDate) : null
-    };
-    
-    const result = await getAllTransactions(options);
-    
-    res.render('economy/transactions', {
-      title: 'مدیریت تراکنش‌ها',
-      transactions: result.transactions,
-      pagination: result.pagination,
-      filters: {
-        type,
-        userId,
-        startDate,
-        endDate
-      }
-    });
-  } catch (error) {
-    req.flash('error_msg', `خطا در بارگیری تراکنش‌ها: ${error.message}`);
-    res.redirect('/admin/economy');
-  }
-});
+// مدیریت سکه‌ها
+router.get('/coins', economyController.showCoinsManagement);
+router.post('/coins/add', economyController.addCoins);
+router.post('/coins/deduct', economyController.deductCoins);
+router.post('/coins/reset', economyController.resetCoins);
 
-/**
- * صفحه تنظیمات اقتصادی
- */
-router.get('/settings', async (req, res) => {
-  try {
-    const stats = await getEconomyStats();
-    
-    res.render('economy/settings', {
-      title: 'تنظیمات اقتصادی',
-      settings: {
-        exchangeRate: stats.exchangeRate,
-        dailyReward: stats.dailyReward,
-        bankInterestRate: stats.bankInterestRate,
-        transferFee: stats.transferFee
-      }
-    });
-  } catch (error) {
-    req.flash('error_msg', `خطا در بارگیری تنظیمات اقتصادی: ${error.message}`);
-    res.redirect('/admin/economy');
-  }
-});
+// مدیریت کریستال‌ها
+router.get('/crystals', economyController.showCrystalsManagement);
+router.post('/crystals/add', economyController.addCrystals);
+router.post('/crystals/deduct', economyController.deductCrystals);
+router.post('/crystals/reset', economyController.resetCrystals);
 
-/**
- * تنظیم نرخ تبدیل سکه به کریستال
- */
-router.post('/settings/exchange-rate', async (req, res) => {
-  const { rate } = req.body;
-  
-  try {
-    if (!rate || isNaN(rate) || rate <= 0) {
-      req.flash('error_msg', 'نرخ تبدیل باید عددی مثبت باشد');
-      return res.redirect('/admin/economy/settings');
-    }
-    
-    await setExchangeRate(parseFloat(rate));
-    req.flash('success_msg', 'نرخ تبدیل سکه به کریستال با موفقیت به‌روزرسانی شد');
-    res.redirect('/admin/economy/settings');
-  } catch (error) {
-    req.flash('error_msg', `خطا در به‌روزرسانی نرخ تبدیل: ${error.message}`);
-    res.redirect('/admin/economy/settings');
-  }
-});
+// مدیریت بانک‌ها
+router.get('/banks', economyController.showBanks);
+router.get('/banks/new', economyController.showCreateBank);
+router.post('/banks/new', economyController.createBank);
+router.get('/banks/:id', economyController.showBank);
+router.post('/banks/:id', economyController.updateBank);
+router.post('/banks/:id/delete', economyController.deleteBank);
 
-/**
- * تنظیم پاداش روزانه
- */
-router.post('/settings/daily-reward', async (req, res) => {
-  const { amount } = req.body;
-  
-  try {
-    if (!amount || isNaN(amount) || amount < 0) {
-      req.flash('error_msg', 'مقدار پاداش روزانه باید عددی مثبت یا صفر باشد');
-      return res.redirect('/admin/economy/settings');
-    }
-    
-    await setDailyReward(parseInt(amount));
-    req.flash('success_msg', 'مقدار پاداش روزانه با موفقیت به‌روزرسانی شد');
-    res.redirect('/admin/economy/settings');
-  } catch (error) {
-    req.flash('error_msg', `خطا در به‌روزرسانی پاداش روزانه: ${error.message}`);
-    res.redirect('/admin/economy/settings');
-  }
-});
+// مدیریت تراکنش‌ها
+router.get('/transactions', economyController.showTransactions);
+router.get('/transactions/export', economyController.exportTransactions);
+router.get('/transactions/:id', economyController.showTransaction);
 
-/**
- * تنظیم نرخ بهره بانکی
- */
-router.post('/settings/bank-interest', async (req, res) => {
-  const { rate } = req.body;
-  
-  try {
-    if (!rate || isNaN(rate) || rate < 0 || rate > 100) {
-      req.flash('error_msg', 'نرخ بهره باید عددی بین 0 تا 100 باشد');
-      return res.redirect('/admin/economy/settings');
-    }
-    
-    await setBankInterestRate(parseFloat(rate));
-    req.flash('success_msg', 'نرخ بهره بانکی با موفقیت به‌روزرسانی شد');
-    res.redirect('/admin/economy/settings');
-  } catch (error) {
-    req.flash('error_msg', `خطا در به‌روزرسانی نرخ بهره: ${error.message}`);
-    res.redirect('/admin/economy/settings');
-  }
-});
+// مدیریت فروشگاه‌ها
+router.get('/shops', economyController.showShops);
+router.get('/shops/new', economyController.showCreateShop);
+router.post('/shops/new', economyController.createShop);
+router.get('/shops/:id', economyController.showShop);
+router.post('/shops/:id', economyController.updateShop);
+router.post('/shops/:id/delete', economyController.deleteShop);
 
-/**
- * تنظیم کارمزد انتقال سکه
- */
-router.post('/settings/transfer-fee', async (req, res) => {
-  const { fee } = req.body;
-  
-  try {
-    if (!fee || isNaN(fee) || fee < 0 || fee > 100) {
-      req.flash('error_msg', 'کارمزد انتقال باید عددی بین 0 تا 100 باشد');
-      return res.redirect('/admin/economy/settings');
-    }
-    
-    await setTransferFee(parseFloat(fee));
-    req.flash('success_msg', 'کارمزد انتقال سکه با موفقیت به‌روزرسانی شد');
-    res.redirect('/admin/economy/settings');
-  } catch (error) {
-    req.flash('error_msg', `خطا در به‌روزرسانی کارمزد انتقال: ${error.message}`);
-    res.redirect('/admin/economy/settings');
-  }
-});
+// مدیریت آیتم‌ها
+router.get('/items', economyController.showItems);
+router.get('/items/new', economyController.showCreateItem);
+router.post('/items/new', economyController.createItem);
+router.get('/items/:id', economyController.showItem);
+router.post('/items/:id', economyController.updateItem);
+router.post('/items/:id/delete', economyController.deleteItem);
 
-/**
- * تاریخچه تراکنش‌های یک کاربر
- */
-router.get('/user-transactions/:userId', async (req, res) => {
-  const { userId } = req.params;
-  
-  try {
-    const transactions = await getUserTransactions(userId, 50);
-    
-    res.render('economy/user-transactions', {
-      title: 'تراکنش‌های کاربر',
-      userId,
-      transactions
-    });
-  } catch (error) {
-    req.flash('error_msg', `خطا در بارگیری تراکنش‌های کاربر: ${error.message}`);
-    res.redirect('/admin/economy/transactions');
-  }
-});
+// مدیریت بازار سهام
+router.get('/stocks', economyController.showStocks);
+router.get('/stocks/new', economyController.showCreateStock);
+router.post('/stocks/new', economyController.createStock);
+router.get('/stocks/:id', economyController.showStock);
+router.post('/stocks/:id', economyController.updateStock);
+router.post('/stocks/:id/delete', economyController.deleteStock);
+router.post('/stocks/:id/price', economyController.updateStockPrice);
+router.post('/stocks/:id/simulate', economyController.simulateStockMarket);
+
+// تنظیمات اقتصادی
+router.get('/settings', economyController.showSettings);
+router.post('/settings', economyController.updateSettings);
+
+// آمار و گزارشات
+router.get('/reports', economyController.showReports);
+router.get('/reports/daily', economyController.getDailyReport);
+router.get('/reports/weekly', economyController.getWeeklyReport);
+router.get('/reports/monthly', economyController.getMonthlyReport);
+router.get('/reports/custom', economyController.getCustomReport);
 
 export default router;

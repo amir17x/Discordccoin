@@ -1,320 +1,215 @@
 /**
- * سرویس مدیریت سیستم پنل ادمین
+ * سرویس مدیریت ادمین‌ها
+ * 
+ * این سرویس مسئول مدیریت کاربران ادمین و عملیات مرتبط با آن‌ها است.
  */
 
-import os from 'os';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import fs from 'fs/promises';
-import path from 'path';
-import { getDiscordBot } from '../../server/discord/bot.js';
+import bcrypt from 'bcryptjs';
 
-const execPromise = promisify(exec);
-
-// مدت زمان راه‌اندازی سیستم
-const startTime = Date.now();
+// فعلاً از یک لیست ثابت استفاده می‌کنیم، در محیط واقعی از پایگاه داده استفاده می‌شود
+const admins = [
+  {
+    id: '1',
+    username: 'admin',
+    password: '$2a$10$x7Tj9YcAkKhKBDJbkRCOZ.LNL5pCx6StRyA.8Z3GfY1hXOQvFZ6Ja', // 'admin123'
+    name: 'مدیر اصلی',
+    email: 'admin@ccoin.com',
+    role: 'admin',
+    permissions: ['users', 'economy', 'games', 'ai', 'events', 'servers', 'logs', 'settings'],
+    lastLogin: new Date().toISOString(),
+    active: true
+  },
+  {
+    id: '2',
+    username: 'moderator',
+    password: '$2a$10$bSsVuG7.hDUFGBCnSrT0FuKzWYIHCnR3Y6T3nrWBKixM/x3WZ1J1m', // 'mod123'
+    name: 'مدیر محتوا',
+    email: 'mod@ccoin.com',
+    role: 'moderator',
+    permissions: ['users', 'games', 'events'],
+    lastLogin: new Date().toISOString(),
+    active: true
+  }
+];
 
 /**
- * تبدیل میلی‌ثانیه به فرمت خوانا
- * @param {number} ms زمان به میلی‌ثانیه
- * @returns {string} فرمت خوانا
+ * دریافت لیست تمام ادمین‌ها
+ * 
+ * @returns {Promise<Array>} لیست ادمین‌ها
  */
-function formatUptime(ms) {
-  const seconds = Math.floor((ms / 1000) % 60);
-  const minutes = Math.floor((ms / (1000 * 60)) % 60);
-  const hours = Math.floor((ms / (1000 * 60 * 60)) % 24);
-  const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+export async function getAllAdmins() {
+  return admins.map(admin => {
+    const { password, ...adminData } = admin;
+    return adminData;
+  });
+}
+
+/**
+ * دریافت ادمین با شناسه مشخص
+ * 
+ * @param {string} adminId شناسه ادمین
+ * @returns {Promise<Object|null>} اطلاعات ادمین یا null در صورت عدم وجود
+ */
+export async function getAdminById(adminId) {
+  const admin = admins.find(a => a.id === adminId);
   
-  return `${days} روز ${hours} ساعت ${minutes} دقیقه`;
+  if (!admin) {
+    return null;
+  }
+  
+  const { password, ...adminData } = admin;
+  return adminData;
 }
 
 /**
- * دریافت آمار سیستم
- * @returns {Object} آمار سیستم
+ * دریافت ادمین با نام کاربری مشخص
+ * 
+ * @param {string} username نام کاربری
+ * @returns {Promise<Object|null>} اطلاعات ادمین یا null در صورت عدم وجود
  */
-export async function getSystemStats() {
-  try {
-    // اطلاعات بات دیسکورد
-    const bot = getDiscordBot();
-    
-    const botStats = {
-      servers: bot ? bot.guilds.cache.size : 0,
-      users: bot ? bot.users.cache.size : 0,
-      status: bot ? 'آنلاین' : 'آفلاین',
-      uptime: formatUptime(Date.now() - startTime)
-    };
-    
-    // اطلاعات سیستم
-    const systemInfo = {
-      platform: os.platform(),
-      arch: os.arch(),
-      cpuCount: os.cpus().length,
-      totalMemory: Math.round(os.totalmem() / (1024 * 1024 * 1024)) + ' GB',
-      freeMemory: Math.round(os.freemem() / (1024 * 1024 * 1024)) + ' GB',
-      uptime: formatUptime(os.uptime() * 1000)
-    };
-    
-    // اطلاعات نود
-    const nodeInfo = {
-      version: process.version,
-      memoryUsage: Math.round(process.memoryUsage().rss / (1024 * 1024)) + ' MB'
-    };
-    
-    return {
-      bot: botStats,
-      system: systemInfo,
-      node: nodeInfo,
-      uptime: botStats.uptime
-    };
-  } catch (error) {
-    console.error('خطا در دریافت آمار سیستم:', error);
-    return {
-      bot: { status: 'نامشخص', uptime: '0' },
-      system: {},
-      node: {},
-      uptime: '0'
-    };
-  }
+export async function getAdminByUsername(username) {
+  return admins.find(a => a.username === username && a.active) || null;
 }
 
 /**
- * دریافت تنظیمات سیستم
- * @returns {Object} تنظیمات سیستم
+ * ایجاد ادمین جدید
+ * 
+ * @param {Object} adminData اطلاعات ادمین جدید
+ * @returns {Promise<Object>} اطلاعات ادمین ایجاد شده
  */
-export async function getSystemSettings() {
-  try {
-    // در حالت واقعی باید از دیتابیس خوانده شود
-    return {
-      general: {
-        botName: 'CCOIN Bot',
-        botPrefix: '!',
-        language: 'fa',
-        timezone: 'Asia/Tehran',
-        maintenanceMode: false
-      },
-      economy: {
-        startingCoins: 5000,
-        dailyReward: 1000,
-        transferFee: 5, // درصد
-        exchangeRate: 100, // تعداد سکه برای هر کریستال
-        bankInterestRate: 2 // درصد
-      },
-      games: {
-        maxBet: 10000,
-        minBet: 100,
-        lotteryTicketPrice: 500,
-        slotMachineOdds: 10 // درصد برد
-      },
-      notifications: {
-        enableDM: true,
-        enableMentions: true
-      }
-    };
-  } catch (error) {
-    console.error('خطا در دریافت تنظیمات سیستم:', error);
-    return {};
+export async function createAdmin(adminData) {
+  // بررسی وجود نام کاربری
+  const existingAdmin = await getAdminByUsername(adminData.username);
+  
+  if (existingAdmin) {
+    throw new Error('این نام کاربری قبلاً ثبت شده است.');
   }
+  
+  // رمزنگاری رمز عبور
+  const hashedPassword = await bcrypt.hash(adminData.password, 10);
+  
+  // ایجاد ادمین جدید
+  const newAdmin = {
+    id: (admins.length + 1).toString(),
+    username: adminData.username,
+    password: hashedPassword,
+    name: adminData.name || adminData.username,
+    email: adminData.email || '',
+    role: adminData.role || 'moderator',
+    permissions: adminData.permissions || [],
+    lastLogin: new Date().toISOString(),
+    active: true
+  };
+  
+  // افزودن به لیست
+  admins.push(newAdmin);
+  
+  // حذف رمز عبور از خروجی
+  const { password, ...adminWithoutPassword } = newAdmin;
+  return adminWithoutPassword;
 }
 
 /**
- * به‌روزرسانی تنظیمات عمومی
- * @param {Object} newSettings تنظیمات جدید
- * @returns {Object} تنظیمات به‌روزرسانی شده
+ * بروزرسانی اطلاعات ادمین
+ * 
+ * @param {string} adminId شناسه ادمین
+ * @param {Object} updateData اطلاعات جدید
+ * @returns {Promise<Object|null>} اطلاعات بروزرسانی شده یا null در صورت عدم وجود
  */
-export async function updateGeneralSettings(newSettings) {
-  try {
-    // در حالت واقعی باید در دیتابیس ذخیره شود
-    console.log('تنظیمات عمومی به‌روز شد:', newSettings);
-    return { ...newSettings, updated: true };
-  } catch (error) {
-    console.error('خطا در به‌روزرسانی تنظیمات عمومی:', error);
-    throw error;
+export async function updateAdmin(adminId, updateData) {
+  const adminIndex = admins.findIndex(a => a.id === adminId);
+  
+  if (adminIndex === -1) {
+    return null;
   }
+  
+  // بروزرسانی اطلاعات
+  admins[adminIndex] = {
+    ...admins[adminIndex],
+    ...updateData,
+    // اطمینان از عدم تغییر شناسه و رمز عبور
+    id: admins[adminIndex].id,
+    password: admins[adminIndex].password
+  };
+  
+  // حذف رمز عبور از خروجی
+  const { password, ...adminWithoutPassword } = admins[adminIndex];
+  return adminWithoutPassword;
 }
 
 /**
- * به‌روزرسانی تنظیمات اقتصادی
- * @param {Object} newSettings تنظیمات جدید
- * @returns {Object} تنظیمات به‌روزرسانی شده
+ * بروزرسانی رمز عبور ادمین
+ * 
+ * @param {string} adminId شناسه ادمین
+ * @param {string} newPassword رمز عبور جدید (هش شده)
+ * @returns {Promise<boolean>} آیا عملیات موفق بود؟
  */
-export async function updateEconomySettings(newSettings) {
-  try {
-    // در حالت واقعی باید در دیتابیس ذخیره شود
-    console.log('تنظیمات اقتصادی به‌روز شد:', newSettings);
-    return { ...newSettings, updated: true };
-  } catch (error) {
-    console.error('خطا در به‌روزرسانی تنظیمات اقتصادی:', error);
-    throw error;
+export async function updateAdminPassword(adminId, newPassword) {
+  const adminIndex = admins.findIndex(a => a.id === adminId);
+  
+  if (adminIndex === -1) {
+    return false;
   }
+  
+  // بروزرسانی رمز عبور
+  admins[adminIndex].password = newPassword;
+  
+  return true;
 }
 
 /**
- * به‌روزرسانی تنظیمات بازی‌ها
- * @param {Object} newSettings تنظیمات جدید
- * @returns {Object} تنظیمات به‌روزرسانی شده
+ * غیرفعال کردن ادمین
+ * 
+ * @param {string} adminId شناسه ادمین
+ * @returns {Promise<boolean>} آیا عملیات موفق بود؟
  */
-export async function updateGamesSettings(newSettings) {
-  try {
-    // در حالت واقعی باید در دیتابیس ذخیره شود
-    console.log('تنظیمات بازی‌ها به‌روز شد:', newSettings);
-    return { ...newSettings, updated: true };
-  } catch (error) {
-    console.error('خطا در به‌روزرسانی تنظیمات بازی‌ها:', error);
-    throw error;
+export async function deactivateAdmin(adminId) {
+  const adminIndex = admins.findIndex(a => a.id === adminId);
+  
+  if (adminIndex === -1) {
+    return false;
   }
+  
+  // غیرفعال کردن
+  admins[adminIndex].active = false;
+  
+  return true;
 }
 
 /**
- * به‌روزرسانی تنظیمات هوش مصنوعی
- * @param {Object} newSettings تنظیمات جدید
- * @returns {Object} تنظیمات به‌روزرسانی شده
+ * فعال کردن ادمین
+ * 
+ * @param {string} adminId شناسه ادمین
+ * @returns {Promise<boolean>} آیا عملیات موفق بود؟
  */
-export async function updateAISettings(newSettings) {
-  try {
-    // در حالت واقعی باید در دیتابیس ذخیره شود
-    console.log('تنظیمات هوش مصنوعی به‌روز شد:', newSettings);
-    return { ...newSettings, updated: true };
-  } catch (error) {
-    console.error('خطا در به‌روزرسانی تنظیمات هوش مصنوعی:', error);
-    throw error;
+export async function activateAdmin(adminId) {
+  const adminIndex = admins.findIndex(a => a.id === adminId);
+  
+  if (adminIndex === -1) {
+    return false;
   }
+  
+  // فعال کردن
+  admins[adminIndex].active = true;
+  
+  return true;
 }
 
 /**
- * ایجاد پشتیبان از داده‌ها
- * @returns {Object} نتیجه عملیات
+ * بروزرسانی زمان آخرین ورود
+ * 
+ * @param {string} adminId شناسه ادمین
+ * @returns {Promise<boolean>} آیا عملیات موفق بود؟
  */
-export async function createBackup() {
-  try {
-    const backupTime = new Date().toISOString().replace(/:/g, '-');
-    const backupName = `backup_${backupTime}`;
-    const backupPath = path.join(process.cwd(), 'backup', backupName);
-    
-    // در حالت واقعی باید یک فایل پشتیبان از دیتابیس ایجاد شود
-    await fs.mkdir(backupPath, { recursive: true });
-    
-    return {
-      success: true,
-      name: backupName,
-      path: backupPath,
-      time: new Date().toISOString()
-    };
-  } catch (error) {
-    console.error('خطا در ایجاد پشتیبان:', error);
-    throw error;
+export async function updateLastLogin(adminId) {
+  const adminIndex = admins.findIndex(a => a.id === adminId);
+  
+  if (adminIndex === -1) {
+    return false;
   }
-}
-
-/**
- * بازیابی داده‌ها از پشتیبان
- * @param {string} backupId شناسه پشتیبان
- * @returns {Object} نتیجه عملیات
- */
-export async function restoreBackup(backupId) {
-  try {
-    // در حالت واقعی باید فایل پشتیبان بازیابی شود
-    console.log(`بازیابی پشتیبان ${backupId}`);
-    
-    return {
-      success: true,
-      backupId,
-      time: new Date().toISOString()
-    };
-  } catch (error) {
-    console.error('خطا در بازیابی پشتیبان:', error);
-    throw error;
-  }
-}
-
-/**
- * اجرای دستور سیستمی
- * @param {string} command دستور
- * @returns {Object} نتیجه اجرای دستور
- */
-export async function executeSystemCommand(command) {
-  try {
-    // فقط اجرای دستورات مجاز
-    const allowedCommands = ['ping', 'uptime', 'free', 'df', 'ps', 'netstat'];
-    const cmd = command.split(' ')[0];
-    
-    if (!allowedCommands.includes(cmd)) {
-      throw new Error('دستور غیرمجاز');
-    }
-    
-    const { stdout, stderr } = await execPromise(command);
-    
-    return {
-      success: true,
-      stdout,
-      stderr
-    };
-  } catch (error) {
-    console.error('خطا در اجرای دستور سیستمی:', error);
-    throw error;
-  }
-}
-
-/**
- * ریست کردن آمار سیستم
- * @returns {Object} نتیجه عملیات
- */
-export async function resetSystemStats() {
-  try {
-    // در حالت واقعی باید آمار سیستم در دیتابیس ریست شود
-    console.log('آمار سیستم ریست شد');
-    
-    return {
-      success: true,
-      time: new Date().toISOString()
-    };
-  } catch (error) {
-    console.error('خطا در ریست آمار سیستم:', error);
-    throw error;
-  }
-}
-
-/**
- * دریافت لاگ‌های سیستم
- * @param {string} logType نوع لاگ (all, error, info, warn)
- * @param {number} limit تعداد لاگ
- * @param {number} page شماره صفحه
- * @returns {Object} لاگ‌ها و اطلاعات صفحه‌بندی
- */
-export async function getSystemLogs(logType = 'all', limit = 50, page = 1) {
-  try {
-    // در حالت واقعی باید از دیتابیس یا فایل‌های لاگ خوانده شود
-    // اینجا به صورت موقت داده‌های نمونه تولید می‌کنیم
-    
-    const sampleLogs = [
-      { id: 1, level: 'info', message: 'سیستم راه‌اندازی شد', timestamp: new Date().toISOString() },
-      { id: 2, level: 'info', message: 'بات دیسکورد متصل شد', timestamp: new Date().toISOString() },
-      { id: 3, level: 'warn', message: 'تلاش ناموفق برای ورود به پنل ادمین', timestamp: new Date().toISOString() },
-      { id: 4, level: 'error', message: 'خطا در پردازش تراکنش شناسه #12345', timestamp: new Date().toISOString() },
-      { id: 5, level: 'info', message: 'تنظیمات سیستم بروزرسانی شد', timestamp: new Date().toISOString() }
-    ];
-    
-    // فیلتر بر اساس نوع لاگ
-    let filteredLogs = sampleLogs;
-    if (logType !== 'all') {
-      filteredLogs = sampleLogs.filter(log => log.level === logType);
-    }
-    
-    // صفحه‌بندی
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-    const paginatedLogs = filteredLogs.slice(startIndex, endIndex);
-    
-    return {
-      logs: paginatedLogs,
-      pagination: {
-        page,
-        limit,
-        totalLogs: filteredLogs.length,
-        totalPages: Math.ceil(filteredLogs.length / limit)
-      }
-    };
-  } catch (error) {
-    console.error('خطا در دریافت لاگ‌های سیستم:', error);
-    return { logs: [], pagination: { page: 1, limit, totalLogs: 0, totalPages: 0 } };
-  }
+  
+  // بروزرسانی زمان آخرین ورود
+  admins[adminIndex].lastLogin = new Date().toISOString();
+  
+  return true;
 }

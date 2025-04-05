@@ -1,216 +1,76 @@
 /**
- * مسیرهای مدیریت بازی‌ها پنل ادمین
+ * مسیرهای مدیریت بازی‌ها
+ * 
+ * این فایل شامل مسیرهای مربوط به مدیریت بازی‌ها و تنظیمات آن‌ها است.
  */
 
 import express from 'express';
-import { getGameStats, getGamesList, getGameById, toggleGameStatus, 
-         updateGameSettings, getRecentGames, getUserGames, 
-         updateGameChanceSettings, resetGameStats } from '../services/gameService.js';
+import { gamesController } from '../controllers/gamesController.js';
 
 const router = express.Router();
 
-/**
- * صفحه اصلی مدیریت بازی‌ها
- */
-router.get('/', async (req, res) => {
-  try {
-    const stats = await getGameStats();
-    const games = await getGamesList();
-    const recentGames = await getRecentGames(5);
-    
-    res.render('games/index', {
-      title: 'مدیریت بازی‌ها',
-      stats,
-      games,
-      recentGames
-    });
-  } catch (error) {
-    req.flash('error_msg', `خطا در بارگیری اطلاعات بازی‌ها: ${error.message}`);
-    res.redirect('/admin/dashboard');
-  }
-});
+// صفحه اصلی مدیریت بازی‌ها
+router.get('/', gamesController.showDashboard);
 
-/**
- * صفحه جزئیات یک بازی
- */
-router.get('/details/:gameId', async (req, res) => {
-  const { gameId } = req.params;
-  
-  try {
-    const game = await getGameById(gameId);
-    
-    if (!game) {
-      req.flash('error_msg', 'بازی موردنظر یافت نشد');
-      return res.redirect('/admin/games');
-    }
-    
-    res.render('games/details', {
-      title: `جزئیات بازی ${game.name}`,
-      game
-    });
-  } catch (error) {
-    req.flash('error_msg', `خطا در بارگیری اطلاعات بازی: ${error.message}`);
-    res.redirect('/admin/games');
-  }
-});
+// مدیریت بازی‌های قمار
+router.get('/gambling', gamesController.showGamblingGames);
+router.get('/gambling/:id', gamesController.showGamblingGame);
+router.post('/gambling/:id', gamesController.updateGamblingGame);
+router.post('/gambling/:id/toggle', gamesController.toggleGamblingGame);
 
-/**
- * صفحه ویرایش تنظیمات بازی
- */
-router.get('/edit/:gameId', async (req, res) => {
-  const { gameId } = req.params;
-  
-  try {
-    const game = await getGameById(gameId);
-    
-    if (!game) {
-      req.flash('error_msg', 'بازی موردنظر یافت نشد');
-      return res.redirect('/admin/games');
-    }
-    
-    res.render('games/edit', {
-      title: `ویرایش بازی ${game.name}`,
-      game
-    });
-  } catch (error) {
-    req.flash('error_msg', `خطا در بارگیری اطلاعات بازی: ${error.message}`);
-    res.redirect('/admin/games');
-  }
-});
+// مدیریت بازی‌های کارتی
+router.get('/card-games', gamesController.showCardGames);
+router.get('/card-games/:id', gamesController.showCardGame);
+router.post('/card-games/:id', gamesController.updateCardGame);
+router.post('/card-games/:id/toggle', gamesController.toggleCardGame);
 
-/**
- * به‌روزرسانی تنظیمات بازی
- */
-router.post('/edit/:gameId', async (req, res) => {
-  const { gameId } = req.params;
-  const settings = req.body;
-  
-  try {
-    await updateGameSettings(gameId, settings);
-    req.flash('success_msg', 'تنظیمات بازی با موفقیت به‌روزرسانی شد');
-    res.redirect(`/admin/games/details/${gameId}`);
-  } catch (error) {
-    req.flash('error_msg', `خطا در به‌روزرسانی تنظیمات بازی: ${error.message}`);
-    res.redirect(`/admin/games/edit/${gameId}`);
-  }
-});
+// مدیریت بازی رولت
+router.get('/roulette', gamesController.showRouletteSettings);
+router.post('/roulette', gamesController.updateRouletteSettings);
 
-/**
- * فعال/غیرفعال کردن بازی
- */
-router.post('/toggle/:gameId', async (req, res) => {
-  const { gameId } = req.params;
-  const { enabled } = req.body;
-  
-  try {
-    await toggleGameStatus(gameId, enabled === 'true');
-    req.flash('success_msg', `بازی با موفقیت ${enabled === 'true' ? 'فعال' : 'غیرفعال'} شد`);
-    
-    // اگر درخواست از طریق AJAX آمده باشد JSON برمی‌گرداند
-    if (req.xhr) {
-      return res.json({ success: true });
-    }
-    
-    res.redirect('/admin/games');
-  } catch (error) {
-    req.flash('error_msg', `خطا در تغییر وضعیت بازی: ${error.message}`);
-    
-    // اگر درخواست از طریق AJAX آمده باشد JSON برمی‌گرداند
-    if (req.xhr) {
-      return res.status(400).json({ success: false, error: error.message });
-    }
-    
-    res.redirect('/admin/games');
-  }
-});
+// مدیریت بازی اسلات
+router.get('/slots', gamesController.showSlotsSettings);
+router.post('/slots', gamesController.updateSlotsSettings);
+router.get('/slots/symbols', gamesController.showSlotSymbols);
+router.post('/slots/symbols/new', gamesController.createSlotSymbol);
+router.post('/slots/symbols/:id', gamesController.updateSlotSymbol);
+router.post('/slots/symbols/:id/delete', gamesController.deleteSlotSymbol);
 
-/**
- * صفحه مدیریت شانس بازی
- */
-router.get('/chance/:gameId', async (req, res) => {
-  const { gameId } = req.params;
-  
-  try {
-    const game = await getGameById(gameId);
-    
-    if (!game) {
-      req.flash('error_msg', 'بازی موردنظر یافت نشد');
-      return res.redirect('/admin/games');
-    }
-    
-    res.render('games/chance', {
-      title: `مدیریت شانس ${game.name}`,
-      game
-    });
-  } catch (error) {
-    req.flash('error_msg', `خطا در بارگیری اطلاعات بازی: ${error.message}`);
-    res.redirect('/admin/games');
-  }
-});
+// مدیریت بازی بلک جک
+router.get('/blackjack', gamesController.showBlackjackSettings);
+router.post('/blackjack', gamesController.updateBlackjackSettings);
 
-/**
- * به‌روزرسانی تنظیمات شانس بازی
- */
-router.post('/chance/:gameId', async (req, res) => {
-  const { gameId } = req.params;
-  const chanceSettings = req.body;
-  
-  try {
-    await updateGameChanceSettings(gameId, chanceSettings);
-    req.flash('success_msg', 'تنظیمات شانس بازی با موفقیت به‌روزرسانی شد');
-    res.redirect(`/admin/games/details/${gameId}`);
-  } catch (error) {
-    req.flash('error_msg', `خطا در به‌روزرسانی تنظیمات شانس: ${error.message}`);
-    res.redirect(`/admin/games/chance/${gameId}`);
-  }
-});
+// مدیریت بازی حکم
+router.get('/hokm', gamesController.showHokmSettings);
+router.post('/hokm', gamesController.updateHokmSettings);
 
-/**
- * ریست آمار بازی
- */
-router.post('/reset/:gameId', async (req, res) => {
-  const { gameId } = req.params;
-  
-  try {
-    await resetGameStats(gameId);
-    req.flash('success_msg', 'آمار بازی با موفقیت ریست شد');
-    
-    // اگر درخواست از طریق AJAX آمده باشد JSON برمی‌گرداند
-    if (req.xhr) {
-      return res.json({ success: true });
-    }
-    
-    res.redirect(`/admin/games/details/${gameId}`);
-  } catch (error) {
-    req.flash('error_msg', `خطا در ریست آمار بازی: ${error.message}`);
-    
-    // اگر درخواست از طریق AJAX آمده باشد JSON برمی‌گرداند
-    if (req.xhr) {
-      return res.status(400).json({ success: false, error: error.message });
-    }
-    
-    res.redirect(`/admin/games/details/${gameId}`);
-  }
-});
+// مدیریت بازی‌های گروهی
+router.get('/group-games', gamesController.showGroupGames);
+router.get('/group-games/:id', gamesController.showGroupGame);
+router.post('/group-games/:id', gamesController.updateGroupGame);
+router.post('/group-games/:id/toggle', gamesController.toggleGroupGame);
 
-/**
- * مشاهده تاریخچه بازی‌های یک کاربر
- */
-router.get('/user-games/:userId', async (req, res) => {
-  const { userId } = req.params;
-  
-  try {
-    const games = await getUserGames(userId, 50);
-    
-    res.render('games/user-games', {
-      title: 'بازی‌های کاربر',
-      userId,
-      games
-    });
-  } catch (error) {
-    req.flash('error_msg', `خطا در بارگیری بازی‌های کاربر: ${error.message}`);
-    res.redirect('/admin/games');
-  }
-});
+// مدیریت جایزه‌ها و پاداش‌ها
+router.get('/rewards', gamesController.showRewards);
+router.get('/rewards/new', gamesController.showCreateReward);
+router.post('/rewards/new', gamesController.createReward);
+router.get('/rewards/:id', gamesController.showReward);
+router.post('/rewards/:id', gamesController.updateReward);
+router.post('/rewards/:id/delete', gamesController.deleteReward);
+
+// دستی‌کاری و تقلب (فقط برای آزمایش)
+router.get('/cheats', gamesController.showCheats);
+router.post('/cheats/win-rate', gamesController.setCheatsWinRate);
+router.post('/cheats/reset', gamesController.resetCheats);
+
+// آمار بازی‌ها
+router.get('/stats', gamesController.showStats);
+router.get('/stats/:gameId', gamesController.showGameStats);
+router.get('/stats/user/:userId', gamesController.showUserStats);
+router.get('/stats/exports', gamesController.exportStats);
+
+// تنظیمات بازی‌ها
+router.get('/settings', gamesController.showSettings);
+router.post('/settings', gamesController.updateSettings);
 
 export default router;

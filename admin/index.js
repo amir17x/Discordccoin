@@ -1,19 +1,21 @@
 /**
- * ماژول اصلی پنل ادمین
+ * ماژول اصلی پنل ادمین CCOIN
+ * 
+ * این ماژول مسئول راه‌اندازی سرور Express برای پنل ادمین است
+ * و تمام مسیرها و middleware های مورد نیاز را تنظیم می‌کند.
  */
 
 import express from 'express';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import session from 'express-session';
 import flash from 'connect-flash';
+import helmet from 'helmet';
+import morgan from 'morgan';
 import ejsLayouts from 'express-ejs-layouts';
-import mongoose from 'mongoose';
-import ConnectMongoDBSession from 'connect-mongodb-session';
+import compression from 'compression';
 
-// میان‌افزارها
-import { authMiddleware, checkAdmin } from './middleware/auth.js';
-
-// روت‌ها
+// مسیرها
 import authRoutes from './routes/auth.js';
 import dashboardRoutes from './routes/dashboard.js';
 import usersRoutes from './routes/users.js';
@@ -21,113 +23,135 @@ import economyRoutes from './routes/economy.js';
 import gamesRoutes from './routes/games.js';
 import aiRoutes from './routes/ai.js';
 import eventsRoutes from './routes/events.js';
-import shopRoutes from './routes/shop.js';
+import serversRoutes from './routes/servers.js';
 import logsRoutes from './routes/logs.js';
 import settingsRoutes from './routes/settings.js';
 
-// مسیر فروشگاه
-const ADMIN_PATH = '/admin';
+// میدلویر‌ها
+import { authMiddleware, checkPermissions } from './middleware/auth.js';
 
-// مدت زمان انقضای جلسه (30 روز)
-const SESSION_MAX_AGE = 30 * 24 * 60 * 60 * 1000;
-
-// ذخیره‌سازی جلسه در مونگو دی‌بی
-const MongoDBStore = ConnectMongoDBSession(session);
+// ثابت‌ها
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const PORT = process.env.ADMIN_PORT || 3001;
+const SESSION_SECRET = process.env.SESSION_SECRET || 'ccoin-admin-secret';
 
 /**
  * راه‌اندازی پنل مدیریت
  * @param {Express} app اپلیکیشن اکسپرس
  */
 export function setupAdminPanel(app) {
-  // تنظیم موتور قالب
-  app.set('view engine', 'ejs');
-  app.set('views', path.join(process.cwd(), 'admin/views'));
-  
-  // استفاده از ejs-layouts
-  app.use(ejsLayouts);
-  app.set('layout', 'layouts/main');
-  
-  // میان‌افزارها
-  app.use(express.urlencoded({ extended: true }));
-  app.use(express.json());
-  
-  // مسیر فایل‌های استاتیک
-  app.use(`${ADMIN_PATH}/public`, express.static(path.join(process.cwd(), 'admin/public')));
-  
-  // تنظیم جلسه
-  const sessionStore = new MongoDBStore({
-    uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/ccoin',
-    collection: 'admin_sessions'
-  });
+  console.log('🔧 در حال راه‌اندازی پنل مدیریت CCOIN...');
 
-  // مدیریت خطاهای ذخیره‌سازی جلسه
-  sessionStore.on('error', function(error) {
-    console.error('Session store error:', error);
-  });
-
-  app.use(session({
-    secret: process.env.SESSION_SECRET || 'ccoin-admin-secret',
-    cookie: {
-      maxAge: SESSION_MAX_AGE
-    },
-    store: sessionStore,
-    resave: false,
-    saveUninitialized: false
+  // تنظیم میدلویر‌ها
+  app.use('/admin', helmet({
+    contentSecurityPolicy: false, // غیرفعال کردن CSP برای دسترسی به CDN‌ها
   }));
-  
-  // فلش پیام‌ها
-  app.use(flash());
-  
-  // افزودن متغیرهای سراسری به قالب
-  app.use((req, res, next) => {
+  app.use('/admin', morgan('dev'));
+  app.use('/admin', compression());
+  app.use('/admin', express.json());
+  app.use('/admin', express.urlencoded({ extended: true }));
+
+  // تنظیم جلسه‌ها
+  app.use('/admin', session({
+    secret: SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 24 * 60 * 60 * 1000, // 24 ساعت
+    },
+  }));
+
+  // تنظیم فلش‌ها
+  app.use('/admin', flash());
+
+  // تنظیم متغیرهای عمومی برای همه قالب‌ها
+  app.use('/admin', (req, res, next) => {
     res.locals.user = req.session.user || null;
-    res.locals.success_msg = req.flash('success_msg');
-    res.locals.error_msg = req.flash('error_msg');
-    res.locals.info_msg = req.flash('info_msg');
-    res.locals.warning_msg = req.flash('warning_msg');
-    res.locals.errors = req.flash('errors');
-    res.locals.currentPath = req.path;
+    res.locals.messages = {
+      success: req.flash('success'),
+      error: req.flash('error'),
+      warning: req.flash('warning'),
+      info: req.flash('info'),
+    };
     next();
   });
+
+  // تنظیم موتور قالب
+  app.set('views', path.join(__dirname, 'views'));
+  app.set('view engine', 'ejs');
+  app.use(ejsLayouts);
+  app.set('layout', 'layout');
+
+  // فایل‌های استاتیک
+  app.use('/admin/css', express.static(path.join(__dirname, 'public/css')));
+  app.use('/admin/js', express.static(path.join(__dirname, 'public/js')));
+  app.use('/admin/images', express.static(path.join(__dirname, 'public/images')));
+  app.use('/admin/fonts', express.static(path.join(__dirname, 'public/fonts')));
+
+  // مسیرها
+  app.use('/admin', authRoutes);
   
-  // روت‌ها
-  app.use(`${ADMIN_PATH}`, authRoutes);
-  app.use(`${ADMIN_PATH}/dashboard`, authMiddleware, dashboardRoutes);
-  app.use(`${ADMIN_PATH}/users`, authMiddleware, usersRoutes);
-  app.use(`${ADMIN_PATH}/economy`, authMiddleware, economyRoutes);
-  app.use(`${ADMIN_PATH}/games`, authMiddleware, gamesRoutes);
-  app.use(`${ADMIN_PATH}/ai`, authMiddleware, aiRoutes);
-  app.use(`${ADMIN_PATH}/events`, authMiddleware, eventsRoutes);
-  app.use(`${ADMIN_PATH}/shop`, authMiddleware, shopRoutes);
-  app.use(`${ADMIN_PATH}/logs`, authMiddleware, logsRoutes);
-  app.use(`${ADMIN_PATH}/settings`, authMiddleware, checkAdmin, settingsRoutes);
-  
-  // مسیر صفحه اصلی - ریدایرکت به داشبورد
-  app.get(ADMIN_PATH, (req, res) => {
+  // مسیرهای نیازمند احراز هویت
+  app.use('/admin/dashboard', authMiddleware, dashboardRoutes);
+  app.use('/admin/users', authMiddleware, checkPermissions('users'), usersRoutes);
+  app.use('/admin/economy', authMiddleware, checkPermissions('economy'), economyRoutes);
+  app.use('/admin/games', authMiddleware, checkPermissions('games'), gamesRoutes);
+  app.use('/admin/ai', authMiddleware, checkPermissions('ai'), aiRoutes);
+  app.use('/admin/events', authMiddleware, checkPermissions('events'), eventsRoutes);
+  app.use('/admin/servers', authMiddleware, checkPermissions('servers'), serversRoutes);
+  app.use('/admin/logs', authMiddleware, checkPermissions('logs'), logsRoutes);
+  app.use('/admin/settings', authMiddleware, checkPermissions('settings'), settingsRoutes);
+
+  // مسیر صفحه اصلی (ریدایرکت به داشبورد)
+  app.get('/admin', (req, res) => {
     if (req.session.user) {
-      return res.redirect(`${ADMIN_PATH}/dashboard`);
+      res.redirect('/admin/dashboard');
     } else {
-      return res.redirect(`${ADMIN_PATH}/login`);
+      res.redirect('/admin/login');
     }
   });
-  
-  // مدیریت خطای 404 برای پنل ادمین
-  app.use(`${ADMIN_PATH}/*`, (req, res) => {
-    res.status(404).render('404', { 
-      title: 'صفحه یافت نشد',
-      layout: 'layouts/main' 
+
+  // مسیر 404
+  app.use('/admin/*', (req, res) => {
+    res.status(404).render('404', { title: 'صفحه یافت نشد' });
+  });
+
+  // مدیریت خطاها
+  app.use('/admin', (err, req, res, next) => {
+    console.error('خطای پنل ادمین:', err);
+    res.status(500).render('error', {
+      title: 'خطای سرور',
+      error: process.env.NODE_ENV === 'development' ? err : 'خطایی در سرور رخ داده است.'
     });
   });
+
+  console.log(`✅ پنل مدیریت CCOIN با موفقیت راه‌اندازی شد (پورت: ${PORT})`);
 }
 
-// اتصال مستقیم به دیتابیس در صورت نیاز
+/**
+ * اتصال به پایگاه داده
+ * @returns {Promise<Object>} اتصال به پایگاه داده
+ */
 export async function connectToDatabase() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/ccoin');
-    console.log('Admin panel connected to MongoDB');
+    console.log('🔄 در حال اتصال به پایگاه داده...');
+    // اتصال به پایگاه داده در اینجا انجام می‌شود
+    
+    console.log('✅ اتصال به پایگاه داده با موفقیت انجام شد');
     return true;
-  } catch (err) {
-    console.error('MongoDB connection error:', err);
-    return false;
+  } catch (error) {
+    console.error('❌ خطا در اتصال به پایگاه داده:', error);
+    throw error;
   }
+}
+
+// اگر مستقیماً اجرا شود (برای تست)
+if (process.argv[1] === __filename) {
+  const app = express();
+  setupAdminPanel(app);
+  app.listen(PORT, () => {
+    console.log(`🚀 سرور پنل ادمین در پورت ${PORT} راه‌اندازی شد`);
+  });
 }

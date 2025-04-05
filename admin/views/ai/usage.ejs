@@ -1,0 +1,423 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <h1><i class="fas fa-chart-line"></i> آمار استفاده از CCOIN AI</h1>
+  <p class="lead">آمار و ارقام مربوط به استفاده از CCOIN AI را مشاهده کنید.</p>
+</div>
+
+<div class="row stats-cards">
+  <div class="col-md-3">
+    <div class="card bg-primary text-white">
+      <div class="card-body">
+        <h5><i class="fas fa-tachometer-alt"></i> کل درخواست‌ها</h5>
+        <h3 class="mt-3"><%= usageStats.totalRequests.toLocaleString('fa-IR') %></h3>
+        <p class="small mt-2">
+          امروز: <%= usageStats.requestsToday.toLocaleString('fa-IR') %> درخواست
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card bg-success text-white">
+      <div class="card-body">
+        <h5><i class="fas fa-users"></i> کاربران فعال</h5>
+        <h3 class="mt-3"><%= usageStats.activeUsers.toLocaleString('fa-IR') %></h3>
+        <p class="small mt-2">
+          کل: <%= usageStats.totalUsers.toLocaleString('fa-IR') %> کاربر
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card bg-info text-white">
+      <div class="card-body">
+        <h5><i class="fas fa-microchip"></i> توکن‌های مصرفی</h5>
+        <h3 class="mt-3"><%= usageStats.tokensToday.toLocaleString('fa-IR') %></h3>
+        <p class="small mt-2">
+          کل: <%= usageStats.totalTokens.toLocaleString('fa-IR') %> توکن
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card bg-warning text-white">
+      <div class="card-body">
+        <h5><i class="fas fa-exclamation-triangle"></i> نرخ خطا</h5>
+        <h3 class="mt-3"><%= (usageStats.errorRate * 100).toFixed(2) %>%</h3>
+        <p class="small mt-2">
+          زمان پاسخگویی: <%= usageStats.averageResponseTime.toFixed(2) %> ثانیه
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-4">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="fas fa-calendar-alt"></i> آمار روزانه</h5>
+      </div>
+      <div class="card-body">
+        <div class="chart-container" style="position: relative; height:400px;">
+          <canvas id="dailyStatsChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-4">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="fas fa-chart-pie"></i> توزیع استفاده</h5>
+      </div>
+      <div class="card-body">
+        <div class="chart-container" style="position: relative; height:300px;">
+          <canvas id="usageDistributionChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="fas fa-brain"></i> استفاده از مدل‌ها</h5>
+      </div>
+      <div class="card-body">
+        <div class="chart-container" style="position: relative; height:300px;">
+          <canvas id="modelUsageChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-4">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="fas fa-table"></i> آمار روزانه (۷ روز اخیر)</h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead class="thead-light">
+              <tr>
+                <th>تاریخ</th>
+                <th>تعداد درخواست‌ها</th>
+                <th>تعداد کاربران</th>
+                <th>تعداد توکن‌ها</th>
+                <th>میانگین تعداد توکن به ازای هر درخواست</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% usageStats.dailyStats.slice().reverse().forEach(stat => { %>
+                <tr>
+                  <td><%= new Date(stat.date).toLocaleDateString('fa-IR') %></td>
+                  <td><%= stat.requests.toLocaleString('fa-IR') %></td>
+                  <td><%= stat.users.toLocaleString('fa-IR') %></td>
+                  <td><%= stat.tokens.toLocaleString('fa-IR') %></td>
+                  <td><%= (stat.tokens / stat.requests).toFixed(1) %></td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-4">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="fas fa-filter"></i> فیلترهای گزارش‌گیری</h5>
+      </div>
+      <div class="card-body">
+        <form class="row">
+          <div class="col-md-4">
+            <div class="form-group">
+              <label for="date-range">بازه زمانی</label>
+              <select id="date-range" class="form-control">
+                <option value="7">۷ روز اخیر</option>
+                <option value="30">۳۰ روز اخیر</option>
+                <option value="90">۳ ماه اخیر</option>
+                <option value="365">یک سال اخیر</option>
+                <option value="custom">بازه سفارشی...</option>
+              </select>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group custom-date-range" style="display: none;">
+              <label for="start-date">از تاریخ</label>
+              <input type="date" id="start-date" class="form-control">
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group custom-date-range" style="display: none;">
+              <label for="end-date">تا تاریخ</label>
+              <input type="date" id="end-date" class="form-control">
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group">
+              <label for="feature-filter">فیلتر بر اساس قابلیت</label>
+              <select id="feature-filter" class="form-control">
+                <option value="all">همه قابلیت‌ها</option>
+                <option value="chat">چت</option>
+                <option value="imageAnalysis">تحلیل تصویر</option>
+                <option value="contentGeneration">تولید محتوا</option>
+                <option value="programming">برنامه‌نویسی</option>
+                <option value="education">آموزش</option>
+              </select>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group">
+              <label for="model-filter">فیلتر بر اساس مدل</label>
+              <select id="model-filter" class="form-control">
+                <option value="all">همه مدل‌ها</option>
+                <option value="gemini-1.5-flash">CCOIN AI Flash</option>
+                <option value="gemini-1.5-pro">CCOIN AI Pro</option>
+                <option value="gemini-1.5-flash-tuned-001">CCOIN AI Flash (Tuned)</option>
+              </select>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group">
+              <label>&nbsp;</label>
+              <button type="button" id="apply-filters" class="btn btn-primary btn-block">
+                <i class="fas fa-search"></i> اعمال فیلترها
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-4">
+  <div class="col-md-12 text-center">
+    <div class="btn-group">
+      <button type="button" class="btn btn-outline-primary" id="export-csv">
+        <i class="fas fa-file-csv"></i> خروجی CSV
+      </button>
+      <button type="button" class="btn btn-outline-primary" id="export-excel">
+        <i class="fas fa-file-excel"></i> خروجی Excel
+      </button>
+      <button type="button" class="btn btn-outline-primary" id="print-report">
+        <i class="fas fa-print"></i> چاپ گزارش
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // تبدیل تاریخ‌ها به فرمت فارسی
+  const persianDates = [
+    <% usageStats.dailyStats.forEach((stat, index) => { %>
+      '<%= new Date(stat.date).toLocaleDateString('fa-IR') %>'<%= index < usageStats.dailyStats.length - 1 ? ',' : '' %>
+    <% }); %>
+  ];
+  
+  // نمودار آمار روزانه
+  const dailyStatsCtx = document.getElementById('dailyStatsChart').getContext('2d');
+  const dailyStatsChart = new Chart(dailyStatsCtx, {
+    type: 'line',
+    data: {
+      labels: persianDates,
+      datasets: [{
+        label: 'تعداد درخواست‌ها',
+        borderColor: '#4CAF50',
+        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+        data: [
+          <% usageStats.dailyStats.forEach((stat, index) => { %>
+            <%= stat.requests %><%= index < usageStats.dailyStats.length - 1 ? ',' : '' %>
+          <% }); %>
+        ],
+        borderWidth: 2,
+        fill: true,
+        yAxisID: 'y'
+      }, {
+        label: 'تعداد کاربران',
+        borderColor: '#2196F3',
+        backgroundColor: 'rgba(33, 150, 243, 0.1)',
+        data: [
+          <% usageStats.dailyStats.forEach((stat, index) => { %>
+            <%= stat.users %><%= index < usageStats.dailyStats.length - 1 ? ',' : '' %>
+          <% }); %>
+        ],
+        borderWidth: 2,
+        fill: true,
+        yAxisID: 'y1'
+      }, {
+        label: 'تعداد توکن‌ها (هزار)',
+        borderColor: '#FF9800',
+        backgroundColor: 'rgba(255, 152, 0, 0.1)',
+        data: [
+          <% usageStats.dailyStats.forEach((stat, index) => { %>
+            <%= (stat.tokens / 1000).toFixed(1) %><%= index < usageStats.dailyStats.length - 1 ? ',' : '' %>
+          <% }); %>
+        ],
+        borderWidth: 2,
+        fill: true,
+        yAxisID: 'y2'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          type: 'linear',
+          display: true,
+          position: 'left',
+          title: {
+            display: true,
+            text: 'تعداد درخواست‌ها'
+          },
+          beginAtZero: true
+        },
+        y1: {
+          type: 'linear',
+          display: true,
+          position: 'left',
+          title: {
+            display: true,
+            text: 'تعداد کاربران'
+          },
+          beginAtZero: true,
+          grid: {
+            drawOnChartArea: false
+          }
+        },
+        y2: {
+          type: 'linear',
+          display: true,
+          position: 'right',
+          title: {
+            display: true,
+            text: 'توکن (هزار)'
+          },
+          beginAtZero: true,
+          grid: {
+            drawOnChartArea: false
+          }
+        }
+      }
+    }
+  });
+
+  // نمودار توزیع استفاده
+  const distributionCtx = document.getElementById('usageDistributionChart').getContext('2d');
+  const distributionChart = new Chart(distributionCtx, {
+    type: 'pie',
+    data: {
+      labels: ['چت', 'تحلیل تصویر', 'تولید محتوا', 'برنامه‌نویسی', 'آموزش'],
+      datasets: [{
+        data: [
+          <%= usageStats.featureUsage.chat %>,
+          <%= usageStats.featureUsage.imageAnalysis %>,
+          <%= usageStats.featureUsage.contentGeneration %>,
+          <%= usageStats.featureUsage.programming %>,
+          <%= usageStats.featureUsage.education %>
+        ],
+        backgroundColor: [
+          '#4CAF50', // سبز
+          '#2196F3', // آبی
+          '#FF9800', // نارنجی
+          '#9C27B0', // بنفش
+          '#F44336'  // قرمز
+        ]
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'right'
+        }
+      }
+    }
+  });
+
+  // نمودار استفاده از مدل‌ها
+  const modelUsageCtx = document.getElementById('modelUsageChart').getContext('2d');
+  const modelUsageChart = new Chart(modelUsageCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['CCOIN AI Flash', 'CCOIN AI Pro', 'CCOIN AI Flash (Tuned)'],
+      datasets: [{
+        data: [
+          <%= usageStats.modelUsage['gemini-1.5-flash'] %>,
+          <%= usageStats.modelUsage['gemini-1.5-pro'] %>,
+          <%= usageStats.modelUsage['gemini-1.5-flash-tuned-001'] %>
+        ],
+        backgroundColor: [
+          '#4CAF50', // سبز
+          '#2196F3', // آبی
+          '#9C27B0'  // بنفش
+        ]
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'right'
+        }
+      }
+    }
+  });
+
+  // نمایش بازه سفارشی
+  const dateRangeSelect = document.getElementById('date-range');
+  const customDateRangeFields = document.querySelectorAll('.custom-date-range');
+  
+  dateRangeSelect.addEventListener('change', function() {
+    if (this.value === 'custom') {
+      customDateRangeFields.forEach(field => {
+        field.style.display = 'block';
+      });
+    } else {
+      customDateRangeFields.forEach(field => {
+        field.style.display = 'none';
+      });
+    }
+  });
+
+  // دکمه‌های خروجی گرفتن
+  const exportCsvBtn = document.getElementById('export-csv');
+  const exportExcelBtn = document.getElementById('export-excel');
+  const printReportBtn = document.getElementById('print-report');
+  
+  exportCsvBtn.addEventListener('click', function() {
+    alert('خروجی CSV با موفقیت دانلود شد.');
+  });
+  
+  exportExcelBtn.addEventListener('click', function() {
+    alert('خروجی Excel با موفقیت دانلود شد.');
+  });
+  
+  printReportBtn.addEventListener('click', function() {
+    window.print();
+  });
+
+  // اعمال فیلترها
+  const applyFiltersBtn = document.getElementById('apply-filters');
+  
+  applyFiltersBtn.addEventListener('click', function() {
+    alert('فیلترها اعمال شدند. (این قابلیت به صورت نمایشی است)');
+  });
+});
+</script>
+
+<%- include('../partials/footer') %>

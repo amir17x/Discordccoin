@@ -1,0 +1,427 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <h1><i class="fas fa-cogs"></i> تنظیمات CCOIN AI</h1>
+  <p class="lead">از این صفحه می‌توانید تنظیمات CCOIN AI را مدیریت کنید.</p>
+</div>
+
+<% if(messages.success.length > 0) { %>
+  <div class="alert alert-success">
+    <i class="fas fa-check-circle"></i> <%= messages.success %>
+  </div>
+<% } %>
+
+<% if(messages.error.length > 0) { %>
+  <div class="alert alert-danger">
+    <i class="fas fa-exclamation-circle"></i> <%= messages.error %>
+  </div>
+<% } %>
+
+<form action="/admin/ai/settings" method="POST" class="settings-form">
+  <div class="card mb-4">
+    <div class="card-header bg-dark text-white">
+      <h5 class="mb-0"><i class="fas fa-sliders-h"></i> تنظیمات عمومی</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <div class="form-group">
+            <label for="defaultModel">مدل پیش‌فرض</label>
+            <select name="defaultModel" id="defaultModel" class="form-control">
+              <% settings.models.forEach(model => { %>
+                <option value="<%= model.id %>" <%= settings.defaultModel === model.id ? 'selected' : '' %>>
+                  <%= model.name %> - <%= model.description %>
+                </option>
+              <% }); %>
+            </select>
+            <small class="form-text text-muted">این مدل به صورت پیش‌فرض برای پردازش درخواست‌ها استفاده خواهد شد.</small>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-group">
+            <label for="maxRequestsPerDay">حداکثر درخواست روزانه</label>
+            <input type="number" name="maxRequestsPerDay" id="maxRequestsPerDay" class="form-control" 
+                  value="<%= settings.maxRequestsPerDay %>" min="1" max="100000">
+            <small class="form-text text-muted">حداکثر تعداد درخواست‌های مجاز در روز برای تمام کاربران.</small>
+          </div>
+        </div>
+      </div>
+      
+      <div class="row mt-3">
+        <div class="col-md-6">
+          <div class="form-group">
+            <label for="maxRequestsPerUser">حداکثر درخواست هر کاربر</label>
+            <input type="number" name="maxRequestsPerUser" id="maxRequestsPerUser" class="form-control" 
+                  value="<%= settings.maxRequestsPerUser %>" min="1" max="1000">
+            <small class="form-text text-muted">حداکثر تعداد درخواست‌های مجاز در روز برای هر کاربر.</small>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-group">
+            <label>زبان پیش‌فرض</label>
+            <div class="form-check">
+              <input type="radio" name="defaultLanguage" id="lang-fa" class="form-check-input" 
+                    value="fa" <%= settings.promptStrategy.defaultLanguage === 'fa' ? 'checked' : '' %>>
+              <label for="lang-fa" class="form-check-label">فارسی</label>
+            </div>
+            <div class="form-check">
+              <input type="radio" name="defaultLanguage" id="lang-en" class="form-check-input" 
+                    value="en" <%= settings.promptStrategy.defaultLanguage === 'en' ? 'checked' : '' %>>
+              <label for="lang-en" class="form-check-label">انگلیسی</label>
+            </div>
+            <small class="form-text text-muted">زبان پیش‌فرض برای پاسخ‌ها (در صورت عدم تشخیص خودکار).</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-header bg-dark text-white">
+      <h5 class="mb-0"><i class="fas fa-robot"></i> مدیریت مدل‌ها</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead class="thead-light">
+            <tr>
+              <th>نام مدل</th>
+              <th>توضیحات</th>
+              <th>حداکثر توکن</th>
+              <th>دمای پیش‌فرض</th>
+              <th>وضعیت</th>
+              <th>عملیات</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% settings.models.forEach((model, index) => { %>
+              <tr>
+                <td>
+                  <input type="hidden" name="models[<%= index %>][id]" value="<%= model.id %>">
+                  <input type="text" name="models[<%= index %>][name]" value="<%= model.name %>" class="form-control">
+                </td>
+                <td>
+                  <input type="text" name="models[<%= index %>][description]" value="<%= model.description %>" class="form-control">
+                </td>
+                <td>
+                  <input type="number" name="models[<%= index %>][maxTokens]" value="<%= model.maxTokens %>" class="form-control">
+                </td>
+                <td>
+                  <input type="number" name="models[<%= index %>][defaultTemperature]" value="<%= model.defaultTemperature %>" 
+                        min="0" max="1" step="0.1" class="form-control">
+                </td>
+                <td>
+                  <div class="custom-control custom-switch">
+                    <input type="checkbox" name="models[<%= index %>][enabled]" id="model<%= index %>-enabled" 
+                          class="custom-control-input" <%= model.enabled ? 'checked' : '' %>>
+                    <label for="model<%= index %>-enabled" class="custom-control-label">
+                      <%= model.enabled ? 'فعال' : 'غیرفعال' %>
+                    </label>
+                  </div>
+                </td>
+                <td>
+                  <button type="button" class="btn btn-sm btn-outline-info model-info-btn" data-model-id="<%= model.id %>">
+                    <i class="fas fa-info-circle"></i>
+                  </button>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-header bg-dark text-white">
+      <h5 class="mb-0"><i class="fas fa-image"></i> تنظیمات تشخیص تصویر</h5>
+    </div>
+    <div class="card-body">
+      <div class="form-group">
+        <div class="custom-control custom-switch">
+          <input type="checkbox" name="vision[enabled]" id="vision-enabled" class="custom-control-input" 
+                <%= settings.vision && settings.vision.enabled ? 'checked' : '' %>>
+          <label for="vision-enabled" class="custom-control-label">فعال‌سازی قابلیت تشخیص تصویر</label>
+        </div>
+        <small class="form-text text-muted">با فعال‌سازی این گزینه، CCOIN AI قادر به تحلیل تصاویر ارسالی کاربران خواهد بود.</small>
+      </div>
+      
+      <div id="vision-settings" class="mt-3" <%= !settings.vision || !settings.vision.enabled ? 'style="display: none;"' : '' %>>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="vision-maxSize">حداکثر اندازه فایل (MB)</label>
+              <input type="number" name="vision[maxSize]" id="vision-maxSize" class="form-control" 
+                    value="<%= settings.vision ? settings.vision.maxSize : 10 %>" min="1" max="50">
+              <small class="form-text text-muted">حداکثر اندازه مجاز برای تصاویر ارسالی (مگابایت).</small>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-group">
+              <label>فرمت‌های مجاز</label>
+              <div class="row">
+                <% const formats = settings.vision ? settings.vision.formats : ['jpg', 'jpeg', 'png', 'gif', 'webp']; %>
+                <div class="col-md-4">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" name="vision[formats][]" id="format-jpg" value="jpg" 
+                          class="custom-control-input" <%= formats.includes('jpg') ? 'checked' : '' %>>
+                    <label for="format-jpg" class="custom-control-label">JPG</label>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" name="vision[formats][]" id="format-jpeg" value="jpeg" 
+                          class="custom-control-input" <%= formats.includes('jpeg') ? 'checked' : '' %>>
+                    <label for="format-jpeg" class="custom-control-label">JPEG</label>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" name="vision[formats][]" id="format-png" value="png" 
+                          class="custom-control-input" <%= formats.includes('png') ? 'checked' : '' %>>
+                    <label for="format-png" class="custom-control-label">PNG</label>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" name="vision[formats][]" id="format-gif" value="gif" 
+                          class="custom-control-input" <%= formats.includes('gif') ? 'checked' : '' %>>
+                    <label for="format-gif" class="custom-control-label">GIF</label>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" name="vision[formats][]" id="format-webp" value="webp" 
+                          class="custom-control-input" <%= formats.includes('webp') ? 'checked' : '' %>>
+                    <label for="format-webp" class="custom-control-label">WebP</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-header bg-dark text-white">
+      <h5 class="mb-0"><i class="fas fa-key"></i> کلیدهای API</h5>
+    </div>
+    <div class="card-body">
+      <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i> کلیدهای API برای ارتباط با سرویس‌های هوش مصنوعی ضروری هستند. لطفاً از امنیت آن‌ها اطمینان حاصل کنید.
+      </div>
+      
+      <div class="row">
+        <div class="col-md-6">
+          <div class="form-group">
+            <label for="gemini-api-key">کلید API Gemini</label>
+            <div class="input-group">
+              <input type="password" name="apiKeys[gemini]" id="gemini-api-key" class="form-control" 
+                    value="<%= settings.apiKeys.gemini %>" placeholder="کلید API را وارد کنید">
+              <div class="input-group-append">
+                <button type="button" class="btn btn-outline-secondary toggle-password" data-target="gemini-api-key">
+                  <i class="fas fa-eye"></i>
+                </button>
+              </div>
+            </div>
+            <small class="form-text text-muted">این کلید برای دسترسی به API Gemini استفاده می‌شود.</small>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-group">
+            <label for="openai-api-key">کلید API OpenAI (اختیاری)</label>
+            <div class="input-group">
+              <input type="password" name="apiKeys[openai]" id="openai-api-key" class="form-control" 
+                    value="<%= settings.apiKeys.openai %>" placeholder="کلید API را وارد کنید">
+              <div class="input-group-append">
+                <button type="button" class="btn btn-outline-secondary toggle-password" data-target="openai-api-key">
+                  <i class="fas fa-eye"></i>
+                </button>
+              </div>
+            </div>
+            <small class="form-text text-muted">این کلید برای دسترسی به API OpenAI استفاده می‌شود (اختیاری).</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-header bg-dark text-white">
+      <h5 class="mb-0"><i class="fas fa-comment-alt"></i> استراتژی پرامپت</h5>
+    </div>
+    <div class="card-body">
+      <div class="form-group">
+        <div class="custom-control custom-switch">
+          <input type="checkbox" name="promptStrategy[useTemplates]" id="use-templates" class="custom-control-input" 
+                <%= settings.promptStrategy.useTemplates ? 'checked' : '' %>>
+          <label for="use-templates" class="custom-control-label">استفاده از الگوهای پرامپت</label>
+        </div>
+        <small class="form-text text-muted">با فعال‌سازی این گزینه، CCOIN AI از الگوهای پرامپت تعریف شده برای درخواست‌های مختلف استفاده خواهد کرد.</small>
+      </div>
+      
+      <div class="form-group mt-3">
+        <div class="custom-control custom-switch">
+          <input type="checkbox" name="promptStrategy[autoDetectLanguage]" id="auto-detect-language" class="custom-control-input" 
+                <%= settings.promptStrategy.autoDetectLanguage ? 'checked' : '' %>>
+          <label for="auto-detect-language" class="custom-control-label">تشخیص خودکار زبان</label>
+        </div>
+        <small class="form-text text-muted">با فعال‌سازی این گزینه، CCOIN AI زبان درخواست کاربر را به صورت خودکار تشخیص داده و به همان زبان پاسخ می‌دهد.</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-group text-center">
+    <button type="submit" class="btn btn-primary btn-lg">
+      <i class="fas fa-save"></i> ذخیره تنظیمات
+    </button>
+    <a href="/admin/ai" class="btn btn-secondary btn-lg mr-2">
+      <i class="fas fa-arrow-left"></i> بازگشت
+    </a>
+  </div>
+</form>
+
+<!-- مودال اطلاعات مدل -->
+<div class="modal fade" id="modelInfoModal" tabindex="-1" role="dialog" aria-labelledby="modelInfoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-info text-white">
+        <h5 class="modal-title" id="modelInfoModalTitle">جزئیات مدل</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="بستن">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" id="modelInfoModalBody">
+        <div class="text-center">
+          <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">در حال بارگذاری...</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">بستن</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // نمایش/مخفی‌سازی تنظیمات تشخیص تصویر
+  const visionEnabledSwitch = document.getElementById('vision-enabled');
+  const visionSettings = document.getElementById('vision-settings');
+  
+  visionEnabledSwitch.addEventListener('change', function() {
+    if (this.checked) {
+      visionSettings.style.display = 'block';
+    } else {
+      visionSettings.style.display = 'none';
+    }
+  });
+  
+  // نمایش/مخفی‌سازی کلیدهای API
+  const togglePasswordButtons = document.querySelectorAll('.toggle-password');
+  
+  togglePasswordButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      const targetId = this.getAttribute('data-target');
+      const inputField = document.getElementById(targetId);
+      
+      if (inputField.type === 'password') {
+        inputField.type = 'text';
+        this.innerHTML = '<i class="fas fa-eye-slash"></i>';
+      } else {
+        inputField.type = 'password';
+        this.innerHTML = '<i class="fas fa-eye"></i>';
+      }
+    });
+  });
+  
+  // اطلاعات مدل
+  const modelInfoButtons = document.querySelectorAll('.model-info-btn');
+  const modelInfoModal = $('#modelInfoModal');
+  const modelInfoModalTitle = document.getElementById('modelInfoModalTitle');
+  const modelInfoModalBody = document.getElementById('modelInfoModalBody');
+  
+  modelInfoButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      const modelId = this.getAttribute('data-model-id');
+      const model = getModelById(modelId);
+      
+      if (model) {
+        modelInfoModalTitle.textContent = `اطلاعات مدل: ${model.name}`;
+        
+        let html = `
+          <div class="card mb-3">
+            <div class="card-header bg-dark text-white">مشخصات کلی</div>
+            <div class="card-body">
+              <dl class="row">
+                <dt class="col-sm-4">شناسه مدل:</dt>
+                <dd class="col-sm-8">${model.id}</dd>
+                
+                <dt class="col-sm-4">نام نمایشی:</dt>
+                <dd class="col-sm-8">${model.name}</dd>
+                
+                <dt class="col-sm-4">توضیحات:</dt>
+                <dd class="col-sm-8">${model.description}</dd>
+                
+                <dt class="col-sm-4">حداکثر توکن:</dt>
+                <dd class="col-sm-8">${model.maxTokens.toLocaleString('fa-IR')}</dd>
+                
+                <dt class="col-sm-4">محدوده دمای تولید:</dt>
+                <dd class="col-sm-8">${model.temperatureRange[0]} - ${model.temperatureRange[1]}</dd>
+                
+                <dt class="col-sm-4">دمای پیش‌فرض:</dt>
+                <dd class="col-sm-8">${model.defaultTemperature}</dd>
+                
+                <dt class="col-sm-4">وضعیت:</dt>
+                <dd class="col-sm-8">
+                  <span class="badge badge-${model.enabled ? 'success' : 'secondary'}">
+                    ${model.enabled ? 'فعال' : 'غیرفعال'}
+                  </span>
+                </dd>
+              </dl>
+            </div>
+          </div>
+        `;
+        
+        if (model.tuned) {
+          html += `
+            <div class="card">
+              <div class="card-header bg-dark text-white">اطلاعات آموزش</div>
+              <div class="card-body">
+                <dl class="row">
+                  <dt class="col-sm-4">مدل پایه:</dt>
+                  <dd class="col-sm-8">${model.baseModel}</dd>
+                  
+                  <dt class="col-sm-4">آموزش‌دیده:</dt>
+                  <dd class="col-sm-8">
+                    <span class="badge badge-success">بله</span>
+                  </dd>
+                </dl>
+                
+                <div class="alert alert-info">
+                  <i class="fas fa-info-circle"></i> این مدل با استفاده از داده‌های اختصاصی CCOIN آموزش دیده و بهینه‌سازی شده است.
+                </div>
+              </div>
+            </div>
+          `;
+        }
+        
+        modelInfoModalBody.innerHTML = html;
+        modelInfoModal.modal('show');
+      }
+    });
+  });
+  
+  // تابع بازیابی مدل با شناسه
+  function getModelById(modelId) {
+    const models = <%= JSON.stringify(settings.models) %>;
+    return models.find(model => model.id === modelId);
+  }
+});
+</script>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,648 @@
+<%- include('../partials/header') %>
+
+<div class="page-header">
+  <h1><i class="fas fa-vial"></i> تست مدل CCOIN AI</h1>
+  <p class="lead">از این صفحه می‌توانید مدل‌های CCOIN AI را تست کنید و عملکرد آن‌ها را بررسی نمایید.</p>
+</div>
+
+<div class="row">
+  <div class="col-lg-8">
+    <div class="card mb-4">
+      <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="fas fa-comment-alt"></i> تست تکمیل متن</h5>
+      </div>
+      <div class="card-body">
+        <form id="testForm">
+          <div class="form-group">
+            <label for="modelSelect">انتخاب مدل</label>
+            <select id="modelSelect" name="modelName" class="form-control">
+              <% tunedModels.forEach(model => { %>
+                <option value="<%= model.id %>"><%= model.displayName %></option>
+              <% }); %>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="promptInput">پرامپت</label>
+            <textarea id="promptInput" name="prompt" class="form-control" rows="5" 
+                      placeholder="متن پرامپت خود را وارد کنید..."
+                      required></textarea>
+            <small class="form-text text-muted">دستورالعمل یا سوالی که می‌خواهید مدل به آن پاسخ دهد.</small>
+          </div>
+          
+          <div class="form-group">
+            <label for="temperatureInput">دمای تولید
+              <span class="badge badge-info" id="temperatureDisplay">0.7</span>
+            </label>
+            <input type="range" id="temperatureInput" name="temperature" class="custom-range" 
+                  min="0" max="1" step="0.1" value="0.7">
+            <div class="d-flex justify-content-between small text-muted">
+              <span>0.0 (قطعی‌تر)</span>
+              <span>0.5 (متعادل)</span>
+              <span>1.0 (خلاقانه‌تر)</span>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <div class="custom-control custom-checkbox">
+              <input type="checkbox" id="showAdvanced" class="custom-control-input">
+              <label for="showAdvanced" class="custom-control-label">نمایش گزینه‌های پیشرفته</label>
+            </div>
+          </div>
+          
+          <div id="advancedOptions" style="display: none;">
+            <div class="card bg-light mb-3">
+              <div class="card-body">
+                <div class="form-group">
+                  <label for="maxTokensInput">حداکثر توکن خروجی</label>
+                  <input type="number" id="maxTokensInput" name="maxTokens" class="form-control" 
+                        min="10" max="4096" value="1024">
+                  <small class="form-text text-muted">حداکثر تعداد توکن‌های خروجی (10-4096)</small>
+                </div>
+                
+                <div class="form-group">
+                  <label for="topPInput">Top P</label>
+                  <input type="range" id="topPInput" name="topP" class="custom-range" 
+                        min="0" max="1" step="0.05" value="0.9">
+                  <div class="d-flex justify-content-between">
+                    <small class="text-muted">0.0</small>
+                    <small class="text-muted">0.5</small>
+                    <small class="text-muted">1.0</small>
+                  </div>
+                  <small class="form-text text-muted">کنترل تنوع خروجی با انتخاب از میان توکن‌های احتمالی (nucleus sampling)</small>
+                </div>
+                
+                <div class="form-group">
+                  <label for="presencePenaltyInput">جریمه تکرار</label>
+                  <input type="range" id="presencePenaltyInput" name="presencePenalty" class="custom-range" 
+                        min="-2" max="2" step="0.1" value="0">
+                  <div class="d-flex justify-content-between">
+                    <small class="text-muted">-2.0 (تشویق تکرار)</small>
+                    <small class="text-muted">0.0 (خنثی)</small>
+                    <small class="text-muted">2.0 (پرهیز از تکرار)</small>
+                  </div>
+                </div>
+                
+                <div class="form-group mb-0">
+                  <div class="custom-control custom-switch">
+                    <input type="checkbox" id="streamingInput" name="streaming" class="custom-control-input" checked>
+                    <label for="streamingInput" class="custom-control-label">نمایش پاسخ به صورت جریانی</label>
+                  </div>
+                  <small class="form-text text-muted">دریافت پاسخ به صورت تدریجی و جریانی به جای یکجا</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="form-group text-center">
+            <button type="button" id="submitBtn" class="btn btn-primary btn-lg">
+              <i class="fas fa-paper-plane"></i> ارسال درخواست
+            </button>
+            <button type="button" id="resetBtn" class="btn btn-secondary btn-lg">
+              <i class="fas fa-sync-alt"></i> پاکسازی
+            </button>
+          </div>
+        </form>
+        
+        <div id="resultContainer" style="display: none;">
+          <hr>
+          <div class="d-flex justify-content-between mb-3">
+            <h5><i class="fas fa-robot"></i> پاسخ CCOIN AI</h5>
+            <div class="btn-group">
+              <button type="button" id="copyBtn" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-copy"></i> کپی
+              </button>
+              <button type="button" id="exportBtn" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-download"></i> خروجی
+              </button>
+            </div>
+          </div>
+          
+          <div id="resultLoading" class="text-center p-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="sr-only">در حال پردازش...</span>
+            </div>
+            <p class="mt-3">در حال دریافت پاسخ از CCOIN AI...</p>
+          </div>
+          
+          <div id="resultOutput" style="display: none;">
+            <div id="resultText" class="bg-light p-3 rounded" style="min-height: 200px; white-space: pre-wrap;"></div>
+            
+            <div class="card mt-3">
+              <div class="card-header bg-dark text-white">
+                <h6 class="mb-0"><i class="fas fa-chart-bar"></i> آمار درخواست</h6>
+              </div>
+              <div class="card-body p-0">
+                <table class="table table-bordered mb-0">
+                  <tr>
+                    <th style="width: 30%">مدل</th>
+                    <td id="resultModel"></td>
+                  </tr>
+                  <tr>
+                    <th>توکن‌های ورودی</th>
+                    <td id="resultPromptTokens"></td>
+                  </tr>
+                  <tr>
+                    <th>توکن‌های خروجی</th>
+                    <td id="resultCompletionTokens"></td>
+                  </tr>
+                  <tr>
+                    <th>زمان پردازش</th>
+                    <td id="resultProcessingTime"></td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </div>
+          
+          <div id="resultError" class="alert alert-danger" style="display: none;">
+            <i class="fas fa-exclamation-circle"></i> <span id="errorMessage"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="fas fa-image"></i> تست تولید تصویر</h5>
+      </div>
+      <div class="card-body">
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle"></i> برای تست قابلیت تولید تصویر، از فرم زیر استفاده کنید.
+        </div>
+        
+        <form id="imageForm">
+          <div class="form-group">
+            <label for="imagePromptInput">توضیحات تصویر</label>
+            <textarea id="imagePromptInput" name="prompt" class="form-control" rows="3" 
+                      placeholder="توضیحات تصویر مورد نظر خود را وارد کنید..."
+                      required></textarea>
+            <small class="form-text text-muted">توضیح دقیق و جزئیات تصویری که می‌خواهید تولید شود.</small>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="widthInput">عرض تصویر</label>
+                <select id="widthInput" name="width" class="form-control">
+                  <option value="512">512px</option>
+                  <option value="768">768px</option>
+                  <option value="1024" selected>1024px</option>
+                  <option value="1280">1280px</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="heightInput">ارتفاع تصویر</label>
+                <select id="heightInput" name="height" class="form-control">
+                  <option value="512">512px</option>
+                  <option value="768">768px</option>
+                  <option value="1024" selected>1024px</option>
+                  <option value="1280">1280px</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          <div class="form-group text-center">
+            <button type="button" id="generateImageBtn" class="btn btn-success btn-lg">
+              <i class="fas fa-magic"></i> تولید تصویر
+            </button>
+          </div>
+        </form>
+        
+        <div id="imageResultContainer" style="display: none;">
+          <hr>
+          <div class="d-flex justify-content-between mb-3">
+            <h5><i class="fas fa-image"></i> تصویر تولید شده</h5>
+            <button type="button" id="downloadImageBtn" class="btn btn-sm btn-outline-secondary">
+              <i class="fas fa-download"></i> دانلود تصویر
+            </button>
+          </div>
+          
+          <div id="imageLoading" class="text-center p-5">
+            <div class="spinner-border text-success" role="status">
+              <span class="sr-only">در حال تولید تصویر...</span>
+            </div>
+            <p class="mt-3">در حال تولید تصویر توسط CCOIN AI...</p>
+            <p class="small text-muted">این فرآیند ممکن است تا 30 ثانیه طول بکشد</p>
+          </div>
+          
+          <div id="imageOutput" style="display: none;" class="text-center">
+            <img id="generatedImage" class="img-fluid rounded shadow-sm" alt="تصویر تولید شده">
+            
+            <div class="card mt-3">
+              <div class="card-header bg-dark text-white">
+                <h6 class="mb-0"><i class="fas fa-info-circle"></i> اطلاعات تصویر</h6>
+              </div>
+              <div class="card-body p-0">
+                <table class="table table-bordered mb-0">
+                  <tr>
+                    <th style="width: 30%">پرامپت</th>
+                    <td id="imagePromptDisplay"></td>
+                  </tr>
+                  <tr>
+                    <th>ابعاد</th>
+                    <td id="imageDimensions"></td>
+                  </tr>
+                  <tr>
+                    <th>زمان تولید</th>
+                    <td id="imageGenerationTime"></td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </div>
+          
+          <div id="imageError" class="alert alert-danger mt-3" style="display: none;">
+            <i class="fas fa-exclamation-circle"></i> <span id="imageErrorMessage"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-4">
+    <div class="card mb-4">
+      <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="fas fa-lightbulb"></i> نکات استفاده</h5>
+      </div>
+      <div class="card-body">
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle"></i> برای دریافت بهترین نتایج، از پرامپت‌های دقیق و جامع استفاده کنید.
+        </div>
+        
+        <h6><i class="fas fa-check-circle text-success"></i> پرامپت‌های مؤثر</h6>
+        <ul>
+          <li>دستورالعمل‌های واضح و مشخص ارائه دهید</li>
+          <li>جزئیات مورد نیاز را مشخص کنید</li>
+          <li>فرمت پاسخ مورد نظر را بیان کنید</li>
+          <li>از بافت و زمینه کافی استفاده کنید</li>
+        </ul>
+        
+        <h6><i class="fas fa-sliders-h text-primary"></i> تنظیم پارامترها</h6>
+        <ul>
+          <li><strong>دما:</strong> مقادیر پایین‌تر برای پاسخ‌های دقیق‌تر و قطعی‌تر، مقادیر بالاتر برای خلاقیت بیشتر</li>
+          <li><strong>Top P:</strong> کنترل تنوع پاسخ‌ها (مقادیر پایین‌تر به پاسخ‌های با احتمال بالاتر محدود می‌شود)</li>
+          <li><strong>جریمه تکرار:</strong> جلوگیری از تکرار عبارات و کلمات در پاسخ</li>
+        </ul>
+        
+        <h6><i class="fas fa-exclamation-triangle text-warning"></i> نکات مهم</h6>
+        <ul>
+          <li>پاسخ‌ها ممکن است بر اساس مدل و پارامترها متفاوت باشند</li>
+          <li>مدل‌های آموزش‌دیده در زمینه‌های خاص بهتر عمل می‌کنند</li>
+          <li>پرامپت‌های طولانی توکن‌های بیشتری مصرف می‌کنند</li>
+        </ul>
+      </div>
+    </div>
+    
+    <div class="card mb-4">
+      <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="fas fa-bookmark"></i> پرامپت‌های نمونه</h5>
+      </div>
+      <div class="card-body">
+        <div class="list-group sample-prompts">
+          <a href="#" class="list-group-item list-group-item-action sample-prompt-item">
+            <div><strong>معرفی CCOIN</strong></div>
+            <small class="text-muted">توضیح جامعی درباره ربات CCOIN، قابلیت‌ها و ویژگی‌های آن ارائه بده.</small>
+          </a>
+          <a href="#" class="list-group-item list-group-item-action sample-prompt-item">
+            <div><strong>اقتصاد CCOIN</strong></div>
+            <small class="text-muted">سیستم اقتصادی CCOIN را توضیح بده و نحوه کارکرد سکه‌ها، کریستال‌ها و سیستم بانکی را شرح بده.</small>
+          </a>
+          <a href="#" class="list-group-item list-group-item-action sample-prompt-item">
+            <div><strong>راهنمای بازی‌ها</strong></div>
+            <small class="text-muted">لیستی از بازی‌های موجود در CCOIN را به همراه توضیحات مختصر و نحوه بازی کردن آن‌ها ارائه بده.</small>
+          </a>
+          <a href="#" class="list-group-item list-group-item-action sample-prompt-item">
+            <div><strong>دستورات اصلی</strong></div>
+            <small class="text-muted">۱۰ دستور پرکاربرد CCOIN را به همراه توضیحات و مثال لیست کن.</small>
+          </a>
+          <a href="#" class="list-group-item list-group-item-action sample-prompt-item">
+            <div><strong>عیب‌یابی رایج</strong></div>
+            <small class="text-muted">مشکلات رایج کاربران با CCOIN و راه‌حل‌های آن‌ها را به صورت پرسش و پاسخ ارائه بده.</small>
+          </a>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="fas fa-history"></i> تاریخچه تست‌ها</h5>
+      </div>
+      <div class="card-body">
+        <ul class="list-group test-history">
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <div><strong>معرفی CCOIN</strong></div>
+              <small class="text-muted">امروز - 15:30</small>
+            </div>
+            <span class="badge badge-primary badge-pill">CCOIN AI Flash</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <div><strong>سیستم اقتصادی</strong></div>
+              <small class="text-muted">امروز - 14:45</small>
+            </div>
+            <span class="badge badge-primary badge-pill">CCOIN AI Pro</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <div><strong>دستورات بازی</strong></div>
+              <small class="text-muted">امروز - 13:20</small>
+            </div>
+            <span class="badge badge-primary badge-pill">CCOIN AI Flash</span>
+          </li>
+        </ul>
+        
+        <button class="btn btn-outline-secondary btn-sm btn-block mt-3">
+          <i class="fas fa-trash-alt"></i> پاکسازی تاریخچه
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // متغیرهای عمومی
+  let currentResponse = '';
+  let generatedImageURL = '';
+  
+  // عناصر فرم تکمیل متن
+  const testForm = document.getElementById('testForm');
+  const modelSelect = document.getElementById('modelSelect');
+  const promptInput = document.getElementById('promptInput');
+  const temperatureInput = document.getElementById('temperatureInput');
+  const temperatureDisplay = document.getElementById('temperatureDisplay');
+  const showAdvancedCheckbox = document.getElementById('showAdvanced');
+  const advancedOptionsDiv = document.getElementById('advancedOptions');
+  const submitBtn = document.getElementById('submitBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  
+  // عناصر نتیجه تکمیل متن
+  const resultContainer = document.getElementById('resultContainer');
+  const resultLoading = document.getElementById('resultLoading');
+  const resultOutput = document.getElementById('resultOutput');
+  const resultText = document.getElementById('resultText');
+  const resultModel = document.getElementById('resultModel');
+  const resultPromptTokens = document.getElementById('resultPromptTokens');
+  const resultCompletionTokens = document.getElementById('resultCompletionTokens');
+  const resultProcessingTime = document.getElementById('resultProcessingTime');
+  const resultError = document.getElementById('resultError');
+  const errorMessage = document.getElementById('errorMessage');
+  
+  // عناصر فرم تولید تصویر
+  const imageForm = document.getElementById('imageForm');
+  const imagePromptInput = document.getElementById('imagePromptInput');
+  const widthInput = document.getElementById('widthInput');
+  const heightInput = document.getElementById('heightInput');
+  const generateImageBtn = document.getElementById('generateImageBtn');
+  
+  // عناصر نتیجه تولید تصویر
+  const imageResultContainer = document.getElementById('imageResultContainer');
+  const imageLoading = document.getElementById('imageLoading');
+  const imageOutput = document.getElementById('imageOutput');
+  const generatedImage = document.getElementById('generatedImage');
+  const imagePromptDisplay = document.getElementById('imagePromptDisplay');
+  const imageDimensions = document.getElementById('imageDimensions');
+  const imageGenerationTime = document.getElementById('imageGenerationTime');
+  const imageError = document.getElementById('imageError');
+  const imageErrorMessage = document.getElementById('imageErrorMessage');
+  
+  // دکمه‌های عملیات
+  const copyBtn = document.getElementById('copyBtn');
+  const exportBtn = document.getElementById('exportBtn');
+  const downloadImageBtn = document.getElementById('downloadImageBtn');
+  
+  // پرامپت‌های نمونه
+  const samplePrompts = document.querySelectorAll('.sample-prompt-item');
+  
+  // تنظیم دما
+  temperatureInput.addEventListener('input', function() {
+    temperatureDisplay.textContent = this.value;
+  });
+  
+  // تنظیم گزینه‌های پیشرفته
+  showAdvancedCheckbox.addEventListener('change', function() {
+    advancedOptionsDiv.style.display = this.checked ? 'block' : 'none';
+  });
+  
+  // کلیک روی دکمه ارسال
+  submitBtn.addEventListener('click', function() {
+    if (promptInput.value.trim() === '') {
+      alert('لطفاً پرامپت را وارد کنید.');
+      return;
+    }
+    
+    testCompletion();
+  });
+  
+  // کلیک روی دکمه پاکسازی
+  resetBtn.addEventListener('click', function() {
+    promptInput.value = '';
+    temperatureInput.value = 0.7;
+    temperatureDisplay.textContent = '0.7';
+    
+    if (showAdvancedCheckbox.checked) {
+      document.getElementById('maxTokensInput').value = 1024;
+      document.getElementById('topPInput').value = 0.9;
+      document.getElementById('presencePenaltyInput').value = 0;
+      document.getElementById('streamingInput').checked = true;
+    }
+    
+    resultContainer.style.display = 'none';
+  });
+  
+  // کلیک روی دکمه کپی
+  copyBtn.addEventListener('click', function() {
+    if (currentResponse) {
+      navigator.clipboard.writeText(currentResponse)
+        .then(() => {
+          alert('متن با موفقیت کپی شد.');
+        })
+        .catch(err => {
+          console.error('خطا در کپی متن:', err);
+          alert('خطا در کپی متن.');
+        });
+    }
+  });
+  
+  // کلیک روی دکمه خروجی
+  exportBtn.addEventListener('click', function() {
+    if (currentResponse) {
+      const blob = new Blob([currentResponse], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'ccoin_ai_response.txt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  });
+  
+  // کلیک روی دکمه تولید تصویر
+  generateImageBtn.addEventListener('click', function() {
+    if (imagePromptInput.value.trim() === '') {
+      alert('لطفاً توضیحات تصویر را وارد کنید.');
+      return;
+    }
+    
+    generateImage();
+  });
+  
+  // کلیک روی دکمه دانلود تصویر
+  downloadImageBtn.addEventListener('click', function() {
+    if (generatedImageURL) {
+      const a = document.createElement('a');
+      a.href = generatedImageURL;
+      a.download = 'ccoin_ai_image.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  });
+  
+  // انتخاب پرامپت نمونه
+  samplePrompts.forEach(prompt => {
+    prompt.addEventListener('click', function(e) {
+      e.preventDefault();
+      promptInput.value = this.querySelector('small').textContent;
+    });
+  });
+  
+  // تست تکمیل متن
+  function testCompletion() {
+    // نمایش بارگذاری
+    resultContainer.style.display = 'block';
+    resultLoading.style.display = 'block';
+    resultOutput.style.display = 'none';
+    resultError.style.display = 'none';
+    
+    // پارامترهای درخواست
+    const modelName = modelSelect.value;
+    const prompt = promptInput.value;
+    const temperature = parseFloat(temperatureInput.value);
+    
+    // پارامترهای پیشرفته (اگر فعال باشند)
+    let maxTokens = 1024;
+    let topP = 0.9;
+    let presencePenalty = 0;
+    let streaming = true;
+    
+    if (showAdvancedCheckbox.checked) {
+      maxTokens = parseInt(document.getElementById('maxTokensInput').value);
+      topP = parseFloat(document.getElementById('topPInput').value);
+      presencePenalty = parseFloat(document.getElementById('presencePenaltyInput').value);
+      streaming = document.getElementById('streamingInput').checked;
+    }
+    
+    // در یک محیط واقعی، درخواست API به سرور ارسال می‌شود
+    // در اینجا، یک تأخیر ایجاد می‌کنیم و یک پاسخ نمونه نمایش می‌دهیم
+    
+    // شبیه‌سازی پاسخ
+    setTimeout(() => {
+      // تنظیم مقادیر آماری
+      const modelDisplayName = modelSelect.options[modelSelect.selectedIndex].text;
+      const promptTokenCount = Math.ceil(prompt.length / 4); // تخمین تعداد توکن‌ها
+      const completionTokenCount = 120; // تخمین تعداد توکن‌های پاسخ
+      const processingTime = 1.5; // زمان پردازش به ثانیه
+      
+      // مخفی کردن بارگذاری
+      resultLoading.style.display = 'none';
+      
+      // نمایش خروجی
+      resultOutput.style.display = 'block';
+      
+      // ساخت پاسخ نمونه بر اساس پرامپت
+      currentResponse = `به عنوان CCOIN AI، دستیار هوشمند ربات Ccoin، در پاسخ به پرامپت شما:
+
+${prompt}
+
+اینجا هستم تا به سوالات و درخواست‌های شما پاسخ دهم. CCOIN یک ربات کامل دیسکورد است که ویژگی‌های متنوعی از جمله بازی‌ها، سیستم اقتصادی پیشرفته، امکانات مدیریت سرور و قابلیت‌های هوش مصنوعی را ارائه می‌دهد.
+
+لطفاً توجه داشته باشید که این یک پاسخ نمونه برای تست مدل CCOIN AI است. در یک محیط واقعی، پاسخ بر اساس پرامپت شما و مدل انتخاب شده متفاوت خواهد بود.
+
+آیا می‌توانم در مورد دیگری به شما کمک کنم؟`;
+      
+      resultText.textContent = currentResponse;
+      resultModel.textContent = modelDisplayName;
+      resultPromptTokens.textContent = promptTokenCount.toLocaleString('fa-IR');
+      resultCompletionTokens.textContent = completionTokenCount.toLocaleString('fa-IR');
+      resultProcessingTime.textContent = `${processingTime.toFixed(2)} ثانیه`;
+      
+      // افزودن به تاریخچه (در یک محیط واقعی، در سرور ذخیره می‌شود)
+      addToHistory(prompt.substring(0, 20) + '...', modelDisplayName);
+    }, 2000);
+  }
+  
+  // تولید تصویر
+  function generateImage() {
+    // نمایش بارگذاری
+    imageResultContainer.style.display = 'block';
+    imageLoading.style.display = 'block';
+    imageOutput.style.display = 'none';
+    imageError.style.display = 'none';
+    
+    // پارامترهای درخواست
+    const prompt = imagePromptInput.value;
+    const width = parseInt(widthInput.value);
+    const height = parseInt(heightInput.value);
+    
+    // در یک محیط واقعی، درخواست API به سرور ارسال می‌شود
+    // در اینجا، یک تأخیر ایجاد می‌کنیم و یک تصویر نمونه نمایش می‌دهیم
+    
+    // شبیه‌سازی پاسخ
+    setTimeout(() => {
+      // تنظیم مقادیر
+      const generationTime = 4.2; // زمان تولید به ثانیه
+      
+      // استفاده از یک تصویر نمونه (در یک محیط واقعی، این تصویر از API دریافت می‌شود)
+      generatedImageURL = 'https://placehold.co/' + width + 'x' + height;
+      
+      // مخفی کردن بارگذاری
+      imageLoading.style.display = 'none';
+      
+      // نمایش خروجی
+      imageOutput.style.display = 'block';
+      generatedImage.src = generatedImageURL;
+      imagePromptDisplay.textContent = prompt;
+      imageDimensions.textContent = `${width} × ${height} پیکسل`;
+      imageGenerationTime.textContent = `${generationTime.toFixed(2)} ثانیه`;
+    }, 3000);
+  }
+  
+  // افزودن به تاریخچه
+  function addToHistory(promptTitle, modelName) {
+    const historyList = document.querySelector('.test-history');
+    
+    // ایجاد عنصر جدید در تاریخچه
+    const now = new Date();
+    const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                       now.getMinutes().toString().padStart(2, '0');
+    
+    const listItem = document.createElement('li');
+    listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+    listItem.innerHTML = `
+      <div>
+        <div><strong>${promptTitle}</strong></div>
+        <small class="text-muted">امروز - ${timeString}</small>
+      </div>
+      <span class="badge badge-primary badge-pill">${modelName}</span>
+    `;
+    
+    // افزودن به ابتدای لیست
+    historyList.insertBefore(listItem, historyList.firstChild);
+    
+    // محدود کردن تعداد موارد تاریخچه
+    if (historyList.children.length > 10) {
+      historyList.removeChild(historyList.lastChild);
+    }
+  }
+});
+</script>
+
+<%- include('../partials/footer') %>

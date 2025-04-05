@@ -1,20 +1,27 @@
 /**
  * مسیرهای داشبورد پنل ادمین
+ * 
+ * این فایل شامل مسیرهای مربوط به صفحه داشبورد اصلی است.
  */
 
 import express from 'express';
-import { showDashboard, showProfile, updateProfile, showSettings } from '../controllers/dashboardController.js';
+import { dashboardController } from '../controllers/dashboardController.js';
 
 const router = express.Router();
 
 // صفحه اصلی داشبورد
-router.get('/', showDashboard);
+router.get('/', dashboardController.showDashboard);
 
-// پروفایل کاربر
-router.get('/profile', showProfile);
-router.post('/profile', updateProfile);
+// داده‌های آمار
+router.get('/stats', dashboardController.getStats);
 
-// تنظیمات داشبورد
-router.get('/settings', showSettings);
+// داده‌های نمودار فعالیت کاربران
+router.get('/charts/user-activity', dashboardController.getUserActivityChart);
+
+// داده‌های نمودار اقتصادی
+router.get('/charts/economy', dashboardController.getEconomyChart);
+
+// داده‌های نمودار بازی‌ها
+router.get('/charts/games', dashboardController.getGamesChart);
 
 export default router;

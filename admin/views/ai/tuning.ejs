@@ -1,0 +1,1087 @@
+<%- include('../partials/header') %>
+
+<div class="page-header d-flex justify-content-between align-items-center">
+  <div>
+    <h1><i class="fas fa-brain"></i> آموزش مدل‌ها</h1>
+    <p class="lead">مدل‌های CCOIN AI را با استفاده از داده‌های مخصوص آموزش دهید.</p>
+  </div>
+  <button type="button" class="btn btn-success" id="startNewTuningBtn">
+    <i class="fas fa-plus"></i> شروع آموزش جدید
+  </button>
+</div>
+
+<% if(messages.success.length > 0) { %>
+  <div class="alert alert-success">
+    <i class="fas fa-check-circle"></i> <%= messages.success %>
+  </div>
+<% } %>
+
+<% if(messages.error.length > 0) { %>
+  <div class="alert alert-danger">
+    <i class="fas fa-exclamation-circle"></i> <%= messages.error %>
+  </div>
+<% } %>
+
+<div class="row mt-4">
+  <div class="col-lg-8">
+    <div class="card mb-4">
+      <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="fas fa-database"></i> مدل‌های آموزش‌دیده</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead class="thead-light">
+              <tr>
+                <th>نام</th>
+                <th>مدل پایه</th>
+                <th>تاریخ ایجاد</th>
+                <th>وضعیت</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody id="tunedModelsTable">
+              <% if(tunedModels && tunedModels.length > 0) { %>
+                <% tunedModels.forEach(model => { %>
+                  <tr>
+                    <td><%= model.displayName %></td>
+                    <td><%= model.baseModel %></td>
+                    <td><%= new Date(model.createTime).toLocaleDateString('fa-IR') %></td>
+                    <td>
+                      <% if(model.state === 'ACTIVE') { %>
+                        <span class="badge badge-success">فعال</span>
+                      <% } else { %>
+                        <span class="badge badge-secondary"><%= model.state %></span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <div class="btn-group">
+                        <button type="button" class="btn btn-sm btn-outline-info view-model-btn" data-id="<%= model.id %>">
+                          <i class="fas fa-info-circle"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-primary test-model-btn" data-id="<%= model.id %>">
+                          <i class="fas fa-vial"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                <% }); %>
+              <% } else { %>
+                <tr>
+                  <td colspan="5" class="text-center">
+                    <div class="alert alert-info mt-3 mb-3">
+                      هنوز هیچ مدل آموزش‌دیده‌ای وجود ندارد. برای ایجاد یک مدل آموزش‌دیده، روی دکمه "شروع آموزش جدید" کلیک کنید.
+                    </div>
+                  </td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="fas fa-tasks"></i> وظایف آموزش</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead class="thead-light">
+              <tr>
+                <th>شناسه</th>
+                <th>نام مدل</th>
+                <th>مدل پایه</th>
+                <th>زمان شروع</th>
+                <th>وضعیت</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody id="tuningJobsTable">
+              <% if(tuningJobs && tuningJobs.length > 0) { %>
+                <% tuningJobs.forEach(job => { %>
+                  <tr>
+                    <td><%= job.id %></td>
+                    <td><%= job.displayName %></td>
+                    <td><%= job.baseModel %></td>
+                    <td><%= job.startTime ? new Date(job.startTime).toLocaleDateString('fa-IR') : 'در انتظار' %></td>
+                    <td>
+                      <% if(job.status === 'SUCCEEDED') { %>
+                        <span class="badge badge-success">موفق</span>
+                      <% } else if(job.status === 'PENDING') { %>
+                        <span class="badge badge-warning">در انتظار</span>
+                      <% } else if(job.status === 'RUNNING') { %>
+                        <span class="badge badge-primary">در حال اجرا</span>
+                      <% } else if(job.status === 'FAILED') { %>
+                        <span class="badge badge-danger">ناموفق</span>
+                      <% } else { %>
+                        <span class="badge badge-secondary"><%= job.status %></span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <div class="btn-group">
+                        <button type="button" class="btn btn-sm btn-outline-info view-job-btn" data-id="<%= job.id %>">
+                          <i class="fas fa-info-circle"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-primary refresh-job-btn" data-id="<%= job.id %>">
+                          <i class="fas fa-sync-alt"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                <% }); %>
+              <% } else { %>
+                <tr>
+                  <td colspan="6" class="text-center">
+                    <div class="alert alert-info mt-3 mb-3">
+                      هیچ وظیفه آموزشی در حال اجرا یا به اتمام رسیده وجود ندارد.
+                    </div>
+                  </td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-4">
+    <div class="card mb-4">
+      <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="fas fa-info-circle"></i> راهنمای آموزش مدل</h5>
+      </div>
+      <div class="card-body">
+        <div class="alert alert-info">
+          <i class="fas fa-lightbulb"></i> با آموزش مدل‌ها می‌توانید CCOIN AI را برای موارد خاص بهینه‌سازی کنید.
+        </div>
+        
+        <h6><i class="fas fa-check-circle text-success"></i> مزایای آموزش مدل</h6>
+        <ul>
+          <li>بهبود پاسخ‌دهی به سوالات خاص</li>
+          <li>شخصی‌سازی لحن و سبک پاسخ</li>
+          <li>آموزش اصطلاحات و مفاهیم خاص</li>
+          <li>عملکرد بهتر در وظایف خاص</li>
+        </ul>
+        
+        <h6><i class="fas fa-exclamation-circle text-warning"></i> نکات مهم</h6>
+        <ul>
+          <li>حداقل ۱۰۰ نمونه برای آموزش مؤثر نیاز است</li>
+          <li>داده‌های متنوع کیفیت آموزش را بهبود می‌بخشند</li>
+          <li>فرآیند آموزش ممکن است چند ساعت طول بکشد</li>
+          <li>هر چه داده بیشتر، نتیجه بهتر (توصیه: ۵۰۰+ نمونه)</li>
+        </ul>
+        
+        <h6><i class="fas fa-cogs text-primary"></i> مراحل آموزش</h6>
+        <ol>
+          <li>آماده‌سازی داده‌های آموزشی</li>
+          <li>انتخاب مدل پایه مناسب</li>
+          <li>شروع فرآیند آموزش</li>
+          <li>بررسی وضعیت و آمار آموزش</li>
+          <li>تست مدل آموزش‌دیده</li>
+        </ol>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="fas fa-chart-line"></i> آمار آموزش</h5>
+      </div>
+      <div class="card-body">
+        <% if(tuningJobs && tuningJobs.length > 0 && tuningJobs.some(job => job.trainingStats)) { %>
+          <% const job = tuningJobs.find(job => job.trainingStats) %>
+          <div class="mb-3">
+            <h6>آخرین وظیفه آموزش: <%= job.displayName %></h6>
+            <div class="progress mb-2">
+              <div class="progress-bar bg-success" role="progressbar" style="width: <%= job.trainingStats.trainingAccuracy * 100 %>%">
+                دقت آموزش: <%= (job.trainingStats.trainingAccuracy * 100).toFixed(1) %>%
+              </div>
+            </div>
+            <div class="progress">
+              <div class="progress-bar bg-info" role="progressbar" style="width: <%= job.trainingStats.validationAccuracy * 100 %>%">
+                دقت اعتبارسنجی: <%= (job.trainingStats.validationAccuracy * 100).toFixed(1) %>%
+              </div>
+            </div>
+          </div>
+          
+          <div class="table-responsive">
+            <table class="table table-sm table-bordered">
+              <tr>
+                <th>اندازه داده</th>
+                <td><%= job.trainingStats.datasetSize.toLocaleString('fa-IR') %> نمونه</td>
+              </tr>
+              <tr>
+                <th>خطای آموزش</th>
+                <td><%= job.trainingStats.trainingLoss.toFixed(4) %></td>
+              </tr>
+              <tr>
+                <th>خطای اعتبارسنجی</th>
+                <td><%= job.trainingStats.validationLoss.toFixed(4) %></td>
+              </tr>
+              <tr>
+                <th>زمان آموزش</th>
+                <td>
+                  <% 
+                    const startTime = new Date(job.startTime);
+                    const endTime = new Date(job.endTime);
+                    const durationMs = endTime - startTime;
+                    const hours = Math.floor(durationMs / (1000 * 60 * 60));
+                    const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+                  %>
+                  <%= hours %> ساعت و <%= minutes %> دقیقه
+                </td>
+              </tr>
+            </table>
+          </div>
+        <% } else { %>
+          <div class="alert alert-info">
+            هنوز هیچ آمار آموزشی موجود نیست.
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- مودال شروع آموزش جدید -->
+<div class="modal fade" id="startTuningModal" tabindex="-1" role="dialog" aria-labelledby="startTuningModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="startTuningModalLabel">شروع آموزش جدید</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="بستن">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-warning">
+          <i class="fas fa-exclamation-triangle"></i> 
+          فرآیند آموزش زمان‌بر و نیازمند منابع محاسباتی زیادی است. لطفاً توجه داشته باشید که این فرآیند ممکن است چندین ساعت طول بکشد.
+        </div>
+        
+        <form id="startTuningForm">
+          <div class="form-group">
+            <label for="baseModel">مدل پایه</label>
+            <select id="baseModel" name="baseModel" class="form-control" required>
+              <option value="gemini-1.5-flash">CCOIN AI Flash (سریع‌تر)</option>
+              <option value="gemini-1.5-pro">CCOIN AI Pro (دقیق‌تر)</option>
+            </select>
+            <small class="form-text text-muted">مدل پایه‌ای که می‌خواهید آموزش دهید.</small>
+          </div>
+          
+          <div class="form-group">
+            <label for="displayName">نام نمایشی</label>
+            <input type="text" id="displayName" name="displayName" class="form-control" required 
+                  placeholder="مثال: CCOIN AI Tuned for Support">
+            <small class="form-text text-muted">نامی که برای شناسایی این مدل استفاده خواهد شد.</small>
+          </div>
+          
+          <div class="form-group">
+            <label>داده‌های آموزشی</label>
+            <div class="custom-control custom-radio">
+              <input type="radio" id="dataSource1" name="dataSource" value="upload" class="custom-control-input" checked>
+              <label class="custom-control-label" for="dataSource1">آپلود فایل</label>
+            </div>
+            <div class="custom-control custom-radio">
+              <input type="radio" id="dataSource2" name="dataSource" value="existing" class="custom-control-input">
+              <label class="custom-control-label" for="dataSource2">استفاده از داده‌های موجود</label>
+            </div>
+          </div>
+          
+          <div id="uploadFileSection">
+            <div class="form-group">
+              <label for="trainingFile">فایل داده آموزشی</label>
+              <div class="custom-file">
+                <input type="file" class="custom-file-input" id="trainingFile" accept=".csv,.json,.jsonl">
+                <label class="custom-file-label" for="trainingFile">انتخاب فایل...</label>
+              </div>
+              <small class="form-text text-muted">فرمت‌های پشتیبانی شده: CSV، JSON، JSONL. حجم فایل نباید بیشتر از 100 مگابایت باشد.</small>
+            </div>
+            
+            <div class="form-group">
+              <label for="fileFormat">فرمت فایل</label>
+              <select id="fileFormat" class="form-control">
+                <option value="csv">CSV</option>
+                <option value="json">JSON</option>
+                <option value="jsonl">JSONL</option>
+              </select>
+            </div>
+          </div>
+          
+          <div id="existingDataSection" style="display: none;">
+            <div class="form-group">
+              <label for="existingDataset">مجموعه داده موجود</label>
+              <select id="existingDataset" class="form-control">
+                <option value="ccoin_ai_training">داده‌های آموزشی CCOIN AI</option>
+                <option value="support_dataset">داده‌های پشتیبانی</option>
+                <option value="discord_chat_dataset">مکالمات Discord</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="trainingEpochs">تعداد دوره‌های آموزش</label>
+            <input type="range" class="custom-range" id="trainingEpochs" name="trainingEpochs" 
+                  min="1" max="10" value="5" oninput="document.getElementById('epochsValue').innerHTML = this.value">
+            <div class="d-flex justify-content-between">
+              <span>کمتر (سریع‌تر)</span>
+              <span>تعداد دوره‌ها: <span id="epochsValue">5</span></span>
+              <span>بیشتر (دقیق‌تر)</span>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <div class="custom-control custom-checkbox">
+              <input type="checkbox" class="custom-control-input" id="advancedOptions">
+              <label class="custom-control-label" for="advancedOptions">گزینه‌های پیشرفته</label>
+            </div>
+          </div>
+          
+          <div id="advancedOptionsSection" style="display: none;">
+            <div class="form-group">
+              <label for="learningRate">نرخ یادگیری</label>
+              <input type="number" id="learningRate" name="learningRate" class="form-control" 
+                    value="0.001" min="0.0001" max="0.01" step="0.0001">
+              <small class="form-text text-muted">نرخ یادگیری کوچک‌تر به همگرایی بهتر اما کندتر منجر می‌شود.</small>
+            </div>
+            
+            <div class="form-group">
+              <label for="validationSplit">نسبت اعتبارسنجی</label>
+              <input type="range" class="custom-range" id="validationSplit" name="validationSplit" 
+                    min="10" max="30" value="20" oninput="document.getElementById('validationValue').innerHTML = this.value">
+              <div class="text-center">
+                <span><span id="validationValue">20</span>% از داده‌ها برای اعتبارسنجی استفاده می‌شود</span>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">انصراف</button>
+        <button type="button" class="btn btn-primary" id="submitTuningBtn">
+          <i class="fas fa-play"></i> شروع آموزش
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- مودال جزئیات مدل -->
+<div class="modal fade" id="modelDetailsModal" tabindex="-1" role="dialog" aria-labelledby="modelDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-info text-white">
+        <h5 class="modal-title" id="modelDetailsModalLabel">جزئیات مدل</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="بستن">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" id="modelDetailsContent">
+        <div class="text-center">
+          <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">در حال بارگذاری...</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">بستن</button>
+        <button type="button" class="btn btn-primary" id="testModelFromDetailsBtn">تست مدل</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- مودال جزئیات وظیفه آموزش -->
+<div class="modal fade" id="jobDetailsModal" tabindex="-1" role="dialog" aria-labelledby="jobDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-info text-white">
+        <h5 class="modal-title" id="jobDetailsModalLabel">جزئیات وظیفه آموزش</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="بستن">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" id="jobDetailsContent">
+        <div class="text-center">
+          <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">در حال بارگذاری...</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">بستن</button>
+        <button type="button" class="btn btn-primary" id="refreshJobStatusBtn">بروزرسانی وضعیت</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- مودال تست مدل -->
+<div class="modal fade" id="testModelModal" tabindex="-1" role="dialog" aria-labelledby="testModelModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-white">
+        <h5 class="modal-title" id="testModelModalLabel">تست مدل</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="بستن">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="testModelForm">
+          <input type="hidden" id="testModelId" name="modelName">
+          
+          <div class="form-group">
+            <label for="testPrompt">پرامپت تست</label>
+            <textarea id="testPrompt" name="prompt" class="form-control" rows="4" required
+                      placeholder="متن پرامپت خود را وارد کنید..."></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label for="testTemperature">دمای تولید</label>
+            <input type="range" class="custom-range" id="testTemperature" name="temperature" 
+                  min="0" max="1" step="0.1" value="0.7" 
+                  oninput="document.getElementById('temperatureValue').innerHTML = this.value">
+            <div class="d-flex justify-content-between">
+              <span>دقیق‌تر (0.0)</span>
+              <span>دما: <span id="temperatureValue">0.7</span></span>
+              <span>خلاقانه‌تر (1.0)</span>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <button type="button" id="submitTestBtn" class="btn btn-warning btn-block">
+              <i class="fas fa-play"></i> ارسال درخواست
+            </button>
+          </div>
+        </form>
+        
+        <div id="testResultContainer" style="display: none;">
+          <div class="card mt-3">
+            <div class="card-header bg-light">
+              <h6 class="mb-0">نتیجه تست</h6>
+            </div>
+            <div class="card-body">
+              <div id="testResultLoading" class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="sr-only">در حال بارگذاری...</span>
+                </div>
+                <p class="mt-2">در حال پردازش...</p>
+              </div>
+              
+              <div id="testResultContent" style="display: none;">
+                <pre class="bg-light p-3 rounded" id="testResultText"></pre>
+                
+                <div class="row mt-3">
+                  <div class="col-md-6">
+                    <div class="card">
+                      <div class="card-header bg-light">آمار</div>
+                      <div class="card-body p-0">
+                        <table class="table table-sm table-bordered mb-0">
+                          <tr>
+                            <th>توکن‌های ورودی</th>
+                            <td id="promptTokens"></td>
+                          </tr>
+                          <tr>
+                            <th>توکن‌های خروجی</th>
+                            <td id="completionTokens"></td>
+                          </tr>
+                          <tr>
+                            <th>کل توکن‌ها</th>
+                            <td id="totalTokens"></td>
+                          </tr>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="card">
+                      <div class="card-header bg-light">زمان</div>
+                      <div class="card-body p-0">
+                        <table class="table table-sm table-bordered mb-0">
+                          <tr>
+                            <th>زمان پردازش</th>
+                            <td id="processingTime"></td>
+                          </tr>
+                          <tr>
+                            <th>توکن بر ثانیه</th>
+                            <td id="tokensPerSecond"></td>
+                          </tr>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div id="testResultError" class="alert alert-danger mt-3" style="display: none;">
+                <i class="fas fa-exclamation-circle"></i> <span id="testErrorMessage"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">بستن</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // متغیرهای عمومی
+  let currentModelId = null;
+  let currentJobId = null;
+  
+  // شروع آموزش جدید
+  const startNewTuningBtn = document.getElementById('startNewTuningBtn');
+  startNewTuningBtn.addEventListener('click', function() {
+    $('#startTuningModal').modal('show');
+  });
+  
+  // انتخاب منبع داده
+  const dataSourceRadios = document.getElementsByName('dataSource');
+  const uploadFileSection = document.getElementById('uploadFileSection');
+  const existingDataSection = document.getElementById('existingDataSection');
+  
+  dataSourceRadios.forEach(radio => {
+    radio.addEventListener('change', function() {
+      if (this.value === 'upload') {
+        uploadFileSection.style.display = 'block';
+        existingDataSection.style.display = 'none';
+      } else {
+        uploadFileSection.style.display = 'none';
+        existingDataSection.style.display = 'block';
+      }
+    });
+  });
+  
+  // گزینه‌های پیشرفته
+  const advancedOptionsCheckbox = document.getElementById('advancedOptions');
+  const advancedOptionsSection = document.getElementById('advancedOptionsSection');
+  
+  advancedOptionsCheckbox.addEventListener('change', function() {
+    advancedOptionsSection.style.display = this.checked ? 'block' : 'none';
+  });
+  
+  // نمایش نام فایل انتخاب شده
+  const trainingFile = document.getElementById('trainingFile');
+  trainingFile.addEventListener('change', function() {
+    const fileName = this.files[0] ? this.files[0].name : 'انتخاب فایل...';
+    const label = document.querySelector('.custom-file-label');
+    label.textContent = fileName;
+    
+    // تشخیص خودکار فرمت فایل
+    if (fileName.endsWith('.csv')) {
+      document.getElementById('fileFormat').value = 'csv';
+    } else if (fileName.endsWith('.json')) {
+      document.getElementById('fileFormat').value = 'json';
+    } else if (fileName.endsWith('.jsonl')) {
+      document.getElementById('fileFormat').value = 'jsonl';
+    }
+  });
+  
+  // ارسال فرم آموزش
+  const submitTuningBtn = document.getElementById('submitTuningBtn');
+  submitTuningBtn.addEventListener('click', function() {
+    const baseModel = document.getElementById('baseModel').value;
+    const displayName = document.getElementById('displayName').value;
+    
+    if (!displayName) {
+      alert('لطفاً نام نمایشی را وارد کنید.');
+      return;
+    }
+    
+    const dataSource = document.querySelector('input[name="dataSource"]:checked').value;
+    let trainingData = [];
+    
+    if (dataSource === 'upload') {
+      const file = document.getElementById('trainingFile').files[0];
+      if (!file) {
+        alert('لطفاً فایل داده آموزشی را انتخاب کنید.');
+        return;
+      }
+      
+      // در یک محیط واقعی، فایل به سرور آپلود می‌شود و پردازش می‌شود
+      // اینجا برای نمایش، یک درخواست شبیه‌سازی شده را ارسال می‌کنیم
+      
+      // نمونه‌های آموزشی
+      trainingData = [
+        { input: "سلام", output: "سلام! چطور می‌توانم کمکتان کنم؟" },
+        { input: "CCOIN چیست؟", output: "CCOIN یک ربات پیشرفته دیسکورد است که قابلیت‌های متنوعی از جمله بازی، اقتصاد، مدیریت سرور و هوش مصنوعی را ارائه می‌دهد." },
+        // ... داده‌های دیگر
+      ];
+    } else {
+      // استفاده از داده‌های موجود
+      const datasetId = document.getElementById('existingDataset').value;
+      
+      // در یک محیط واقعی، داده‌ها از سرور دریافت می‌شوند
+      trainingData = [
+        { input: "سلام", output: "سلام! چطور می‌توانم کمکتان کنم؟" },
+        { input: "CCOIN چیست؟", output: "CCOIN یک ربات پیشرفته دیسکورد است که قابلیت‌های متنوعی از جمله بازی، اقتصاد، مدیریت سرور و هوش مصنوعی را ارائه می‌دهد." },
+        // ... داده‌های دیگر
+      ];
+    }
+    
+    // پارامترهای آموزش
+    const trainingEpochs = document.getElementById('trainingEpochs').value;
+    const learningRate = document.getElementById('advancedOptions').checked ? 
+                          document.getElementById('learningRate').value : 0.001;
+    const validationSplit = document.getElementById('advancedOptions').checked ? 
+                          document.getElementById('validationSplit').value / 100 : 0.2;
+    
+    // درخواست شروع آموزش
+    fetch('/admin/ai/tuning/start', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        baseModel,
+        displayName,
+        trainingData,
+        trainingEpochs,
+        learningRate,
+        validationSplit
+      }),
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('خطا در شروع آموزش');
+      }
+      return response.json();
+    })
+    .then(data => {
+      alert('وظیفه آموزش با موفقیت شروع شد!');
+      $('#startTuningModal').modal('hide');
+      
+      // در یک محیط واقعی، صفحه بروزرسانی می‌شود یا اطلاعات به‌روز می‌شوند
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('خطا در شروع آموزش: ' + error.message);
+    });
+  });
+  
+  // نمایش جزئیات مدل
+  document.querySelectorAll('.view-model-btn').forEach(button => {
+    button.addEventListener('click', function() {
+      const modelId = this.getAttribute('data-id');
+      viewModelDetails(modelId);
+    });
+  });
+  
+  // نمایش جزئیات وظیفه آموزش
+  document.querySelectorAll('.view-job-btn').forEach(button => {
+    button.addEventListener('click', function() {
+      const jobId = this.getAttribute('data-id');
+      viewJobDetails(jobId);
+    });
+  });
+  
+  // بروزرسانی وضعیت وظیفه آموزش
+  document.querySelectorAll('.refresh-job-btn').forEach(button => {
+    button.addEventListener('click', function() {
+      const jobId = this.getAttribute('data-id');
+      refreshJobStatus(jobId);
+    });
+  });
+  
+  // تست مدل
+  document.querySelectorAll('.test-model-btn').forEach(button => {
+    button.addEventListener('click', function() {
+      const modelId = this.getAttribute('data-id');
+      openTestModelModal(modelId);
+    });
+  });
+  
+  // دکمه تست مدل از جزئیات
+  document.getElementById('testModelFromDetailsBtn').addEventListener('click', function() {
+    $('#modelDetailsModal').modal('hide');
+    openTestModelModal(currentModelId);
+  });
+  
+  // دکمه بروزرسانی وضعیت وظیفه
+  document.getElementById('refreshJobStatusBtn').addEventListener('click', function() {
+    refreshJobStatus(currentJobId);
+  });
+  
+  // ارسال درخواست تست
+  document.getElementById('submitTestBtn').addEventListener('click', function() {
+    testModel();
+  });
+  
+  // نمایش جزئیات مدل
+  function viewModelDetails(modelId) {
+    currentModelId = modelId;
+    
+    // در یک محیط واقعی، درخواست API برای دریافت جزئیات مدل
+    // برای نمایش، از داده‌های نمونه استفاده می‌کنیم
+    const modelDetailsContent = document.getElementById('modelDetailsContent');
+    
+    // یافتن مدل در لیست مدل‌های آموزش‌دیده
+    const tunedModels = <%= JSON.stringify(tunedModels) %>;
+    const model = tunedModels.find(m => m.id === modelId);
+    
+    if (model) {
+      let html = '';
+      
+      html += `<div class="card mb-3">
+                <div class="card-header bg-dark text-white">اطلاعات اصلی</div>
+                <div class="card-body">
+                  <dl class="row">
+                    <dt class="col-sm-4">شناسه مدل:</dt>
+                    <dd class="col-sm-8">${model.id}</dd>
+                    
+                    <dt class="col-sm-4">نام نمایشی:</dt>
+                    <dd class="col-sm-8">${model.displayName}</dd>
+                    
+                    <dt class="col-sm-4">مدل پایه:</dt>
+                    <dd class="col-sm-8">${model.baseModel}</dd>
+                    
+                    <dt class="col-sm-4">تاریخ ایجاد:</dt>
+                    <dd class="col-sm-8">${new Date(model.createTime).toLocaleDateString('fa-IR')} ${new Date(model.createTime).toLocaleTimeString('fa-IR')}</dd>
+                    
+                    <dt class="col-sm-4">وضعیت:</dt>
+                    <dd class="col-sm-8">
+                      <span class="badge badge-${model.state === 'ACTIVE' ? 'success' : 'secondary'}">
+                        ${model.state === 'ACTIVE' ? 'فعال' : model.state}
+                      </span>
+                    </dd>
+                  </dl>
+                </div>
+              </div>`;
+              
+      // اطلاعات آموزش (در یک محیط واقعی، این اطلاعات از API دریافت می‌شوند)
+      html += `<div class="card mb-3">
+                <div class="card-header bg-dark text-white">آمار آموزش</div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <h6>دقت</h6>
+                      <div class="progress mb-2">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: 92%">
+                          آموزش: 92%
+                        </div>
+                      </div>
+                      <div class="progress mb-3">
+                        <div class="progress-bar bg-info" role="progressbar" style="width: 89%">
+                          اعتبارسنجی: 89%
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <h6>خطا</h6>
+                      <div class="progress mb-2">
+                        <div class="progress-bar bg-warning" role="progressbar" style="width: 37%">
+                          آموزش: 0.37
+                        </div>
+                      </div>
+                      <div class="progress mb-3">
+                        <div class="progress-bar bg-danger" role="progressbar" style="width: 42%">
+                          اعتبارسنجی: 0.42
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <table class="table table-sm table-bordered">
+                    <tr>
+                      <th>اندازه مجموعه داده</th>
+                      <td>1,024 نمونه</td>
+                    </tr>
+                    <tr>
+                      <th>تعداد دوره‌های آموزش</th>
+                      <td>5</td>
+                    </tr>
+                    <tr>
+                      <th>زمان آموزش</th>
+                      <td>4 ساعت و 10 دقیقه</td>
+                    </tr>
+                  </table>
+                </div>
+              </div>`;
+              
+      // توصیه‌ها و نکات
+      html += `<div class="card">
+                <div class="card-header bg-dark text-white">توصیه‌ها</div>
+                <div class="card-body">
+                  <div class="alert alert-info">
+                    <i class="fas fa-lightbulb"></i> برای دستیابی به بهترین نتایج با این مدل:
+                    <ul class="mb-0 mt-2">
+                      <li>از دستورالعمل‌های واضح و مشخص استفاده کنید</li>
+                      <li>پرامپت‌ها را به زبان فارسی سلیس و روان بنویسید</li>
+                      <li>از دمای متوسط (0.7) برای تعادل بین خلاقیت و دقت استفاده کنید</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>`;
+      
+      modelDetailsContent.innerHTML = html;
+    } else {
+      modelDetailsContent.innerHTML = '<div class="alert alert-danger">مدل مورد نظر یافت نشد.</div>';
+    }
+    
+    $('#modelDetailsModal').modal('show');
+  }
+  
+  // نمایش جزئیات وظیفه آموزش
+  function viewJobDetails(jobId) {
+    currentJobId = jobId;
+    
+    // در یک محیط واقعی، درخواست API برای دریافت جزئیات وظیفه
+    // برای نمایش، از داده‌های نمونه استفاده می‌کنیم
+    const jobDetailsContent = document.getElementById('jobDetailsContent');
+    
+    // یافتن وظیفه در لیست وظایف آموزش
+    const tuningJobs = <%= JSON.stringify(tuningJobs) %>;
+    const job = tuningJobs.find(j => j.id === jobId);
+    
+    if (job) {
+      let html = '';
+      
+      html += `<div class="card mb-3">
+                <div class="card-header bg-dark text-white">اطلاعات وظیفه</div>
+                <div class="card-body">
+                  <dl class="row">
+                    <dt class="col-sm-4">شناسه وظیفه:</dt>
+                    <dd class="col-sm-8">${job.id}</dd>
+                    
+                    <dt class="col-sm-4">نام مدل:</dt>
+                    <dd class="col-sm-8">${job.displayName}</dd>
+                    
+                    <dt class="col-sm-4">مدل پایه:</dt>
+                    <dd class="col-sm-8">${job.baseModel}</dd>
+                    
+                    <dt class="col-sm-4">وضعیت:</dt>
+                    <dd class="col-sm-8">
+                      <span class="badge badge-${getStatusBadgeClass(job.status)}">
+                        ${getStatusLabel(job.status)}
+                      </span>
+                    </dd>
+                    
+                    <dt class="col-sm-4">زمان ایجاد:</dt>
+                    <dd class="col-sm-8">${new Date(job.createTime).toLocaleDateString('fa-IR')} ${new Date(job.createTime).toLocaleTimeString('fa-IR')}</dd>
+                    
+                    <dt class="col-sm-4">زمان شروع:</dt>
+                    <dd class="col-sm-8">${job.startTime ? `${new Date(job.startTime).toLocaleDateString('fa-IR')} ${new Date(job.startTime).toLocaleTimeString('fa-IR')}` : 'در انتظار'}</dd>
+                    
+                    <dt class="col-sm-4">زمان پایان:</dt>
+                    <dd class="col-sm-8">${job.endTime ? `${new Date(job.endTime).toLocaleDateString('fa-IR')} ${new Date(job.endTime).toLocaleTimeString('fa-IR')}` : 'در حال اجرا'}</dd>
+                  </dl>
+                </div>
+              </div>`;
+              
+      // اگر آمار آموزش وجود داشته باشد
+      if (job.trainingStats) {
+        html += `<div class="card mb-3">
+                  <div class="card-header bg-dark text-white">آمار آموزش</div>
+                  <div class="card-body">
+                    <div class="row">
+                      <div class="col-md-6">
+                        <h6>دقت</h6>
+                        <div class="progress mb-2">
+                          <div class="progress-bar bg-success" role="progressbar" style="width: ${job.trainingStats.trainingAccuracy * 100}%">
+                            آموزش: ${(job.trainingStats.trainingAccuracy * 100).toFixed(1)}%
+                          </div>
+                        </div>
+                        <div class="progress mb-3">
+                          <div class="progress-bar bg-info" role="progressbar" style="width: ${job.trainingStats.validationAccuracy * 100}%">
+                            اعتبارسنجی: ${(job.trainingStats.validationAccuracy * 100).toFixed(1)}%
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <h6>خطا</h6>
+                        <div class="progress mb-2">
+                          <div class="progress-bar bg-warning" role="progressbar" style="width: ${job.trainingStats.trainingLoss * 100}%">
+                            آموزش: ${job.trainingStats.trainingLoss.toFixed(4)}
+                          </div>
+                        </div>
+                        <div class="progress mb-3">
+                          <div class="progress-bar bg-danger" role="progressbar" style="width: ${job.trainingStats.validationLoss * 100}%">
+                            اعتبارسنجی: ${job.trainingStats.validationLoss.toFixed(4)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <table class="table table-sm table-bordered">
+                      <tr>
+                        <th>اندازه مجموعه داده</th>
+                        <td>${job.trainingStats.datasetSize.toLocaleString('fa-IR')} نمونه</td>
+                      </tr>
+                    </table>
+                  </div>
+                </div>`;
+      }
+      
+      // اگر وظیفه در حال اجراست، پیشرفت را نمایش می‌دهیم
+      if (job.status === 'RUNNING') {
+        html += `<div class="card">
+                  <div class="card-header bg-dark text-white">پیشرفت آموزش</div>
+                  <div class="card-body">
+                    <div class="progress mb-3">
+                      <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 45%">
+                        45%
+                      </div>
+                    </div>
+                    <p>زمان تخمینی باقی‌مانده: حدود 2 ساعت و 15 دقیقه</p>
+                    <div class="alert alert-info">
+                      <i class="fas fa-info-circle"></i> آموزش مدل در حال انجام است. لطفاً صبور باشید.
+                    </div>
+                  </div>
+                </div>`;
+      }
+      
+      // اگر وظیفه ناموفق بوده است، پیام خطا را نمایش می‌دهیم
+      if (job.status === 'FAILED') {
+        html += `<div class="card">
+                  <div class="card-header bg-danger text-white">خطای آموزش</div>
+                  <div class="card-body">
+                    <div class="alert alert-danger">
+                      <i class="fas fa-exclamation-circle"></i> آموزش مدل با خطا مواجه شد.
+                      <p class="mt-2 mb-0">پیام خطا: داده‌های آموزشی ناکافی یا نامعتبر</p>
+                    </div>
+                    <p class="mt-3">پیشنهادات:</p>
+                    <ul>
+                      <li>مطمئن شوید که داده‌های آموزشی حداقل 100 نمونه دارند</li>
+                      <li>فرمت داده‌های آموزشی را بررسی کنید</li>
+                      <li>اطمینان حاصل کنید که ساختار ورودی و خروجی صحیح است</li>
+                    </ul>
+                  </div>
+                </div>`;
+      }
+      
+      jobDetailsContent.innerHTML = html;
+    } else {
+      jobDetailsContent.innerHTML = '<div class="alert alert-danger">وظیفه مورد نظر یافت نشد.</div>';
+    }
+    
+    $('#jobDetailsModal').modal('show');
+  }
+  
+  // بروزرسانی وضعیت وظیفه آموزش
+  function refreshJobStatus(jobId) {
+    // در یک محیط واقعی، درخواست API برای بروزرسانی وضعیت
+    // برای نمایش، تنها پیام نمایش می‌دهیم
+    alert('وضعیت وظیفه آموزش بروزرسانی شد.');
+    
+    // در یک محیط واقعی، وضعیت بروزرسانی شده دریافت و نمایش داده می‌شود
+    viewJobDetails(jobId);
+  }
+  
+  // باز کردن مودال تست مدل
+  function openTestModelModal(modelId) {
+    currentModelId = modelId;
+    
+    // تنظیم شناسه مدل در فرم
+    document.getElementById('testModelId').value = modelId;
+    document.getElementById('testPrompt').value = '';
+    document.getElementById('testTemperature').value = 0.7;
+    document.getElementById('temperatureValue').innerHTML = '0.7';
+    
+    // مخفی کردن نتایج قبلی
+    document.getElementById('testResultContainer').style.display = 'none';
+    
+    // یافتن مدل در لیست مدل‌های آموزش‌دیده
+    const tunedModels = <%= JSON.stringify(tunedModels) %>;
+    const model = tunedModels.find(m => m.id === modelId);
+    
+    if (model) {
+      // تنظیم عنوان مودال
+      document.getElementById('testModelModalLabel').textContent = `تست مدل: ${model.displayName}`;
+    }
+    
+    $('#testModelModal').modal('show');
+  }
+  
+  // تست مدل
+  function testModel() {
+    const modelName = document.getElementById('testModelId').value;
+    const prompt = document.getElementById('testPrompt').value;
+    const temperature = parseFloat(document.getElementById('testTemperature').value);
+    
+    if (!prompt) {
+      alert('لطفاً پرامپت تست را وارد کنید.');
+      return;
+    }
+    
+    // نمایش قسمت نتیجه و بارگذاری
+    document.getElementById('testResultContainer').style.display = 'block';
+    document.getElementById('testResultLoading').style.display = 'block';
+    document.getElementById('testResultContent').style.display = 'none';
+    document.getElementById('testResultError').style.display = 'none';
+    
+    // در یک محیط واقعی، درخواست API برای تست مدل
+    // برای نمایش، از یک تأخیر استفاده می‌کنیم تا شبیه‌سازی کنیم
+    setTimeout(() => {
+      // مخفی کردن بارگذاری
+      document.getElementById('testResultLoading').style.display = 'none';
+      
+      // نمایش نتیجه
+      document.getElementById('testResultContent').style.display = 'block';
+      
+      // شبیه‌سازی پاسخ
+      const promptTokens = prompt.length / 4; // تخمین تعداد توکن‌ها
+      const completionTokens = 50; // تخمین تعداد توکن‌های پاسخ
+      const totalTokens = promptTokens + completionTokens;
+      const processingTime = 1.2; // ثانیه
+      
+      // تنظیم متن نتیجه
+      document.getElementById('testResultText').textContent = `سلام! این یک پاسخ آزمایشی از مدل ${modelName} است.
+
+بر اساس پرامپت شما: "${prompt}"
+
+من اینجا هستم تا به شما کمک کنم. CCOIN AI یک سیستم هوش مصنوعی آموزش‌دیده است که برای پاسخگویی به سوالات و درخواست‌های شما طراحی شده است.
+
+آیا سوال دیگری دارید که بتوانم کمک کنم؟`;
+      
+      // تنظیم آمار
+      document.getElementById('promptTokens').textContent = Math.ceil(promptTokens);
+      document.getElementById('completionTokens').textContent = completionTokens;
+      document.getElementById('totalTokens').textContent = Math.ceil(totalTokens);
+      document.getElementById('processingTime').textContent = `${processingTime.toFixed(2)} ثانیه`;
+      document.getElementById('tokensPerSecond').textContent = Math.ceil(totalTokens / processingTime);
+    }, 1500);
+  }
+  
+  // کلاس badge بر اساس وضعیت
+  function getStatusBadgeClass(status) {
+    switch (status) {
+      case 'SUCCEEDED':
+        return 'success';
+      case 'PENDING':
+        return 'warning';
+      case 'RUNNING':
+        return 'primary';
+      case 'FAILED':
+        return 'danger';
+      default:
+        return 'secondary';
+    }
+  }
+  
+  // برچسب فارسی وضعیت
+  function getStatusLabel(status) {
+    switch (status) {
+      case 'SUCCEEDED':
+        return 'موفق';
+      case 'PENDING':
+        return 'در انتظار';
+      case 'RUNNING':
+        return 'در حال اجرا';
+      case 'FAILED':
+        return 'ناموفق';
+      default:
+        return status;
+    }
+  }
+});
+</script>
+
+<%- include('../partials/footer') %>
