@@ -9,6 +9,7 @@ import {
   StringSelectMenuInteraction,
   StringSelectMenuOptionBuilder
 } from 'discord.js';
+import { log } from '../../vite';
 
 /**
  * منوی راهنمای جامع با دسته‌بندی
@@ -19,6 +20,9 @@ export async function helpMenu(
   interaction: ButtonInteraction | ChatInputCommandInteraction | StringSelectMenuInteraction, 
   category?: string
 ) {
+  // لاگ اطلاعات عیب‌یابی
+  log(`helpMenu called with category: ${category || 'undefined'}`, 'info');
+  log(`Interaction type: ${interaction.constructor.name}, customId: ${(interaction as any).customId || 'N/A'}`, 'info');
   try {
     // ایجاد منوی انتخاب دسته‌بندی
     const categorySelect = new StringSelectMenuBuilder()
@@ -113,31 +117,50 @@ export async function helpMenu(
           .setStyle(ButtonStyle.Danger)
       );
     
-    // ارسال پاسخ
+    // ارسال پاسخ با لاگ بیشتر برای دیباگ
     if (interaction.deferred) {
+      log(`Interaction is deferred, using editReply`, 'info');
       await interaction.editReply({
         embeds: [embed],
         components: [selectRow, navButtonsRow]
+      }).catch((err: Error) => {
+        log(`Error in editReply: ${err.message}`, 'error');
       });
     } else if ('update' in interaction && typeof interaction.update === 'function') {
+      log(`Interaction has update function, using update method`, 'info');
       try {
-        await interaction.update({
+        // نکته مهم: در اینجا تایپ را به StringSelectMenuInteraction تبدیل می‌کنیم و از متد update استفاده می‌کنیم
+        const selectMenuInteraction = interaction as StringSelectMenuInteraction;
+        await selectMenuInteraction.update({
           embeds: [embed],
           components: [selectRow, navButtonsRow]
+        }).catch((err: Error) => {
+          log(`Error in update: ${err.message}`, 'error');
+          throw err; // بازپخش خطا برای پردازش در بلوک catch بعدی
         });
       } catch (e) {
+        log(`Falling back to reply due to error: ${e}`, 'warn');
+        if (!interaction.replied) {
+          await interaction.reply({
+            embeds: [embed],
+            components: [selectRow, navButtonsRow],
+            ephemeral: true
+          }).catch((err: Error) => {
+            log(`Error in reply fallback: ${err.message}`, 'error');
+          });
+        }
+      }
+    } else {
+      log(`Using regular reply`, 'info');
+      if (!interaction.replied) {
         await interaction.reply({
           embeds: [embed],
           components: [selectRow, navButtonsRow],
           ephemeral: true
+        }).catch((err: Error) => {
+          log(`Error in regular reply: ${err.message}`, 'error');
         });
       }
-    } else {
-      await interaction.reply({
-        embeds: [embed],
-        components: [selectRow, navButtonsRow],
-        ephemeral: true
-      });
     }
   } catch (error) {
     console.error('Error in helpMenu:', error);

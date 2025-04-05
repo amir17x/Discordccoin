@@ -299,7 +299,7 @@ export async function initDiscordBot() {
             return;
           }
           */
-          const now = Date.now(); // برای استفاده در کد بعدی
+          // این متغیر در بخش کد فعلی استفاده نمی‌شود
           
           // پردازش سایر دکمه‌ها
           await executeWithTimeout(
@@ -323,38 +323,89 @@ export async function initDiscordBot() {
           */
           
         } else if (interaction.isStringSelectMenu()) {
-          // بررسی کش برای منوهای انتخاب - موقتاً غیرفعال
-          /*
-          const cacheKey = `menu_${interaction.customId}_${interaction.user.id}`;
-          const cachedData = interactionCache.get(cacheKey);
-          const now = Date.now();
-          
-          if (cachedData && (now - cachedData.timestamp < INTERACTION_CACHE_TTL)) {
-            // استفاده از کش برای کاهش درخواست‌های تکراری به API
-            await interaction.reply({
-              content: cachedData.responseMessage || '⚠️ لطفاً کمی صبر کنید و سپس دوباره تلاش کنید.',
-              ephemeral: true
-            });
-            return;
+          try {
+            // ثبت لاگ برای عیب‌یابی بهتر
+            log(`Processing select menu interaction: ${interaction.customId} with values: ${interaction.values.join(', ')}`, 'info');
+            
+            // بررسی خاص برای منوی راهنما
+            if (interaction.customId === 'help_category_select') {
+              log(`Help menu category selected: ${interaction.values[0]}`, 'info');
+              const { helpMenu } = await import('./components/helpMenu');
+              
+              // دریافت مقدار انتخاب شده
+              const selectedCategory = interaction.values[0];
+              
+              try {
+                // برای منوی راهنما از deferUpdate استفاده می‌کنیم
+                if (!interaction.deferred && !interaction.replied) {
+                  await interaction.deferUpdate();
+                  log('Help menu interaction deferred successfully', 'info');
+                }
+                
+                // اجرای مستقیم تابع helpMenu برای جلوگیری از مشکلات ناشی از executeWithTimeout
+                await helpMenu(interaction as any, selectedCategory);
+                log(`Help menu successfully processed for category: ${selectedCategory}`, 'info');
+                return;
+              } catch (helpError) {
+                log(`Error in direct helpMenu call: ${helpError}`, 'error');
+                if (!interaction.replied) {
+                  await interaction.editReply({
+                    content: '❌ خطایی در پردازش منوی راهنما رخ داد. لطفاً مجدداً تلاش کنید.'
+                  }).catch(err => log(`Failed to send error message: ${err}`, 'error'));
+                }
+                return;
+              }
+            }
+            
+            // بررسی کش برای منوهای انتخاب - موقتاً غیرفعال
+            /*
+            const cacheKey = `menu_${interaction.customId}_${interaction.user.id}`;
+            const cachedData = interactionCache.get(cacheKey);
+            const now = Date.now();
+            
+            if (cachedData && (now - cachedData.timestamp < INTERACTION_CACHE_TTL)) {
+              // استفاده از کش برای کاهش درخواست‌های تکراری به API
+              await interaction.reply({
+                content: cachedData.responseMessage || '⚠️ لطفاً کمی صبر کنید و سپس دوباره تلاش کنید.',
+                ephemeral: true
+              });
+              return;
+            }
+            */
+            // این متغیر در بخش کد فعلی استفاده نمی‌شود
+            
+            // پردازش سایر منوهای انتخاب
+            if (interaction.customId !== 'help_category_select') {
+              log(`Handling other select menu through executeWithTimeout: ${interaction.customId}`, 'info');
+              await executeWithTimeout(
+                interaction,
+                async () => { await handleSelectMenuInteraction(interaction); },
+                `menu ${interaction.customId}`,
+                'خطایی در منوی انتخاب رخ داده است!'
+              );
+            }
+          } catch (selectMenuError) {
+            log(`Critical error in select menu handling: ${selectMenuError}`, 'error');
+            if (!interaction.replied && !interaction.deferred) {
+              await interaction.reply({
+                content: '❌ خطایی در پردازش منوی انتخاب رخ داد. لطفاً مجدداً تلاش کنید.',
+                ephemeral: true
+              }).catch(console.error);
+            } else if (interaction.deferred) {
+              await interaction.editReply({
+                content: '❌ خطایی در پردازش منوی انتخاب رخ داد. لطفاً مجدداً تلاش کنید.'
+              }).catch(console.error);
+            }
           }
-          */
-          const now = Date.now(); // برای استفاده در کد بعدی
-          
-          // پردازش منوهای انتخاب
-          await executeWithTimeout(
-            interaction,
-            async () => { await handleSelectMenuInteraction(interaction); },
-            `menu ${interaction.customId}`,
-            'خطایی در منوی انتخاب رخ داده است!'
-          );
           
           // ذخیره در کش فقط برای منوهای پرکاربرد
           if (interaction.customId.includes('shop') || 
               interaction.customId.includes('inventory') || 
               interaction.customId.includes('game_select')) {
+            const menuNow = Date.now(); // استفاده از متغیر جداگانه برای این بخش
             const menuCacheKey = `menu_${interaction.customId}_${interaction.user.id}`;
             interactionCache.set(menuCacheKey, {
-              timestamp: now,
+              timestamp: menuNow,
               responseMessage: '⚠️ لطفاً کمی صبر کنید و سپس دوباره تلاش کنید.'
             });
           }

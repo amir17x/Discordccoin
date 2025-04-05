@@ -12,7 +12,6 @@ export async function handleSelectMenuInteraction(interaction: StringSelectMenuI
   try {
     // پردازش منوی راهنما
     if (customId === 'help_category_select') {
-      const { helpMenu } = await import('../components/helpMenu');
       // دریافت مقدار انتخاب شده
       const selectedCategory = interaction.values[0];
       log(`Help category selected: ${selectedCategory}`, 'info');
@@ -24,15 +23,25 @@ export async function handleSelectMenuInteraction(interaction: StringSelectMenuI
         });
       }
       
+      // اضافه کردن log بیشتر برای دیباگ
+      log(`Loading help menu for category: ${selectedCategory}`, 'info');
+      
       try {
-        // فراخوانی تابع helpMenu با دسته‌بندی انتخاب شده
+        // بجای import مستقیم در اینجا، می‌کنیم
+        const { helpMenu } = await import('../components/helpMenu');
+        log(`Help menu component loaded successfully`, 'info');
+        
+        // ایجاد Embed متناسب با دسته‌بندی
         await helpMenu(interaction as any, selectedCategory);
+        log(`Help menu executed successfully for category: ${selectedCategory}`, 'info');
       } catch (helpError) {
         log(`Error in helpMenu: ${helpError}`, 'error');
         if (!interaction.replied) {
           await interaction.editReply({ 
             content: "❌ خطایی در بارگذاری منوی راهنما رخ داد. لطفاً دوباره تلاش کنید."
-          }).catch(console.error);
+          }).catch(err => {
+            log(`Error sending error message: ${err}`, 'error');
+          });
         }
       }
       return;
