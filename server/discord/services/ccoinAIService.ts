@@ -2,6 +2,10 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { log } from '../../vite';
 import { botConfig } from '../utils/config';
 import axios from 'axios';
+import aiCache from './aiCache';
+import { logAIUsage } from './aiAnalytics';
+import { checkAIAccess } from './aiAccessManager';
+import { ModelType } from './smartModelSelector';
 
 // Using CCOIN_AI_API_KEY for authentication to our AI service
 const CCOIN_AI_API_KEY = process.env.GOOGLE_AI_API_KEY || process.env.CCOIN_AI_API_KEY;
@@ -24,25 +28,34 @@ class OptimizedCcoinAIService {
   private genAI: any;
   private model: any;
   private visionModel: any;
-  // کش برای پاسخ‌های متداول
-  private responseCache: Map<string, { response: string, timestamp: number }>;
-  // زمان انقضای کش (30 دقیقه)
-  private CACHE_EXPIRY = 30 * 60 * 1000;
+  private proModel: any;
   
   constructor() {
     this.apiKey = CCOIN_AI_API_KEY || '';
-    this.responseCache = new Map();
     
     // مقداردهی اولیه
     if (this.apiKey) {
       this.genAI = new GoogleGenerativeAI(this.apiKey);
+      
       // ایجاد مدل‌ها از ابتدا برای جلوگیری از ایجاد مکرر
+      // مدل سریع برای درخواست‌های ساده
       this.model = this.genAI.getGenerativeModel({ 
         model: "gemini-1.5-flash",
         systemInstruction: "تو دستیار هوشمند CCOIN AI برای بازی Ccoin هستی. همیشه پاسخ‌های کوتاه، دقیق و مفید می‌دهی."
       });
-      // پیش‌بارگذاری مدل برای تصاویر
+      
+      // مدل پیشرفته برای درخواست‌های پیچیده
+      this.proModel = this.genAI.getGenerativeModel({ 
+        model: "gemini-1.5-pro",
+        systemInstruction: "تو دستیار هوشمند CCOIN AI برای بازی Ccoin هستی. پاسخ‌های کامل و جامع می‌دهی."
+      });
+      
+      // مدل برای تصاویر (همان مدل پیشرفته)
       this.visionModel = this.genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+      
+      // پاکسازی کش در زمان راه‌اندازی
+      aiCache.cleanExpired();
+      
       log('سرویس CCOIN AI با موفقیت راه‌اندازی شد', 'info');
     } else {
       log('سرویس CCOIN AI: کلید API تنظیم نشده است', 'warn');
@@ -55,17 +68,13 @@ class OptimizedCcoinAIService {
    * @returns پاسخ کش شده یا null
    */
   private getCachedResponse(key: string): string | null {
-    const cachedItem = this.responseCache.get(key);
-    if (cachedItem) {
-      const now = Date.now();
-      // بررسی انقضای کش
-      if (now - cachedItem.timestamp < this.CACHE_EXPIRY) {
-        log(`پاسخ از کش بازیابی شد: ${key.substring(0, 20)}...`, 'info');
-        return cachedItem.response;
-      } else {
-        // حذف آیتم منقضی شده
-        this.responseCache.delete(key);
-      }
+    // از کش سینگلتون جدید استفاده می‌کنیم که در فایل جداگانه تعریف شده
+    const parts = key.split('_');
+    if (parts.length >= 3) {
+      const prompt = parts[0];
+      const maxTokens = parseInt(parts[1], 10);
+      const temperature = parseFloat(parts[2]);
+      return aiCache.get(prompt, temperature, maxTokens);
     }
     return null;
   }
@@ -76,43 +85,13 @@ class OptimizedCcoinAIService {
    * @param response پاسخ برای ذخیره
    */
   private cacheResponse(key: string, response: string): void {
-    // افزودن آیتم جدید به کش با زمان فعلی
-    this.responseCache.set(key, {
-      response,
-      timestamp: Date.now()
-    });
-    
-    // محدود کردن اندازه کش به 100 آیتم
-    if (this.responseCache.size > 100) {
-      // حذف 10 آیتم قدیمی برای کاهش اندازه کش
-      // روش جایگزین بدون استفاده از entries() که نیاز به تنظیمات خاص دارد
-      let keysToDelete: string[] = [];
-      let oldestTimestamp = Date.now();
-      let oldestKey = '';
-      
-      // حذف 10 آیتم قدیمی‌ترین
-      for (let i = 0; i < 10; i++) {
-        oldestTimestamp = Date.now();
-        oldestKey = '';
-        
-        // پیدا کردن قدیمی‌ترین آیتم
-        this.responseCache.forEach((value, key) => {
-          if (value.timestamp < oldestTimestamp) {
-            oldestTimestamp = value.timestamp;
-            oldestKey = key;
-          }
-        });
-        
-        // اگر کلید قدیمی پیدا شد، آن را به لیست حذف اضافه می‌کنیم
-        if (oldestKey) {
-          keysToDelete.push(oldestKey);
-        }
-      }
-      
-      // حذف تمام کلیدهای قدیمی
-      for (const key of keysToDelete) {
-        this.responseCache.delete(key);
-      }
+    // از کش سینگلتون جدید استفاده می‌کنیم که در فایل جداگانه تعریف شده
+    const parts = key.split('_');
+    if (parts.length >= 3) {
+      const prompt = parts[0];
+      const maxTokens = parseInt(parts[1], 10);
+      const temperature = parseFloat(parts[2]);
+      aiCache.set(prompt, response, temperature, maxTokens);
     }
   }
   
@@ -136,26 +115,44 @@ class OptimizedCcoinAIService {
    * @param prompt متن ورودی
    * @param maxTokens حداکثر تعداد توکن‌های خروجی
    * @param temperature دمای تولید پاسخ (0.0 تا 1.0)
+   * @param userId شناسه کاربر (اختیاری)
    * @returns پاسخ تولید شده توسط مدل
    */
   async generateContent(
     prompt: string, 
     maxTokens: number = 1000, 
-    temperature: number = 0.7
+    temperature: number = 0.7,
+    userId?: string
   ): Promise<string> {
     if (!this.apiKey || !this.model) {
       throw new Error('سرویس CCOIN AI به درستی راه‌اندازی نشده است');
     }
     
+    // اگر شناسه کاربر ارائه شده، دسترسی را بررسی می‌کنیم
+    if (userId) {
+      const hasAccess = await checkAIAccess(userId);
+      if (!hasAccess) {
+        throw new Error('شما دسترسی کافی به CCOIN AI ندارید');
+      }
+    }
+    
     // بررسی کش برای درخواست‌های تکراری
-    const cacheKey = this.createCacheKey(prompt, maxTokens, temperature);
-    const cachedResponse = this.getCachedResponse(cacheKey);
+    const cachedResponse = aiCache.get(prompt, temperature, maxTokens);
     if (cachedResponse) {
+      log(`پاسخ از کش بازیابی شد: ${prompt.substring(0, 20)}...`, 'info');
+      
+      // ثبت آمار استفاده از کش (زمان پاسخگویی صفر)
+      if (userId) {
+        logAIUsage(userId, 'chat', 0, 'cache');
+      }
+      
       return cachedResponse;
     }
     
     try {
       log(`ارسال درخواست به CCOIN AI: ${prompt.substring(0, 50)}...`, 'info');
+      
+      const startTime = Date.now();
       
       // تلاش‌های مجدد برای افزایش اطمینان از پاسخگویی
       let lastError: any = null;
@@ -167,8 +164,19 @@ class OptimizedCcoinAIService {
             log(`تلاش مجدد ${attempt} از ${MAX_RETRIES}...`, 'info');
           }
           
+          // تصمیم‌گیری در مورد استفاده از مدل پیشرفته یا سریع
+          let targetModel = this.model;
+          let modelName: ModelType = 'gemini-1.5-flash';
+          
+          // اگر درخواست طولانی یا پیچیده است از مدل پیشرفته استفاده می‌کنیم
+          if (prompt.length > 500 || temperature > 0.8 || maxTokens > 1500) {
+            targetModel = this.proModel;
+            modelName = 'gemini-1.5-pro';
+            log(`استفاده از مدل پیشرفته (${modelName}) برای درخواست پیچیده`, 'info');
+          }
+          
           // استفاده از مدل SDK با تنظیمات بهینه
-          const result = await (this.model as any).generateContent(prompt, {
+          const result = await targetModel.generateContent(prompt, {
             temperature: temperature,
             maxOutputTokens: maxTokens,
             topP: 0.9,  // افزایش تنوع خروجی
@@ -178,10 +186,18 @@ class OptimizedCcoinAIService {
           const response = await result.response;
           const generatedText = response.text();
           
-          log(`پاسخ از CCOIN AI دریافت شد (${generatedText.length} کاراکتر) ✨`, 'info');
+          const endTime = Date.now();
+          const responseTime = endTime - startTime;
+          
+          log(`پاسخ از CCOIN AI دریافت شد (${generatedText.length} کاراکتر, ${responseTime}ms) ✨`, 'info');
           
           // ذخیره پاسخ در کش برای استفاده آینده
-          this.cacheResponse(cacheKey, generatedText);
+          aiCache.set(prompt, generatedText, temperature, maxTokens);
+          
+          // ثبت آمار استفاده
+          if (userId) {
+            logAIUsage(userId, 'chat', responseTime, modelName);
+          }
           
           return generatedText;
         } catch (error: any) {
@@ -223,17 +239,37 @@ class OptimizedCcoinAIService {
    * استفاده شده برای درخواست‌های ساده و کوتاه
    * @param prompt متن ورودی
    * @param maxTokens حداکثر تعداد توکن‌های خروجی
+   * @param userId شناسه کاربر (اختیاری)
    * @returns پاسخ تولید شده توسط مدل
    */
-  async generateContentFast(prompt: string, maxTokens: number = 100): Promise<string> {
+  async generateContentFast(
+    prompt: string, 
+    maxTokens: number = 100,
+    userId?: string
+  ): Promise<string> {
     if (!this.apiKey) {
       throw new Error('سرویس CCOIN AI به درستی راه‌اندازی نشده است');
     }
     
+    // اگر شناسه کاربر ارائه شده، دسترسی را بررسی می‌کنیم
+    if (userId) {
+      const hasAccess = await checkAIAccess(userId);
+      if (!hasAccess) {
+        throw new Error('شما دسترسی کافی به CCOIN AI ندارید');
+      }
+    }
+    
     // بررسی کش برای درخواست‌های تکراری
-    const cacheKey = this.createCacheKey(prompt, maxTokens, 0.2);
-    const cachedResponse = this.getCachedResponse(cacheKey);
+    const temperature = 0.2; // دمای پایین برای پاسخ‌های سریع و قطعی
+    const cachedResponse = aiCache.get(prompt, temperature, maxTokens);
     if (cachedResponse) {
+      log(`پاسخ سریع از کش بازیابی شد: ${prompt.substring(0, 20)}...`, 'info');
+      
+      // ثبت آمار استفاده از کش (زمان پاسخگویی صفر)
+      if (userId) {
+        logAIUsage(userId, 'chat', 0, 'cache');
+      }
+      
       return cachedResponse;
     }
     
@@ -248,7 +284,7 @@ class OptimizedCcoinAIService {
             parts: [{ text: prompt }]
           }],
           generationConfig: {
-            temperature: 0.2,
+            temperature: temperature,
             maxOutputTokens: maxTokens,
             topP: 0.9,
             topK: 16
@@ -261,13 +297,19 @@ class OptimizedCcoinAIService {
       );
       
       const endTime = Date.now();
+      const responseTime = endTime - startTime;
       
       if (response.data && response.data.candidates && response.data.candidates[0]) {
         const text = response.data.candidates[0].content.parts[0].text;
-        log(`پاسخ سریع از CCOIN AI دریافت شد (${text.length} کاراکتر، ${endTime - startTime}ms) ⚡`, 'info');
+        log(`پاسخ سریع از CCOIN AI دریافت شد (${text.length} کاراکتر، ${responseTime}ms) ⚡`, 'info');
         
         // ذخیره پاسخ در کش
-        this.cacheResponse(cacheKey, text);
+        aiCache.set(prompt, text, temperature, maxTokens);
+        
+        // ثبت آمار استفاده
+        if (userId) {
+          logAIUsage(userId, 'chat', responseTime, 'gemini-1.5-flash');
+        }
         
         return text;
       } else {
@@ -278,7 +320,7 @@ class OptimizedCcoinAIService {
       log('خطا در فراخوانی سریع سرویس CCOIN AI: ' + error, 'error');
       
       // fallback به روش معمولی
-      return this.generateContent(prompt, maxTokens, 0.2);
+      return this.generateContent(prompt, maxTokens, 0.2, userId);
     }
   }
   
@@ -289,6 +331,7 @@ class OptimizedCcoinAIService {
    * @param mimeType نوع فایل تصویر (مثلاً 'image/jpeg')
    * @param maxTokens حداکثر تعداد توکن‌های خروجی
    * @param temperature دمای تولید پاسخ (0.0 تا 1.0)
+   * @param userId شناسه کاربر (اختیاری)
    * @returns پاسخ تولید شده توسط مدل
    */
   async generateContentWithImage(
@@ -296,14 +339,25 @@ class OptimizedCcoinAIService {
     imageBase64: string,
     mimeType: string = 'image/jpeg',
     maxTokens: number = 1000,
-    temperature: number = 0.7
+    temperature: number = 0.7,
+    userId?: string
   ): Promise<string> {
     if (!this.apiKey || !this.visionModel) {
       throw new Error('سرویس CCOIN AI به درستی راه‌اندازی نشده است');
     }
     
+    // اگر شناسه کاربر ارائه شده، دسترسی را بررسی می‌کنیم
+    if (userId) {
+      const hasAccess = await checkAIAccess(userId);
+      if (!hasAccess) {
+        throw new Error('شما دسترسی کافی به تحلیل تصویر CCOIN AI ندارید');
+      }
+    }
+    
     try {
       log(`ارسال درخواست چندرسانه‌ای به CCOIN AI: ${textPrompt.substring(0, 50)}...`, 'info');
+      
+      const startTime = Date.now();
       
       // ایجاد اجزای درخواست مطابق با مستندات
       const imagePart = {
@@ -334,7 +388,16 @@ class OptimizedCcoinAIService {
           const response = await result.response;
           const generatedText = response.text();
           
-          log(`پاسخ چندرسانه‌ای از CCOIN AI دریافت شد (${generatedText.length} کاراکتر) ✨`, 'info');
+          const endTime = Date.now();
+          const responseTime = endTime - startTime;
+          
+          log(`پاسخ چندرسانه‌ای از CCOIN AI دریافت شد (${generatedText.length} کاراکتر, ${responseTime}ms) ✨`, 'info');
+          
+          // ثبت آمار استفاده
+          if (userId) {
+            logAIUsage(userId, 'image_analysis', responseTime, 'gemini-1.5-pro');
+          }
+          
           return generatedText;
         } catch (error: any) {
           lastError = error;
@@ -415,9 +478,13 @@ class OptimizedCcoinAIService {
    * پاکسازی کش برای آزاد کردن حافظه
    */
   clearCache(): void {
-    const size = this.responseCache.size;
-    this.responseCache.clear();
-    log(`کش سرویس CCOIN AI پاکسازی شد (${size} آیتم)`, 'info');
+    try {
+      const size = aiCache.size();
+      aiCache.clear();
+      log(`کش سرویس CCOIN AI پاکسازی شد (${size} آیتم)`, 'info');
+    } catch (error) {
+      log(`خطا در پاکسازی کش CCOIN AI: ${error}`, 'error');
+    }
   }
 }
 
