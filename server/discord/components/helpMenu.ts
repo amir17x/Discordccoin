@@ -6,6 +6,7 @@ import {
   ButtonBuilder, 
   ButtonStyle, 
   StringSelectMenuBuilder, 
+  StringSelectMenuInteraction,
   StringSelectMenuOptionBuilder
 } from 'discord.js';
 
@@ -14,7 +15,10 @@ import {
  * @param interaction تعامل کاربر
  * @param category دسته‌بندی (اختیاری)
  */
-export async function helpMenu(interaction: ButtonInteraction | ChatInputCommandInteraction, category?: string) {
+export async function helpMenu(
+  interaction: ButtonInteraction | ChatInputCommandInteraction | StringSelectMenuInteraction, 
+  category?: string
+) {
   try {
     // ایجاد منوی انتخاب دسته‌بندی
     const categorySelect = new StringSelectMenuBuilder()
@@ -56,6 +60,11 @@ export async function helpMenu(interaction: ButtonInteraction | ChatInputCommand
           .setDescription('راهنمای فروشگاه، کوله‌پشتی و استفاده از آیتم‌ها')
           .setValue('shop')
           .setEmoji('🛒'),
+        new StringSelectMenuOptionBuilder()
+          .setLabel('هوش مصنوعی CCOIN AI')
+          .setDescription('راهنمای استفاده از قابلیت‌های هوش مصنوعی بات')
+          .setValue('ai')
+          .setEmoji('🧠'),
       );
       
     const selectRow = new ActionRowBuilder<StringSelectMenuBuilder>()
@@ -82,49 +91,12 @@ export async function helpMenu(interaction: ButtonInteraction | ChatInputCommand
       embed = createQuestsHelpEmbed(embed);
     } else if (category === 'shop') {
       embed = createShopHelpEmbed(embed);
+    } else if (category === 'ai') {
+      embed = createAIHelpEmbed(embed);
     } else {
       // دسته‌بندی پیش‌فرض: راهنمای کلی
       embed = createGeneralHelpEmbed(embed);
     }
-    
-    // دکمه‌های دسته‌بندی راهنما با طراحی جدید
-    const helpButtonsRow1 = new ActionRowBuilder<ButtonBuilder>()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId('help_view_economy')
-          .setLabel('راهنمای اقتصاد')
-          .setEmoji('💰')
-          .setStyle(ButtonStyle.Primary),
-        new ButtonBuilder()
-          .setCustomId('help_view_games')
-          .setLabel('راهنمای بازی‌ها')
-          .setEmoji('🎮')
-          .setStyle(ButtonStyle.Primary),
-        new ButtonBuilder()
-          .setCustomId('help_view_shop')
-          .setLabel('راهنمای فروشگاه')
-          .setEmoji('🛒')
-          .setStyle(ButtonStyle.Primary)
-      );
-      
-    const helpButtonsRow2 = new ActionRowBuilder<ButtonBuilder>()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId('help_view_quests')
-          .setLabel('راهنمای ماموریت‌ها')
-          .setEmoji('🎯')
-          .setStyle(ButtonStyle.Primary),
-        new ButtonBuilder()
-          .setCustomId('help_view_clans')
-          .setLabel('راهنمای کلن‌ها')
-          .setEmoji('🏰')
-          .setStyle(ButtonStyle.Primary),
-        new ButtonBuilder()
-          .setCustomId('help_view_friends')
-          .setLabel('راهنمای دوستی')
-          .setEmoji('👥')
-          .setStyle(ButtonStyle.Primary)
-      );
     
     // دکمه‌های ناوبری
     const navButtonsRow = new ActionRowBuilder<ButtonBuilder>()
@@ -134,11 +106,6 @@ export async function helpMenu(interaction: ButtonInteraction | ChatInputCommand
           .setLabel('منوی اصلی')
           .setEmoji('🏠')
           .setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder()
-          .setCustomId('help_search')
-          .setLabel('جستجو')
-          .setEmoji('🔍')
-          .setStyle(ButtonStyle.Success),
         new ButtonBuilder()
           .setCustomId('feedback')
           .setLabel('ارسال بازخورد')
@@ -150,25 +117,25 @@ export async function helpMenu(interaction: ButtonInteraction | ChatInputCommand
     if (interaction.deferred) {
       await interaction.editReply({
         embeds: [embed],
-        components: [selectRow, helpButtonsRow1, helpButtonsRow2, navButtonsRow]
+        components: [selectRow, navButtonsRow]
       });
     } else if ('update' in interaction && typeof interaction.update === 'function') {
       try {
         await interaction.update({
           embeds: [embed],
-          components: [selectRow, helpButtonsRow1, helpButtonsRow2, navButtonsRow]
+          components: [selectRow, navButtonsRow]
         });
       } catch (e) {
         await interaction.reply({
           embeds: [embed],
-          components: [selectRow, helpButtonsRow1, helpButtonsRow2, navButtonsRow],
+          components: [selectRow, navButtonsRow],
           ephemeral: true
         });
       }
     } else {
       await interaction.reply({
         embeds: [embed],
-        components: [selectRow, helpButtonsRow1, helpButtonsRow2, navButtonsRow],
+        components: [selectRow, navButtonsRow],
         ephemeral: true
       });
     }
@@ -540,6 +507,60 @@ function createShopHelpEmbed(embed: EmbedBuilder): EmbedBuilder {
 }
 
 /**
+ * ایجاد Embed راهنمای هوش مصنوعی CCOIN AI
+ */
+function createAIHelpEmbed(embed: EmbedBuilder): EmbedBuilder {
+  return embed
+    .setTitle('🧠 راهنمای هوش مصنوعی CCOIN AI')
+    .setDescription('آشنایی با قابلیت‌های هوش مصنوعی اختصاصی ربات، نحوه استفاده و کاربردهای مختلف آن')
+    .setThumbnail('https://img.icons8.com/fluency/48/artificial-intelligence.png')
+    .addFields(
+      { 
+        name: '🔮 **معرفی CCOIN AI**', 
+        value: '**CCOIN AI چیست؟**: هوش مصنوعی اختصاصی ربات Ccoin برای ارائه خدمات هوشمند\n' +
+              '**مبتنی بر**: فناوری پیشرفته هوش مصنوعی با بهینه‌سازی اختصاصی\n' +
+              '**زبان‌های پشتیبانی شده**: فارسی و انگلیسی با دقت بالا\n' +
+              '**سرعت پاسخگویی**: بهینه‌سازی شده تا 65% سریع‌تر از نسخه‌های قبلی',
+        inline: false
+      },
+      { 
+        name: '⚡ **دستورات اصلی**', 
+        value: '**`/askai`**: گفتگوی مستقیم با هوش مصنوعی CCOIN AI\n' +
+              '**`/image-analyze`**: تحلیل و توصیف تصاویر آپلود شده\n' +
+              '**`/content-generate`**: تولید محتوای متنی اختصاصی\n' +
+              '**`/code-assistant`**: کمک در نوشتن و دیباگ کد برنامه‌نویسی\n' +
+              '**`/learn`**: دریافت آموزش در موضوعات مختلف',
+        inline: false
+      },
+      { 
+        name: '🎯 **قابلیت‌های اصلی**', 
+        value: '**گفتگوی هوشمند**: پاسخگویی به سوالات و مکالمه طبیعی\n' +
+              '**تحلیل تصویر**: شناسایی اجزای تصویر، توصیف محتوا و استخراج متن\n' +
+              '**تولید محتوا**: ایجاد متن‌های خلاقانه، داستان، شعر و محتوای آموزشی\n' +
+              '**کمک برنامه‌نویسی**: نوشتن، دیباگ و توضیح کد به زبان‌های مختلف\n' +
+              '**آموزش**: توضیح مفاهیم پیچیده به زبان ساده و ارائه مثال‌های کاربردی',
+        inline: false
+      },
+      { 
+        name: '⚙️ **تنظیمات و شخصی‌سازی**', 
+        value: '**تنظیم زبان**: انتخاب زبان پیش‌فرض برای تعامل با AI\n' +
+              '**سطح جزئیات**: تنظیم میزان توضیحات در پاسخ‌ها (کوتاه، متوسط، مفصل)\n' +
+              '**حالت خلاقیت**: تنظیم میزان خلاقیت و تنوع در پاسخ‌های تولید شده\n' +
+              '**ذخیره پاسخ‌ها**: امکان ذخیره پاسخ‌های مفید برای استفاده بعدی',
+        inline: false
+      },
+      { 
+        name: '💡 **نکات استفاده بهینه**', 
+        value: '**سوالات دقیق**: هر چه سوال شما دقیق‌تر باشد، پاسخ بهتری دریافت می‌کنید\n' +
+              '**استفاده از فرمت‌ها**: برای محتوای ساختاریافته، فرمت مورد نظر را مشخص کنید\n' +
+              '**محدودیت‌ها**: برخی درخواست‌ها مانند تولید محتوای نامناسب پذیرفته نمی‌شود\n' +
+              '**ارسال بازخورد**: با ارسال بازخورد به ما کمک کنید هوش مصنوعی را بهبود دهیم',
+        inline: false
+      }
+    );
+}
+
+/**
  * جستجو در راهنما براساس کلیدواژه
  * @param interaction تعامل کاربر
  * @param query کلیدواژه جستجو
@@ -706,12 +727,7 @@ export async function searchHelp(interaction: ButtonInteraction | ChatInputComma
           .setCustomId('menu')
           .setLabel('منوی اصلی')
           .setEmoji('🏠')
-          .setStyle(ButtonStyle.Primary),
-        new ButtonBuilder()
-          .setCustomId('help_search')
-          .setLabel('جستجوی جدید')
-          .setEmoji('🔍')
-          .setStyle(ButtonStyle.Success)
+          .setStyle(ButtonStyle.Primary)
       );
     
     buttonRows.push(menuButtons);

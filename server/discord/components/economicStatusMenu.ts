@@ -7,7 +7,7 @@
 import { ButtonInteraction, MessageComponentInteraction, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ColorResolvable } from 'discord.js';
 import { storage } from '../../storage';
 import { EconomicStatus, calculateNextLevelProgress, determineEconomicStatus } from '../utils/economyStatusCalculator';
-import { formatNumber, createProgressBar } from '../utils/formatter';
+import { formatNumber, createProgressBar, getValueIcon, getThemeAsciiArt, formatTimeFromSeconds } from '../utils/formatter';
 import { log } from '../utils/logger';
 
 // Logger wrapper to match the expected format
@@ -64,96 +64,145 @@ export async function economicStatusMenu(
       [EconomicStatus.BEGINNER]: { 
         color: '#4CAF50', 
         emoji: '🟢',
+        icon: '🔰',
         name: 'تازه‌کار',
         description: 'شما در ابتدای مسیر اقتصادی خود هستید.'
       },
       [EconomicStatus.INTERMEDIATE]: { 
         color: '#FFC107', 
         emoji: '🟡',
+        icon: '🥈',
         name: 'متوسط',
         description: 'شما تجربه خوبی در فعالیت‌های اقتصادی کسب کرده‌اید.'
       },
       [EconomicStatus.PROFESSIONAL]: { 
         color: '#FF9800', 
         emoji: '🟠',
+        icon: '🥇',
         name: 'حرفه‌ای',
         description: 'شما یک متخصص اقتصادی با تجربه هستید.'
       },
       [EconomicStatus.WEALTHY]: { 
         color: '#2196F3', 
         emoji: '💎',
+        icon: '👑',
         name: 'ثروتمند',
         description: 'شما به بالاترین سطح اقتصادی دست یافته‌اید!'
       }
     };
     
-    // ایجاد Embed اصلی
+    // اطلاعات کمّی کاربر
+    const economicScore = user.economyScore || 0;
+    const transactionVolume = user.transactionVolume || 0;
+    const economyLevel = user.economyLevel || 1;
+    const punctualityRate = user.loanRepaymentHistory?.punctualityRate || 0;
+    const tasksCompleted = user.jobActivity?.totalTasksCompleted || 0;
+    const jobEarnings = user.jobActivity?.totalJobEarnings || 0;
+    const totalJobs = user.jobActivity?.totalJobsHeld || 0;
+    
+    // اضافه کردن یک تصویر زیبا با اسکی آرت
+    const asciiArt = getThemeAsciiArt('economic');
+    
+    // ایجاد Embed اصلی با طراحی جدید
     const embed = new EmbedBuilder()
       .setColor(statusDetails[currentStatus].color as ColorResolvable)
-      .setTitle(`${statusDetails[currentStatus].emoji} وضعیت اقتصادی: ${statusDetails[currentStatus].name}`)
-      .setDescription(statusDetails[currentStatus].description)
-      .setThumbnail('https://img.icons8.com/fluency/48/bank-building.png')
+      .setTitle(`${statusDetails[currentStatus].icon} وضعیت اقتصادی: ${statusDetails[currentStatus].name}`)
+      .setDescription(`${asciiArt}\n\n${statusDetails[currentStatus].description}`)
+      .setThumbnail('https://img.icons8.com/fluency/96/economic-improvement.png')
       .setAuthor({
         name: interaction.user.username,
         iconURL: interaction.user.displayAvatarURL()
       })
       .setFooter({
-        text: 'CCoin Economic Status System',
+        text: `CCoin Economic Status System • ${new Date().toLocaleDateString('fa-IR')}`,
         iconURL: interaction.client.user?.displayAvatarURL()
       })
       .setTimestamp();
     
-    // اضافه کردن اطلاعات آماری
+    // اضافه کردن اطلاعات آماری با آیکون‌های متناسب
     embed.addFields(
-      { name: '💰 امتیاز اقتصادی', value: formatNumber(user.economyScore || 0), inline: true },
-      { name: '💱 گردش مالی', value: formatNumber(user.transactionVolume || 0), inline: true },
-      { name: '📊 سطح اقتصادی', value: `${user.economyLevel || 1}`, inline: true }
+      { 
+        name: `${getValueIcon(economicScore, 2000, 'money')} امتیاز اقتصادی`, 
+        value: formatNumber(economicScore), 
+        inline: true 
+      },
+      { 
+        name: `${getValueIcon(transactionVolume, 1000000, 'transaction')} گردش مالی`, 
+        value: formatNumber(transactionVolume), 
+        inline: true 
+      },
+      { 
+        name: `${getValueIcon(economyLevel, 4, 'level')} سطح اقتصادی`, 
+        value: `${economyLevel}/4`, 
+        inline: true 
+      }
     );
     
-    // اضافه کردن اطلاعات خوش‌حسابی در وام‌ها
+    // اضافه کردن اطلاعات دارایی کلی
+    embed.addFields({ 
+      name: '💰 دارایی و منابع مالی', 
+      value: `${getValueIcon(user.wallet, 10000, 'money')} کیف پول: ${formatNumber(user.wallet)} Ccoin\n` +
+             `${getValueIcon(user.bank, 100000, 'money')} حساب بانکی: ${formatNumber(user.bank)} Ccoin\n` +
+             `${getValueIcon(user.wallet + user.bank, 110000, 'money')} ثروت کل: ${formatNumber(user.wallet + user.bank)} Ccoin`,
+      inline: false 
+    });
+    
+    // اضافه کردن اطلاعات خوش‌حسابی در وام‌ها با طراحی بهتر
     if (user.loanRepaymentHistory) {
-      const punctualityRate = user.loanRepaymentHistory.punctualityRate || 0;
-      const punctualityBar = createProgressBar(punctualityRate);
+      // استفاده از نوار پیشرفت با استایل ایموجی برای نمایش بهتر
+      const punctualityBar = createProgressBar(punctualityRate, 7, true, 'emoji');
       
       embed.addFields({ 
         name: '💳 خوش‌حسابی در پرداخت وام‌ها', 
-        value: `${punctualityBar} (${punctualityRate}%)\n` +
-               `تعداد کل وام‌ها: ${user.loanRepaymentHistory.totalLoans || 0}\n` +
-               `پرداخت به موقع: ${user.loanRepaymentHistory.onTimePayments || 0}\n` +
-               `پرداخت با تأخیر: ${user.loanRepaymentHistory.latePayments || 0}`,
+        value: `${punctualityBar}\n` +
+               `📊 آمار وام‌ها: ${user.loanRepaymentHistory.totalLoans || 0} وام دریافتی\n` +
+               `✅ پرداخت به موقع: ${user.loanRepaymentHistory.onTimePayments || 0} مورد\n` +
+               `⏰ پرداخت با تأخیر: ${user.loanRepaymentHistory.latePayments || 0} مورد`,
         inline: false 
       });
     }
     
-    // اضافه کردن اطلاعات فعالیت شغلی
+    // اضافه کردن اطلاعات فعالیت شغلی با فرمت بهتر
     if (user.jobActivity) {
-      embed.addFields({ 
-        name: '👷 فعالیت‌های شغلی', 
-        value: `تعداد کارهای انجام شده: ${user.jobActivity.totalTasksCompleted || 0}\n` +
-               `درآمد کل: ${formatNumber(user.jobActivity.totalJobEarnings || 0)} CCoin\n` +
-               `تعداد شغل‌های داشته شده: ${user.jobActivity.totalJobsHeld || 0}`,
-        inline: false 
-      });
-    }
-    
-    // افزودن بخش پیشرفت به سطح بعدی اگر در بالاترین سطح نباشد
-    if (nextLevelProgress.nextStatus) {
-      const nextStatusName = statusDetails[nextLevelProgress.nextStatus].name;
-      const nextStatusEmoji = statusDetails[nextLevelProgress.nextStatus].emoji;
+      // استفاده از نوار پیشرفت و ایموجی‌های مناسب
+      const jobProgressBar = createProgressBar((tasksCompleted / 100) * 100, 7, true, 'colorful');
       
       embed.addFields({ 
-        name: `🔼 پیشرفت به سطح بعدی: ${nextStatusEmoji} ${nextStatusName}`, 
-        value: `امتیاز اقتصادی: ${createProgressBar(nextLevelProgress.scoreProgress.percentage)} (${nextLevelProgress.scoreProgress.current}/${nextLevelProgress.scoreProgress.required})\n` +
-               `گردش مالی: ${createProgressBar(nextLevelProgress.transactionProgress.percentage)} (${formatNumber(nextLevelProgress.transactionProgress.current)}/${formatNumber(nextLevelProgress.transactionProgress.required)})\n` +
-               `خوش‌حسابی: ${createProgressBar(nextLevelProgress.punctualityProgress.percentage)} (${nextLevelProgress.punctualityProgress.current}%/${nextLevelProgress.punctualityProgress.required}%)\n` +
-               `کارهای انجام شده: ${createProgressBar(nextLevelProgress.tasksProgress.percentage)} (${nextLevelProgress.tasksProgress.current}/${nextLevelProgress.tasksProgress.required})`,
+        name: '👷 فعالیت‌های شغلی و کسب درآمد', 
+        value: `${jobProgressBar}\n` +
+               `📋 کارهای انجام شده: ${tasksCompleted} مورد\n` +
+               `💵 درآمد کل: ${formatNumber(jobEarnings)} Ccoin\n` +
+               `👔 تعداد شغل‌ها: ${totalJobs} شغل مختلف`,
+        inline: false 
+      });
+    }
+    
+    // افزودن بخش پیشرفت به سطح بعدی با طراحی زیباتر
+    if (nextLevelProgress.nextStatus) {
+      const nextStatusName = statusDetails[nextLevelProgress.nextStatus].name;
+      const nextStatusIcon = statusDetails[nextLevelProgress.nextStatus].icon;
+      
+      // استفاده از استایل‌های مختلف برای هر نوار پیشرفت
+      const scoreBar = createProgressBar(nextLevelProgress.scoreProgress.percentage, 7, true, 'elegant');
+      const transactionBar = createProgressBar(nextLevelProgress.transactionProgress.percentage, 7, true, 'elegant');
+      const punctualityBar = createProgressBar(nextLevelProgress.punctualityProgress.percentage, 7, true, 'elegant');  
+      const tasksBar = createProgressBar(nextLevelProgress.tasksProgress.percentage, 7, true, 'elegant');
+      
+      embed.addFields({ 
+        name: `🔼 پیشرفت به سطح بعدی: ${nextStatusIcon} ${nextStatusName}`, 
+        value: `💰 امتیاز اقتصادی:\n${scoreBar}\n(${nextLevelProgress.scoreProgress.current}/${nextLevelProgress.scoreProgress.required})\n\n` +
+               `💱 گردش مالی:\n${transactionBar}\n(${formatNumber(nextLevelProgress.transactionProgress.current)}/${formatNumber(nextLevelProgress.transactionProgress.required)})\n\n` +
+               `💳 خوش‌حسابی:\n${punctualityBar}\n(${nextLevelProgress.punctualityProgress.current}%/${nextLevelProgress.punctualityProgress.required}%)\n\n` +
+               `👷 کارهای انجام شده:\n${tasksBar}\n(${nextLevelProgress.tasksProgress.current}/${nextLevelProgress.tasksProgress.required})`,
         inline: false 
       });
     } else {
       // پیام برای کاربرانی که در بالاترین سطح هستند
       embed.addFields({ 
         name: '🏆 تبریک!', 
-        value: 'شما به بالاترین سطح اقتصادی دست یافته‌اید!',
+        value: '```\n🌟 شما به بالاترین سطح اقتصادی دست یافته‌اید! 🌟\n```\n' +
+               '💎 از تمام مزایای ویژه سطح ثروتمند بهره‌مند شوید!\n' +
+               '👑 نام شما در میان ثروتمندترین‌های سرور ثبت شده است.',
         inline: false 
       });
     }
@@ -226,110 +275,148 @@ export async function economicStatusDetail(
     // تعیین وضعیت اقتصادی فعلی کاربر
     const currentStatus = (user.economyStatus as EconomicStatus) || EconomicStatus.BEGINNER;
     
+    // اطلاعات کمّی کاربر
+    const economicScore = user.economyScore || 0;
+    const transactionVolume = user.transactionVolume || 0;
+    const economyLevel = user.economyLevel || 1;
+    const punctualityRate = user.loanRepaymentHistory?.punctualityRate || 0;
+    const tasksCompleted = user.jobActivity?.totalTasksCompleted || 0;
+    const jobEarnings = user.jobActivity?.totalJobEarnings || 0;
+    
     // تنظیمات رنگ و نماد برای هر سطح
     const statusDetails = {
       [EconomicStatus.BEGINNER]: { 
         color: '#4CAF50', 
         emoji: '🟢',
-        name: 'تازه‌کار'
+        icon: '🔰',
+        name: 'تازه‌کار',
+        description: 'شما در ابتدای مسیر اقتصادی خود هستید.'
       },
       [EconomicStatus.INTERMEDIATE]: { 
         color: '#FFC107', 
         emoji: '🟡',
-        name: 'متوسط'
+        icon: '🥈',
+        name: 'متوسط',
+        description: 'شما تجربه خوبی در فعالیت‌های اقتصادی کسب کرده‌اید.'
       },
       [EconomicStatus.PROFESSIONAL]: { 
         color: '#FF9800', 
         emoji: '🟠',
-        name: 'حرفه‌ای'
+        icon: '🥇',
+        name: 'حرفه‌ای',
+        description: 'شما یک متخصص اقتصادی با تجربه هستید.'
       },
       [EconomicStatus.WEALTHY]: { 
         color: '#2196F3', 
         emoji: '💎',
-        name: 'ثروتمند'
+        icon: '👑',
+        name: 'ثروتمند',
+        description: 'شما به بالاترین سطح اقتصادی دست یافته‌اید!'
       }
     };
     
-    // توضیحات مزایای هر سطح
+    // توضیحات مزایای هر سطح - با طراحی بهتر و ایموجی‌های زیباتر
     const benefits = {
       [EconomicStatus.BEGINNER]: [
-        '💰 سقف تراکنش کیف پول: ۱,۰۰۰ Ccoin',
-        '💹 سود بانکی: ۱٪',
+        '💵 سقف تراکنش کیف پول: ۱,۰۰۰ Ccoin',
+        '📈 سود بانکی: ۱٪ روزانه',
         '💳 سقف وام: ۵,۰۰۰ Ccoin',
-        '👷 دسترسی به شغل‌های پایه'
+        '👷 دسترسی به شغل‌های پایه',
+        '🔹 امکان خرید سهام (حداکثر ۳ سهم)'
       ],
       [EconomicStatus.INTERMEDIATE]: [
-        '💰 سقف تراکنش کیف پول: ۵,۰۰۰ Ccoin',
-        '💹 سود بانکی: ۳٪',
+        '💵 سقف تراکنش کیف پول: ۵,۰۰۰ Ccoin',
+        '📈 سود بانکی: ۳٪ روزانه',
         '💳 سقف وام: ۲۰,۰۰۰ Ccoin',
-        '👷 دسترسی به شغل‌های سطح متوسط'
+        '👷 دسترسی به شغل‌های سطح متوسط',
+        '🔹 امکان خرید سهام (حداکثر ۵ سهم)',
+        '🎰 امکان شرکت در قمارهای سطح متوسط'
       ],
       [EconomicStatus.PROFESSIONAL]: [
-        '💰 سقف تراکنش کیف پول: ۲۰,۰۰۰ Ccoin',
-        '💹 سود بانکی: ۵٪',
+        '💵 سقف تراکنش کیف پول: ۲۰,۰۰۰ Ccoin',
+        '📈 سود بانکی: ۵٪ روزانه',
         '💳 سقف وام: ۱۰۰,۰۰۰ Ccoin',
         '👷 دسترسی به شغل‌های سطح بالا',
+        '🔹 امکان خرید سهام (حداکثر ۱۰ سهم)',
+        '🎰 امکان شرکت در قمارهای سطح بالا',
         '🎖️ نقش ویژه: "Professional Trader"'
       ],
       [EconomicStatus.WEALTHY]: [
-        '💰 سقف تراکنش کیف پول: ۱۰۰,۰۰۰ Ccoin',
-        '💹 سود بانکی: ۱۰٪',
+        '💵 سقف تراکنش کیف پول: ۱۰۰,۰۰۰ Ccoin',
+        '📈 سود بانکی: ۱۰٪ روزانه',
         '💳 سقف وام: ۵۰۰,۰۰۰ Ccoin',
         '👷 دسترسی به تمام شغل‌ها',
+        '🔹 امکان خرید نامحدود سهام',
+        '🎰 امکان شرکت در تمامی قمارها',
         '🌟 نقش ویژه: "Wealthy Elite"',
-        '🏆 نشان اختصاصی کنار نام'
+        '🏆 نشان اختصاصی کنار نام',
+        '💎 دریافت ۱۰,۰۰۰ Ccoin هدیه هفتگی'
       ]
     };
     
-    // راهنمای ارتقا برای هر سطح
+    // راهنمای ارتقا برای هر سطح با فرمت بهتر
     const upgradeGuide = {
       [EconomicStatus.BEGINNER]: [
-        '🔄 انجام تراکنش‌های مالی منظم',
-        '💸 پرداخت به موقع وام‌ها',
-        '👨‍💼 انجام کارهای شغلی روزانه',
-        '📊 سرمایه‌گذاری در بازار سهام',
-        '🏦 استفاده از خدمات بانکی'
+        '💱 انجام تراکنش‌های مالی منظم (حداقل ۱۰,۰۰۰ Ccoin گردش مالی)',
+        '💸 پرداخت به موقع وام‌ها (حداقل ۶۰٪ خوش‌حسابی)',
+        '👨‍💼 انجام کارهای شغلی روزانه (حداقل ۱۰ کار)',
+        '📊 سرمایه‌گذاری در بازار سهام برای افزایش امتیاز اقتصادی',
+        '🏦 استفاده از خدمات بانکی برای سود بیشتر'
       ],
       [EconomicStatus.INTERMEDIATE]: [
-        '📈 افزایش حجم معاملات سهام',
-        '💳 دریافت و بازپرداخت وام‌های بزرگتر',
-        '👔 ارتقا به شغل‌های پردرآمدتر',
-        '🤝 انجام معاملات تجاری با سایر کاربران',
-        '🏭 سرمایه‌گذاری در پروژه‌های کلان'
+        '📈 افزایش حجم معاملات سهام (حداقل ۱۰۰,۰۰۰ Ccoin گردش مالی)',
+        '💳 دریافت و بازپرداخت وام‌های بزرگتر (حداقل ۸۰٪ خوش‌حسابی)',
+        '👔 ارتقا به شغل‌های پردرآمدتر (حداقل ۵۰ کار انجام شده)',
+        '🤝 انجام معاملات تجاری با سایر کاربران برای افزایش گردش مالی',
+        '🏭 سرمایه‌گذاری در پروژه‌های کلان و افزایش امتیاز اقتصادی به ۵۰۰+'
       ],
       [EconomicStatus.PROFESSIONAL]: [
-        '💎 خرید و فروش حجم بالای دارایی‌های باارزش',
+        '💎 خرید و فروش حجم بالای دارایی‌ها (حداقل ۱,۰۰۰,۰۰۰ Ccoin گردش مالی)',
+        '📊 معاملات سهام با حجم بالا برای کسب امتیاز اقتصادی ۲,۰۰۰+',
         '🌐 گسترش شبکه تجاری با کاربران سطح بالا',
-        '💰 ایجاد فرصت‌های سرمایه‌گذاری برای دیگران',
-        '🏢 مشارکت در پروژه‌های اقتصادی بزرگ',
-        '📊 معاملات سهام با حجم بالا و سود مطمئن'
+        '✨ بازپرداخت سریع وام‌ها (حداقل ۹۵٪ خوش‌حسابی)',
+        '👨‍💼 تکمیل حداقل ۲۰۰ کار شغلی برای رسیدن به سطح ثروتمندی'
       ],
       [EconomicStatus.WEALTHY]: [
-        '🏆 شما به بالاترین سطح اقتصادی رسیده‌اید!',
-        '🌟 از مزایای ویژه این سطح لذت ببرید',
-        '🤝 به دیگران در مسیر پیشرفت کمک کنید'
+        '🏆 شما به بالاترین سطح اقتصادی دست یافته‌اید!',
+        '✨ از مزایای ویژه و منحصر به فرد این سطح لذت ببرید',
+        '🤝 به دیگران در مسیر پیشرفت اقتصادی کمک کنید',
+        '💎 ثروت خود را حفظ کنید تا در این سطح باقی بمانید'
       ]
     };
     
-    // ایجاد Embed جزئیات
+    // اضافه کردن یک تصویر زیبا با اسکی آرت
+    const asciiArt = getThemeAsciiArt('bank');
+    
+    // ایجاد Embed جزئیات با طراحی جدید
     const embed = new EmbedBuilder()
       .setColor(statusDetails[currentStatus].color as ColorResolvable)
-      .setTitle(`${statusDetails[currentStatus].emoji} جزئیات وضعیت اقتصادی: ${statusDetails[currentStatus].name}`)
-      .setDescription('در این بخش می‌توانید مزایای سطح فعلی و راهنمای ارتقا به سطح بعدی را مشاهده کنید.')
-      .setThumbnail('https://img.icons8.com/fluency/48/business-report.png')
+      .setTitle(`${statusDetails[currentStatus].icon} جزئیات وضعیت اقتصادی: ${statusDetails[currentStatus].name}`)
+      .setDescription(`${asciiArt}\n\nدر این بخش می‌توانید مزایای سطح فعلی و راهنمای ارتقا به سطح بعدی را مشاهده کنید.`)
+      .setThumbnail('https://img.icons8.com/fluency/96/economic-development.png')
       .setAuthor({
         name: interaction.user.username,
         iconURL: interaction.user.displayAvatarURL()
       })
       .setFooter({
-        text: 'CCoin Economic Status System',
+        text: `CCoin Economic Status System • ${new Date().toLocaleDateString('fa-IR')}`,
         iconURL: interaction.client.user?.displayAvatarURL()
       })
       .setTimestamp();
     
-    // اضافه کردن بخش مزایای فعلی
+    // اضافه کردن خلاصه وضعیت اقتصادی
     embed.addFields({
-      name: '🎁 مزایای سطح فعلی',
+      name: '📊 خلاصه وضعیت اقتصادی',
+      value: `${getValueIcon(economicScore, 2000, 'money')} امتیاز اقتصادی: ${formatNumber(economicScore)}\n` +
+             `${getValueIcon(transactionVolume, 1000000, 'transaction')} گردش مالی: ${formatNumber(transactionVolume)}\n` +
+             `${getValueIcon(economyLevel, 4, 'level')} سطح اقتصادی: ${economyLevel}/4\n` +
+             `${getValueIcon(punctualityRate, 100, 'rating')} خوش‌حسابی: ${punctualityRate}%`,
+      inline: false
+    });
+    
+    // اضافه کردن بخش مزایای سطح فعلی با فرمت بهتر
+    embed.addFields({
+      name: `🎁 مزایای سطح ${statusDetails[currentStatus].emoji} ${statusDetails[currentStatus].name}`,
       value: benefits[currentStatus].join('\n'),
       inline: false
     });
