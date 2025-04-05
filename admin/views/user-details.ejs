@@ -1,0 +1,419 @@
+<!-- User Details Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>جزئیات کاربر <%= user.username %></h1>
+  
+  <div>
+    <a href="/admin/users/<%= user.userId %>/edit" class="btn btn-primary">
+      <i class="fas fa-edit"></i> ویرایش
+    </a>
+    
+    <% if (user.isBanned) { %>
+      <a href="/admin/users/<%= user.userId %>/unban" class="btn btn-primary" data-confirm="آیا از رفع مسدودیت این کاربر اطمینان دارید؟">
+        <i class="fas fa-unlock"></i> رفع مسدودیت
+      </a>
+    <% } else { %>
+      <a href="/admin/users/<%= user.userId %>/ban" class="btn btn-danger" data-confirm="آیا از مسدود کردن این کاربر اطمینان دارید؟">
+        <i class="fas fa-ban"></i> مسدودیت
+      </a>
+    <% } %>
+    
+    <a href="/admin/users" class="btn">
+      <i class="fas fa-arrow-right"></i> بازگشت
+    </a>
+  </div>
+</div>
+
+<!-- User Overview -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h3 class="card-title">اطلاعات کلی</h3>
+  </div>
+  
+  <div class="grid-3">
+    <div>
+      <p><strong>شناسه کاربر:</strong> <%= user.userId %></p>
+      <p><strong>نام کاربری:</strong> <%= user.username %></p>
+      <p><strong>وضعیت:</strong> 
+        <% if (user.isBanned) { %>
+          <span class="badge badge-red">مسدود شده</span>
+        <% } else { %>
+          <span class="badge badge-green">فعال</span>
+        <% } %>
+      </p>
+    </div>
+    
+    <div>
+      <p><strong>موجودی کیف پول:</strong> <%= user.wallet.toLocaleString() %> سکه</p>
+      <p><strong>موجودی بانک:</strong> <%= user.bank.toLocaleString() %> سکه</p>
+      <p><strong>مجموع دارایی:</strong> <%= (user.wallet + user.bank).toLocaleString() %> سکه</p>
+    </div>
+    
+    <div>
+      <p><strong>سطح:</strong> <%= user.level || 0 %></p>
+      <p><strong>تجربه:</strong> <%= user.xp || 0 %></p>
+      <p><strong>تاریخ عضویت:</strong> <%= user.joinDate ? new Date(user.joinDate).toLocaleDateString('fa-IR') : 'نامشخص' %></p>
+    </div>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="card mb-4">
+  <div class="card-header">
+    <ul class="nav nav-tabs">
+      <li class="nav-item">
+        <a class="nav-link active" data-toggle="tab" href="#inventory">انبار</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" data-toggle="tab" href="#transactions">تراکنش‌ها</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" data-toggle="tab" href="#game-stats">آمار بازی‌ها</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" data-toggle="tab" href="#activity">فعالیت‌ها</a>
+      </li>
+    </ul>
+  </div>
+  
+  <div class="tab-content">
+    <!-- Inventory Tab -->
+    <div class="tab-pane active" id="inventory">
+      <% if (inventory && inventory.length > 0) { %>
+        <div class="table-container">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>نام آیتم</th>
+                <th>تعداد</th>
+                <th>توضیحات</th>
+                <th>دسته</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% inventory.forEach(item => { %>
+                <tr>
+                  <td><%= item.name %></td>
+                  <td><%= item.quantity %></td>
+                  <td><%= item.description %></td>
+                  <td><%= item.category %></td>
+                  <td>
+                    <form action="/admin/users/<%= user.userId %>/remove-item" method="POST" class="d-inline">
+                      <input type="hidden" name="itemId" value="<%= item.id %>">
+                      <button type="submit" class="btn btn-sm btn-danger" data-confirm="آیا از حذف این آیتم اطمینان دارید؟">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      <% } else { %>
+        <div class="alert alert-info m-3">
+          این کاربر هیچ آیتمی در انبار خود ندارد.
+        </div>
+      <% } %>
+      
+      <!-- Add Item Form -->
+      <div class="card-footer">
+        <h4>افزودن آیتم</h4>
+        <form action="/admin/users/add-item" method="POST" class="d-flex align-items-end">
+          <input type="hidden" name="userId" value="<%= user.userId %>">
+          
+          <div class="form-group" style="flex: 2;">
+            <label for="itemId" class="form-label">آیتم</label>
+            <select id="itemId" name="itemId" class="form-select" required>
+              <option value="">انتخاب کنید...</option>
+              <% items.forEach(item => { %>
+                <option value="<%= item.id %>"><%= item.name %></option>
+              <% }); %>
+            </select>
+          </div>
+          
+          <div class="form-group" style="flex: 1; margin-right: 10px;">
+            <label for="quantity" class="form-label">تعداد</label>
+            <input type="number" id="quantity" name="quantity" class="form-control" required min="1" value="1">
+          </div>
+          
+          <div style="margin-right: 10px;">
+            <button type="submit" class="btn btn-primary">افزودن</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    
+    <!-- Transactions Tab -->
+    <div class="tab-pane" id="transactions">
+      <% if (transactions && transactions.length > 0) { %>
+        <div class="table-container">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>تاریخ</th>
+                <th>مقدار</th>
+                <th>نوع</th>
+                <th>توضیحات</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% transactions.forEach(transaction => { %>
+                <tr>
+                  <td><%= new Date(transaction.timestamp).toLocaleString('fa-IR') %></td>
+                  <td class="<%= transaction.amount >= 0 ? 'text-green' : 'text-red' %>">
+                    <%= transaction.amount >= 0 ? '+' : '' %><%= transaction.amount.toLocaleString() %>
+                  </td>
+                  <td>
+                    <span class="badge <%= 
+                      transaction.type === 'job' ? 'badge-green' : 
+                      transaction.type === 'game' ? 'badge-blue' : 
+                      transaction.type === 'shop' ? 'badge-yellow' : 
+                      transaction.type === 'admin' ? 'badge-red' : 'badge-secondary'
+                    %>">
+                      <%= transaction.type %>
+                    </span>
+                  </td>
+                  <td><%= transaction.description %></td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      <% } else { %>
+        <div class="alert alert-info m-3">
+          این کاربر هیچ تراکنشی ندارد.
+        </div>
+      <% } %>
+    </div>
+    
+    <!-- Game Stats Tab -->
+    <div class="tab-pane" id="game-stats">
+      <div class="stats-container">
+        <div class="stat-card">
+          <div class="stat-icon">
+            <i class="fas fa-gamepad"></i>
+          </div>
+          <div class="stat-value"><%= gameStats.totalGames %></div>
+          <div class="stat-label">کل بازی‌ها</div>
+        </div>
+        
+        <div class="stat-card stat-card-green">
+          <div class="stat-icon">
+            <i class="fas fa-trophy"></i>
+          </div>
+          <div class="stat-value"><%= gameStats.wins %></div>
+          <div class="stat-label">برد</div>
+        </div>
+        
+        <div class="stat-card stat-card-red">
+          <div class="stat-icon">
+            <i class="fas fa-times-circle"></i>
+          </div>
+          <div class="stat-value"><%= gameStats.losses %></div>
+          <div class="stat-label">باخت</div>
+        </div>
+        
+        <div class="stat-card stat-card-blue">
+          <div class="stat-icon">
+            <i class="fas fa-percentage"></i>
+          </div>
+          <div class="stat-value"><%= gameStats.winRate %>%</div>
+          <div class="stat-label">نرخ برد</div>
+        </div>
+      </div>
+      
+      <div class="grid-2 mt-4">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">جزئیات مالی بازی‌ها</h3>
+          </div>
+          
+          <div class="p-3">
+            <p><strong>مجموع سکه‌های برد:</strong> <%= gameStats.totalCoinsWon.toLocaleString() %> سکه</p>
+            <p><strong>مجموع سکه‌های باخت:</strong> <%= gameStats.totalCoinsLost.toLocaleString() %> سکه</p>
+            <p><strong>سود خالص:</strong> <span class="<%= gameStats.netProfit >= 0 ? 'text-green' : 'text-red' %>"><%= gameStats.netProfit.toLocaleString() %> سکه</span></p>
+            <p><strong>بازی محبوب:</strong> <%= gameStats.favoriteGame %></p>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">بازی‌ها بر اساس نوع</h3>
+          </div>
+          
+          <div style="height: 250px;">
+            <canvas id="gameTypesChart" data-chart="pie" 
+              data-labels="<%= JSON.stringify(Object.keys(gameStats.gamesByType)) %>"
+              data-datasets="<%= JSON.stringify([{data: Object.values(gameStats.gamesByType)}]) %>"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Activity Tab -->
+    <div class="tab-pane" id="activity">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">آمار فعالیت</h3>
+          </div>
+          
+          <div class="p-3">
+            <p><strong>کل دستورات استفاده شده:</strong> <%= activityStats.totalCommands %></p>
+            <p><strong>دریافت جایزه روزانه:</strong> <%= activityStats.dailyClaims %> بار</p>
+            <p><strong>شغل‌های انجام شده:</strong> <%= activityStats.jobsCompleted %> بار</p>
+            <p><strong>ماموریت‌های تکمیل شده:</strong> <%= activityStats.questsCompleted %> عدد</p>
+            <p><strong>خریدهای فروشگاه:</strong> <%= activityStats.shopPurchases %> بار</p>
+            <p><strong>آیتم‌های استفاده شده:</strong> <%= activityStats.itemsUsed %> عدد</p>
+            <p><strong>پیام‌های کلن:</strong> <%= activityStats.messagesInClan %> عدد</p>
+            <p><strong>انتقال وجه ارسالی:</strong> <%= activityStats.transfersSent %> بار</p>
+            <p><strong>انتقال وجه دریافتی:</strong> <%= activityStats.transfersReceived %> بار</p>
+            <p><strong>آخرین فعالیت:</strong> <%= activityStats.lastActive %></p>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">عملیات سریع</h3>
+          </div>
+          
+          <div class="p-3">
+            <!-- Add Coins Form -->
+            <form action="/admin/users/add-coins" method="POST" class="mb-4">
+              <h4>افزودن سکه</h4>
+              <input type="hidden" name="userId" value="<%= user.userId %>">
+              
+              <div class="d-flex" style="gap: 10px;">
+                <div class="form-group" style="flex: 1;">
+                  <input type="number" name="amount" class="form-control" required min="1" placeholder="مقدار">
+                </div>
+                
+                <div class="form-group" style="flex: 2;">
+                  <input type="text" name="reason" class="form-control" required placeholder="دلیل">
+                </div>
+                
+                <button type="submit" class="btn btn-primary">افزودن</button>
+              </div>
+            </form>
+            
+            <!-- Remove Coins Form -->
+            <form action="/admin/users/remove-coins" method="POST" class="mb-4">
+              <h4>کسر سکه</h4>
+              <input type="hidden" name="userId" value="<%= user.userId %>">
+              
+              <div class="d-flex" style="gap: 10px;">
+                <div class="form-group" style="flex: 1;">
+                  <input type="number" name="amount" class="form-control" required min="1" placeholder="مقدار">
+                </div>
+                
+                <div class="form-group" style="flex: 2;">
+                  <input type="text" name="reason" class="form-control" required placeholder="دلیل">
+                </div>
+                
+                <button type="submit" class="btn btn-danger">کسر</button>
+              </div>
+            </form>
+            
+            <!-- Reset User Button -->
+            <button type="button" class="btn btn-danger" data-modal="resetUserModal">
+              <i class="fas fa-exclamation-triangle"></i> ریست کاربر
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Reset User Modal -->
+<div id="resetUserModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>ریست کاربر</h3>
+      <button type="button" class="modal-close">&times;</button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle"></i> هشدار: این عملیات غیرقابل بازگشت است!
+      </div>
+      
+      <form action="/admin/users/reset" method="POST">
+        <input type="hidden" name="userId" value="<%= user.userId %>">
+        
+        <div class="form-group">
+          <label class="form-label">گزینه‌های ریست</label>
+          
+          <div class="checkbox-group">
+            <label>
+              <input type="checkbox" name="resetWallet" value="1"> ریست کیف پول
+            </label>
+          </div>
+          
+          <div class="checkbox-group">
+            <label>
+              <input type="checkbox" name="resetBank" value="1"> ریست حساب بانکی
+            </label>
+          </div>
+          
+          <div class="checkbox-group">
+            <label>
+              <input type="checkbox" name="resetInventory" value="1"> ریست انبار
+            </label>
+          </div>
+          
+          <div class="checkbox-group">
+            <label>
+              <input type="checkbox" name="resetLevel" value="1"> ریست سطح
+            </label>
+          </div>
+          
+          <div class="checkbox-group">
+            <label>
+              <input type="checkbox" name="resetStats" value="1"> ریست آمار
+            </label>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="resetReason" class="form-label">دلیل</label>
+          <input type="text" id="resetReason" name="reason" class="form-control" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="confirmReset" class="form-label">تأیید</label>
+          <input type="text" id="confirmReset" name="confirm" class="form-control" required placeholder="RESET را تایپ کنید">
+        </div>
+        
+        <div class="form-group">
+          <button type="submit" class="btn btn-danger" data-confirm="آیا از ریست کردن این کاربر اطمینان دارید؟ این عملیات غیرقابل بازگشت است!">ریست کاربر</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  // اسکریپت‌های مختص این صفحه
+  document.addEventListener('DOMContentLoaded', function() {
+    // تنظیم تب‌ها
+    const tabLinks = document.querySelectorAll('[data-toggle="tab"]');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+    
+    tabLinks.forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // غیرفعال کردن همه تب‌ها
+        tabLinks.forEach(l => l.classList.remove('active'));
+        tabPanes.forEach(p => p.classList.remove('active'));
+        
+        // فعال کردن تب انتخابی
+        this.classList.add('active');
+        const target = this.getAttribute('href').substring(1);
+        document.getElementById(target).classList.add('active');
+      });
+    });
+  });
+</script>

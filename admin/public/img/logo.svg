@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="60" cy="60" r="58" fill="#1E1E1E" stroke="#00FF9D" stroke-width="4"/>
+  
+  <!-- C letter -->
+  <path d="M45 40C37.268 40 31 46.268 31 54V68C31 75.732 37.268 82 45 82H53C60.732 82 67 75.732 67 68" stroke="#00FF9D" stroke-width="8" stroke-linecap="round"/>
+  
+  <!-- C letter inner -->
+  <path d="M45 40C37.268 40 31 46.268 31 54V68C31 75.732 37.268 82 45 82H53C60.732 82 67 75.732 67 68" stroke="#1E1E1E" stroke-width="4" stroke-linecap="round"/>
+  
+  <!-- Coin circles -->
+  <circle cx="75" cy="45" r="15" fill="#1E1E1E" stroke="#00FF9D" stroke-width="4"/>
+  <circle cx="85" cy="75" r="15" fill="#1E1E1E" stroke="#00FF9D" stroke-width="4"/>
+  
+  <!-- Coin sparkles -->
+  <path d="M75 35V55" stroke="#00FF9D" stroke-width="2" stroke-linecap="round"/>
+  <path d="M65 45H85" stroke="#00FF9D" stroke-width="2" stroke-linecap="round"/>
+  
+  <path d="M85 65V85" stroke="#00FF9D" stroke-width="2" stroke-linecap="round"/>
+  <path d="M75 75H95" stroke="#00FF9D" stroke-width="2" stroke-linecap="round"/>
+</svg>

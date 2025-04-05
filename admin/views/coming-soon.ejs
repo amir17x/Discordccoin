@@ -1,0 +1,61 @@
+<div class="coming-soon-container">
+    <div class="coming-soon-icon">
+        <i class="fas fa-tools"></i>
+    </div>
+    <h1><%= title || 'در دست ساخت' %></h1>
+    <p><%= message || 'این بخش در حال توسعه است و به زودی در دسترس قرار می‌گیرد.' %></p>
+    <div class="coming-soon-actions">
+        <a href="/admin/dashboard" class="btn btn-primary">
+            <i class="fas fa-home"></i>
+            بازگشت به داشبورد
+        </a>
+    </div>
+</div>
+
+<style>
+    .coming-soon-container {
+        text-align: center;
+        padding: 5rem 1rem;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .coming-soon-icon {
+        font-size: 5rem;
+        color: var(--primary-color);
+        margin-bottom: 2rem;
+        animation: pulse 1.5s infinite;
+    }
+    
+    .coming-soon-container h1 {
+        font-size: 2.5rem;
+        margin-bottom: 1.5rem;
+        color: var(--text-title);
+    }
+    
+    .coming-soon-container p {
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+        color: var(--text-muted);
+        line-height: 1.6;
+    }
+    
+    .coming-soon-actions {
+        margin-top: 2rem;
+    }
+    
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+            opacity: 1;
+        }
+        50% {
+            transform: scale(1.1);
+            opacity: 0.8;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+</style>

@@ -1,0 +1,79 @@
+<!-- User Edit Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>ویرایش کاربر <%= user.username %></h1>
+  
+  <div>
+    <a href="/admin/users/<%= user.userId %>" class="btn">
+      <i class="fas fa-arrow-right"></i> بازگشت
+    </a>
+  </div>
+</div>
+
+<!-- Edit User Form -->
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">ویرایش اطلاعات</h3>
+  </div>
+  
+  <form action="/admin/users/<%= user.userId %>/edit" method="POST">
+    <div class="grid-2">
+      <div class="form-group">
+        <label for="userId" class="form-label">شناسه کاربر</label>
+        <input type="text" id="userId" class="form-control" value="<%= user.userId %>" disabled>
+      </div>
+      
+      <div class="form-group">
+        <label for="username" class="form-label">نام کاربری</label>
+        <input type="text" id="username" class="form-control" value="<%= user.username %>" disabled>
+      </div>
+      
+      <div class="form-group">
+        <label for="wallet" class="form-label">موجودی کیف پول</label>
+        <input type="number" id="wallet" name="wallet" class="form-control" value="<%= user.wallet %>" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="bank" class="form-label">موجودی بانک</label>
+        <input type="number" id="bank" name="bank" class="form-control" value="<%= user.bank %>" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="level" class="form-label">سطح</label>
+        <input type="number" id="level" name="level" class="form-control" value="<%= user.level || 0 %>" min="0">
+      </div>
+      
+      <div class="form-group">
+        <label for="xp" class="form-label">تجربه</label>
+        <input type="number" id="xp" name="xp" class="form-control" value="<%= user.xp || 0 %>" min="0">
+      </div>
+      
+      <div class="form-group">
+        <label for="isBanned" class="form-label">مسدودیت</label>
+        <div class="form-check">
+          <input type="checkbox" id="isBanned" name="isBanned" class="form-check-input" <%= user.isBanned ? 'checked' : '' %>>
+          <label class="form-check-label" for="isBanned">کاربر مسدود شود</label>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card-footer">
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-save"></i> ذخیره تغییرات
+      </button>
+      
+      <a href="/admin/users/<%= user.userId %>" class="btn">انصراف</a>
+    </div>
+  </form>
+</div>
+
+<!-- Warning Card -->
+<div class="card mt-4">
+  <div class="card-header bg-danger text-white">
+    <h3 class="card-title">هشدار</h3>
+  </div>
+  
+  <div class="card-body">
+    <p><i class="fas fa-exclamation-triangle"></i> تغییرات در این صفحه به طور مستقیم در دیتابیس اعمال می‌شوند. لطفاً با دقت عمل کنید.</p>
+    <p>برای ریست کردن کاربر یا انجام عملیات حساس‌تر از صفحه جزئیات کاربر استفاده کنید.</p>
+  </div>
+</div>

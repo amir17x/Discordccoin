@@ -132,31 +132,35 @@ app.use((req, res, next) => {
     log("Continuing without Discord bot functionality", "warn");
   }
 
-  // راه‌اندازی پنل ادمین - غیرفعال شده به صورت موقت
-  // به درخواست کاربر، ارتباط بین ربات دیسکورد و پنل ادمین قطع شده است
-  log("Admin panel temporarily disabled", "info");
-  
-  // const setupAdminPanel = await import("./admin").then(module => module.setupAdminPanel);
-  
-  // صفحه موقت ادمین
-  app.get('/admin', (_req, res) => {
-    res.send(`
-      <html>
-        <head>
-          <title>Ccoin Admin Panel</title>
-          <style>
-            body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-            h1 { color: #333; text-align: center; }
-            .notice { background: #f8f9fa; border-left: 4px solid #e74c3c; padding: 15px; margin: 20px 0; }
-          </style>
-        </head>
-        <body>
-          <h1>Ccoin Admin Panel</h1>
-          <div class="notice">پنل ادمین به صورت موقت غیرفعال شده است. بعداً مجدداً توسعه خواهد یافت.</div>
-        </body>
-      </html>
-    `);
-  });
+  // راه‌اندازی پنل ادمین جدید
+  try {
+    const { setupAdminPanel } = await import("../admin/index");
+    setupAdminPanel(app);
+    log("Admin panel initialized successfully", "success");
+  } catch (adminError) {
+    log(`Error initializing admin panel: ${adminError}`, "error");
+    
+    // صفحه موقت ادمین در صورت خطا
+    app.get('/admin', (_req, res) => {
+      res.send(`
+        <html>
+          <head>
+            <title>Ccoin Admin Panel</title>
+            <style>
+              body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+              h1 { color: #333; text-align: center; }
+              .notice { background: #f8f9fa; border-left: 4px solid #e74c3c; padding: 15px; margin: 20px 0; }
+            </style>
+          </head>
+          <body>
+            <h1>Ccoin Admin Panel</h1>
+            <div class="notice">خطا در بارگذاری پنل ادمین. لطفاً با مدیر سیستم تماس بگیرید.</div>
+            <div class="notice">${adminError}</div>
+          </body>
+        </html>
+      `);
+    });
+  }
 
   const server = await registerRoutes(app);
 

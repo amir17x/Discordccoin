@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> | پنل مدیریت CCOIN</title>
+    
+    <!-- فونت‌ها -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- آیکون‌ها -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- استایل‌های اصلی -->
+    <link rel="stylesheet" href="/admin/public/css/style.css">
+    
+    <!-- استایل‌های اضافی -->
+    <% if (typeof styles !== 'undefined' && styles.length > 0) { %>
+        <% styles.forEach(function(style) { %>
+            <link rel="stylesheet" href="<%= style %>">
+        <% }); %>
+    <% } %>
+</head>
+<body>
+    <div class="admin-panel">
+        <!-- سایدبار -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <img src="/admin/public/img/ccoin-logo.png" alt="CCOIN" onerror="this.src='/admin/public/img/default-logo.png'">
+                    <h1>CCOIN</h1>
+                </div>
+                <button id="sidebarToggle" class="mobile-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            
+            <div class="sidebar-content">
+                <nav class="sidebar-nav">
+                    <ul>
+                        <li>
+                            <a href="/admin/dashboard" class="<%= currentPath.includes('/dashboard') ? 'active' : '' %>">
+                                <i class="fas fa-tachometer-alt"></i>
+                                <span>داشبورد</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/admin/users" class="<%= currentPath.includes('/users') ? 'active' : '' %>">
+                                <i class="fas fa-users"></i>
+                                <span>مدیریت کاربران</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/admin/economy" class="<%= currentPath.includes('/economy') ? 'active' : '' %>">
+                                <i class="fas fa-coins"></i>
+                                <span>مدیریت اقتصادی</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/admin/games" class="<%= currentPath.includes('/games') ? 'active' : '' %>">
+                                <i class="fas fa-gamepad"></i>
+                                <span>مدیریت بازی‌ها</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/admin/ai" class="<%= currentPath.includes('/ai') ? 'active' : '' %>">
+                                <i class="fas fa-robot"></i>
+                                <span>تنظیمات CCOIN AI</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/admin/events" class="<%= currentPath.includes('/events') ? 'active' : '' %>">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span>مدیریت رویدادها</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/admin/shop" class="<%= currentPath.includes('/shop') ? 'active' : '' %>">
+                                <i class="fas fa-store"></i>
+                                <span>مدیریت فروشگاه</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/admin/logs" class="<%= currentPath.includes('/logs') ? 'active' : '' %>">
+                                <i class="fas fa-history"></i>
+                                <span>لاگ‌ها و پشتیبان‌گیری</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/admin/settings" class="<%= currentPath.includes('/settings') ? 'active' : '' %>">
+                                <i class="fas fa-cog"></i>
+                                <span>تنظیمات سیستم</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+                
+                <div class="sidebar-footer">
+                    <form action="/admin/logout" method="POST">
+                        <button type="submit" class="logout-btn">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>خروج</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- محتوای اصلی -->
+        <main class="main-content">
+            <!-- هدر -->
+            <header class="header">
+                <div class="header-left">
+                    <button id="mobileSidebarToggle" class="mobile-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="globalSearch" placeholder="جستجو...">
+                    </div>
+                </div>
+                
+                <div class="header-right">
+                    <!-- اعلان‌ها -->
+                    <div class="notifications">
+                        <button class="notification-btn">
+                            <i class="fas fa-bell"></i>
+                            <span class="badge">3</span>
+                        </button>
+                        
+                        <div class="notification-dropdown">
+                            <div class="notification-header">
+                                <h3>اعلان‌ها</h3>
+                                <a href="/admin/notifications">نمایش همه</a>
+                            </div>
+                            
+                            <div class="notification-body">
+                                <div class="notification-item">
+                                    <div class="notification-icon bg-success">
+                                        <i class="fas fa-user-plus"></i>
+                                    </div>
+                                    <div class="notification-content">
+                                        <p>کاربر جدید ثبت‌نام کرد</p>
+                                        <small>10 دقیقه پیش</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="notification-item">
+                                    <div class="notification-icon bg-danger">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </div>
+                                    <div class="notification-content">
+                                        <p>خطا در پردازش تراکنش</p>
+                                        <small>30 دقیقه پیش</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="notification-item">
+                                    <div class="notification-icon bg-info">
+                                        <i class="fas fa-info-circle"></i>
+                                    </div>
+                                    <div class="notification-content">
+                                        <p>سیستم به‌روزرسانی شد</p>
+                                        <small>2 ساعت پیش</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- منوی کاربر -->
+                    <div class="user-menu">
+                        <button class="user-menu-btn">
+                            <div class="avatar">
+                                <img src="<%= user?.avatar || '/admin/public/img/default-avatar.png' %>" alt="<%= user?.displayName || 'کاربر' %>">
+                            </div>
+                            <span><%= user?.displayName || 'کاربر' %></span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        
+                        <div class="user-menu-dropdown">
+                            <a href="/admin/dashboard/profile">
+                                <i class="fas fa-user"></i>
+                                پروفایل من
+                            </a>
+                            <a href="/admin/dashboard/settings">
+                                <i class="fas fa-cog"></i>
+                                تنظیمات
+                            </a>
+                            <div class="divider"></div>
+                            <a href="/admin/logout" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                <i class="fas fa-sign-out-alt"></i>
+                                خروج
+                            </a>
+                            <form id="logout-form" action="/admin/logout" method="POST" style="display: none;"></form>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- محتوا -->
+            <div class="content">
+                <!-- پیام‌های فلش -->
+                <% if (success_msg && success_msg.length > 0) { %>
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i>
+                        <%= success_msg %>
+                    </div>
+                <% } %>
+                
+                <% if (error_msg && error_msg.length > 0) { %>
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <%= error_msg %>
+                    </div>
+                <% } %>
+                
+                <% if (info_msg && info_msg.length > 0) { %>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <%= info_msg %>
+                    </div>
+                <% } %>
+                
+                <% if (warning_msg && warning_msg.length > 0) { %>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <%= warning_msg %>
+                    </div>
+                <% } %>
+                
+                <!-- محتوای اصلی صفحه -->
+                <%- body %>
+            </div>
+            
+            <!-- فوتر -->
+            <footer class="footer">
+                <div>
+                    <span>&copy; <%= new Date().getFullYear() %> پنل مدیریت CCOIN</span>
+                </div>
+                <div>
+                    <span>نسخه 1.0.0</span>
+                </div>
+            </footer>
+        </main>
+    </div>
+    
+    <!-- اسکریپت‌های اصلی -->
+    <script src="/admin/public/js/admin.js"></script>
+    
+    <!-- اسکریپت‌های اضافی -->
+    <% if (typeof scripts !== 'undefined' && scripts.length > 0) { %>
+        <% scripts.forEach(function(script) { %>
+            <script src="<%= script %>"></script>
+        <% }); %>
+    <% } %>
+</body>
+</html>

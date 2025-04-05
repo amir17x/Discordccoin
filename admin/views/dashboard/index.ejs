@@ -1,0 +1,233 @@
+<h1>
+    <i class="fas fa-tachometer-alt"></i>
+    داشبورد
+</h1>
+
+<div class="stats-cards">
+    <!-- کارت آمار کاربران -->
+    <div class="stat-card">
+        <div class="stat-icon bg-primary">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="stat-content">
+            <h3><%= totalStats.usersCount || 0 %></h3>
+            <p>تعداد کاربران</p>
+            <div class="stat-footer">
+                <span class="stat-change increase">
+                    <i class="fas fa-arrow-up"></i>
+                    5% نسبت به ماه قبل
+                </span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- کارت آمار اقتصادی -->
+    <div class="stat-card">
+        <div class="stat-icon bg-success">
+            <i class="fas fa-coins"></i>
+        </div>
+        <div class="stat-content">
+            <h3><%= totalStats.totalCoins ? totalStats.totalCoins.toLocaleString() : 0 %></h3>
+            <p>مجموع سکه‌های سیستم</p>
+            <div class="stat-footer">
+                <span class="stat-change increase">
+                    <i class="fas fa-arrow-up"></i>
+                    10% نسبت به ماه قبل
+                </span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- کارت آمار بازی‌ها -->
+    <div class="stat-card">
+        <div class="stat-icon bg-warning">
+            <i class="fas fa-gamepad"></i>
+        </div>
+        <div class="stat-content">
+            <h3><%= totalStats.totalGamesPlayed ? totalStats.totalGamesPlayed.toLocaleString() : 0 %></h3>
+            <p>تعداد بازی‌های انجام شده</p>
+            <div class="stat-footer">
+                <span class="stat-change increase">
+                    <i class="fas fa-arrow-up"></i>
+                    8% نسبت به ماه قبل
+                </span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- کارت آمار هوش مصنوعی -->
+    <div class="stat-card">
+        <div class="stat-icon bg-info">
+            <i class="fas fa-robot"></i>
+        </div>
+        <div class="stat-content">
+            <h3><%= totalStats.totalAiQueries ? totalStats.totalAiQueries.toLocaleString() : 0 %></h3>
+            <p>تعداد درخواست‌های CCOIN AI</p>
+            <div class="stat-footer">
+                <span class="stat-change increase">
+                    <i class="fas fa-arrow-up"></i>
+                    15% نسبت به ماه قبل
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-charts">
+    <!-- نمودار فعالیت کاربران -->
+    <div class="chart-card">
+        <div class="chart-header">
+            <h3>فعالیت کاربران</h3>
+            <div class="chart-actions">
+                <button class="btn btn-sm">روزانه</button>
+                <button class="btn btn-sm">هفتگی</button>
+                <button class="btn btn-sm">ماهانه</button>
+            </div>
+        </div>
+        <div class="chart-body">
+            <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">
+                نمودار فعالیت کاربران
+            </div>
+        </div>
+    </div>
+    
+    <!-- نمودار اقتصادی -->
+    <div class="chart-card">
+        <div class="chart-header">
+            <h3>آمار اقتصادی</h3>
+            <div class="chart-actions">
+                <button class="btn btn-sm">سکه</button>
+                <button class="btn btn-sm">کریستال</button>
+                <button class="btn btn-sm">معاملات</button>
+            </div>
+        </div>
+        <div class="chart-body">
+            <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">
+                نمودار آمار اقتصادی
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="info-cards">
+    <!-- کاربران برتر -->
+    <div class="info-card">
+        <div class="info-card-header">
+            <h3>کاربران برتر</h3>
+            <a href="/admin/users" class="btn btn-sm">مشاهده همه</a>
+        </div>
+        <div class="info-card-body">
+            <ul class="top-users-list">
+                <% if (topUsers && topUsers.length > 0) { %>
+                    <% topUsers.forEach((user, index) => { %>
+                        <li class="top-user-item">
+                            <div class="top-user-rank"><%= index + 1 %></div>
+                            <div class="top-user-name"><%= user.displayName || user.username %></div>
+                            <div class="top-user-value"><%= user.coins.toLocaleString() %> سکه</div>
+                        </li>
+                    <% }); %>
+                <% } else { %>
+                    <li class="top-user-item">
+                        <div class="top-user-name">هیچ کاربری یافت نشد</div>
+                    </li>
+                <% } %>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- تراکنش‌های اخیر -->
+    <div class="info-card">
+        <div class="info-card-header">
+            <h3>تراکنش‌های اخیر</h3>
+            <a href="/admin/economy/transactions" class="btn btn-sm">مشاهده همه</a>
+        </div>
+        <div class="info-card-body">
+            <% if (recentTransactions && recentTransactions.length > 0) { %>
+                <% recentTransactions.forEach((tx) => { %>
+                    <div class="info-item">
+                        <div class="info-label"><%= tx.username %></div>
+                        <div class="<%= tx.amount >= 0 ? 'increase' : 'decrease' %>">
+                            <%= tx.amount >= 0 ? '+' : '' %><%= tx.amount.toLocaleString() %> سکه
+                        </div>
+                    </div>
+                <% }); %>
+            <% } else { %>
+                <div class="info-item">
+                    <div class="info-label">هیچ تراکنشی یافت نشد</div>
+                </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<div class="notifications-and-events">
+    <!-- هشدارهای سیستم -->
+    <div class="info-card">
+        <div class="info-card-header">
+            <h3>هشدارهای سیستم</h3>
+            <a href="/admin/logs" class="btn btn-sm">مشاهده همه</a>
+        </div>
+        <div class="info-card-body">
+            <ul class="alerts-list">
+                <% if (recentLogs && recentLogs.length > 0) { %>
+                    <% recentLogs.forEach((log) => { %>
+                        <li class="alert-item alert-<%= log.level === 'error' ? 'error' : (log.level === 'warn' ? 'warning' : 'info') %>">
+                            <div class="alert-icon">
+                                <i class="fas fa-<%= log.level === 'error' ? 'exclamation-circle' : (log.level === 'warn' ? 'exclamation-triangle' : 'info-circle') %>"></i>
+                            </div>
+                            <div class="alert-content">
+                                <p><%= log.message %></p>
+                                <small><%= new Date(log.timestamp).toLocaleString() %></small>
+                            </div>
+                        </li>
+                    <% }); %>
+                <% } else { %>
+                    <li class="alert-item alert-info">
+                        <div class="alert-icon">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                        <div class="alert-content">
+                            <p>هیچ لاگی یافت نشد</p>
+                        </div>
+                    </li>
+                <% } %>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- فعالیت‌های اخیر -->
+    <div class="info-card">
+        <div class="info-card-header">
+            <h3>فعالیت‌های اخیر</h3>
+        </div>
+        <div class="info-card-body">
+            <div class="activities-list">
+                <% if (recentGames && recentGames.length > 0) { %>
+                    <% recentGames.forEach((game) => { %>
+                        <div class="activity-item">
+                            <div class="activity-icon bg-<%= game.result === 'win' || game.result === 'jackpot' ? 'success' : 'danger' %>">
+                                <i class="fas fa-gamepad"></i>
+                            </div>
+                            <div class="activity-content">
+                                <p>
+                                    <%= game.username %> در بازی <%= game.type %> 
+                                    <%= game.result === 'win' || game.result === 'jackpot' ? 'برنده' : 'بازنده' %> شد
+                                </p>
+                                <small>
+                                    <%= game.result === 'win' || game.result === 'jackpot' ? '+' : '-' %>
+                                    <%= Math.abs(game.netGain).toLocaleString() %> سکه
+                                </small>
+                            </div>
+                        </div>
+                    <% }); %>
+                <% } else { %>
+                    <div class="activity-item">
+                        <div class="activity-content">
+                            <p>هیچ فعالیتی یافت نشد</p>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,184 @@
+<div class="topbar">
+  <div class="topbar-title">
+    <h1>مدیریت کاربران</h1>
+    <p>مشاهده، ویرایش و مدیریت کاربران</p>
+  </div>
+  
+  <div class="topbar-actions">
+    <a href="/admin/users/export<%= queryString ? '?' + queryString : '' %>" class="btn">
+      <i class="fas fa-file-export"></i> خروجی اکسل
+    </a>
+  </div>
+</div>
+
+<!-- فیلتر و جستجو -->
+<div class="card">
+  <div class="card-body">
+    <form action="/admin/users" method="GET" class="search-form">
+      <input type="text" name="search" class="form-control" placeholder="جستجو بر اساس نام کاربری یا شناسه..." value="<%= search %>">
+      
+      <div style="min-width: 150px;">
+        <select name="status" class="form-select">
+          <option value="all" <%= filter.status === 'all' ? 'selected' : '' %>>همه کاربران</option>
+          <option value="active" <%= filter.status === 'active' ? 'selected' : '' %>>کاربران فعال</option>
+          <option value="banned" <%= filter.status === 'banned' ? 'selected' : '' %>>کاربران مسدود</option>
+        </select>
+      </div>
+      
+      <div style="min-width: 150px;">
+        <select name="sortBy" class="form-select">
+          <option value="username" <%= sort.by === 'username' ? 'selected' : '' %>>نام کاربری</option>
+          <option value="wallet" <%= sort.by === 'wallet' ? 'selected' : '' %>>موجودی کیف پول</option>
+          <option value="bank" <%= sort.by === 'bank' ? 'selected' : '' %>>موجودی بانک</option>
+          <option value="level" <%= sort.by === 'level' ? 'selected' : '' %>>سطح</option>
+          <option value="joinDate" <%= sort.by === 'joinDate' ? 'selected' : '' %>>تاریخ عضویت</option>
+        </select>
+      </div>
+      
+      <div style="min-width: 120px;">
+        <select name="sortOrder" class="form-select">
+          <option value="asc" <%= sort.order === 'asc' ? 'selected' : '' %>>صعودی</option>
+          <option value="desc" <%= sort.order === 'desc' ? 'selected' : '' %>>نزولی</option>
+        </select>
+      </div>
+      
+      <div style="min-width: 80px;">
+        <select name="limit" class="form-select">
+          <option value="10" <%= limit === 10 ? 'selected' : '' %>>10</option>
+          <option value="20" <%= limit === 20 ? 'selected' : '' %>>20</option>
+          <option value="50" <%= limit === 50 ? 'selected' : '' %>>50</option>
+          <option value="100" <%= limit === 100 ? 'selected' : '' %>>100</option>
+        </select>
+      </div>
+      
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-search"></i> جستجو
+      </button>
+    </form>
+  </div>
+</div>
+
+<% if (error) { %>
+  <div class="alert alert-danger">
+    <i class="fas fa-exclamation-circle"></i>
+    خطا در بارگیری لیست کاربران: <%= errorMessage || 'لطفاً دوباره تلاش کنید' %>
+  </div>
+<% } else { %>
+
+  <!-- جدول کاربران -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">لیست کاربران</h3>
+      <div>
+        <span><%= totalUsers.toLocaleString() %> کاربر یافت شد</span>
+      </div>
+    </div>
+    
+    <div class="table-container">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>نام کاربری</th>
+            <th>شناسه</th>
+            <th>موجودی کیف پول</th>
+            <th>موجودی بانک</th>
+            <th>سطح</th>
+            <th>وضعیت</th>
+            <th>تاریخ عضویت</th>
+            <th>عملیات</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (users && users.length > 0) { %>
+            <% users.forEach(user => { %>
+              <tr>
+                <td><%= user.username %></td>
+                <td><small class="text-muted"><%= user.userId %></small></td>
+                <td><%= user.wallet.toLocaleString() %> 💰</td>
+                <td><%= user.bank.toLocaleString() %> 🏦</td>
+                <td><%= user.level || 0 %> <small class="text-muted">(<%= user.xp || 0 %> XP)</small></td>
+                <td>
+                  <% if (user.isBanned) { %>
+                    <span class="badge badge-red">مسدود</span>
+                  <% } else { %>
+                    <span class="badge badge-green">فعال</span>
+                  <% } %>
+                </td>
+                <td><%= user.joinDate ? new Date(user.joinDate).toLocaleDateString('fa-IR') : 'نامشخص' %></td>
+                <td>
+                  <a href="/admin/users/<%= user.userId %>" class="btn btn-sm">
+                    <i class="fas fa-eye"></i>
+                  </a>
+                  <a href="/admin/users/<%= user.userId %>/edit" class="btn btn-sm">
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  <% if (user.isBanned) { %>
+                    <a href="/admin/users/<%= user.userId %>/unban" class="btn btn-sm" data-confirm="آیا از رفع مسدودیت این کاربر اطمینان دارید؟">
+                      <i class="fas fa-unlock"></i>
+                    </a>
+                  <% } else { %>
+                    <a href="/admin/users/<%= user.userId %>/ban" class="btn btn-sm btn-danger" data-confirm="آیا از مسدود کردن این کاربر اطمینان دارید؟">
+                      <i class="fas fa-ban"></i>
+                    </a>
+                  <% } %>
+                </td>
+              </tr>
+            <% }); %>
+          <% } else { %>
+            <tr>
+              <td colspan="8" class="text-center">هیچ کاربری یافت نشد</td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- پیجینیشن -->
+    <% if (totalPages > 1) { %>
+      <div class="card-footer">
+        <ul class="pagination">
+          <% if (currentPage > 1) { %>
+            <li>
+              <a href="/admin/users?page=1<%= queryString ? '&' + queryString : '' %>" title="صفحه اول">
+                <i class="fas fa-angle-double-right"></i>
+              </a>
+            </li>
+            <li>
+              <a href="/admin/users?page=<%= currentPage - 1 %><%= queryString ? '&' + queryString : '' %>" title="صفحه قبل">
+                <i class="fas fa-angle-right"></i>
+              </a>
+            </li>
+          <% } %>
+          
+          <% 
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, startPage + 4);
+            
+            if (endPage - startPage < 4) {
+              startPage = Math.max(1, endPage - 4);
+            }
+          %>
+          
+          <% for (let i = startPage; i <= endPage; i++) { %>
+            <li class="<%= i === currentPage ? 'active' : '' %>">
+              <a href="/admin/users?page=<%= i %><%= queryString ? '&' + queryString : '' %>"><%= i %></a>
+            </li>
+          <% } %>
+          
+          <% if (currentPage < totalPages) { %>
+            <li>
+              <a href="/admin/users?page=<%= currentPage + 1 %><%= queryString ? '&' + queryString : '' %>" title="صفحه بعد">
+                <i class="fas fa-angle-left"></i>
+              </a>
+            </li>
+            <li>
+              <a href="/admin/users?page=<%= totalPages %><%= queryString ? '&' + queryString : '' %>" title="صفحه آخر">
+                <i class="fas fa-angle-double-left"></i>
+              </a>
+            </li>
+          <% } %>
+        </ul>
+      </div>
+    <% } %>
+  </div>
+<% } %>
