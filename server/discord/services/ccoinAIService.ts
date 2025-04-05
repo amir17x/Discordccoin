@@ -500,10 +500,22 @@ class OptimizedCcoinAIService {
    */
   async testConnection(): Promise<boolean> {
     try {
-      const startTime = Date.now();
-      await this.generateContentFast('1+1', 10);
-      const endTime = Date.now();
-      log(`تست اتصال CCOIN AI موفقیت‌آمیز بود (${endTime - startTime}ms) ✨`, 'info');
+      // استفاده از یک درخواست ساده API برای تست اتصال به جای تولید محتوا
+      // این روش سریع‌تر است و کش را دور می‌زند برای تست واقعی سرعت اتصال
+      const startTime = performance.now();
+      
+      // ارسال یک درخواست API مستقیم برای بررسی وضعیت مدل
+      // این درخواست بسیار سبک‌تر از تولید محتواست و زمان واقعی اتصال را نشان می‌دهد
+      const modelName = 'gemini-1.5-flash';
+      await axios.get(
+        `${CCOIN_AI_BASE_URL}/models/${modelName}?key=${this.apiKey}`,
+        { timeout: 5000 }
+      );
+      
+      const endTime = performance.now();
+      const pingTime = Math.round(endTime - startTime);
+      
+      log(`تست اتصال CCOIN AI موفقیت‌آمیز بود (${pingTime}ms) ✨`, 'info');
       return true;
     } catch (error) {
       log('تست اتصال سرویس CCOIN AI با شکست مواجه شد: ' + error, 'error');

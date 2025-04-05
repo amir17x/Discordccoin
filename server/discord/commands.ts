@@ -6,6 +6,7 @@ import { setupTipSystem, addTipChannel, removeTipChannel, toggleTipChannel, upda
 import { handleGroupGamesMenu } from './components/groupGames';
 import { botConfig } from './utils/config';
 import { pingCurrentAIService, generateAIResponse } from './services/aiService';
+import axios from 'axios';
 import { setFeedbackChannelCommand, executeSetFeedbackChannel } from './commands/admin/setFeedbackChannel';
 import { timeThiefCommand, unTimeThiefCommand, executeTimeThief, executeUnTimeThief } from './commands/economy/robberyCommands';
 
@@ -550,13 +551,21 @@ const ping = {
       // نام نمایشی سرویس هوش مصنوعی
       const aiServiceDisplayName = 'CCOIN AI';
       
-      // بررسی وضعیت پینگ هوش مصنوعی با آستانه‌های جدید
+      // بررسی وضعیت پینگ هوش مصنوعی با آستانه‌های جدید و بهبود یافته
       if (aiPing > 0) {
         // پینگ موفق با آستانه‌های بهینه‌سازی شده
-        aiStatus = aiPing < 120 ? '🟢 عالی' : 
-                 aiPing < 250 ? '🟡 متوسط' : 
-                 aiPing < 750 ? '🟠 ضعیف' : 
-                 '⚫ ناپایدار';
+        // طبقه‌بندی دقیق‌تر برای نمایش بهتر وضعیت
+        if (aiPing < 80) {
+          aiStatus = '🟢 عالی';
+        } else if (aiPing < 170) {
+          aiStatus = '🟢 خوب';
+        } else if (aiPing < 300) {
+          aiStatus = '🟡 متوسط';
+        } else if (aiPing < 600) {
+          aiStatus = '🟠 ضعیف';
+        } else {
+          aiStatus = '⚫ کند';
+        }
       } else if (aiPing === -2) {
         // خطای تایم‌اوت در درخواست
         aiStatus = '⚫ تایم‌اوت';
@@ -837,7 +846,581 @@ const unTipChannel = {
 };
 
 // دستور گروه حذف شد و با منوی بازی‌ها یکپارچه شد
+
+/**
+ * تحلیل تصویر با استفاده از CCOIN AI
+ * @param imageUrl آدرس تصویر
+ * @param prompt درخواست برای تحلیل تصویر
+ * @returns پاسخ هوش مصنوعی
+ */
+async function handleImageAnalysis(imageUrl: string, prompt: string): Promise<string> {
+  try {
+    // استفاده از سرویس CCOIN AI برای تحلیل تصویر
+    const aiSettings = botConfig.getAISettings();
+    const apiKey = aiSettings.apiKey;
+    const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-vision-latest:generateContent";
+    
+    // ارسال درخواست به API
+    const response = await axios.post(
+      `${apiUrl}?key=${apiKey}`,
+      {
+        contents: [{
+          parts: [
+            { text: prompt },
+            { inline_data: {
+                mime_type: "image/jpeg",
+                data: (await axios.get(imageUrl, { responseType: 'arraybuffer' }))
+                  .data.toString('base64')
+              }
+            }
+          ]
+        }],
+        generation_config: {
+          temperature: 0.4,
+          maxOutputTokens: 1024,
+          topP: 0.95,
+          topK: 64
+        }
+      },
+      {
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
+    
+    // پردازش پاسخ API
+    if (response.data && response.data.candidates && response.data.candidates[0]) {
+      const generatedText = response.data.candidates[0].content.parts[0].text;
+      return generatedText;
+    } else {
+      throw new Error('ساختار پاسخ API غیرمنتظره');
+    }
+  } catch (error) {
+    console.error('خطا در تحلیل تصویر:', error);
+    
+    if (axios.isAxiosError(error) && error.response) {
+      const status = error.response.status;
+      
+      if (status === 400) {
+        throw new Error('خطا در درخواست: فرمت تصویر نامعتبر یا حجم آن بیش از حد مجاز است');
+      } else if (status === 401) {
+        throw new Error('خطای احراز هویت: کلید API نامعتبر است');
+      } else if (status === 429) {
+        throw new Error('محدودیت نرخ API: تعداد درخواست‌ها بیش از حد مجاز است');
+      } else if (status >= 500) {
+        throw new Error(`خطای سرور API (${status})`);
+      }
+    }
+    
+    throw new Error(`خطای نامشخص در تحلیل تصویر: ${error instanceof Error ? error.message : 'خطای نامشخص'}`);
+  }
+}
 // کاربران حالا می‌توانند از طریق منوی بازی‌ها به بازی‌های گروهی دسترسی داشته باشند
+
+// Command for AI image analysis
+const imageAnalyze = {
+  data: new SlashCommandBuilder()
+    .setName('image-analyze')
+    .setDescription('🖼️ تحلیل و توصیف تصاویر با هوش مصنوعی')
+    .addAttachmentOption(option => 
+      option.setName('image')
+            .setDescription('تصویری که می‌خواهید تحلیل شود')
+            .setRequired(true)),
+  
+  async execute(interaction: any) {
+    try {
+      // نمایش "در حال تایپ" برای تعامل طولانی مدت
+      await interaction.deferReply();
+      
+      // دریافت تصویر آپلود شده
+      const attachment = interaction.options.getAttachment('image');
+      
+      // بررسی نوع فایل
+      if (!attachment.contentType || !attachment.contentType.startsWith('image/')) {
+        await interaction.editReply({
+          content: '❌ لطفاً یک فایل تصویری معتبر (JPG، PNG، GIF و...) آپلود کنید.'
+        });
+        return;
+      }
+      
+      // دریافت سرویس فعال هوش مصنوعی و پینگ برای بررسی وضعیت اتصال
+      const aiPing = await pingCurrentAIService();
+      
+      // بررسی وضعیت اتصال به سرویس هوش مصنوعی
+      if (aiPing < 0) {
+        // تنظیم پیام خطا بر اساس کد پینگ
+        let errorMessage = 'سرویس هوش مصنوعی در حال حاضر در دسترس نیست.';
+        
+        await interaction.editReply({
+          content: `❌ ${errorMessage} لطفاً کمی بعد دوباره امتحان کنید.`
+        });
+        return;
+      }
+      
+      // نمایش پیام در حال پردازش به کاربر
+      await interaction.editReply({
+        content: '🔍 **CCOIN AI** در حال تحلیل تصویر شما است... لطفاً چند لحظه صبر کنید.'
+      });
+      
+      try {
+        // استفاده از هوش مصنوعی برای تحلیل تصویر
+        const prompt = "لطفاً این تصویر را به طور کامل توصیف کن. جزئیات را شرح بده، اشیاء را شناسایی کن و اگر متنی در تصویر وجود دارد، آن را استخراج کن. توضیحات را به صورت کامل و در پاراگراف‌های مجزا برای هر بخش از تصویر بنویس. پاسخ به فارسی باشد.";
+        
+        // فراخوانی سرویس هوش مصنوعی برای تصویر
+        const imageUrl = attachment.url;
+        const response = await handleImageAnalysis(imageUrl, prompt);
+        
+        // ایجاد امبد برای نمایش نتیجه
+        const resultEmbed = new EmbedBuilder()
+          .setColor('#4169E1')
+          .setTitle('🔍 تحلیل تصویر با CCOIN AI')
+          .setDescription(response)
+          .setThumbnail(attachment.url)
+          .setFooter({ 
+            text: `درخواست شده توسط ${interaction.user.tag}`, 
+            iconURL: interaction.user.displayAvatarURL() 
+          })
+          .setTimestamp();
+        
+        // اضافه کردن تصویر به عنوان فیلد در امبد
+        resultEmbed.setImage(attachment.url);
+        
+        // ارسال نتیجه به کاربر
+        await interaction.editReply({
+          content: null,
+          embeds: [resultEmbed]
+        });
+        
+      } catch (error) {
+        console.error("Error analyzing image:", error);
+        
+        // پیام خطا به کاربر
+        await interaction.editReply({
+          content: `❌ خطا در تحلیل تصویر: ${error instanceof Error ? error.message : 'خطای نامشخص'}. لطفاً دوباره تلاش کنید یا از تصویر دیگری استفاده کنید.`
+        });
+      }
+    } catch (error) {
+      console.error('Error in image-analyze command:', error);
+      
+      if (interaction.deferred) {
+        await interaction.editReply({
+          content: '⚠️ خطا در اجرای دستور! لطفاً دوباره تلاش کنید.'
+        });
+      } else if (!interaction.replied) {
+        await interaction.reply({
+          content: '⚠️ خطا در اجرای دستور! لطفاً دوباره تلاش کنید.',
+          ephemeral: true
+        });
+      }
+    }
+  }
+};
+
+// Command for content generation
+const contentGenerate = {
+  data: new SlashCommandBuilder()
+    .setName('content-generate')
+    .setDescription('📝 تولید محتوای متنی اختصاصی با هوش مصنوعی')
+    .addStringOption(option => 
+      option.setName('topic')
+            .setDescription('موضوع یا درخواست شما برای تولید محتوا')
+            .setRequired(true))
+    .addStringOption(option => 
+      option.setName('style')
+            .setDescription('سبک مورد نظر برای محتوا')
+            .setRequired(false)
+            .addChoices(
+              { name: 'استاندارد', value: 'standard' },
+              { name: 'خلاقانه', value: 'creative' },
+              { name: 'آکادمیک', value: 'academic' },
+              { name: 'طنز', value: 'funny' },
+              { name: 'رسمی', value: 'formal' }
+            )),
+  
+  async execute(interaction: any) {
+    try {
+      // نمایش "در حال تایپ" برای تعامل طولانی مدت
+      await interaction.deferReply();
+      
+      // دریافت موضوع و سبک
+      const topic = interaction.options.getString('topic');
+      const style = interaction.options.getString('style') || 'standard';
+      
+      // دریافت سرویس فعال هوش مصنوعی و پینگ برای بررسی وضعیت اتصال
+      const aiPing = await pingCurrentAIService();
+      
+      // بررسی وضعیت اتصال به سرویس هوش مصنوعی
+      if (aiPing < 0) {
+        // تنظیم پیام خطا بر اساس کد پینگ
+        let errorMessage = 'سرویس هوش مصنوعی در حال حاضر در دسترس نیست.';
+        
+        await interaction.editReply({
+          content: `❌ ${errorMessage} لطفاً کمی بعد دوباره امتحان کنید.`
+        });
+        return;
+      }
+      
+      // نمایش پیام در حال پردازش به کاربر
+      await interaction.editReply({
+        content: '✍️ **CCOIN AI** در حال تولید محتوا برای شما است... لطفاً چند لحظه صبر کنید.'
+      });
+      
+      try {
+        // تنظیم پرامپت براساس سبک انتخاب شده
+        let stylePrompt = '';
+        let temperature = 0.7;
+        
+        switch (style) {
+          case 'creative':
+            stylePrompt = 'محتوایی خلاقانه، جذاب و نوآورانه با زبانی شاعرانه تولید کن.';
+            temperature = 0.9;
+            break;
+          case 'academic':
+            stylePrompt = 'محتوایی آکادمیک، رسمی و علمی با ارجاعات مناسب تولید کن.';
+            temperature = 0.3;
+            break;
+          case 'funny':
+            stylePrompt = 'محتوایی طنزآمیز، سرگرم‌کننده و شوخ‌طبعانه تولید کن.';
+            temperature = 0.95;
+            break;
+          case 'formal':
+            stylePrompt = 'محتوایی رسمی، حرفه‌ای و مناسب برای محیط کار تولید کن.';
+            temperature = 0.4;
+            break;
+          default:
+            stylePrompt = 'محتوایی استاندارد، متعادل و کاربردی تولید کن.';
+            temperature = 0.7;
+        }
+        
+        // ایجاد پرامپت نهایی
+        const finalPrompt = `
+لطفاً در مورد موضوع "${topic}" ${stylePrompt}
+محتوا باید منسجم، ساختاریافته و جامع باشد.
+لطفاً از عنوان‌بندی مناسب، پاراگراف‌بندی صحیح و نشانه‌گذاری استفاده کن.
+در صورت نیاز از بولت‌پوینت‌ها و شماره‌گذاری استفاده کن تا خوانایی بهبود یابد.
+محتوا باید به زبان فارسی باشد.`;
+        
+        // فراخوانی سرویس هوش مصنوعی
+        const response = await generateAIResponse(finalPrompt, 'aiAssistant', style === 'funny' ? 'طنزآمیز' : (style === 'creative' ? 'خلاقانه' : 'دقیق'));
+        
+        // ایجاد امبد برای نمایش نتیجه
+        const resultEmbed = new EmbedBuilder()
+          .setColor('#4169E1')
+          .setTitle(`📝 محتوای تولید شده: ${topic.length > 50 ? topic.substring(0, 50) + '...' : topic}`)
+          .setDescription(response.length > 4000 ? response.substring(0, 4000) + '...' : response)
+          .setFooter({ 
+            text: `تولید شده توسط CCOIN AI | سبک: ${style === 'standard' ? 'استاندارد' : style === 'creative' ? 'خلاقانه' : style === 'academic' ? 'آکادمیک' : style === 'funny' ? 'طنز' : 'رسمی'}`, 
+            iconURL: interaction.client.user.displayAvatarURL() 
+          })
+          .setTimestamp();
+        
+        // ارسال نتیجه به کاربر
+        await interaction.editReply({
+          content: null,
+          embeds: [resultEmbed]
+        });
+        
+      } catch (error) {
+        console.error("Error generating content:", error);
+        
+        // پیام خطا به کاربر
+        await interaction.editReply({
+          content: `❌ خطا در تولید محتوا: ${error instanceof Error ? error.message : 'خطای نامشخص'}. لطفاً دوباره تلاش کنید.`
+        });
+      }
+    } catch (error) {
+      console.error('Error in content-generate command:', error);
+      
+      if (interaction.deferred) {
+        await interaction.editReply({
+          content: '⚠️ خطا در اجرای دستور! لطفاً دوباره تلاش کنید.'
+        });
+      } else if (!interaction.replied) {
+        await interaction.reply({
+          content: '⚠️ خطا در اجرای دستور! لطفاً دوباره تلاش کنید.',
+          ephemeral: true
+        });
+      }
+    }
+  }
+};
+
+// Command for code assistance
+const codeAssistant = {
+  data: new SlashCommandBuilder()
+    .setName('code-assistant')
+    .setDescription('💻 کمک در نوشتن و دیباگ کد برنامه‌نویسی')
+    .addStringOption(option => 
+      option.setName('language')
+            .setDescription('زبان برنامه‌نویسی')
+            .setRequired(true)
+            .addChoices(
+              { name: 'JavaScript', value: 'javascript' },
+              { name: 'Python', value: 'python' },
+              { name: 'Java', value: 'java' },
+              { name: 'C++', value: 'cpp' },
+              { name: 'C#', value: 'csharp' },
+              { name: 'PHP', value: 'php' },
+              { name: 'Go', value: 'go' },
+              { name: 'TypeScript', value: 'typescript' },
+              { name: 'Ruby', value: 'ruby' },
+              { name: 'Swift', value: 'swift' },
+              { name: 'Kotlin', value: 'kotlin' },
+              { name: 'Rust', value: 'rust' },
+              { name: 'SQL', value: 'sql' },
+              { name: 'HTML/CSS', value: 'html' },
+              { name: 'سایر', value: 'other' }
+            ))
+    .addStringOption(option => 
+      option.setName('query')
+            .setDescription('درخواست یا کد شما')
+            .setRequired(true))
+    .addStringOption(option => 
+      option.setName('task')
+            .setDescription('نوع وظیفه')
+            .setRequired(false)
+            .addChoices(
+              { name: 'نوشتن کد', value: 'writing' },
+              { name: 'دیباگ', value: 'debugging' },
+              { name: 'بهینه‌سازی', value: 'optimization' },
+              { name: 'توضیح کد', value: 'explanation' },
+              { name: 'تبدیل کد', value: 'conversion' }
+            )),
+  
+  async execute(interaction: any) {
+    try {
+      // نمایش "در حال تایپ" برای تعامل طولانی مدت
+      await interaction.deferReply();
+      
+      // دریافت زبان، درخواست و وظیفه
+      const language = interaction.options.getString('language');
+      const query = interaction.options.getString('query');
+      const task = interaction.options.getString('task') || 'writing';
+      
+      // دریافت سرویس فعال هوش مصنوعی و پینگ برای بررسی وضعیت اتصال
+      const aiPing = await pingCurrentAIService();
+      
+      // بررسی وضعیت اتصال به سرویس هوش مصنوعی
+      if (aiPing < 0) {
+        // تنظیم پیام خطا بر اساس کد پینگ
+        let errorMessage = 'سرویس هوش مصنوعی در حال حاضر در دسترس نیست.';
+        
+        await interaction.editReply({
+          content: `❌ ${errorMessage} لطفاً کمی بعد دوباره امتحان کنید.`
+        });
+        return;
+      }
+      
+      // نمایش پیام در حال پردازش به کاربر
+      await interaction.editReply({
+        content: '💻 **CCOIN AI** در حال کار روی کد شما است... لطفاً چند لحظه صبر کنید.'
+      });
+      
+      try {
+        // تنظیم پرامپت براساس وظیفه انتخاب شده
+        let taskPrompt = '';
+        
+        switch (task) {
+          case 'debugging':
+            taskPrompt = 'مشکلات این کد را پیدا کن و راه‌حل‌های رفع آن‌ها را با توضیحات کامل ارائه بده.';
+            break;
+          case 'optimization':
+            taskPrompt = 'این کد را برای بهبود کارایی و خوانایی بهینه‌سازی کن و بهبودهای اعمال شده را توضیح بده.';
+            break;
+          case 'explanation':
+            taskPrompt = 'این کد را خط به خط با جزئیات کامل توضیح بده تا درک آن برای افراد مبتدی آسان باشد.';
+            break;
+          case 'conversion':
+            taskPrompt = 'این کد را به بهترین شکل ممکن به زبان‌های برنامه‌نویسی دیگر تبدیل کن (حداقل یک زبان دیگر).';
+            break;
+          default:
+            taskPrompt = 'کد مناسب را براساس درخواست نوشته و با توضیحات کامل ارائه بده.';
+        }
+        
+        // ایجاد پرامپت نهایی
+        const finalPrompt = `
+لطفاً به عنوان یک متخصص برنامه‌نویسی حرفه‌ای در زبان ${language}، به این درخواست پاسخ بده:
+
+${query}
+
+${taskPrompt}
+
+در پاسخ خود:
+1. کد را داخل بلوک‌های مناسب \`\`\` قرار بده.
+2. توضیحات کاملی درباره منطق و رویکرد حل مسئله ارائه بده.
+3. اگر چند رویکرد مختلف وجود دارد، بهترین رویکرد را با ذکر مزایا و معایب پیشنهاد بده.
+4. در صورت امکان، مثال‌هایی از نحوه استفاده از کد ارائه بده.
+5. بهترین شیوه‌های برنامه‌نویسی را در پاسخ خود رعایت کن.
+
+لطفاً پاسخ را به زبان فارسی ارائه بده.`;
+        
+        // فراخوانی سرویس هوش مصنوعی
+        const response = await generateAIResponse(finalPrompt, 'aiAssistant', 'دقیق');
+        
+        // ایجاد امبد برای نمایش نتیجه
+        const resultEmbed = new EmbedBuilder()
+          .setColor('#4169E1')
+          .setTitle(`💻 دستیار کد: ${task === 'writing' ? 'نوشتن کد' : task === 'debugging' ? 'دیباگ کد' : task === 'optimization' ? 'بهینه‌سازی کد' : task === 'explanation' ? 'توضیح کد' : 'تبدیل کد'}`)
+          .setDescription(response.length > 4000 ? response.substring(0, 4000) + '\n\n*محتوا به دلیل طولانی بودن کوتاه شده است*' : response)
+          .setFooter({ 
+            text: `زبان: ${language} | تولید شده توسط CCOIN AI`, 
+            iconURL: interaction.client.user.displayAvatarURL() 
+          })
+          .setTimestamp();
+        
+        // ارسال نتیجه به کاربر
+        await interaction.editReply({
+          content: null,
+          embeds: [resultEmbed]
+        });
+        
+      } catch (error) {
+        console.error("Error in code assistant:", error);
+        
+        // پیام خطا به کاربر
+        await interaction.editReply({
+          content: `❌ خطا در پردازش درخواست کد: ${error instanceof Error ? error.message : 'خطای نامشخص'}. لطفاً دوباره تلاش کنید.`
+        });
+      }
+    } catch (error) {
+      console.error('Error in code-assistant command:', error);
+      
+      if (interaction.deferred) {
+        await interaction.editReply({
+          content: '⚠️ خطا در اجرای دستور! لطفاً دوباره تلاش کنید.'
+        });
+      } else if (!interaction.replied) {
+        await interaction.reply({
+          content: '⚠️ خطا در اجرای دستور! لطفاً دوباره تلاش کنید.',
+          ephemeral: true
+        });
+      }
+    }
+  }
+};
+
+// Command for learning assistant
+const learn = {
+  data: new SlashCommandBuilder()
+    .setName('learn')
+    .setDescription('📚 دریافت آموزش در موضوعات مختلف')
+    .addStringOption(option => 
+      option.setName('topic')
+            .setDescription('موضوع مورد نظر برای یادگیری')
+            .setRequired(true))
+    .addStringOption(option => 
+      option.setName('level')
+            .setDescription('سطح آموزش')
+            .setRequired(false)
+            .addChoices(
+              { name: 'مبتدی', value: 'beginner' },
+              { name: 'متوسط', value: 'intermediate' },
+              { name: 'پیشرفته', value: 'advanced' }
+            )),
+  
+  async execute(interaction: any) {
+    try {
+      // نمایش "در حال تایپ" برای تعامل طولانی مدت
+      await interaction.deferReply();
+      
+      // دریافت موضوع و سطح
+      const topic = interaction.options.getString('topic');
+      const level = interaction.options.getString('level') || 'beginner';
+      
+      // دریافت سرویس فعال هوش مصنوعی و پینگ برای بررسی وضعیت اتصال
+      const aiPing = await pingCurrentAIService();
+      
+      // بررسی وضعیت اتصال به سرویس هوش مصنوعی
+      if (aiPing < 0) {
+        // تنظیم پیام خطا بر اساس کد پینگ
+        let errorMessage = 'سرویس هوش مصنوعی در حال حاضر در دسترس نیست.';
+        
+        await interaction.editReply({
+          content: `❌ ${errorMessage} لطفاً کمی بعد دوباره امتحان کنید.`
+        });
+        return;
+      }
+      
+      // نمایش پیام در حال پردازش به کاربر
+      await interaction.editReply({
+        content: '📚 **CCOIN AI** در حال آماده‌سازی محتوای آموزشی برای شما است... لطفاً چند لحظه صبر کنید.'
+      });
+      
+      try {
+        // تنظیم پرامپت براساس سطح انتخاب شده
+        let levelPrompt = '';
+        
+        switch (level) {
+          case 'beginner':
+            levelPrompt = 'مبتدی (بدون نیاز به دانش قبلی، با مفاهیم پایه و اساسی شروع کن)';
+            break;
+          case 'intermediate':
+            levelPrompt = 'متوسط (با فرض آشنایی با مفاهیم پایه، جزئیات بیشتر و نکات کاربردی را توضیح بده)';
+            break;
+          case 'advanced':
+            levelPrompt = 'پیشرفته (با فرض تسلط بر مفاهیم پایه و متوسط، به تکنیک‌های پیشرفته و دانش عمیق بپرداز)';
+            break;
+          default:
+            levelPrompt = 'مبتدی (بدون نیاز به دانش قبلی، با مفاهیم پایه و اساسی شروع کن)';
+        }
+        
+        // ایجاد پرامپت نهایی
+        const finalPrompt = `
+لطفاً یک آموزش جامع و ساختارمند در مورد "${topic}" در سطح ${levelPrompt} ارائه بده.
+
+لطفاً این آموزش را به صورت زیر ساختاربندی کن:
+1. **مقدمه**: توضیح کوتاهی در مورد اهمیت و کاربردهای موضوع
+2. **مفاهیم اصلی**: معرفی و توضیح مفاهیم کلیدی با ترتیب منطقی
+3. **نکات کاربردی**: نکات عملی و کاربردی مرتبط با موضوع
+4. **مثال‌ها**: ارائه مثال‌های روشن و قابل درک
+5. **منابع تکمیلی**: پیشنهاد منابع و ابزارهای مفید برای یادگیری بیشتر
+
+از عنوان‌بندی مناسب، پاراگراف‌بندی منظم، و عناصر بصری مثل بولت‌پوینت‌ها و لیست‌های شماره‌دار استفاده کن.
+محتوا باید به زبان فارسی و با استفاده از اصطلاحات تخصصی در کنار معادل‌های انگلیسی باشد.`;
+        
+        // فراخوانی سرویس هوش مصنوعی
+        const response = await generateAIResponse(finalPrompt, 'aiAssistant', 'دقیق');
+        
+        // ایجاد امبد برای نمایش نتیجه
+        const resultEmbed = new EmbedBuilder()
+          .setColor('#4169E1')
+          .setTitle(`📚 آموزش: ${topic}`)
+          .setDescription(response.length > 4000 ? response.substring(0, 4000) + '\n\n*محتوا به دلیل طولانی بودن کوتاه شده است*' : response)
+          .setFooter({ 
+            text: `سطح: ${level === 'beginner' ? 'مبتدی' : level === 'intermediate' ? 'متوسط' : 'پیشرفته'} | تولید شده توسط CCOIN AI`, 
+            iconURL: interaction.client.user.displayAvatarURL() 
+          })
+          .setTimestamp();
+        
+        // ارسال نتیجه به کاربر
+        await interaction.editReply({
+          content: null,
+          embeds: [resultEmbed]
+        });
+        
+      } catch (error) {
+        console.error("Error in learning assistant:", error);
+        
+        // پیام خطا به کاربر
+        await interaction.editReply({
+          content: `❌ خطا در تولید محتوای آموزشی: ${error instanceof Error ? error.message : 'خطای نامشخص'}. لطفاً دوباره تلاش کنید.`
+        });
+      }
+    } catch (error) {
+      console.error('Error in learn command:', error);
+      
+      if (interaction.deferred) {
+        await interaction.editReply({
+          content: '⚠️ خطا در اجرای دستور! لطفاً دوباره تلاش کنید.'
+        });
+      } else if (!interaction.replied) {
+        await interaction.reply({
+          content: '⚠️ خطا در اجرای دستور! لطفاً دوباره تلاش کنید.',
+          ephemeral: true
+        });
+      }
+    }
+  }
+};
 
 // Command for AI interaction
 const hf = {
@@ -1123,6 +1706,10 @@ export async function loadCommands(client: Client) {
   client.commands.set(unTipChannel.data.name, unTipChannel);
   // کامند بازی‌های گروهی حذف شد و با منوی بازی‌ها یکپارچه شد
   client.commands.set(hf.data.name, hf); // Add the CCOIN AI command
+  client.commands.set(imageAnalyze.data.name, imageAnalyze); // Add image analysis command
+  client.commands.set(contentGenerate.data.name, contentGenerate); // Add content generation command
+  client.commands.set(codeAssistant.data.name, codeAssistant); // Add code assistant command
+  client.commands.set(learn.data.name, learn); // Add learning assistant command
   
   // تنظیم کانال بازخورد
   const setFeedbackChannel = {
@@ -1155,6 +1742,10 @@ export const commands = [
   unTipChannel.data.toJSON(),
   // کامند بازی‌های گروهی حذف شد و با منوی بازی‌ها یکپارچه شد
   hf.data.toJSON(), // Add the CCOIN AI command to slash commands
+  imageAnalyze.data.toJSON(), // دستور تحلیل تصاویر با هوش مصنوعی
+  contentGenerate.data.toJSON(), // دستور تولید محتوا با هوش مصنوعی
+  codeAssistant.data.toJSON(), // دستور کمک در برنامه‌نویسی با هوش مصنوعی
+  learn.data.toJSON(), // دستور دریافت آموزش از هوش مصنوعی
   timeThiefCommand.toJSON(), // کامند فعال‌سازی اطلاع‌رسانی دزدی 
   unTimeThiefCommand.toJSON(), // کامند غیرفعال‌سازی اطلاع‌رسانی دزدی
   setFeedbackChannelCommand.toJSON() // کامند تنظیم کانال بازخورد
