@@ -93,6 +93,74 @@ export async function handleSelectMenuInteraction(interaction: StringSelectMenuI
     }
     */
     
+    // پردازش منوی CCOIN AI
+    if (customId === 'ccoin_ai_menu') {
+      // دریافت مقدار انتخاب شده
+      const selectedOption = interaction.values[0];
+      log(`CCOIN AI menu option selected: ${selectedOption}`, 'info');
+      
+      // اگر تعامل هنوز پاسخ داده نشده، آن را به‌روزرسانی کنیم
+      if (!interaction.deferred && !interaction.replied) {
+        await interaction.deferUpdate().catch(err => {
+          log(`Error deferring CCOIN AI menu update: ${err}`, 'error');
+        });
+      }
+      
+      try {
+        // بارگذاری و فراخوانی توابع مناسب براساس گزینه انتخاب شده
+        const { 
+          showAIChatModal, 
+          showImageAnalysisMenu, 
+          showContentCreationModal,
+          showCodeAssistantModal,
+          showLearningAssistantModal 
+        } = await import('../components/ccoinAIMenu');
+        
+        log(`CCOIN AI menu components loaded successfully`, 'info');
+        
+        // فراخوانی تابع مناسب براساس گزینه انتخاب شده
+        switch (selectedOption) {
+          case 'ai_chat':
+            await showAIChatModal(interaction);
+            log(`CCOIN AI chat modal shown successfully`, 'info');
+            break;
+          case 'image_analysis':
+            await showImageAnalysisMenu(interaction);
+            log(`CCOIN AI image analysis menu shown successfully`, 'info');
+            break;
+          case 'content_creation':
+            await showContentCreationModal(interaction);
+            log(`CCOIN AI content creation modal shown successfully`, 'info');
+            break;
+          case 'code_assistant':
+            await showCodeAssistantModal(interaction);
+            log(`CCOIN AI code assistant modal shown successfully`, 'info');
+            break;
+          case 'learning_assistant':
+            await showLearningAssistantModal(interaction);
+            log(`CCOIN AI learning assistant modal shown successfully`, 'info');
+            break;
+          default:
+            log(`Unknown CCOIN AI menu option: ${selectedOption}`, 'warn');
+            if (!interaction.replied) {
+              await interaction.editReply({ 
+                content: "❌ گزینه انتخاب شده نامعتبر است. لطفاً دوباره تلاش کنید."
+              });
+            }
+        }
+      } catch (aiError) {
+        log(`Error in CCOIN AI menu: ${aiError}`, 'error');
+        if (!interaction.replied) {
+          await interaction.editReply({ 
+            content: "❌ خطایی در پردازش منوی هوش مصنوعی رخ داد. لطفاً دوباره تلاش کنید."
+          }).catch(err => {
+            log(`Error sending error message: ${err}`, 'error');
+          });
+        }
+      }
+      return;
+    }
+    
     // اگر به اینجا رسیدیم، یعنی منو پردازش نشده است
     log(`Unhandled select menu interaction with customId: ${customId}`, 'warn');
     if (!interaction.replied && !interaction.deferred) {
