@@ -8,7 +8,7 @@ import ccoinAIService from './ccoinAIService';
 
 export type ComplexityLevel = 'high' | 'medium' | 'low';
 
-export type ModelType = 'gemini-1.5-pro' | 'gemini-1.5-flash' | 'gemini-pro';
+export type ModelType = 'gemini-1.5-pro' | 'gemini-1.5-flash' | 'gemini-pro' | 'tuned-model';
 
 // کلیدواژه‌هایی که نشان‌دهنده پیچیدگی بالا هستند
 const HIGH_COMPLEXITY_KEYWORDS = [
@@ -36,8 +36,22 @@ const MEDIUM_COMPLEXITY_KEYWORDS = [
 export async function generateContentWithSmartModel(
   prompt: string,
   maxTokens: number = 1000,
-  temperature: number = 0.7
+  temperature: number = 0.7,
+  userId?: string,
+  preferTunedModel: boolean = false
 ): Promise<string> {
+  // تشخیص اگر درخواست مربوط به سوالات CCoin باشد
+  const isCCoinQuestion = detectCCoinRelatedQuery(prompt);
+  
+  // اگر درخواست مربوط به CCoin است و مدل آموزش‌دیده در دسترس است، از آن استفاده می‌کنیم
+  if ((isCCoinQuestion || preferTunedModel) && ccoinAIService.hasTunedModelAvailable()) {
+    log(`استفاده از مدل آموزش‌دیده CCOIN AI برای درخواست مرتبط با CCoin 🔮`, 'info');
+    return await ccoinAIService.generateContentWithTunedModel(prompt, maxTokens, 
+      Math.min(temperature, 0.3), // محدود کردن temperature برای پاسخ‌های دقیق‌تر
+      userId
+    );
+  }
+  
   // تخمین پیچیدگی درخواست
   const complexity = estimatePromptComplexity(prompt);
   
@@ -66,21 +80,58 @@ export async function generateContentWithSmartModel(
   }
   
   // استفاده از مدل انتخاب شده برای تولید پاسخ
-  // توجه: اینجا فرض شده که تابع generateContentWithModel در ccoinAIService وجود دارد
-  // در نسخه‌های بعدی باید این تابع پیاده‌سازی شود
   try {
     if (modelName === 'gemini-1.5-flash') {
       // از متد سریع استفاده می‌کنیم
-      return await ccoinAIService.generateContentFast(prompt, maxTokens);
+      return await ccoinAIService.generateContentFast(prompt, maxTokens, userId);
     } else {
       // از متد استاندارد استفاده می‌کنیم
-      return await ccoinAIService.generateContent(prompt, maxTokens, temperature);
+      return await ccoinAIService.generateContent(prompt, maxTokens, temperature, userId);
     }
   } catch (error) {
     log(`خطا در استفاده از مدل هوشمند (${modelName}): ${error}`, 'error');
     // در صورت خطا، به مدل پیش‌فرض برمی‌گردیم
-    return await ccoinAIService.generateContent(prompt, maxTokens, temperature);
+    return await ccoinAIService.generateContent(prompt, maxTokens, temperature, userId);
   }
+}
+
+/**
+ * تشخیص اینکه آیا درخواست مربوط به CCoin است
+ * @param prompt متن ورودی
+ * @returns آیا درخواست مربوط به CCoin است
+ */
+function detectCCoinRelatedQuery(prompt: string): boolean {
+  const normalizedPrompt = prompt.toLowerCase();
+  
+  // کلیدواژه‌های مرتبط با CCoin
+  const ccoinKeywords = [
+    'ccoin', 'c-coin', 'سی-کوین', 'سی کوین', 'سکه',
+    'دستور', 'کامند', 'command', '/daily', '/work', '/profile',
+    'چت ناشناس', 'anonymous chat', 'بلک جک', 'blackjack',
+    'روبری', 'robbery', 'دوئل', 'duel', 'سطح', 'level',
+    'کلن', 'clan', 'دوست', 'friend', 'بازی', 'گیم',
+    'مینی گیم', 'minigame', 'ربات دیسکورد', 'discord bot'
+  ];
+  
+  // بررسی حضور کلیدواژه‌ها در پرامپت
+  for (const keyword of ccoinKeywords) {
+    if (normalizedPrompt.includes(keyword)) {
+      return true;
+    }
+  }
+  
+  // بررسی اگر درخواست شبیه به یک سوال راهنما درباره ربات باشد
+  if (
+    (normalizedPrompt.includes('چطور') || normalizedPrompt.includes('چگونه') || 
+     normalizedPrompt.includes('how') || normalizedPrompt.includes('what')) &&
+    (normalizedPrompt.includes('ربات') || normalizedPrompt.includes('bot') || 
+     normalizedPrompt.includes('کار') || normalizedPrompt.includes('استفاده') ||
+     normalizedPrompt.includes('use') || normalizedPrompt.includes('work'))
+  ) {
+    return true;
+  }
+  
+  return false;
 }
 
 /**
@@ -134,6 +185,11 @@ export function estimatePromptComplexity(prompt: string): ComplexityLevel {
  * @returns نام مدل پیشنهادی
  */
 export function suggestModelForPrompt(prompt: string): ModelType {
+  // اگر سوال مرتبط با CCoin است و مدل آموزش‌دیده در دسترس است، آن را پیشنهاد می‌دهیم
+  if (detectCCoinRelatedQuery(prompt) && ccoinAIService.hasTunedModelAvailable()) {
+    return 'tuned-model';
+  }
+  
   const complexity = estimatePromptComplexity(prompt);
   
   switch (complexity) {

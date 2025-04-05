@@ -39,6 +39,7 @@ export interface AIStats {
     content_generation: number;
     code_assistant: number;
     learning_assistant: number;
+    tuned_chat: number;
   };
   averageLatency: number;
   totalLatency: number;
@@ -67,6 +68,7 @@ export interface UserAIStats {
     content_generation: number;
     code_assistant: number;
     learning_assistant: number;
+    tuned_chat: number;
   };
   lastUsed: string | null;
   averageResponseTime: number;

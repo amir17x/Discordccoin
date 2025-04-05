@@ -11,7 +11,7 @@ import { AIStats, UsageType } from '../types/aiTypes';
 // مسیر ذخیره آمار
 const STATS_FILE_PATH = path.join(process.cwd(), 'ai_stats.json');
 
-export type AIFeatureType = 'chat' | 'image_analysis' | 'content_generation' | 'code_assistant' | 'learning_assistant';
+export type AIFeatureType = 'chat' | 'image_analysis' | 'content_generation' | 'code_assistant' | 'learning_assistant' | 'tuned_chat';
 
 // آمار پیش‌فرض برای زمانی که فایل آمار وجود ندارد
 const DEFAULT_STATS: AIStats = {
@@ -40,7 +40,8 @@ const DEFAULT_STATS: AIStats = {
     image_analysis: 0,
     content_generation: 0,
     code_assistant: 0,
-    learning_assistant: 0
+    learning_assistant: 0,
+    tuned_chat: 0
   },
   averageLatency: 0,
   totalLatency: 0
@@ -187,6 +188,8 @@ function featureTypeToUsageType(
       return 'aiAssistant';
     case 'learning_assistant':
       return 'questStories';
+    case 'tuned_chat':
+      return 'aiAssistant';
     default:
       return 'other';
   }

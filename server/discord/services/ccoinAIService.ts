@@ -6,6 +6,8 @@ import aiCache from './aiCache';
 import { logAIUsage } from './aiAnalytics';
 import { checkAIAccess } from './aiAccessManager';
 import { ModelType } from './smartModelSelector';
+import fs from 'fs';
+import path from 'path';
 
 // Using CCOIN_AI_API_KEY for authentication to our AI service
 const CCOIN_AI_API_KEY = process.env.GOOGLE_AI_API_KEY || process.env.CCOIN_AI_API_KEY;
@@ -18,6 +20,9 @@ const RETRY_DELAY = 300;
 // زمان timeout برای درخواست‌ها (میلی‌ثانیه)
 const REQUEST_TIMEOUT = 8000;
 
+// مسیر فایل اطلاعات مدل آموزش‌دیده
+const TUNED_MODEL_INFO_FILE = path.resolve(process.cwd(), 'tuned_model_info.json');
+
 /**
  * سرویس CCOIN AI با استفاده از SDK گوگل با بهینه‌سازی‌های جدید
  * این سرویس از کتابخانه رسمی @google/generative-ai استفاده می‌کند
@@ -29,6 +34,9 @@ class OptimizedCcoinAIService {
   private model: any;
   private visionModel: any;
   private proModel: any;
+  
+  private tunedModel: any;
+  private hasTunedModel: boolean = false;
   
   constructor() {
     this.apiKey = CCOIN_AI_API_KEY || '';
@@ -53,12 +61,41 @@ class OptimizedCcoinAIService {
       // مدل برای تصاویر (همان مدل پیشرفته)
       this.visionModel = this.genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
       
+      // بارگیری مدل آموزش‌دیده در صورت وجود
+      this.loadTunedModel();
+      
       // پاکسازی کش در زمان راه‌اندازی
       aiCache.cleanExpired();
       
       log('سرویس CCOIN AI با موفقیت راه‌اندازی شد', 'info');
     } else {
       log('سرویس CCOIN AI: کلید API تنظیم نشده است', 'warn');
+    }
+  }
+  
+  /**
+   * بارگیری مدل آموزش‌دیده از فایل اطلاعات
+   */
+  private loadTunedModel(): void {
+    try {
+      // بررسی وجود فایل اطلاعات مدل آموزش‌دیده
+      if (fs.existsSync(TUNED_MODEL_INFO_FILE)) {
+        const modelInfo = JSON.parse(fs.readFileSync(TUNED_MODEL_INFO_FILE, 'utf8'));
+        
+        if (modelInfo && modelInfo.modelName) {
+          // ایجاد نمونه مدل آموزش‌دیده
+          this.tunedModel = this.genAI.getGenerativeModel({
+            model: modelInfo.modelName,
+            systemInstruction: "تو دستیار هوشمند CCOIN AI برای بازی Ccoin هستی و برای پاسخگویی به سؤالات کاربران آموزش دیده‌ای."
+          });
+          
+          this.hasTunedModel = true;
+          log(`مدل آموزش‌دیده CCOIN AI با نام ${modelInfo.modelName} بارگیری شد ✅`, 'info');
+        }
+      }
+    } catch (error) {
+      log(`خطا در بارگیری مدل آموزش‌دیده: ${error}`, 'error');
+      this.hasTunedModel = false;
     }
   }
   
@@ -484,6 +521,144 @@ class OptimizedCcoinAIService {
       log(`کش سرویس CCOIN AI پاکسازی شد (${size} آیتم)`, 'info');
     } catch (error) {
       log(`خطا در پاکسازی کش CCOIN AI: ${error}`, 'error');
+    }
+  }
+  
+  /**
+   * بررسی اینکه آیا مدل آموزش‌دیده در دسترس است
+   * @returns وضعیت مدل آموزش‌دیده
+   */
+  hasTunedModelAvailable(): boolean {
+    return this.hasTunedModel && this.tunedModel !== null;
+  }
+  
+  /**
+   * بازنشانی (ری‌لود) مدل آموزش‌دیده
+   * این متد برای بارگیری مجدد مدل پس از آموزش یا تغییر فایل اطلاعات مدل استفاده می‌شود
+   * @returns وضعیت بارگیری مدل
+   */
+  reloadTunedModel(): boolean {
+    try {
+      this.loadTunedModel();
+      return this.hasTunedModel;
+    } catch (error) {
+      log(`خطا در بازنشانی مدل آموزش‌دیده: ${error}`, 'error');
+      return false;
+    }
+  }
+  
+  /**
+   * تولید پاسخ با استفاده از مدل آموزش‌دیده
+   * این متد از مدل fine-tuned CCOIN AI استفاده می‌کند که برای پاسخگویی به سوالات کاربران در مورد ربات آموزش دیده است
+   * اگر مدل آموزش‌دیده در دسترس نباشد، از مدل استاندارد استفاده می‌کند
+   * @param prompt متن ورودی
+   * @param maxTokens حداکثر تعداد توکن‌های خروجی
+   * @param temperature دمای تولید پاسخ (0.0 تا 1.0)
+   * @param userId شناسه کاربر (اختیاری)
+   * @returns پاسخ تولید شده توسط مدل آموزش‌دیده
+   */
+  async generateContentWithTunedModel(
+    prompt: string,
+    maxTokens: number = 1000,
+    temperature: number = 0.2,
+    userId?: string
+  ): Promise<string> {
+    if (!this.apiKey) {
+      throw new Error('سرویس CCOIN AI به درستی راه‌اندازی نشده است');
+    }
+    
+    // اگر شناسه کاربر ارائه شده، دسترسی را بررسی می‌کنیم
+    if (userId) {
+      const hasAccess = await checkAIAccess(userId);
+      if (!hasAccess) {
+        throw new Error('شما دسترسی کافی به CCOIN AI ندارید');
+      }
+    }
+    
+    // بررسی وجود مدل آموزش‌دیده
+    if (!this.hasTunedModel || !this.tunedModel) {
+      log('مدل آموزش‌دیده در دسترس نیست، استفاده از مدل استاندارد...', 'warn');
+      return this.generateContent(prompt, maxTokens, temperature, userId);
+    }
+    
+    // بررسی کش برای درخواست‌های تکراری
+    const cacheKey = `tuned_${prompt}_${maxTokens}_${temperature}`;
+    const cachedResponse = aiCache.get(prompt, temperature, maxTokens);
+    if (cachedResponse) {
+      log(`پاسخ از کش مدل آموزش‌دیده بازیابی شد: ${prompt.substring(0, 20)}...`, 'info');
+      
+      // ثبت آمار استفاده از کش (زمان پاسخگویی صفر)
+      if (userId) {
+        logAIUsage(userId, 'tuned_chat', 0, 'cache');
+      }
+      
+      return cachedResponse;
+    }
+    
+    try {
+      log(`ارسال درخواست به مدل آموزش‌دیده CCOIN AI: ${prompt.substring(0, 50)}...`, 'info');
+      
+      const startTime = Date.now();
+      
+      // تلاش‌های مجدد برای افزایش اطمینان از پاسخگویی
+      let lastError: any = null;
+      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        try {
+          // اگر تلاش مجدد است، کمی تاخیر ایجاد کنیم
+          if (attempt > 0) {
+            await this.delay(RETRY_DELAY * attempt);
+            log(`تلاش مجدد ${attempt} از ${MAX_RETRIES}...`, 'info');
+          }
+          
+          // استفاده از مدل آموزش‌دیده
+          const result = await this.tunedModel.generateContent(prompt, {
+            temperature: temperature,
+            maxOutputTokens: maxTokens,
+            topP: 0.8,  // کاهش تنوع خروجی برای پاسخ‌های دقیق‌تر
+            topK: 40
+          });
+          
+          const response = await result.response;
+          const generatedText = response.text();
+          
+          const endTime = Date.now();
+          const responseTime = endTime - startTime;
+          
+          log(`پاسخ از مدل آموزش‌دیده CCOIN AI دریافت شد (${generatedText.length} کاراکتر, ${responseTime}ms) 🔮`, 'info');
+          
+          // ذخیره پاسخ در کش برای استفاده آینده
+          aiCache.set(prompt, generatedText, temperature, maxTokens);
+          
+          // ثبت آمار استفاده
+          if (userId) {
+            logAIUsage(userId, 'tuned_chat', responseTime, 'tuned-model');
+          }
+          
+          return generatedText;
+        } catch (error: any) {
+          lastError = error;
+          // اگر خطا موقتی باشد، تلاش مجدد می‌کنیم
+          if (!error.message.includes('API key') && 
+              (error.message.includes('429') || 
+              error.message.includes('500') || 
+              error.message.includes('timeout'))) {
+            continue;
+          } else {
+            // خطای دائمی، تلاش مجدد نمی‌کنیم
+            throw error;
+          }
+        }
+      }
+      
+      // اگر به اینجا رسیدیم، یعنی همه تلاش‌ها ناموفق بوده‌اند
+      throw lastError;
+      
+    } catch (error: any) {
+      log('خطا در فراخوانی مدل آموزش‌دیده CCOIN AI: ' + error, 'error');
+      log('استفاده از مدل استاندارد به عنوان پشتیبان...', 'info');
+      
+      // استفاده از مدل استاندارد به عنوان پشتیبان
+      return this.generateContent(prompt, maxTokens, temperature, userId);
     }
   }
 }
