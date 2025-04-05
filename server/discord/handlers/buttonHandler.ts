@@ -15,6 +15,7 @@ import { wheelOfFortuneMenu, spinWheel } from '../components/wheelOfFortuneMenu'
 import { robberyMenu, selectRobberyTarget, handleRobbery } from '../components/robberyMenu';
 import { adminMenu } from '../components/adminMenu';
 import { achievementsMenu, showCategoryAchievements, showEarnedAchievements, showProgressAchievements } from '../components/achievementsMenu';
+import { getLogger } from '../utils/logger';
 import { 
   handleGroupGamesButton, 
   handleQuizQuestionModalSubmit, 
@@ -3874,17 +3875,12 @@ async function handleExchange(interaction: ButtonInteraction, crystalAmount: num
     
     // Log the transaction
     const logger = getLogger(interaction.client);
-    logger.logTransaction(
+    logger.logEconomy(
       interaction.user.id,
       interaction.user.username,
-      'exchange_crystal',
+      'تبدیل سکه به کریستال',
       -totalCost,
-      `سکه به کریستال تبدیل کرد`,
-      [
-        { name: '💎 کریستال دریافتی', value: `${crystalAmount}`, inline: true },
-        { name: '💰 سکه پرداختی', value: `${baseCost}`, inline: true },
-        { name: '💸 کارمزد', value: `${fee}`, inline: true }
-      ]
+      `💎 کریستال دریافتی: ${crystalAmount} | 💰 سکه پرداختی: ${baseCost} | 💸 کارمزد: ${fee}`
     );
     
     // Reply with success message
@@ -3904,10 +3900,26 @@ async function handleExchange(interaction: ButtonInteraction, crystalAmount: num
     
   } catch (error) {
     console.error('Error in exchange handler:', error);
-    await interaction.reply({
-      content: '❌ متأسفانه در فرآیند تبدیل سکه به کریستال خطایی رخ داد!',
-      ephemeral: true
-    });
+    try {
+      // بررسی وضعیت پاسخ تعامل برای جلوگیری از ارسال پاسخ تکراری
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({
+          content: '❌ متأسفانه در فرآیند تبدیل سکه به کریستال خطایی رخ داد!',
+          ephemeral: true
+        });
+      } else if (interaction.deferred) {
+        await interaction.editReply({
+          content: '❌ متأسفانه در فرآیند تبدیل سکه به کریستال خطایی رخ داد!'
+        });
+      } else {
+        await interaction.followUp({
+          content: '❌ متأسفانه در فرآیند تبدیل سکه به کریستال خطایی رخ داد!',
+          ephemeral: true
+        });
+      }
+    } catch (secondError) {
+      console.error('Error handling exchange error:', secondError);
+    }
   }
 }
 
