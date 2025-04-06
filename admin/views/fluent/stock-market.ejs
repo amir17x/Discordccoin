@@ -1,17 +1,933 @@
-<%- include('page-template', {
-  pageTitle: 'مدیریت Stock Market',
-  pageIcon: 'fas fa-chart-line',
-  pageDescription: 'بازار سهام',
-  pageFeatures: [
-    'مشاهده لیست Stock Market',
-    'افزودن Stock Market جدید',
-    'ویرایش Stock Market موجود',
-    'حذف Stock Market'
-  ],
-  listIcon: 'fas fa-chart-pie',
-  listTitle: 'سهام',
-  tableHeaders: ["نماد", "نام سهام", "قیمت فعلی", "تغییرات", "آخرین به‌روزرسانی"],
-  tableColumns: ["symbol", "name", "price", "change", "updated_at"],
-  tableRows: [],
-  emptyIcon: 'fas fa-chart-bar'
-}) %>
+<div class="fluent-stock-market-dashboard">
+  <div class="fluent-page-header">
+    <h1 class="fluent-page-title">
+      <i class="fas fa-chart-line"></i> مدیریت بازار سهام
+    </h1>
+    <div class="fluent-page-actions">
+      <button class="fluent-btn fluent-btn-primary" id="add-stock-btn">
+        <i class="fas fa-plus"></i>
+        افزودن سهام جدید
+      </button>
+      <button class="fluent-btn fluent-btn-outline" id="refresh-stocks-btn">
+        <i class="fas fa-sync-alt"></i>
+        به‌روزرسانی
+      </button>
+    </div>
+  </div>
+
+  <!-- کارت‌های وضعیت بازار -->
+  <div class="fluent-row">
+    <div class="fluent-col-12 fluent-col-md-6 fluent-col-lg-3">
+      <div class="fluent-stat-card fluent-stat-card-primary">
+        <div class="fluent-stat-icon">
+          <i class="fas fa-money-bill-wave"></i>
+        </div>
+        <div class="fluent-stat-content">
+          <div class="fluent-stat-value">
+            <span class="fluent-stat-number" id="total-volume">
+              <%= typeof marketStats !== 'undefined' && marketStats.totalVolume ? marketStats.totalVolume.toLocaleString('fa-IR') : '0' %>
+            </span>
+            <span class="fluent-stat-unit">CCoin</span>
+          </div>
+          <div class="fluent-stat-label">حجم معاملات امروز</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="fluent-col-12 fluent-col-md-6 fluent-col-lg-3">
+      <div class="fluent-stat-card fluent-stat-card-success">
+        <div class="fluent-stat-icon">
+          <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="fluent-stat-content">
+          <div class="fluent-stat-value">
+            <span class="fluent-stat-number" id="total-stocks">
+              <%= typeof stocks !== 'undefined' ? stocks.length.toLocaleString('fa-IR') : '0' %>
+            </span>
+          </div>
+          <div class="fluent-stat-label">تعداد سهام‌ها</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="fluent-col-12 fluent-col-md-6 fluent-col-lg-3">
+      <div class="fluent-stat-card fluent-stat-card-warning">
+        <div class="fluent-stat-icon">
+          <i class="fas fa-user-tie"></i>
+        </div>
+        <div class="fluent-stat-content">
+          <div class="fluent-stat-value">
+            <span class="fluent-stat-number" id="active-traders">
+              <%= typeof marketStats !== 'undefined' && marketStats.activeTraders ? marketStats.activeTraders.toLocaleString('fa-IR') : '0' %>
+            </span>
+          </div>
+          <div class="fluent-stat-label">معامله‌گران فعال</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="fluent-col-12 fluent-col-md-6 fluent-col-lg-3">
+      <div class="fluent-stat-card fluent-stat-card-info">
+        <div class="fluent-stat-icon">
+          <i class="fas fa-percentage"></i>
+        </div>
+        <div class="fluent-stat-content">
+          <div class="fluent-stat-value">
+            <span class="fluent-stat-number" id="market-condition">
+              <% if (typeof systemStatus !== 'undefined') { %>
+                <% if (systemStatus.stockMarket === 'bull') { %>
+                  <span class="fluent-text-success">رونق</span>
+                <% } else if (systemStatus.stockMarket === 'bear') { %>
+                  <span class="fluent-text-danger">رکود</span>
+                <% } else if (systemStatus.stockMarket === 'crisis') { %>
+                  <span class="fluent-text-danger">بحران</span>
+                <% } else { %>
+                  <span class="fluent-text-muted">ثبات</span>
+                <% } %>
+              <% } else { %>
+                <span class="fluent-text-muted">نامشخص</span>
+              <% } %>
+            </span>
+          </div>
+          <div class="fluent-stat-label">وضعیت بازار</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- نمودار و جدول سهام -->
+  <div class="fluent-row fluent-mt-4">
+    <!-- بخش سمت راست - نمودار -->
+    <div class="fluent-col-12 fluent-col-lg-5">
+      <div class="fluent-card fluent-mb-4">
+        <div class="fluent-card-header">
+          <h3 class="fluent-card-title">
+            <i class="fas fa-chart-pie"></i>
+            نمودار بازار سهام
+          </h3>
+        </div>
+        <div class="fluent-card-body">
+          <div class="fluent-market-chart">
+            <div class="fluent-empty-chart">
+              <% if (typeof stocks !== 'undefined' && stocks.length > 0) { %>
+                <canvas id="stockMarketChart" width="100%" height="250"></canvas>
+              <% } else { %>
+                <div class="fluent-empty-state">
+                  <i class="fas fa-chart-pie fa-2x fluent-mb-2"></i>
+                  <p>داده‌ای برای نمایش نمودار وجود ندارد</p>
+                </div>
+              <% } %>
+            </div>
+          </div>
+        </div>
+        <div class="fluent-card-footer">
+          <div class="fluent-chart-legend" id="chart-legend">
+            <!-- شرح نمودار اینجا قرار می‌گیرد -->
+          </div>
+        </div>
+      </div>
+
+      <!-- تنظیمات بازار -->
+      <div class="fluent-card">
+        <div class="fluent-card-header">
+          <h3 class="fluent-card-title">
+            <i class="fas fa-sliders-h"></i>
+            تنظیمات بازار
+          </h3>
+        </div>
+        <div class="fluent-card-body">
+          <form id="market-settings-form">
+            <div class="fluent-form-group">
+              <label class="fluent-form-label">وضعیت بازار:</label>
+              <select class="fluent-form-control" id="market-status">
+                <option value="normal" <%= typeof systemStatus !== 'undefined' && systemStatus.stockMarket === 'normal' ? 'selected' : '' %>>عادی</option>
+                <option value="bull" <%= typeof systemStatus !== 'undefined' && systemStatus.stockMarket === 'bull' ? 'selected' : '' %>>رونق</option>
+                <option value="bear" <%= typeof systemStatus !== 'undefined' && systemStatus.stockMarket === 'bear' ? 'selected' : '' %>>رکود</option>
+                <option value="crisis" <%= typeof systemStatus !== 'undefined' && systemStatus.stockMarket === 'crisis' ? 'selected' : '' %>>بحران</option>
+              </select>
+            </div>
+
+            <div class="fluent-form-group">
+              <label class="fluent-form-label">ضریب نوسان:</label>
+              <div class="fluent-slider-container">
+                <input type="range" min="0.5" max="2" step="0.1" value="<%= typeof systemStatus !== 'undefined' && systemStatus.inflationRate ? (systemStatus.inflationRate / 100) + 1 : '1' %>" class="fluent-slider" id="volatility-slider">
+                <div class="fluent-slider-value" id="volatility-value"><%= typeof systemStatus !== 'undefined' && systemStatus.inflationRate ? systemStatus.inflationRate : '0' %>%</div>
+              </div>
+            </div>
+
+            <div class="fluent-form-group">
+              <label class="fluent-form-label">فاصله به‌روزرسانی خودکار (دقیقه):</label>
+              <input type="number" class="fluent-form-control" id="auto-update-interval" value="<%= typeof marketSettings !== 'undefined' && marketSettings.updateInterval ? marketSettings.updateInterval : '60' %>" min="15" max="1440">
+            </div>
+
+            <div class="fluent-form-actions">
+              <button type="submit" class="fluent-btn fluent-btn-primary">
+                <i class="fas fa-save"></i>
+                ذخیره تنظیمات
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- بخش سمت چپ - جدول سهام -->
+    <div class="fluent-col-12 fluent-col-lg-7">
+      <div class="fluent-card">
+        <div class="fluent-card-header">
+          <div class="fluent-card-title-with-actions">
+            <h3 class="fluent-card-title">
+              <i class="fas fa-table"></i>
+              لیست سهام
+            </h3>
+            <div class="fluent-card-actions">
+              <div class="fluent-search-box">
+                <input type="text" placeholder="جستجو..." id="stock-search" class="fluent-search-input">
+                <i class="fas fa-search fluent-search-icon"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="fluent-card-body">
+          <div class="fluent-table-responsive">
+            <table class="fluent-table fluent-stock-table">
+              <thead>
+                <tr>
+                  <th class="fluent-th-center">نماد</th>
+                  <th>نام سهام</th>
+                  <th class="fluent-th-center">قیمت فعلی</th>
+                  <th class="fluent-th-center">تغییرات</th>
+                  <th class="fluent-th-center">تاریخ بروزرسانی</th>
+                  <th class="fluent-th-center">عملیات</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (typeof stocks !== 'undefined' && stocks.length > 0) { %>
+                  <% stocks.forEach(function(stock) { %>
+                    <tr>
+                      <td class="fluent-td-center">
+                        <span class="fluent-badge <%= stock.change > 0 ? 'fluent-badge-success' : (stock.change < 0 ? 'fluent-badge-danger' : 'fluent-badge-primary') %>">
+                          <%= stock.symbol %>
+                        </span>
+                      </td>
+                      <td><%= stock.name %></td>
+                      <td class="fluent-td-center"><%= stock.price.toLocaleString('fa-IR') %> CCoin</td>
+                      <td class="fluent-td-center">
+                        <% if (stock.change > 0) { %>
+                          <span class="fluent-text-success">
+                            <i class="fas fa-arrow-up"></i>
+                            <%= stock.change %>%
+                          </span>
+                        <% } else if (stock.change < 0) { %>
+                          <span class="fluent-text-danger">
+                            <i class="fas fa-arrow-down"></i>
+                            <%= Math.abs(stock.change) %>%
+                          </span>
+                        <% } else { %>
+                          <span class="fluent-text-muted">
+                            <i class="fas fa-minus"></i>
+                            0%
+                          </span>
+                        <% } %>
+                      </td>
+                      <td class="fluent-td-center"><%= stock.date %></td>
+                      <td class="fluent-td-center">
+                        <button class="fluent-btn fluent-btn-sm fluent-btn-outline edit-stock-btn" data-symbol="<%= stock.symbol %>" title="ویرایش">
+                          <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="fluent-btn fluent-btn-sm fluent-btn-success force-update-btn" data-symbol="<%= stock.symbol %>" title="به‌روزرسانی سریع">
+                          <i class="fas fa-sync-alt"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  <% }); %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="6" class="fluent-empty-state">
+                      <div class="fluent-empty-icon">
+                        <i class="fas fa-chart-bar"></i>
+                      </div>
+                      <div class="fluent-empty-text">هیچ سهامی برای نمایش وجود ندارد</div>
+                    </td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      
+      <!-- تاریخچه معاملات -->
+      <div class="fluent-card fluent-mt-4">
+        <div class="fluent-card-header">
+          <h3 class="fluent-card-title">
+            <i class="fas fa-history"></i>
+            تاریخچه معاملات
+          </h3>
+        </div>
+        <div class="fluent-card-body">
+          <% if (typeof transactions !== 'undefined' && transactions.length > 0) { %>
+            <div class="fluent-transaction-history">
+              <% transactions.forEach(function(transaction) { %>
+                <div class="fluent-transaction-item">
+                  <div class="fluent-transaction-icon">
+                    <% if (transaction.type === 'buy') { %>
+                      <i class="fas fa-arrow-down fluent-text-success"></i>
+                    <% } else if (transaction.type === 'sell') { %>
+                      <i class="fas fa-arrow-up fluent-text-danger"></i>
+                    <% } else { %>
+                      <i class="fas fa-exchange-alt fluent-text-primary"></i>
+                    <% } %>
+                  </div>
+                  <div class="fluent-transaction-content">
+                    <div class="fluent-transaction-details">
+                      <span class="fluent-transaction-user"><%= transaction.username %></span>
+                      <span class="fluent-transaction-symbol">
+                        <%= transaction.stockSymbol %>
+                      </span>
+                      <span class="fluent-transaction-action">
+                        <% if (transaction.type === 'buy') { %>
+                          خرید کرد
+                        <% } else if (transaction.type === 'sell') { %>
+                          فروخت
+                        <% } else { %>
+                          معامله کرد
+                        <% } %>
+                      </span>
+                    </div>
+                    <div class="fluent-transaction-meta">
+                      <span class="fluent-transaction-amount">
+                        <%= transaction.quantity %> سهم با قیمت <%= transaction.price.toLocaleString('fa-IR') %> CCoin
+                      </span>
+                      <span class="fluent-transaction-time">
+                        <%= transaction.timestamp %>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              <% }); %>
+            </div>
+          <% } else { %>
+            <div class="fluent-empty-state">
+              <i class="fas fa-history fa-2x fluent-mb-2"></i>
+              <p>هیچ معامله‌ای ثبت نشده است</p>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- مودال افزودن/ویرایش سهام -->
+<div class="fluent-modal" id="stock-modal">
+  <div class="fluent-modal-dialog">
+    <div class="fluent-modal-content">
+      <div class="fluent-modal-header">
+        <h3 class="fluent-modal-title" id="modal-title">افزودن سهام جدید</h3>
+        <button class="fluent-modal-close" id="modal-close">&times;</button>
+      </div>
+      <div class="fluent-modal-body">
+        <form id="stock-form">
+          <input type="hidden" id="stock-id">
+          <div class="fluent-form-group">
+            <label class="fluent-form-label" for="stock-symbol">نماد:</label>
+            <input type="text" class="fluent-form-control" id="stock-symbol" maxlength="5" required>
+          </div>
+          <div class="fluent-form-group">
+            <label class="fluent-form-label" for="stock-name">نام شرکت:</label>
+            <input type="text" class="fluent-form-control" id="stock-name" required>
+          </div>
+          <div class="fluent-form-group">
+            <label class="fluent-form-label" for="stock-price">قیمت پایه (CCoin):</label>
+            <input type="number" class="fluent-form-control" id="stock-price" min="1" required>
+          </div>
+          <div class="fluent-form-group">
+            <label class="fluent-form-label" for="stock-volatility">ضریب نوسان (درصد):</label>
+            <div class="fluent-slider-container">
+              <input type="range" min="1" max="50" value="10" class="fluent-slider" id="stock-volatility">
+              <div class="fluent-slider-value" id="stock-volatility-value">10%</div>
+            </div>
+          </div>
+          <div class="fluent-form-group">
+            <label class="fluent-form-label" for="stock-max-daily">حداکثر نوسان روزانه (درصد):</label>
+            <input type="number" class="fluent-form-control" id="stock-max-daily" min="1" max="50" value="15">
+          </div>
+        </form>
+      </div>
+      <div class="fluent-modal-footer">
+        <button class="fluent-btn fluent-btn-danger fluent-btn-sm" id="modal-cancel">انصراف</button>
+        <button class="fluent-btn fluent-btn-primary fluent-btn-sm" id="modal-save">ذخیره</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .fluent-stock-market-dashboard {
+    font-family: 'Vazirmatn', sans-serif;
+  }
+  
+  .fluent-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  
+  .fluent-page-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .fluent-market-chart {
+    min-height: 250px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .fluent-empty-chart {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .fluent-chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+  }
+  
+  .fluent-legend-item {
+    display: flex;
+    align-items: center;
+    font-size: 0.8rem;
+  }
+  
+  .fluent-legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    margin-left: 0.5rem;
+  }
+  
+  .fluent-slider-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .fluent-slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    background: #e0e0e0;
+    outline: none;
+    border-radius: 2px;
+  }
+  
+  .fluent-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--fluent-primary);
+    border-radius: 50%;
+    cursor: pointer;
+  }
+  
+  .fluent-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: var(--fluent-primary);
+    border-radius: 50%;
+    cursor: pointer;
+  }
+  
+  .fluent-slider-value {
+    min-width: 40px;
+    text-align: center;
+  }
+  
+  .fluent-search-box {
+    position: relative;
+    width: 200px;
+  }
+  
+  .fluent-search-input {
+    width: 100%;
+    padding: 0.3rem 2rem 0.3rem 0.5rem;
+    border: 1px solid var(--fluent-border-color);
+    border-radius: 4px;
+    font-family: inherit;
+  }
+  
+  .fluent-search-icon {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--fluent-neutral);
+  }
+  
+  .fluent-stock-table th, 
+  .fluent-stock-table td {
+    padding: 0.75rem 0.5rem;
+    vertical-align: middle;
+  }
+  
+  .fluent-th-center {
+    text-align: center;
+  }
+  
+  .fluent-td-center {
+    text-align: center;
+  }
+  
+  .fluent-transaction-history {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 0.5rem;
+  }
+  
+  .fluent-transaction-item {
+    display: flex;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--fluent-border-color);
+  }
+  
+  .fluent-transaction-item:last-child {
+    border-bottom: none;
+  }
+  
+  .fluent-transaction-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    margin-left: 0.5rem;
+  }
+  
+  .fluent-transaction-content {
+    flex: 1;
+  }
+  
+  .fluent-transaction-details {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  .fluent-transaction-user {
+    font-weight: 600;
+  }
+  
+  .fluent-transaction-symbol {
+    background-color: var(--fluent-neutral-lighter);
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.8rem;
+  }
+  
+  .fluent-transaction-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--fluent-neutral);
+  }
+  
+  .fluent-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .fluent-modal-dialog {
+    max-width: 550px;
+    width: 100%;
+    border-radius: 6px;
+    margin: 1rem;
+  }
+  
+  .fluent-modal-content {
+    background-color: var(--fluent-bg);
+    border-radius: 6px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  }
+  
+  .fluent-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--fluent-border-color);
+  }
+  
+  .fluent-modal-title {
+    margin: 0;
+    font-size: 1.2rem;
+  }
+  
+  .fluent-modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    color: var(--fluent-neutral);
+  }
+  
+  .fluent-modal-body {
+    padding: 1rem;
+  }
+  
+  .fluent-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 1rem;
+    gap: 0.5rem;
+    border-top: 1px solid var(--fluent-border-color);
+  }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // استفاده از Chart.js برای نمایش نمودار در صورت وجود داده
+  const chartElement = document.getElementById('stockMarketChart');
+  if (chartElement) {
+    // دریافت داده‌های سهام از صفحه
+    const stocksData = <%= typeof stocks !== 'undefined' && stocks.length > 0 ? JSON.stringify(stocks) : '[]' %>;
+    
+    // تبدیل داده‌ها به فرمت مناسب برای نمودار
+    if (stocksData.length > 0) {
+      // تنظیم رنگ‌های نمودار
+      const colors = [
+        '#0078D4', '#0E700E', '#D83B01', '#8764B8', 
+        '#00B294', '#EB3C96', '#B4009E', '#69797E'
+      ];
+      
+      // محاسبه سهم هر سهام در بازار براساس قیمت
+      const totalMarketValue = stocksData.reduce((total, stock) => total + stock.price, 0);
+      const data = stocksData.map(stock => (stock.price / totalMarketValue) * 100);
+      const labels = stocksData.map(stock => stock.symbol);
+      
+      // رندر نمودار دایره‌ای
+      if (typeof Chart !== 'undefined') {
+        const ctx = chartElement.getContext('2d');
+        const stockChart = new Chart(ctx, {
+          type: 'pie',
+          data: {
+            labels: labels,
+            datasets: [{
+              data: data,
+              backgroundColor: colors.slice(0, stocksData.length),
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: false
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    const label = context.label || '';
+                    const value = context.raw.toFixed(1) + '%';
+                    return `${label}: ${value}`;
+                  }
+                }
+              }
+            }
+          }
+        });
+        
+        // ایجاد راهنمای نمودار در پایین نمودار
+        const legendContainer = document.getElementById('chart-legend');
+        if (legendContainer) {
+          stocksData.forEach((stock, index) => {
+            const legendItem = document.createElement('div');
+            legendItem.className = 'fluent-legend-item';
+            
+            const colorBox = document.createElement('div');
+            colorBox.className = 'fluent-legend-color';
+            colorBox.style.backgroundColor = colors[index % colors.length];
+            
+            const textSpan = document.createElement('span');
+            textSpan.textContent = `${stock.symbol}: ${data[index].toFixed(1)}%`;
+            
+            legendItem.appendChild(colorBox);
+            legendItem.appendChild(textSpan);
+            legendContainer.appendChild(legendItem);
+          });
+        }
+      } else {
+        console.error('کتابخانه Chart.js یافت نشد. لطفاً آن را به پروژه اضافه کنید.');
+      }
+    }
+  }
+  
+  // اسلایدر تنظیمات بازار
+  const volatilitySlider = document.getElementById('volatility-slider');
+  const volatilityValue = document.getElementById('volatility-value');
+  if (volatilitySlider && volatilityValue) {
+    volatilitySlider.addEventListener('input', function() {
+      const value = (parseFloat(this.value) - 1) * 100;
+      volatilityValue.textContent = `${value.toFixed(1)}%`;
+    });
+  }
+  
+  // اسلایدر مودال
+  const stockVolatilitySlider = document.getElementById('stock-volatility');
+  const stockVolatilityValue = document.getElementById('stock-volatility-value');
+  if (stockVolatilitySlider && stockVolatilityValue) {
+    stockVolatilitySlider.addEventListener('input', function() {
+      stockVolatilityValue.textContent = `${this.value}%`;
+    });
+  }
+  
+  // مدیریت مودال
+  const modal = document.getElementById('stock-modal');
+  const addStockBtn = document.getElementById('add-stock-btn');
+  const modalClose = document.getElementById('modal-close');
+  const modalCancel = document.getElementById('modal-cancel');
+  const modalSave = document.getElementById('modal-save');
+  
+  if (modal && addStockBtn) {
+    // باز کردن مودال برای افزودن سهام جدید
+    addStockBtn.addEventListener('click', function() {
+      document.getElementById('modal-title').textContent = 'افزودن سهام جدید';
+      document.getElementById('stock-form').reset();
+      document.getElementById('stock-id').value = '';
+      modal.style.display = 'flex';
+    });
+    
+    // بستن مودال
+    if (modalClose) {
+      modalClose.addEventListener('click', function() {
+        modal.style.display = 'none';
+      });
+    }
+    
+    if (modalCancel) {
+      modalCancel.addEventListener('click', function() {
+        modal.style.display = 'none';
+      });
+    }
+    
+    // کلیک روی خارج از مودال
+    window.addEventListener('click', function(event) {
+      if (event.target === modal) {
+        modal.style.display = 'none';
+      }
+    });
+    
+    // ذخیره اطلاعات فرم
+    if (modalSave) {
+      modalSave.addEventListener('click', function() {
+        const stockForm = document.getElementById('stock-form');
+        if (stockForm.checkValidity()) {
+          // در اینجا می‌توان داده‌های فرم را به سرور ارسال کرد
+          const stockId = document.getElementById('stock-id').value;
+          const symbol = document.getElementById('stock-symbol').value;
+          const name = document.getElementById('stock-name').value;
+          const price = document.getElementById('stock-price').value;
+          const volatility = document.getElementById('stock-volatility').value;
+          const maxDaily = document.getElementById('stock-max-daily').value;
+          
+          console.log('داده‌های سهام:', { stockId, symbol, name, price, volatility, maxDaily });
+          
+          // ارسال داده‌ها به سرور
+          fetch('/admin/api/stocks', {
+            method: stockId ? 'PUT' : 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              id: stockId,
+              symbol: symbol,
+              name: name,
+              price: parseInt(price),
+              volatility: parseFloat(volatility),
+              maxDaily: parseFloat(maxDaily)
+            })
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              // نمایش پیام موفقیت و بارگذاری مجدد صفحه
+              alert(data.message || 'عملیات با موفقیت انجام شد');
+              window.location.reload();
+            } else {
+              // نمایش پیام خطا
+              alert(data.message || 'خطا در عملیات');
+            }
+          })
+          .catch(error => {
+            console.error('خطا در ارسال داده‌ها:', error);
+            alert('خطا در ارتباط با سرور');
+          });
+          
+          modal.style.display = 'none';
+        } else {
+          stockForm.reportValidity();
+        }
+      });
+    }
+  }
+  
+  // دکمه‌های ویرایش سهام
+  const editButtons = document.querySelectorAll('.edit-stock-btn');
+  editButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      const symbol = this.getAttribute('data-symbol');
+      if (symbol) {
+        // دریافت اطلاعات سهام از سرور
+        fetch(`/admin/api/stocks/${symbol}`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.success && data.stock) {
+              // پر کردن فرم با داده‌های دریافتی
+              document.getElementById('modal-title').textContent = 'ویرایش سهام';
+              document.getElementById('stock-id').value = data.stock._id || '';
+              document.getElementById('stock-symbol').value = data.stock.symbol;
+              document.getElementById('stock-name').value = data.stock.name;
+              document.getElementById('stock-price').value = data.stock.currentPrice;
+              
+              // تنظیم مقادیر اسلایدر
+              const volatilitySlider = document.getElementById('stock-volatility');
+              const volatilityValue = document.getElementById('stock-volatility-value');
+              if (volatilitySlider && volatilityValue) {
+                volatilitySlider.value = data.stock.volatility || 10;
+                volatilityValue.textContent = `${volatilitySlider.value}%`;
+              }
+              
+              document.getElementById('stock-max-daily').value = data.stock.maxDailyChange || 15;
+              
+              // نمایش مودال
+              modal.style.display = 'flex';
+            } else {
+              alert(data.message || 'خطا در دریافت اطلاعات سهام');
+            }
+          })
+          .catch(error => {
+            console.error('خطا در دریافت اطلاعات سهام:', error);
+            alert('خطا در ارتباط با سرور');
+          });
+      }
+    });
+  });
+  
+  // دکمه‌های به‌روزرسانی سریع سهام
+  const updateButtons = document.querySelectorAll('.force-update-btn');
+  updateButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      const symbol = this.getAttribute('data-symbol');
+      if (symbol) {
+        // نمایش پیام تأیید
+        if (confirm(`آیا از به‌روزرسانی سریع قیمت سهام ${symbol} اطمینان دارید؟`)) {
+          // ارسال درخواست به‌روزرسانی به سرور
+          fetch(`/admin/api/stocks/${symbol}/force-update`, {
+            method: 'POST'
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              alert(data.message || 'قیمت سهام با موفقیت به‌روزرسانی شد');
+              window.location.reload();
+            } else {
+              alert(data.message || 'خطا در به‌روزرسانی قیمت سهام');
+            }
+          })
+          .catch(error => {
+            console.error('خطا در به‌روزرسانی قیمت سهام:', error);
+            alert('خطا در ارتباط با سرور');
+          });
+        }
+      }
+    });
+  });
+  
+  // دکمه به‌روزرسانی لیست سهام
+  const refreshButton = document.getElementById('refresh-stocks-btn');
+  if (refreshButton) {
+    refreshButton.addEventListener('click', function() {
+      window.location.reload();
+    });
+  }
+  
+  // فرم تنظیمات بازار
+  const marketSettingsForm = document.getElementById('market-settings-form');
+  if (marketSettingsForm) {
+    marketSettingsForm.addEventListener('submit', function(event) {
+      event.preventDefault();
+      
+      // جمع‌آوری داده‌های فرم
+      const marketStatus = document.getElementById('market-status').value;
+      const volatility = parseFloat(document.getElementById('volatility-slider').value);
+      const updateInterval = parseInt(document.getElementById('auto-update-interval').value);
+      
+      // ارسال داده‌ها به سرور
+      fetch('/admin/api/market-settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          status: marketStatus,
+          volatility: volatility,
+          updateInterval: updateInterval
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert(data.message || 'تنظیمات بازار با موفقیت ذخیره شد');
+          window.location.reload();
+        } else {
+          alert(data.message || 'خطا در ذخیره تنظیمات بازار');
+        }
+      })
+      .catch(error => {
+        console.error('خطا در ذخیره تنظیمات بازار:', error);
+        alert('خطا در ارتباط با سرور');
+      });
+    });
+  }
+  
+  // جستجو در جدول سهام
+  const searchInput = document.getElementById('stock-search');
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      const searchValue = this.value.toLowerCase();
+      const rows = document.querySelectorAll('.fluent-stock-table tbody tr');
+      
+      rows.forEach(row => {
+        const symbol = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
+        const name = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+        
+        if (symbol.includes(searchValue) || name.includes(searchValue)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+  }
+});
+</script>

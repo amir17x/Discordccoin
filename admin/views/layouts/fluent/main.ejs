@@ -102,6 +102,37 @@
         <span>بانک</span>
       </a>
       
+      <!-- منوهای جدید مطابق با پنل ادمین دیسکورد -->
+      <a href="/admin/quests" class="fluent-sidebar-nav-item <%= activePage === 'quests' ? 'active' : '' %>">
+        <i class="fas fa-tasks"></i>
+        <span>ماموریت‌ها</span>
+      </a>
+      
+      <a href="/admin/clans" class="fluent-sidebar-nav-item <%= activePage === 'clans' ? 'active' : '' %>">
+        <i class="fas fa-flag"></i>
+        <span>کلن‌ها</span>
+      </a>
+      
+      <a href="/admin/stats" class="fluent-sidebar-nav-item <%= activePage === 'stats' ? 'active' : '' %>">
+        <i class="fas fa-chart-bar"></i>
+        <span>آمار ربات</span>
+      </a>
+      
+      <a href="/admin/broadcast" class="fluent-sidebar-nav-item <%= activePage === 'broadcast' ? 'active' : '' %>">
+        <i class="fas fa-bullhorn"></i>
+        <span>اطلاع‌رسانی</span>
+      </a>
+      
+      <a href="/admin/backup" class="fluent-sidebar-nav-item <%= activePage === 'backup' ? 'active' : '' %>">
+        <i class="fas fa-database"></i>
+        <span>پشتیبان‌گیری</span>
+      </a>
+      
+      <a href="/admin/ai-settings" class="fluent-sidebar-nav-item <%= activePage === 'ai-settings' ? 'active' : '' %>">
+        <i class="fas fa-brain"></i>
+        <span>تنظیمات هوش مصنوعی</span>
+      </a>
+      
       <a href="/admin/logs" class="fluent-sidebar-nav-item <%= activePage === 'logs' ? 'active' : '' %>">
         <i class="fas fa-list"></i>
         <span>گزارش‌ها</span>
@@ -158,6 +189,9 @@
   <footer class="fluent-footer">
     <p>پنل مدیریت CCoin &copy; <%= new Date().getFullYear() %>. تمامی حقوق محفوظ است.</p>
   </footer>
+  
+  <!-- کتابخانه‌های خارجی -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   
   <!-- اسکریپت‌های Fluent UI -->
   <script src="/admin/js/fluent-ui/fluent.js"></script>

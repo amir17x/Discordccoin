@@ -1,0 +1,1303 @@
+<!-- صفحه اطلاع‌رسانی -->
+<div class="fluent-container">
+  <!-- هدر صفحه -->
+  <div class="fluent-page-header">
+    <h1 class="fluent-page-title">
+      <i class="fas fa-bullhorn"></i>
+      اطلاع‌رسانی
+    </h1>
+    <div class="fluent-page-actions">
+      <button id="btnViewHistory" class="fluent-btn fluent-btn-outline">
+        <i class="fas fa-history"></i>
+        تاریخچه پیام‌ها
+      </button>
+      <button id="btnCreateTemplate" class="fluent-btn fluent-btn-outline">
+        <i class="fas fa-save"></i>
+        ذخیره قالب
+      </button>
+    </div>
+  </div>
+
+  <!-- نمایش خطا در صورت وجود -->
+  <% if (typeof error !== 'undefined' && error) { %>
+    <div class="fluent-alert fluent-alert-danger">
+      <i class="fas fa-exclamation-circle"></i> <%= error %>
+      <button class="fluent-alert-close">&times;</button>
+    </div>
+  <% } %>
+
+  <div class="fluent-row">
+    <!-- فرم ارسال پیام -->
+    <div class="fluent-col-lg-8">
+      <div class="fluent-card fluent-mb-4">
+        <div class="fluent-card-header">
+          <h3 class="fluent-card-title">
+            <i class="fas fa-pen"></i>
+            ایجاد پیام جدید
+          </h3>
+          <div class="fluent-card-actions">
+            <div class="fluent-dropdown">
+              <button class="fluent-dropdown-toggle fluent-btn fluent-btn-sm fluent-btn-outline">
+                <i class="fas fa-file-alt"></i>
+                قالب‌ها
+              </button>
+              <div class="fluent-dropdown-menu fluent-dropdown-menu-right" id="templatesDropdown">
+                <a href="#" class="fluent-dropdown-item" data-template="welcome">خوش‌آمدگویی</a>
+                <a href="#" class="fluent-dropdown-item" data-template="update">اطلاعیه به‌روزرسانی</a>
+                <a href="#" class="fluent-dropdown-item" data-template="event">اطلاعیه رویداد</a>
+                <a href="#" class="fluent-dropdown-item" data-template="maintenance">اطلاعیه تعمیرات</a>
+                <div class="fluent-dropdown-divider"></div>
+                <a href="#" class="fluent-dropdown-item" id="loadMoreTemplates">مشاهده همه قالب‌ها...</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="fluent-card-body">
+          <form id="broadcastForm">
+            <div class="fluent-form-group">
+              <label for="messageTitle" class="fluent-form-label">عنوان پیام</label>
+              <input type="text" class="fluent-form-control" id="messageTitle" name="title" placeholder="عنوان پیام را وارد کنید">
+            </div>
+            
+            <div class="fluent-form-group">
+              <label for="messageContent" class="fluent-form-label required">محتوای پیام</label>
+              <textarea class="fluent-form-control" id="messageContent" name="message" rows="8" placeholder="پیام خود را اینجا بنویسید..." required></textarea>
+              <div class="fluent-form-text">
+                <span>می‌توانید از نشانه‌گذاری Discord استفاده کنید (**پررنگ**, *مورب*, __زیرخط__, ~~خط‌خورده~~, `کد`).</span>
+                <span class="fluent-text-muted float-end"><span id="messageCharCount">0</span> / 2000 کاراکتر</span>
+              </div>
+            </div>
+            
+            <div class="fluent-row">
+              <div class="fluent-col-md-6">
+                <div class="fluent-form-group">
+                  <label for="messageColor" class="fluent-form-label">رنگ نوار کناری</label>
+                  <div class="fluent-input-group">
+                    <span class="fluent-input-group-text">
+                      <i class="fas fa-palette"></i>
+                    </span>
+                    <input type="color" class="fluent-form-control fluent-form-color" id="messageColor" name="color" value="#0099ff">
+                    <input type="text" class="fluent-form-control" id="messageColorText" value="#0099ff">
+                  </div>
+                </div>
+              </div>
+              <div class="fluent-col-md-6">
+                <div class="fluent-form-group">
+                  <label for="messageImageUrl" class="fluent-form-label">آدرس تصویر (اختیاری)</label>
+                  <div class="fluent-input-group">
+                    <span class="fluent-input-group-text">
+                      <i class="fas fa-image"></i>
+                    </span>
+                    <input type="text" class="fluent-form-control" id="messageImageUrl" name="image" placeholder="آدرس تصویر را وارد کنید">
+                    <button type="button" class="fluent-btn fluent-btn-outline" id="btnPreviewImage">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="fluent-form-group" id="imagePreviewContainer" style="display: none;">
+              <label class="fluent-form-label">پیش‌نمایش تصویر</label>
+              <div class="fluent-image-preview">
+                <img id="imagePreview" src="" alt="پیش‌نمایش تصویر">
+              </div>
+            </div>
+            
+            <div class="fluent-form-group">
+              <label class="fluent-form-label">گیرندگان پیام</label>
+              <div class="fluent-form-check fluent-mb-2">
+                <input type="radio" class="fluent-form-check-input" id="targetAll" name="targetType" value="all" checked>
+                <label class="fluent-form-check-label" for="targetAll">تمامی کاربران</label>
+              </div>
+              <div class="fluent-form-check fluent-mb-2">
+                <input type="radio" class="fluent-form-check-input" id="targetServer" name="targetType" value="server">
+                <label class="fluent-form-check-label" for="targetServer">یک سرور خاص</label>
+              </div>
+              <div class="fluent-form-check fluent-mb-2">
+                <input type="radio" class="fluent-form-check-input" id="targetRole" name="targetType" value="role">
+                <label class="fluent-form-check-label" for="targetRole">کاربران با یک نقش خاص</label>
+              </div>
+              <div class="fluent-form-check fluent-mb-2">
+                <input type="radio" class="fluent-form-check-input" id="targetSpecific" name="targetType" value="specific">
+                <label class="fluent-form-check-label" for="targetSpecific">کاربران خاص</label>
+              </div>
+            </div>
+            
+            <div class="fluent-form-group" id="serverSelectContainer" style="display: none;">
+              <label for="serverSelect" class="fluent-form-label">سرور مورد نظر</label>
+              <select class="fluent-form-control" id="serverSelect" name="serverId">
+                <option value="">انتخاب سرور...</option>
+                <!-- گزینه‌ها به صورت پویا بارگذاری می‌شوند -->
+              </select>
+            </div>
+            
+            <div class="fluent-form-group" id="roleSelectContainer" style="display: none;">
+              <label for="roleSelect" class="fluent-form-label">نقش مورد نظر</label>
+              <select class="fluent-form-control" id="roleSelect" name="roleId">
+                <option value="">انتخاب نقش...</option>
+                <!-- گزینه‌ها به صورت پویا بارگذاری می‌شوند -->
+              </select>
+            </div>
+            
+            <div class="fluent-form-group" id="userSelectContainer" style="display: none;">
+              <label for="userSelect" class="fluent-form-label">کاربران مورد نظر</label>
+              <select class="fluent-form-control" id="userSelect" name="userIds" multiple>
+                <!-- گزینه‌ها به صورت پویا بارگذاری می‌شوند -->
+              </select>
+              <div class="fluent-form-text">برای انتخاب چند کاربر، دکمه Ctrl را نگه دارید.</div>
+            </div>
+            
+            <div class="fluent-form-group">
+              <label class="fluent-form-label">گزینه‌های اضافی</label>
+              <div class="fluent-form-check fluent-mb-2">
+                <input type="checkbox" class="fluent-form-check-input" id="sendAsDM" name="sendAsDM">
+                <label class="fluent-form-check-label" for="sendAsDM">ارسال به صورت پیام خصوصی</label>
+              </div>
+              <div class="fluent-form-check fluent-mb-2">
+                <input type="checkbox" class="fluent-form-check-input" id="pinnedMessage" name="pinnedMessage">
+                <label class="fluent-form-check-label" for="pinnedMessage">پین کردن پیام</label>
+              </div>
+              <div class="fluent-form-check fluent-mb-2">
+                <input type="checkbox" class="fluent-form-check-input" id="mentionEveryone" name="mentionEveryone">
+                <label class="fluent-form-check-label" for="mentionEveryone">منشن کردن همه (@everyone)</label>
+              </div>
+            </div>
+            
+            <div class="fluent-form-group">
+              <label for="messageSchedule" class="fluent-form-label">زمان‌بندی ارسال</label>
+              <div class="fluent-form-check fluent-mb-2">
+                <input type="radio" class="fluent-form-check-input" id="scheduleSendNow" name="scheduleType" value="now" checked>
+                <label class="fluent-form-check-label" for="scheduleSendNow">ارسال فوری</label>
+              </div>
+              <div class="fluent-form-check fluent-mb-2">
+                <input type="radio" class="fluent-form-check-input" id="scheduleSendLater" name="scheduleType" value="later">
+                <label class="fluent-form-check-label" for="scheduleSendLater">ارسال در زمان مشخص</label>
+              </div>
+            </div>
+            
+            <div class="fluent-form-group" id="scheduleDateContainer" style="display: none;">
+              <label for="scheduleDate" class="fluent-form-label">تاریخ و زمان ارسال</label>
+              <input type="datetime-local" class="fluent-form-control" id="scheduleDate" name="scheduleDate">
+            </div>
+            
+            <div class="fluent-form-actions">
+              <button type="button" class="fluent-btn fluent-btn-secondary fluent-me-2" id="btnPreview">پیش‌نمایش</button>
+              <button type="button" class="fluent-btn fluent-btn-primary" id="btnSend">ارسال پیام</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- پیش‌نمایش پیام -->
+    <div class="fluent-col-lg-4">
+      <div class="fluent-card fluent-sticky-top fluent-mb-4">
+        <div class="fluent-card-header">
+          <h3 class="fluent-card-title">
+            <i class="fas fa-eye"></i>
+            پیش‌نمایش پیام
+          </h3>
+        </div>
+        <div class="fluent-card-body">
+          <div class="discord-message-preview">
+            <div class="discord-message-embed" id="previewEmbed" style="border-right: 4px solid #0099ff;">
+              <div class="discord-embed-title" id="previewTitle">عنوان پیام</div>
+              <div class="discord-embed-description" id="previewDescription">محتوای پیام اینجا نمایش داده می‌شود...</div>
+              <div class="discord-embed-image" id="previewImageContainer" style="display: none;">
+                <img src="" id="previewImage" alt="تصویر پیام">
+              </div>
+              <div class="discord-embed-footer">
+                <img src="/admin/images/ccoin-logo.png" alt="CCoin" class="discord-embed-footer-icon">
+                <span class="discord-embed-footer-text">ارسال شده توسط CCoin Bot</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="fluent-mt-3">
+            <h5>آمار پیام</h5>
+            <ul class="fluent-stats-list">
+              <li>
+                <span>تعداد کاراکترها:</span>
+                <strong id="previewCharCount">0</strong>
+              </li>
+              <li>
+                <span>تعداد گیرندگان:</span>
+                <strong id="previewRecipientCount">همه کاربران</strong>
+              </li>
+              <li>
+                <span>زمان ارسال:</span>
+                <strong id="previewScheduleTime">فوری</strong>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- مودال تأیید ارسال -->
+<div class="fluent-modal" id="confirmSendModal">
+  <div class="fluent-modal-dialog">
+    <div class="fluent-modal-content">
+      <div class="fluent-modal-header">
+        <h3 class="fluent-modal-title">تأیید ارسال پیام</h3>
+        <button type="button" class="fluent-modal-close" data-dismiss="modal">&times;</button>
+      </div>
+      <div class="fluent-modal-body">
+        <p>آیا از ارسال این پیام به <span id="confirmRecipientCount">همه کاربران</span> اطمینان دارید؟</p>
+        <div class="fluent-alert fluent-alert-warning fluent-mb-0">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>توجه: پس از ارسال پیام، امکان لغو آن وجود ندارد.</span>
+        </div>
+      </div>
+      <div class="fluent-modal-footer">
+        <button type="button" class="fluent-btn fluent-btn-secondary" data-dismiss="modal">انصراف</button>
+        <button type="button" class="fluent-btn fluent-btn-primary" id="confirmSendButton">بله، ارسال شود</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- مودال تاریخچه پیام‌ها -->
+<div class="fluent-modal fluent-modal-lg" id="historyModal">
+  <div class="fluent-modal-dialog">
+    <div class="fluent-modal-content">
+      <div class="fluent-modal-header">
+        <h3 class="fluent-modal-title">تاریخچه پیام‌های ارسال شده</h3>
+        <button type="button" class="fluent-modal-close" data-dismiss="modal">&times;</button>
+      </div>
+      <div class="fluent-modal-body">
+        <div class="fluent-table-responsive">
+          <table class="fluent-table fluent-table-hover">
+            <thead>
+              <tr>
+                <th style="width: 50px;">#</th>
+                <th>عنوان</th>
+                <th>گیرندگان</th>
+                <th>تاریخ ارسال</th>
+                <th>وضعیت</th>
+                <th style="width: 100px;">عملیات</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody">
+              <!-- محتوا به صورت پویا بارگذاری می‌شود -->
+              <tr>
+                <td colspan="6" class="fluent-text-center">
+                  <div class="fluent-empty-state">
+                    <i class="fas fa-spinner fa-spin fa-2x fluent-mb-2"></i>
+                    <p>در حال بارگذاری تاریخچه...</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="fluent-modal-footer">
+        <button type="button" class="fluent-btn fluent-btn-secondary" data-dismiss="modal">بستن</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- مودال ذخیره قالب -->
+<div class="fluent-modal" id="saveTemplateModal">
+  <div class="fluent-modal-dialog">
+    <div class="fluent-modal-content">
+      <div class="fluent-modal-header">
+        <h3 class="fluent-modal-title">ذخیره به عنوان قالب</h3>
+        <button type="button" class="fluent-modal-close" data-dismiss="modal">&times;</button>
+      </div>
+      <div class="fluent-modal-body">
+        <div class="fluent-form-group">
+          <label for="templateName" class="fluent-form-label required">نام قالب</label>
+          <input type="text" class="fluent-form-control" id="templateName" name="templateName" placeholder="نام قالب را وارد کنید" required>
+        </div>
+        <div class="fluent-form-group">
+          <label for="templateDescription" class="fluent-form-label">توضیحات (اختیاری)</label>
+          <textarea class="fluent-form-control" id="templateDescription" name="templateDescription" rows="3" placeholder="توضیحی برای این قالب بنویسید..."></textarea>
+        </div>
+      </div>
+      <div class="fluent-modal-footer">
+        <button type="button" class="fluent-btn fluent-btn-secondary" data-dismiss="modal">انصراف</button>
+        <button type="button" class="fluent-btn fluent-btn-primary" id="saveTemplateButton">ذخیره قالب</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* استایل پیش‌نمایش پیام دیسکورد */
+  .discord-message-preview {
+    background-color: #36393f;
+    border-radius: 4px;
+    padding: 16px;
+    color: #dcddde;
+    font-family: 'Vazirmatn', sans-serif;
+  }
+  
+  .discord-message-embed {
+    background-color: #2f3136;
+    border-radius: 4px;
+    padding: 12px;
+    max-width: 100%;
+  }
+  
+  .discord-embed-title {
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 8px;
+  }
+  
+  .discord-embed-description {
+    color: #dcddde;
+    font-size: 14px;
+    margin-bottom: 10px;
+    white-space: pre-wrap;
+  }
+  
+  .discord-embed-image {
+    margin-top: 12px;
+    max-width: 100%;
+  }
+  
+  .discord-embed-image img {
+    max-width: 100%;
+    border-radius: 4px;
+  }
+  
+  .discord-embed-footer {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    color: #72767d;
+  }
+  
+  .discord-embed-footer-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    margin-left: 8px;
+  }
+  
+  /* استایل آمار پیام */
+  .fluent-stats-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .fluent-stats-list li {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #eaeaea;
+  }
+  
+  .fluent-stats-list li:last-child {
+    border-bottom: none;
+  }
+  
+  /* استایل پیش‌نمایش تصویر آپلود شده */
+  .fluent-image-preview {
+    max-width: 100%;
+    margin-top: 8px;
+  }
+  
+  .fluent-image-preview img {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+  }
+  
+  /* استایل فرم رنگ */
+  .fluent-form-color {
+    width: 50px;
+    padding: 0;
+    height: 38px;
+    border: none;
+    background: none;
+  }
+  
+  /* استایل sticky برای پیش‌نمایش */
+  .fluent-sticky-top {
+    position: sticky;
+    top: 20px;
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // متغیرها
+    let serversData = [];
+    let rolesData = [];
+    let usersData = [];
+    
+    // اعناصر فرم
+    const messageTitle = document.getElementById('messageTitle');
+    const messageContent = document.getElementById('messageContent');
+    const messageColor = document.getElementById('messageColor');
+    const messageColorText = document.getElementById('messageColorText');
+    const messageImageUrl = document.getElementById('messageImageUrl');
+    const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+    const imagePreview = document.getElementById('imagePreview');
+    
+    // رادیو باتن‌های گیرندگان
+    const targetAll = document.getElementById('targetAll');
+    const targetServer = document.getElementById('targetServer');
+    const targetRole = document.getElementById('targetRole');
+    const targetSpecific = document.getElementById('targetSpecific');
+    
+    // کانتینرهای select
+    const serverSelectContainer = document.getElementById('serverSelectContainer');
+    const roleSelectContainer = document.getElementById('roleSelectContainer');
+    const userSelectContainer = document.getElementById('userSelectContainer');
+    
+    // عناصر select
+    const serverSelect = document.getElementById('serverSelect');
+    const roleSelect = document.getElementById('roleSelect');
+    const userSelect = document.getElementById('userSelect');
+    
+    // گزینه‌های اضافی
+    const sendAsDM = document.getElementById('sendAsDM');
+    const pinnedMessage = document.getElementById('pinnedMessage');
+    const mentionEveryone = document.getElementById('mentionEveryone');
+    
+    // زمان‌بندی
+    const scheduleSendNow = document.getElementById('scheduleSendNow');
+    const scheduleSendLater = document.getElementById('scheduleSendLater');
+    const scheduleDateContainer = document.getElementById('scheduleDateContainer');
+    const scheduleDate = document.getElementById('scheduleDate');
+    
+    // عناصر پیش‌نمایش
+    const previewTitle = document.getElementById('previewTitle');
+    const previewDescription = document.getElementById('previewDescription');
+    const previewImageContainer = document.getElementById('previewImageContainer');
+    const previewImage = document.getElementById('previewImage');
+    const previewEmbed = document.getElementById('previewEmbed');
+    const previewCharCount = document.getElementById('previewCharCount');
+    const previewRecipientCount = document.getElementById('previewRecipientCount');
+    const previewScheduleTime = document.getElementById('previewScheduleTime');
+    
+    // دکمه‌ها
+    const btnPreviewImage = document.getElementById('btnPreviewImage');
+    const btnPreview = document.getElementById('btnPreview');
+    const btnSend = document.getElementById('btnSend');
+    const btnViewHistory = document.getElementById('btnViewHistory');
+    const btnCreateTemplate = document.getElementById('btnCreateTemplate');
+    const confirmSendButton = document.getElementById('confirmSendButton');
+    const saveTemplateButton = document.getElementById('saveTemplateButton');
+    
+    // بارگذاری اولیه داده‌ها
+    loadServers();
+    loadRoles();
+    loadUsers();
+    
+    // تنظیم تاریخ پیش‌فرض برای زمان‌بندی
+    const now = new Date();
+    now.setHours(now.getHours() + 1);
+    now.setMinutes(0, 0, 0);
+    scheduleDate.value = now.toISOString().slice(0, 16);
+    
+    // رویدادهای فرم
+    
+    // تغییر عنوان
+    messageTitle.addEventListener('input', updatePreview);
+    
+    // تغییر محتوا و شمارش کاراکترها
+    messageContent.addEventListener('input', function() {
+      const charCount = this.value.length;
+      document.getElementById('messageCharCount').textContent = charCount;
+      updatePreview();
+    });
+    
+    // تغییر رنگ
+    messageColor.addEventListener('input', function() {
+      messageColorText.value = this.value;
+      updatePreview();
+    });
+    
+    // تغییر رنگ از طریق متن
+    messageColorText.addEventListener('input', function() {
+      if (/^#[0-9A-F]{6}$/i.test(this.value)) {
+        messageColor.value = this.value;
+        updatePreview();
+      }
+    });
+    
+    // پیش‌نمایش تصویر
+    btnPreviewImage.addEventListener('click', function() {
+      const imageUrl = messageImageUrl.value.trim();
+      
+      if (imageUrl) {
+        imagePreview.src = imageUrl;
+        imagePreviewContainer.style.display = 'block';
+        updatePreview();
+      } else {
+        imagePreviewContainer.style.display = 'none';
+        FluentUI.Toast.warning('لطفاً آدرس تصویر را وارد کنید');
+      }
+    });
+    
+    // تغییر آدرس تصویر
+    messageImageUrl.addEventListener('input', function() {
+      const imageUrl = this.value.trim();
+      
+      if (imageUrl === '') {
+        imagePreviewContainer.style.display = 'none';
+        previewImageContainer.style.display = 'none';
+      }
+    });
+    
+    // تغییر نوع گیرنده
+    targetAll.addEventListener('change', updateRecipientContainers);
+    targetServer.addEventListener('change', updateRecipientContainers);
+    targetRole.addEventListener('change', updateRecipientContainers);
+    targetSpecific.addEventListener('change', updateRecipientContainers);
+    
+    // تغییر نوع زمان‌بندی
+    scheduleSendNow.addEventListener('change', updateScheduleContainer);
+    scheduleSendLater.addEventListener('change', updateScheduleContainer);
+    
+    // تغییر تاریخ زمان‌بندی
+    scheduleDate.addEventListener('change', updatePreview);
+    
+    // دکمه پیش‌نمایش
+    btnPreview.addEventListener('click', function() {
+      updatePreview();
+      FluentUI.Toast.info('پیش‌نمایش به‌روز شد');
+    });
+    
+    // دکمه ارسال
+    btnSend.addEventListener('click', function() {
+      if (validateForm()) {
+        showSendConfirmation();
+      }
+    });
+    
+    // دکمه تاریخچه
+    btnViewHistory.addEventListener('click', function() {
+      loadMessageHistory();
+      FluentUI.Modal.show('historyModal');
+    });
+    
+    // دکمه ایجاد قالب
+    btnCreateTemplate.addEventListener('click', function() {
+      FluentUI.Modal.show('saveTemplateModal');
+    });
+    
+    // دکمه تایید ارسال
+    confirmSendButton.addEventListener('click', sendMessage);
+    
+    // دکمه ذخیره قالب
+    saveTemplateButton.addEventListener('click', saveTemplate);
+    
+    // رویداد انتخاب قالب
+    document.querySelectorAll('#templatesDropdown .fluent-dropdown-item[data-template]').forEach(item => {
+      item.addEventListener('click', function(e) {
+        e.preventDefault();
+        loadTemplate(this.getAttribute('data-template'));
+      });
+    });
+    
+    /**
+     * بارگذاری لیست سرورها
+     */
+    function loadServers() {
+      // در حالت واقعی، اینجا از API برای دریافت لیست سرورها استفاده می‌شود
+      fetch('/admin/api/servers')
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            serversData = data.servers;
+            populateServerSelect();
+          } else {
+            console.error('Error loading servers:', data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error loading servers:', error);
+        });
+    }
+    
+    /**
+     * بارگذاری لیست نقش‌ها
+     */
+    function loadRoles() {
+      // در حالت واقعی، اینجا از API برای دریافت لیست نقش‌ها استفاده می‌شود
+      fetch('/admin/api/roles')
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            rolesData = data.roles;
+            populateRoleSelect();
+          } else {
+            console.error('Error loading roles:', data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error loading roles:', error);
+        });
+    }
+    
+    /**
+     * بارگذاری لیست کاربران
+     */
+    function loadUsers() {
+      // در حالت واقعی، اینجا از API برای دریافت لیست کاربران استفاده می‌شود
+      fetch('/admin/api/users')
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            usersData = data.users;
+            populateUserSelect();
+          } else {
+            console.error('Error loading users:', data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error loading users:', error);
+        });
+    }
+    
+    /**
+     * پر کردن لیست سرورها
+     */
+    function populateServerSelect() {
+      serverSelect.innerHTML = '<option value="">انتخاب سرور...</option>';
+      
+      serversData.forEach(server => {
+        const option = document.createElement('option');
+        option.value = server.id;
+        option.textContent = server.name;
+        serverSelect.appendChild(option);
+      });
+    }
+    
+    /**
+     * پر کردن لیست نقش‌ها
+     */
+    function populateRoleSelect() {
+      roleSelect.innerHTML = '<option value="">انتخاب نقش...</option>';
+      
+      rolesData.forEach(role => {
+        const option = document.createElement('option');
+        option.value = role.id;
+        option.textContent = role.name;
+        roleSelect.appendChild(option);
+      });
+    }
+    
+    /**
+     * پر کردن لیست کاربران
+     */
+    function populateUserSelect() {
+      userSelect.innerHTML = '';
+      
+      usersData.forEach(user => {
+        const option = document.createElement('option');
+        option.value = user.id;
+        option.textContent = user.username;
+        userSelect.appendChild(option);
+      });
+    }
+    
+    /**
+     * به‌روزرسانی کانتینرهای گیرندگان
+     */
+    function updateRecipientContainers() {
+      serverSelectContainer.style.display = targetServer.checked ? 'block' : 'none';
+      roleSelectContainer.style.display = targetRole.checked ? 'block' : 'none';
+      userSelectContainer.style.display = targetSpecific.checked ? 'block' : 'none';
+      
+      updatePreview();
+    }
+    
+    /**
+     * به‌روزرسانی کانتینر زمان‌بندی
+     */
+    function updateScheduleContainer() {
+      scheduleDateContainer.style.display = scheduleSendLater.checked ? 'block' : 'none';
+      
+      updatePreview();
+    }
+    
+    /**
+     * به‌روزرسانی پیش‌نمایش پیام
+     */
+    function updatePreview() {
+      // عنوان
+      const title = messageTitle.value.trim() || 'عنوان پیام';
+      previewTitle.textContent = title;
+      
+      // محتوا
+      const content = messageContent.value.trim() || 'محتوای پیام اینجا نمایش داده می‌شود...';
+      previewDescription.textContent = content;
+      
+      // شمارش کاراکترها
+      const charCount = content.length;
+      previewCharCount.textContent = charCount;
+      
+      // رنگ
+      const color = messageColor.value;
+      previewEmbed.style.borderColor = color;
+      
+      // تصویر
+      const imageUrl = messageImageUrl.value.trim();
+      if (imageUrl) {
+        previewImage.src = imageUrl;
+        previewImageContainer.style.display = 'block';
+      } else {
+        previewImageContainer.style.display = 'none';
+      }
+      
+      // گیرندگان
+      let recipientText = 'همه کاربران';
+      
+      if (targetServer.checked) {
+        const selectedServer = serverSelect.options[serverSelect.selectedIndex];
+        recipientText = selectedServer.value ? `سرور ${selectedServer.text}` : 'یک سرور خاص';
+      } else if (targetRole.checked) {
+        const selectedRole = roleSelect.options[roleSelect.selectedIndex];
+        recipientText = selectedRole.value ? `کاربران با نقش ${selectedRole.text}` : 'کاربران با یک نقش خاص';
+      } else if (targetSpecific.checked) {
+        const selectedCount = Array.from(userSelect.selectedOptions).length;
+        recipientText = selectedCount > 0 ? `${selectedCount} کاربر خاص` : 'کاربران خاص';
+      }
+      
+      previewRecipientCount.textContent = recipientText;
+      document.getElementById('confirmRecipientCount').textContent = recipientText;
+      
+      // زمان ارسال
+      let scheduleText = 'فوری';
+      
+      if (scheduleSendLater.checked && scheduleDate.value) {
+        const selectedDate = new Date(scheduleDate.value);
+        scheduleText = `${selectedDate.toLocaleDateString('fa-IR')} - ${selectedDate.toLocaleTimeString('fa-IR')}`;
+      }
+      
+      previewScheduleTime.textContent = scheduleText;
+    }
+    
+    /**
+     * اعتبارسنجی فرم
+     * @returns {boolean} آیا فرم معتبر است؟
+     */
+    function validateForm() {
+      // بررسی محتوای پیام
+      if (!messageContent.value.trim()) {
+        FluentUI.Toast.error('لطفاً محتوای پیام را وارد کنید');
+        messageContent.focus();
+        return false;
+      }
+      
+      // بررسی تعداد کاراکترها
+      if (messageContent.value.length > 2000) {
+        FluentUI.Toast.error('طول پیام بیش از حد مجاز است (حداکثر 2000 کاراکتر)');
+        messageContent.focus();
+        return false;
+      }
+      
+      // بررسی انتخاب سرور
+      if (targetServer.checked && !serverSelect.value) {
+        FluentUI.Toast.error('لطفاً یک سرور انتخاب کنید');
+        serverSelect.focus();
+        return false;
+      }
+      
+      // بررسی انتخاب نقش
+      if (targetRole.checked && !roleSelect.value) {
+        FluentUI.Toast.error('لطفاً یک نقش انتخاب کنید');
+        roleSelect.focus();
+        return false;
+      }
+      
+      // بررسی انتخاب کاربران
+      if (targetSpecific.checked && userSelect.selectedOptions.length === 0) {
+        FluentUI.Toast.error('لطفاً حداقل یک کاربر انتخاب کنید');
+        userSelect.focus();
+        return false;
+      }
+      
+      // بررسی تاریخ زمان‌بندی
+      if (scheduleSendLater.checked) {
+        if (!scheduleDate.value) {
+          FluentUI.Toast.error('لطفاً تاریخ و زمان ارسال را وارد کنید');
+          scheduleDate.focus();
+          return false;
+        }
+        
+        const selectedDate = new Date(scheduleDate.value);
+        const now = new Date();
+        
+        if (selectedDate <= now) {
+          FluentUI.Toast.error('تاریخ و زمان ارسال باید در آینده باشد');
+          scheduleDate.focus();
+          return false;
+        }
+      }
+      
+      return true;
+    }
+    
+    /**
+     * نمایش تأییدیه ارسال پیام
+     */
+    function showSendConfirmation() {
+      FluentUI.Modal.show('confirmSendModal');
+    }
+    
+    /**
+     * ارسال پیام
+     */
+    function sendMessage() {
+      // جمع‌آوری داده‌های فرم
+      const formData = {
+        title: messageTitle.value.trim(),
+        message: messageContent.value.trim(),
+        color: messageColor.value,
+        image: messageImageUrl.value.trim(),
+        targetType: targetAll.checked ? 'all' : (targetServer.checked ? 'server' : (targetRole.checked ? 'role' : 'specific')),
+        targetIds: targetAll.checked ? [] : (
+          targetServer.checked ? [serverSelect.value] : (
+            targetRole.checked ? [roleSelect.value] : Array.from(userSelect.selectedOptions).map(option => option.value)
+          )
+        ),
+        sendAsDM: sendAsDM.checked,
+        pinnedMessage: pinnedMessage.checked,
+        mentionEveryone: mentionEveryone.checked,
+        scheduleType: scheduleSendNow.checked ? 'now' : 'later',
+        scheduleDate: scheduleSendLater.checked ? scheduleDate.value : null
+      };
+      
+      // در حالت واقعی، اینجا از API برای ارسال پیام استفاده می‌شود
+      fetch('/admin/api/broadcast/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            FluentUI.Modal.hide('confirmSendModal');
+            FluentUI.Toast.success('پیام با موفقیت ارسال شد');
+            
+            // پاک کردن فرم پس از ارسال موفق
+            document.getElementById('broadcastForm').reset();
+            previewImageContainer.style.display = 'none';
+            imagePreviewContainer.style.display = 'none';
+            updateRecipientContainers();
+            updateScheduleContainer();
+            updatePreview();
+          } else {
+            FluentUI.Toast.error(data.message || 'خطا در ارسال پیام');
+          }
+        })
+        .catch(error => {
+          console.error('Error sending message:', error);
+          FluentUI.Toast.error('خطا در ارسال پیام');
+        });
+    }
+    
+    /**
+     * بارگذاری تاریخچه پیام‌ها
+     */
+    function loadMessageHistory() {
+      // در حالت واقعی، اینجا از API برای دریافت تاریخچه پیام‌ها استفاده می‌شود
+      fetch('/admin/api/broadcast/history')
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            displayMessageHistory(data.messages);
+          } else {
+            console.error('Error loading message history:', data.message);
+            document.getElementById('historyTableBody').innerHTML = `
+              <tr>
+                <td colspan="6" class="fluent-text-center">
+                  <div class="fluent-empty-state">
+                    <i class="fas fa-exclamation-circle fa-2x fluent-mb-2"></i>
+                    <p>خطا در بارگذاری تاریخچه پیام‌ها</p>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }
+        })
+        .catch(error => {
+          console.error('Error loading message history:', error);
+          document.getElementById('historyTableBody').innerHTML = `
+            <tr>
+              <td colspan="6" class="fluent-text-center">
+                <div class="fluent-empty-state">
+                  <i class="fas fa-exclamation-circle fa-2x fluent-mb-2"></i>
+                  <p>خطا در بارگذاری تاریخچه پیام‌ها</p>
+                </div>
+              </td>
+            </tr>
+          `;
+        });
+    }
+    
+    /**
+     * نمایش تاریخچه پیام‌ها در جدول
+     * @param {Array} messages لیست پیام‌ها
+     */
+    function displayMessageHistory(messages) {
+      const historyTableBody = document.getElementById('historyTableBody');
+      
+      if (!messages || messages.length === 0) {
+        historyTableBody.innerHTML = `
+          <tr>
+            <td colspan="6" class="fluent-text-center">
+              <div class="fluent-empty-state">
+                <i class="fas fa-info-circle fa-2x fluent-mb-2"></i>
+                <p>هیچ پیامی ارسال نشده است</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      let html = '';
+      
+      messages.forEach((message, index) => {
+        const statusClass = message.status === 'sent' ? 'fluent-badge-success' : 
+                          (message.status === 'scheduled' ? 'fluent-badge-warning' : 
+                          (message.status === 'failed' ? 'fluent-badge-danger' : 'fluent-badge-secondary'));
+        
+        const statusText = message.status === 'sent' ? 'ارسال شده' : 
+                        (message.status === 'scheduled' ? 'زمان‌بندی شده' : 
+                        (message.status === 'failed' ? 'ناموفق' : 'نامشخص'));
+        
+        html += `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${message.title || 'بدون عنوان'}</td>
+            <td>${getRecipientText(message.targetType, message.targetCount)}</td>
+            <td>${new Date(message.sentAt).toLocaleDateString('fa-IR')}</td>
+            <td><span class="fluent-badge ${statusClass}">${statusText}</span></td>
+            <td>
+              <div class="fluent-btn-group">
+                <button class="fluent-btn fluent-btn-sm fluent-btn-info" onclick="showMessageDetails(${message.id})">
+                  <i class="fas fa-eye"></i>
+                </button>
+                <button class="fluent-btn fluent-btn-sm fluent-btn-primary" onclick="reuseMessage(${message.id})">
+                  <i class="fas fa-copy"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+      
+      historyTableBody.innerHTML = html;
+    }
+    
+    /**
+     * دریافت متن گیرندگان
+     * @param {string} targetType نوع گیرنده
+     * @param {number} targetCount تعداد گیرندگان
+     * @returns {string} متن گیرندگان
+     */
+    function getRecipientText(targetType, targetCount) {
+      switch (targetType) {
+        case 'all':
+          return 'همه کاربران';
+        case 'server':
+          return 'یک سرور';
+        case 'role':
+          return 'یک نقش';
+        case 'specific':
+          return `${targetCount} کاربر`;
+        default:
+          return 'نامشخص';
+      }
+    }
+    
+    /**
+     * بارگذاری قالب
+     * @param {string} templateId شناسه قالب
+     */
+    function loadTemplate(templateId) {
+      // در حالت واقعی، اینجا از API برای دریافت اطلاعات قالب استفاده می‌شود
+      fetch(`/admin/api/broadcast/template/${templateId}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // پر کردن فرم با اطلاعات قالب
+            messageTitle.value = data.template.title || '';
+            messageContent.value = data.template.message || '';
+            messageColor.value = data.template.color || '#0099ff';
+            messageColorText.value = data.template.color || '#0099ff';
+            messageImageUrl.value = data.template.image || '';
+            
+            // به‌روزرسانی پیش‌نمایش
+            updatePreview();
+            
+            // نمایش پیش‌نمایش تصویر در صورت وجود
+            if (data.template.image) {
+              imagePreview.src = data.template.image;
+              imagePreviewContainer.style.display = 'block';
+            } else {
+              imagePreviewContainer.style.display = 'none';
+            }
+            
+            FluentUI.Toast.success('قالب با موفقیت بارگذاری شد');
+          } else {
+            FluentUI.Toast.error(data.message || 'خطا در بارگذاری قالب');
+          }
+        })
+        .catch(error => {
+          console.error('Error loading template:', error);
+          FluentUI.Toast.error('خطا در بارگذاری قالب');
+        });
+    }
+    
+    /**
+     * ذخیره قالب
+     */
+    function saveTemplate() {
+      const templateName = document.getElementById('templateName').value.trim();
+      const templateDescription = document.getElementById('templateDescription').value.trim();
+      
+      if (!templateName) {
+        FluentUI.Toast.warning('لطفاً نام قالب را وارد کنید');
+        return;
+      }
+      
+      if (!messageContent.value.trim()) {
+        FluentUI.Toast.warning('لطفاً ابتدا یک پیام ایجاد کنید');
+        return;
+      }
+      
+      // جمع‌آوری داده‌های قالب
+      const templateData = {
+        name: templateName,
+        description: templateDescription,
+        title: messageTitle.value.trim(),
+        message: messageContent.value.trim(),
+        color: messageColor.value,
+        image: messageImageUrl.value.trim()
+      };
+      
+      // در حالت واقعی، اینجا از API برای ذخیره قالب استفاده می‌شود
+      fetch('/admin/api/broadcast/template/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(templateData)
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            FluentUI.Modal.hide('saveTemplateModal');
+            FluentUI.Toast.success('قالب با موفقیت ذخیره شد');
+            
+            // پاک کردن فرم قالب
+            document.getElementById('templateName').value = '';
+            document.getElementById('templateDescription').value = '';
+          } else {
+            FluentUI.Toast.error(data.message || 'خطا در ذخیره قالب');
+          }
+        })
+        .catch(error => {
+          console.error('Error saving template:', error);
+          FluentUI.Toast.error('خطا در ذخیره قالب');
+        });
+    }
+    
+    // به‌روزرسانی اولیه پیش‌نمایش
+    updatePreview();
+  });
+  
+  /**
+   * نمایش جزئیات پیام
+   * @param {number} messageId شناسه پیام
+   */
+  function showMessageDetails(messageId) {
+    // در حالت واقعی، اینجا از API برای دریافت جزئیات پیام استفاده می‌شود
+    fetch(`/admin/api/broadcast/message/${messageId}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // نمایش جزئیات پیام در یک مودال
+          const message = data.message;
+          
+          // ایجاد محتوای مودال
+          let modalContent = `
+            <div class="fluent-modal-header">
+              <h3 class="fluent-modal-title">جزئیات پیام</h3>
+              <button type="button" class="fluent-modal-close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="fluent-modal-body">
+              <div class="discord-message-preview fluent-mb-3">
+                <div class="discord-message-embed" style="border-right: 4px solid ${message.color || '#0099ff'};">
+                  <div class="discord-embed-title">${message.title || 'بدون عنوان'}</div>
+                  <div class="discord-embed-description">${message.message}</div>
+                  ${message.image ? `
+                    <div class="discord-embed-image">
+                      <img src="${message.image}" alt="تصویر پیام">
+                    </div>
+                  ` : ''}
+                  <div class="discord-embed-footer">
+                    <img src="/admin/images/ccoin-logo.png" alt="CCoin" class="discord-embed-footer-icon">
+                    <span class="discord-embed-footer-text">ارسال شده توسط CCoin Bot</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="fluent-row">
+                <div class="fluent-col-md-6">
+                  <h5>اطلاعات ارسال</h5>
+                  <ul class="fluent-stats-list">
+                    <li>
+                      <span>تاریخ ارسال:</span>
+                      <strong>${new Date(message.sentAt).toLocaleDateString('fa-IR')} ${new Date(message.sentAt).toLocaleTimeString('fa-IR')}</strong>
+                    </li>
+                    <li>
+                      <span>وضعیت:</span>
+                      <strong>${message.status === 'sent' ? 'ارسال شده' : 
+                              (message.status === 'scheduled' ? 'زمان‌بندی شده' : 
+                              (message.status === 'failed' ? 'ناموفق' : 'نامشخص'))}</strong>
+                    </li>
+                    <li>
+                      <span>ارسال کننده:</span>
+                      <strong>${message.sentBy}</strong>
+                    </li>
+                  </ul>
+                </div>
+                
+                <div class="fluent-col-md-6">
+                  <h5>اطلاعات گیرندگان</h5>
+                  <ul class="fluent-stats-list">
+                    <li>
+                      <span>نوع گیرنده:</span>
+                      <strong>${message.targetType === 'all' ? 'همه کاربران' : 
+                              (message.targetType === 'server' ? 'یک سرور' : 
+                              (message.targetType === 'role' ? 'یک نقش' : 'کاربران خاص'))}</strong>
+                    </li>
+                    <li>
+                      <span>تعداد گیرندگان:</span>
+                      <strong>${message.targetCount}</strong>
+                    </li>
+                    <li>
+                      <span>تعداد دریافت شده:</span>
+                      <strong>${message.receivedCount || 0}</strong>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="fluent-modal-footer">
+              <button type="button" class="fluent-btn fluent-btn-secondary" data-dismiss="modal">بستن</button>
+              <button type="button" class="fluent-btn fluent-btn-primary" onclick="reuseMessage(${message.id})">استفاده مجدد</button>
+            </div>
+          `;
+          
+          // ایجاد مودال
+          const modalElement = document.createElement('div');
+          modalElement.className = 'fluent-modal';
+          modalElement.id = `messageDetailsModal_${messageId}`;
+          modalElement.innerHTML = `
+            <div class="fluent-modal-dialog">
+              <div class="fluent-modal-content">
+                ${modalContent}
+              </div>
+            </div>
+          `;
+          
+          // افزودن مودال به صفحه
+          document.body.appendChild(modalElement);
+          
+          // نمایش مودال
+          FluentUI.Modal.show(`messageDetailsModal_${messageId}`);
+          
+          // افزودن رویداد حذف مودال پس از بسته شدن
+          const modal = document.getElementById(`messageDetailsModal_${messageId}`);
+          modal.addEventListener('hidden.bs.modal', function() {
+            document.body.removeChild(modal);
+          });
+        } else {
+          FluentUI.Toast.error(data.message || 'خطا در دریافت جزئیات پیام');
+        }
+      })
+      .catch(error => {
+        console.error('Error loading message details:', error);
+        FluentUI.Toast.error('خطا در دریافت جزئیات پیام');
+      });
+  }
+  
+  /**
+   * استفاده مجدد از یک پیام
+   * @param {number} messageId شناسه پیام
+   */
+  function reuseMessage(messageId) {
+    // بستن مودال فعلی (اگر باز است)
+    FluentUI.Modal.hide(`messageDetailsModal_${messageId}`);
+    FluentUI.Modal.hide('historyModal');
+    
+    // در حالت واقعی، اینجا از API برای دریافت اطلاعات پیام استفاده می‌شود
+    fetch(`/admin/api/broadcast/message/${messageId}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          const message = data.message;
+          
+          // پر کردن فرم با اطلاعات پیام
+          document.getElementById('messageTitle').value = message.title || '';
+          document.getElementById('messageContent').value = message.message || '';
+          document.getElementById('messageColor').value = message.color || '#0099ff';
+          document.getElementById('messageColorText').value = message.color || '#0099ff';
+          document.getElementById('messageImageUrl').value = message.image || '';
+          
+          // به‌روزرسانی شمارش کاراکترها
+          document.getElementById('messageCharCount').textContent = message.message.length;
+          
+          // نمایش پیش‌نمایش تصویر در صورت وجود
+          if (message.image) {
+            document.getElementById('imagePreview').src = message.image;
+            document.getElementById('imagePreviewContainer').style.display = 'block';
+          } else {
+            document.getElementById('imagePreviewContainer').style.display = 'none';
+          }
+          
+          // به‌روزرسانی پیش‌نمایش
+          const previewTitle = document.getElementById('previewTitle');
+          const previewDescription = document.getElementById('previewDescription');
+          const previewImageContainer = document.getElementById('previewImageContainer');
+          const previewImage = document.getElementById('previewImage');
+          const previewEmbed = document.getElementById('previewEmbed');
+          const previewCharCount = document.getElementById('previewCharCount');
+          
+          previewTitle.textContent = message.title || 'عنوان پیام';
+          previewDescription.textContent = message.message;
+          previewEmbed.style.borderColor = message.color || '#0099ff';
+          previewCharCount.textContent = message.message.length;
+          
+          if (message.image) {
+            previewImage.src = message.image;
+            previewImageContainer.style.display = 'block';
+          } else {
+            previewImageContainer.style.display = 'none';
+          }
+          
+          FluentUI.Toast.success('پیام با موفقیت بارگذاری شد');
+        } else {
+          FluentUI.Toast.error(data.message || 'خطا در بارگذاری پیام');
+        }
+      })
+      .catch(error => {
+        console.error('Error reusing message:', error);
+        FluentUI.Toast.error('خطا در بارگذاری پیام');
+      });
+  }
+</script>

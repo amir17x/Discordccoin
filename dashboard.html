@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="fa">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>داشبورد | پنل مدیریت CCoin</title>
+  
+  <!-- فونت Vazirmatn -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
+  
+  <!-- آیکون‌های Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- استایل‌های Fluent UI -->
+  <link rel="stylesheet" href="/admin/css/fluent-ui/fluent.css">
+  
+  <!-- استایل‌های اختصاصی صفحات -->
+  
+</head>
+<body>
+  <!-- هدر -->
+  <header class="fluent-header">
+    <div class="fluent-header-container">
+      <div class="fluent-header-brand">
+        <img src="/admin/images/ccoin-logo.png" alt="CCoin">
+        <span>پنل مدیریت CCoin</span>
+      </div>
+      
+      <div class="fluent-header-nav">
+        <button id="fluent-menu-toggle" class="fluent-btn fluent-btn-outline fluent-d-md-none">
+          <i class="fas fa-bars"></i>
+        </button>
+        
+        <div class="fluent-dropdown fluent-d-none fluent-d-md-block">
+          <button class="fluent-dropdown-toggle fluent-header-nav-item">
+            <i class="fas fa-user-circle"></i>
+            <span>admin</span>
+          </button>
+          
+          <div class="fluent-dropdown-menu fluent-dropdown-menu-right">
+            <a href="/admin/profile" class="fluent-dropdown-item">
+              <i class="fas fa-user"></i>
+              پروفایل
+            </a>
+            <a href="/admin/settings" class="fluent-dropdown-item">
+              <i class="fas fa-cog"></i>
+              تنظیمات
+            </a>
+            <div class="fluent-dropdown-divider"></div>
+            <a href="/admin/logout" class="fluent-dropdown-item">
+              <i class="fas fa-sign-out-alt"></i>
+              خروج
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+  
+  <!-- نوار کناری -->
+  <aside class="fluent-sidebar">
+    <nav class="fluent-sidebar-nav">
+      <a href="/admin/dashboard" class="fluent-sidebar-nav-item active">
+        <i class="fas fa-tachometer-alt"></i>
+        <span>داشبورد</span>
+      </a>
+      
+      <a href="/admin/servers" class="fluent-sidebar-nav-item ">
+        <i class="fas fa-server"></i>
+        <span>سرورها</span>
+      </a>
+      
+      <a href="/admin/users" class="fluent-sidebar-nav-item ">
+        <i class="fas fa-users"></i>
+        <span>کاربران</span>
+      </a>
+      
+      <a href="/admin/economy" class="fluent-sidebar-nav-item ">
+        <i class="fas fa-coins"></i>
+        <span>اقتصاد</span>
+      </a>
+      
+      <a href="/admin/shop" class="fluent-sidebar-nav-item ">
+        <i class="fas fa-shopping-cart"></i>
+        <span>فروشگاه</span>
+      </a>
+      
+      <a href="/admin/stock-market" class="fluent-sidebar-nav-item ">
+        <i class="fas fa-chart-line"></i>
+        <span>بازار سهام</span>
+      </a>
+      
+      <a href="/admin/lottery" class="fluent-sidebar-nav-item ">
+        <i class="fas fa-ticket-alt"></i>
+        <span>قرعه‌کشی</span>
+      </a>
+      
+      <a href="/admin/bank" class="fluent-sidebar-nav-item ">
+        <i class="fas fa-university"></i>
+        <span>بانک</span>
+      </a>
+      
+      <a href="/admin/logs" class="fluent-sidebar-nav-item ">
+        <i class="fas fa-list"></i>
+        <span>گزارش‌ها</span>
+      </a>
+      
+      <a href="/admin/settings" class="fluent-sidebar-nav-item ">
+        <i class="fas fa-cog"></i>
+        <span>تنظیمات</span>
+      </a>
+      
+      <a href="/admin/logout" class="fluent-sidebar-nav-item">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>خروج</span>
+      </a>
+    </nav>
+  </aside>
+  
+  <!-- محتوای اصلی -->
+  <main class="fluent-content">
+    
+      
+      
+      
+      
+      
+      
+      
+    
+    
+    <div class="fluent-dashboard">
+  <h1 class="fluent-page-title">داشبورد</h1>
+
+  <!-- کارت‌های آمار -->
+  <div class="fluent-stats-cards">
+    <!-- کارت سکه‌ها -->
+    <div class="fluent-stat-card fluent-stat-card-primary">
+      <div class="fluent-stat-icon">
+        <i class="fas fa-coins"></i>
+      </div>
+      <div class="fluent-stat-content">
+        <div class="fluent-stat-value">
+          <span class="fluent-stat-number">۱٬۹۶۱٬۵۸۹٬۲۸۵</span>
+          <span class="fluent-stat-unit">CCoin</span>
+        </div>
+        <div class="fluent-stat-label">کل سکه‌های در گردش</div>
+      </div>
+    </div>
+
+    <!-- کارت تراکنش‌ها -->
+    <div class="fluent-stat-card fluent-stat-card-warning">
+      <div class="fluent-stat-icon">
+        <i class="fas fa-exchange-alt"></i>
+      </div>
+      <div class="fluent-stat-content">
+        <div class="fluent-stat-value">
+          <span class="fluent-stat-number">۰</span>
+        </div>
+        <div class="fluent-stat-label">تراکنش‌های امروز</div>
+      </div>
+    </div>
+
+    <!-- کارت کاربران -->
+    <div class="fluent-stat-card fluent-stat-card-success">
+      <div class="fluent-stat-icon">
+        <i class="fas fa-users"></i>
+      </div>
+      <div class="fluent-stat-content">
+        <div class="fluent-stat-value">
+          <span class="fluent-stat-number">۴</span>
+        </div>
+        <div class="fluent-stat-label">کاربران ثبت شده</div>
+      </div>
+    </div>
+
+    <!-- کارت سرورها -->
+    <div class="fluent-stat-card fluent-stat-card-info">
+      <div class="fluent-stat-icon">
+        <i class="fas fa-server"></i>
+      </div>
+      <div class="fluent-stat-content">
+        <div class="fluent-stat-value">
+          <span class="fluent-stat-number">۰</span>
+        </div>
+        <div class="fluent-stat-label">سرورهای فعال</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fluent-row fluent-mt-4">
+    <!-- بخش سمت راست -->
+    <div class="fluent-col-8">
+      <!-- وضعیت سیستم -->
+      <div class="fluent-card fluent-mb-4">
+        <div class="fluent-card-header">
+          <h3 class="fluent-card-title">
+            <i class="fas fa-tachometer-alt"></i>
+            وضعیت سیستم
+          </h3>
+        </div>
+        <div class="fluent-card-body">
+          <div class="fluent-system-status-grid">
+            <!-- وضعیت بازار سهام -->
+            <div class="fluent-status-box">
+              <div class="fluent-status-box-title">
+                <i class="fas fa-chart-line"></i>
+                وضعیت بازار سهام
+              </div>
+              <div class="fluent-status-box-value">
+                
+                  <span class="fluent-status-indicator fluent-status-warning">ثبات</span>
+                
+              </div>
+              <div class="fluent-status-note">نرخ تورم: 0%</div>
+            </div>
+
+            <!-- وضعیت بانک -->
+            <div class="fluent-status-box">
+              <div class="fluent-status-box-title">
+                <i class="fas fa-university"></i>
+                وضعیت بانک
+              </div>
+              <div class="fluent-status-box-value">
+                
+                  <span class="fluent-status-indicator fluent-status-success">سالم</span>
+                
+              </div>
+            </div>
+
+            <!-- وضعیت دیسکورد -->
+            <div class="fluent-status-box">
+              <div class="fluent-status-box-title">
+                <i class="fab fa-discord"></i>
+                وضعیت دیسکورد بات
+              </div>
+              <div class="fluent-status-box-value">
+                
+                  <span class="fluent-status-indicator fluent-status-success">آنلاین</span>
+                
+              </div>
+              <div class="fluent-status-note">آخرین به‌روزرسانی: 0 دقیقه پیش</div>
+            </div>
+          </div>
+        </div>
+        <div class="fluent-card-footer">
+          <button class="fluent-btn fluent-btn-primary fluent-btn-sm" id="refresh-status">
+            <i class="fas fa-sync-alt"></i>
+            به‌روزرسانی وضعیت
+          </button>
+        </div>
+      </div>
+
+      <!-- اطلاعیه‌ها -->
+      <div class="fluent-card fluent-mb-4">
+        <div class="fluent-card-header">
+          <h3 class="fluent-card-title">
+            <i class="fas fa-bullhorn"></i>
+            اطلاعیه‌ها
+          </h3>
+        </div>
+        <div class="fluent-card-body">
+          
+            <div class="fluent-announcements">
+              
+                <div class="fluent-announcement">
+                  <div class="fluent-announcement-header">
+                    <div class="fluent-announcement-title">به‌روزرسانی سیستم</div>
+                    <div class="fluent-announcement-date">۱۴۰۲/۰۱/۱۵</div>
+                  </div>
+                  <div class="fluent-announcement-content">سیستم CCoin به نسخه ۲.۵.۰ به‌روزرسانی شد. برای اطلاعات بیشتر، لاگ تغییرات را مشاهده کنید.</div>
+                </div>
+              
+                <div class="fluent-announcement">
+                  <div class="fluent-announcement-header">
+                    <div class="fluent-announcement-title">تعمیرات سرور</div>
+                    <div class="fluent-announcement-date">۱۴۰۲/۰۱/۱۰</div>
+                  </div>
+                  <div class="fluent-announcement-content">در تاریخ ۲۰ فروردین، سرورها برای تعمیرات به مدت ۲ ساعت در دسترس نخواهند بود.</div>
+                </div>
+              
+            </div>
+          
+        </div>
+        <div class="fluent-card-footer">
+          <a href="/admin/announcements" class="fluent-btn fluent-btn-outline fluent-btn-sm">
+            مشاهده همه
+            <i class="fas fa-arrow-left"></i>
+          </a>
+        </div>
+      </div>
+
+      <!-- تغییرات قیمت سهام -->
+      <div class="fluent-card">
+        <div class="fluent-card-header">
+          <h3 class="fluent-card-title">
+            <i class="fas fa-chart-line"></i>
+            تغییرات قیمت سهام
+          </h3>
+        </div>
+        <div class="fluent-card-body">
+          
+            <div class="fluent-table-responsive">
+              <table class="fluent-table fluent-stock-table">
+                <thead>
+                  <tr>
+                    <th>کاربر</th>
+                    <th>نماد</th>
+                    <th>شرکت</th>
+                    <th>مبلغ</th>
+                    <th>تاریخ</th>
+                    <th>تغییر</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  
+                    <tr>
+                      <td>
+                        <div class="fluent-stock-user">
+                          <div class="fluent-stock-user-avatar">
+                            
+                            <div class="fluent-avatar fluent-avatar-sm ">
+                              سی
+                            </div>
+                          </div>
+                          <div class="fluent-stock-user-name">سیستم</div>
+                        </div>
+                      </td>
+                      <td>
+                        <span class="fluent-badge fluent-badge-primary">
+                          AUTO
+                        </span>
+                      </td>
+                      <td>Persian Automotive</td>
+                      <td>۸۵۴ CCoin</td>
+                      <td>۱۴۰۴/۰۱/۱۷</td>
+                      <td>
+                        
+                          <span class="fluent-text-muted">
+                            <i class="fas fa-minus"></i>
+                            0%
+                          </span>
+                        
+                      </td>
+                    </tr>
+                  
+                    <tr>
+                      <td>
+                        <div class="fluent-stock-user">
+                          <div class="fluent-stock-user-avatar">
+                            
+                            <div class="fluent-avatar fluent-avatar-sm ">
+                              سی
+                            </div>
+                          </div>
+                          <div class="fluent-stock-user-name">سیستم</div>
+                        </div>
+                      </td>
+                      <td>
+                        <span class="fluent-badge fluent-badge-primary">
+                          FOOD
+                        </span>
+                      </td>
+                      <td>Persian Food Industries</td>
+                      <td>۲۷٬۸۰۲ CCoin</td>
+                      <td>۱۴۰۴/۰۱/۱۷</td>
+                      <td>
+                        
+                          <span class="fluent-text-muted">
+                            <i class="fas fa-minus"></i>
+                            0%
+                          </span>
+                        
+                      </td>
+                    </tr>
+                  
+                    <tr>
+                      <td>
+                        <div class="fluent-stock-user">
+                          <div class="fluent-stock-user-avatar">
+                            
+                            <div class="fluent-avatar fluent-avatar-sm ">
+                              سی
+                            </div>
+                          </div>
+                          <div class="fluent-stock-user-name">سیستم</div>
+                        </div>
+                      </td>
+                      <td>
+                        <span class="fluent-badge fluent-badge-primary">
+                          TECH
+                        </span>
+                      </td>
+                      <td>Persian Tech Solutions</td>
+                      <td>۵٬۱۹۹ CCoin</td>
+                      <td>۱۴۰۴/۰۱/۱۷</td>
+                      <td>
+                        
+                          <span class="fluent-text-muted">
+                            <i class="fas fa-minus"></i>
+                            0%
+                          </span>
+                        
+                      </td>
+                    </tr>
+                  
+                    <tr>
+                      <td>
+                        <div class="fluent-stock-user">
+                          <div class="fluent-stock-user-avatar">
+                            
+                            <div class="fluent-avatar fluent-avatar-sm ">
+                              سی
+                            </div>
+                          </div>
+                          <div class="fluent-stock-user-name">سیستم</div>
+                        </div>
+                      </td>
+                      <td>
+                        <span class="fluent-badge fluent-badge-primary">
+                          BANK
+                        </span>
+                      </td>
+                      <td>Persian Banking Group</td>
+                      <td>۵۲٬۳۰۸ CCoin</td>
+                      <td>۱۴۰۴/۰۱/۱۷</td>
+                      <td>
+                        
+                          <span class="fluent-text-muted">
+                            <i class="fas fa-minus"></i>
+                            0%
+                          </span>
+                        
+                      </td>
+                    </tr>
+                  
+                    <tr>
+                      <td>
+                        <div class="fluent-stock-user">
+                          <div class="fluent-stock-user-avatar">
+                            
+                            <div class="fluent-avatar fluent-avatar-sm ">
+                              سی
+                            </div>
+                          </div>
+                          <div class="fluent-stock-user-name">سیستم</div>
+                        </div>
+                      </td>
+                      <td>
+                        <span class="fluent-badge fluent-badge-primary">
+                          OILC
+                        </span>
+                      </td>
+                      <td>Oil Company of Persia</td>
+                      <td>۲۰٬۰۷۶ CCoin</td>
+                      <td>۱۴۰۴/۰۱/۱۷</td>
+                      <td>
+                        
+                          <span class="fluent-text-muted">
+                            <i class="fas fa-minus"></i>
+                            0%
+                          </span>
+                        
+                      </td>
+                    </tr>
+                  
+                </tbody>
+              </table>
+            </div>
+          
+        </div>
+        <div class="fluent-card-footer">
+          <a href="/admin/stock-market" class="fluent-btn fluent-btn-outline fluent-btn-sm">
+            مشاهده همه
+            <i class="fas fa-arrow-left"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- بخش سمت چپ -->
+    <div class="fluent-col-4">
+      <!-- فعالیت‌های اخیر -->
+      <div class="fluent-card fluent-mb-4">
+        <div class="fluent-card-header">
+          <h3 class="fluent-card-title">
+            <i class="fas fa-history"></i>
+            فعالیت‌های اخیر
+          </h3>
+        </div>
+        <div class="fluent-card-body">
+          
+            <div class="fluent-empty-state">
+              <i class="fas fa-info-circle fa-2x fluent-mb-2"></i>
+              <p>هیچ فعالیتی ثبت نشده است.</p>
+            </div>
+          
+        </div>
+        <div class="fluent-card-footer">
+          <a href="/admin/activities" class="fluent-btn fluent-btn-outline fluent-btn-sm">
+            مشاهده همه
+            <i class="fas fa-arrow-left"></i>
+          </a>
+        </div>
+      </div>
+
+      <!-- تراکنش‌های اخیر -->
+      <div class="fluent-card">
+        <div class="fluent-card-header">
+          <h3 class="fluent-card-title">
+            <i class="fas fa-exchange-alt"></i>
+            تراکنش‌های اخیر
+          </h3>
+        </div>
+        <div class="fluent-card-body">
+          
+            <div class="fluent-empty-state">
+              <i class="fas fa-info-circle fa-2x fluent-mb-2"></i>
+              <p>هیچ تراکنشی ثبت نشده است.</p>
+            </div>
+          
+        </div>
+        <div class="fluent-card-footer">
+          <a href="/admin/transactions" class="fluent-btn fluent-btn-outline fluent-btn-sm">
+            مشاهده همه
+            <i class="fas fa-arrow-left"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+  </main>
+  
+  <!-- پاورقی -->
+  <footer class="fluent-footer">
+    <p>پنل مدیریت CCoin &copy; 2025. تمامی حقوق محفوظ است.</p>
+  </footer>
+  
+  <!-- اسکریپت‌های Fluent UI -->
+  <script src="/admin/js/fluent-ui/fluent.js"></script>
+  
+  <!-- اسکریپت‌های اختصاصی صفحات -->
+  
+</body>
+</html>

@@ -1,0 +1,546 @@
+<!-- صفحه تنظیمات هوش مصنوعی -->
+<div class="fluent-container">
+  <!-- هدر صفحه -->
+  <div class="fluent-page-header">
+    <h1 class="fluent-page-title">
+      <i class="fas fa-brain"></i>
+      تنظیمات هوش مصنوعی
+    </h1>
+    <div class="fluent-page-actions">
+      <button id="btnSaveAISettings" class="fluent-btn fluent-btn-primary">
+        <i class="fas fa-save"></i>
+        ذخیره تنظیمات
+      </button>
+      <button id="btnRefreshAISettings" class="fluent-btn fluent-btn-outline">
+        <i class="fas fa-sync-alt"></i>
+        بارگذاری مجدد
+      </button>
+    </div>
+  </div>
+
+  <!-- نمایش خطا در صورت وجود -->
+  <% if (typeof error !== 'undefined' && error) { %>
+    <div class="fluent-alert fluent-alert-danger">
+      <i class="fas fa-exclamation-circle"></i> <%= error %>
+      <button class="fluent-alert-close">&times;</button>
+    </div>
+  <% } %>
+
+  <!-- فرم تنظیمات -->
+  <form id="aiSettingsForm">
+    <div class="fluent-row">
+      <!-- تنظیمات عمومی هوش مصنوعی -->
+      <div class="fluent-col-lg-6">
+        <div class="fluent-card fluent-mb-4">
+          <div class="fluent-card-header">
+            <h3 class="fluent-card-title">
+              <i class="fas fa-cogs"></i>
+              تنظیمات عمومی هوش مصنوعی
+            </h3>
+          </div>
+          <div class="fluent-card-body">
+            <div class="fluent-form-group">
+              <label for="aiProvider" class="fluent-form-label">سرویس‌دهنده هوش مصنوعی</label>
+              <select class="fluent-form-control" id="aiProvider" name="provider">
+                <option value="openai">OpenAI</option>
+                <option value="google">Google Gemini</option>
+                <option value="azure">Azure OpenAI</option>
+                <option value="local">سرویس محلی</option>
+              </select>
+              <div class="fluent-form-text">سرویس‌دهنده اصلی برای هوش مصنوعی.</div>
+            </div>
+            
+            <div class="fluent-form-group">
+              <label for="aiModel" class="fluent-form-label">مدل هوش مصنوعی</label>
+              <select class="fluent-form-control" id="aiModel" name="model">
+                <option value="gpt-4">GPT-4</option>
+                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                <option value="gemini-pro">Gemini Pro</option>
+                <option value="gemini-ultra">Gemini Ultra</option>
+                <option value="custom">مدل سفارشی</option>
+              </select>
+              <div class="fluent-form-text">مدل پیش‌فرض برای پاسخگویی به درخواست‌ها.</div>
+            </div>
+            
+            <div class="fluent-form-group" id="customModelContainer" style="display: none;">
+              <label for="customModel" class="fluent-form-label">نام مدل سفارشی</label>
+              <input type="text" class="fluent-form-control" id="customModel" name="customModel" placeholder="مثال: ccoin-ai-tuned-model">
+              <div class="fluent-form-text">نام مدل سفارشی که آموزش داده‌اید.</div>
+            </div>
+            
+            <div class="fluent-form-group">
+              <label for="apiKey" class="fluent-form-label">کلید API</label>
+              <div class="fluent-input-group">
+                <input type="password" class="fluent-form-control" id="apiKey" name="apiKey" placeholder="کلید API را وارد کنید">
+                <button type="button" class="fluent-btn fluent-btn-outline toggle-password">
+                  <i class="fas fa-eye"></i>
+                </button>
+              </div>
+              <div class="fluent-form-text">کلید API برای دسترسی به سرویس هوش مصنوعی.</div>
+            </div>
+            
+            <div class="fluent-form-group">
+              <label for="temperature" class="fluent-form-label">دمای مدل (Temperature)</label>
+              <input type="range" class="fluent-form-range" id="temperature" name="temperature" min="0" max="2" step="0.1" value="0.7">
+              <div class="fluent-range-value">
+                <span>0</span>
+                <span id="temperatureValue">0.7</span>
+                <span>2</span>
+              </div>
+              <div class="fluent-form-text">میزان خلاقیت پاسخ‌ها. مقادیر پایین‌تر پاسخ‌های دقیق‌تر و مقادیر بالاتر پاسخ‌های خلاقانه‌تر تولید می‌کنند.</div>
+            </div>
+            
+            <div class="fluent-form-group">
+              <label for="maxTokens" class="fluent-form-label">حداکثر توکن‌ها</label>
+              <input type="number" class="fluent-form-control" id="maxTokens" name="maxTokens" min="100" max="8000" value="2000">
+              <div class="fluent-form-text">حداکثر تعداد توکن‌های استفاده شده در هر درخواست.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- تنظیمات کاربری هوش مصنوعی -->
+      <div class="fluent-col-lg-6">
+        <div class="fluent-card fluent-mb-4">
+          <div class="fluent-card-header">
+            <h3 class="fluent-card-title">
+              <i class="fas fa-user-cog"></i>
+              تنظیمات کاربری هوش مصنوعی
+            </h3>
+          </div>
+          <div class="fluent-card-body">
+            <div class="fluent-form-group">
+              <label for="userAccessLevel" class="fluent-form-label">سطح دسترسی کاربران</label>
+              <select class="fluent-form-control" id="userAccessLevel" name="userAccessLevel">
+                <option value="all">همه کاربران</option>
+                <option value="premium">فقط کاربران ویژه</option>
+                <option value="custom">سفارشی (براساس نقش)</option>
+              </select>
+              <div class="fluent-form-text">تعیین کاربرانی که می‌توانند به هوش مصنوعی دسترسی داشته باشند.</div>
+            </div>
+            
+            <div class="fluent-form-group" id="customRolesContainer" style="display: none;">
+              <label class="fluent-form-label">نقش‌های مجاز</label>
+              <div class="fluent-checkbox-list">
+                <div class="fluent-form-check">
+                  <input type="checkbox" class="fluent-form-check-input" id="roleAdmin" name="allowedRoles[]" value="admin">
+                  <label class="fluent-form-check-label" for="roleAdmin">مدیران</label>
+                </div>
+                <div class="fluent-form-check">
+                  <input type="checkbox" class="fluent-form-check-input" id="roleModerator" name="allowedRoles[]" value="moderator">
+                  <label class="fluent-form-check-label" for="roleModerator">ناظران</label>
+                </div>
+                <div class="fluent-form-check">
+                  <input type="checkbox" class="fluent-form-check-input" id="roleVIP" name="allowedRoles[]" value="vip">
+                  <label class="fluent-form-check-label" for="roleVIP">کاربران VIP</label>
+                </div>
+                <div class="fluent-form-check">
+                  <input type="checkbox" class="fluent-form-check-input" id="roleRegular" name="allowedRoles[]" value="regular">
+                  <label class="fluent-form-check-label" for="roleRegular">کاربران عادی</label>
+                </div>
+              </div>
+            </div>
+            
+            <div class="fluent-form-group">
+              <label for="dailyLimit" class="fluent-form-label">محدودیت روزانه</label>
+              <input type="number" class="fluent-form-control" id="dailyLimit" name="dailyLimit" min="1" max="100" value="10">
+              <div class="fluent-form-text">تعداد دفعات مجاز استفاده از هوش مصنوعی در روز برای هر کاربر.</div>
+            </div>
+            
+            <div class="fluent-form-group">
+              <label for="premiumDailyLimit" class="fluent-form-label">محدودیت روزانه کاربران ویژه</label>
+              <input type="number" class="fluent-form-control" id="premiumDailyLimit" name="premiumDailyLimit" min="1" max="1000" value="50">
+              <div class="fluent-form-text">تعداد دفعات مجاز استفاده از هوش مصنوعی در روز برای کاربران ویژه.</div>
+            </div>
+            
+            <div class="fluent-form-group">
+              <label for="costPerUse" class="fluent-form-label">هزینه هر درخواست (سکه)</label>
+              <input type="number" class="fluent-form-control" id="costPerUse" name="costPerUse" min="0" max="1000" value="5">
+              <div class="fluent-form-text">هزینه (به سکه) برای هر بار استفاده از هوش مصنوعی. برای رایگان بودن، 0 وارد کنید.</div>
+            </div>
+            
+            <div class="fluent-form-group">
+              <label for="cooldown" class="fluent-form-label">زمان انتظار بین درخواست‌ها (ثانیه)</label>
+              <input type="number" class="fluent-form-control" id="cooldown" name="cooldown" min="0" max="3600" value="30">
+              <div class="fluent-form-text">زمان انتظار (به ثانیه) بین دو درخواست متوالی. برای بدون محدودیت، 0 وارد کنید.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="fluent-row">
+      <!-- تنظیمات محتوا -->
+      <div class="fluent-col-lg-6">
+        <div class="fluent-card fluent-mb-4">
+          <div class="fluent-card-header">
+            <h3 class="fluent-card-title">
+              <i class="fas fa-filter"></i>
+              تنظیمات محتوا
+            </h3>
+          </div>
+          <div class="fluent-card-body">
+            <div class="fluent-form-group">
+              <label for="contentFilter" class="fluent-form-label">فیلتر محتوا</label>
+              <select class="fluent-form-control" id="contentFilter" name="contentFilter">
+                <option value="strict">سخت‌گیرانه</option>
+                <option value="moderate">متوسط</option>
+                <option value="low">حداقل</option>
+                <option value="disabled">غیرفعال</option>
+              </select>
+              <div class="fluent-form-text">سطح فیلترینگ محتوای نامناسب.</div>
+            </div>
+            
+            <div class="fluent-form-group">
+              <label class="fluent-form-label">موضوعات ممنوعه</label>
+              <div class="fluent-checkbox-list">
+                <div class="fluent-form-check">
+                  <input type="checkbox" class="fluent-form-check-input" id="blockPolitical" name="blockedTopics[]" value="political">
+                  <label class="fluent-form-check-label" for="blockPolitical">سیاسی</label>
+                </div>
+                <div class="fluent-form-check">
+                  <input type="checkbox" class="fluent-form-check-input" id="blockReligious" name="blockedTopics[]" value="religious">
+                  <label class="fluent-form-check-label" for="blockReligious">مذهبی</label>
+                </div>
+                <div class="fluent-form-check">
+                  <input type="checkbox" class="fluent-form-check-input" id="blockAdult" name="blockedTopics[]" value="adult">
+                  <label class="fluent-form-check-label" for="blockAdult">محتوای بزرگسالان</label>
+                </div>
+                <div class="fluent-form-check">
+                  <input type="checkbox" class="fluent-form-check-input" id="blockViolence" name="blockedTopics[]" value="violence">
+                  <label class="fluent-form-check-label" for="blockViolence">خشونت</label>
+                </div>
+              </div>
+              <div class="fluent-form-text">موضوعاتی که هوش مصنوعی اجازه پاسخگویی به آنها را ندارد.</div>
+            </div>
+            
+            <div class="fluent-form-group">
+              <label for="systemPrompt" class="fluent-form-label">پرامپت سیستمی</label>
+              <textarea class="fluent-form-control" id="systemPrompt" name="systemPrompt" rows="5" placeholder="دستورالعمل‌های سیستمی را وارد کنید..."></textarea>
+              <div class="fluent-form-text">دستورالعمل‌های سیستمی که به هوش مصنوعی داده می‌شود (شخصیت، محدودیت‌ها و راهنمایی‌ها).</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- تنظیمات پیشرفته -->
+      <div class="fluent-col-lg-6">
+        <div class="fluent-card fluent-mb-4">
+          <div class="fluent-card-header">
+            <h3 class="fluent-card-title">
+              <i class="fas fa-sliders-h"></i>
+              تنظیمات پیشرفته
+            </h3>
+          </div>
+          <div class="fluent-card-body">
+            <div class="fluent-form-group">
+              <label for="fallbackProvider" class="fluent-form-label">سرویس‌دهنده جایگزین</label>
+              <select class="fluent-form-control" id="fallbackProvider" name="fallbackProvider">
+                <option value="none">هیچ‌کدام</option>
+                <option value="openai">OpenAI</option>
+                <option value="google">Google Gemini</option>
+                <option value="azure">Azure OpenAI</option>
+                <option value="local">سرویس محلی</option>
+              </select>
+              <div class="fluent-form-text">سرویس‌دهنده جایگزین در صورت خطا یا عدم دسترسی به سرویس اصلی.</div>
+            </div>
+            
+            <div class="fluent-form-group">
+              <label for="logLevel" class="fluent-form-label">سطح لاگ</label>
+              <select class="fluent-form-control" id="logLevel" name="logLevel">
+                <option value="error">فقط خطاها</option>
+                <option value="warn">هشدارها و خطاها</option>
+                <option value="info">اطلاعات عمومی</option>
+                <option value="debug">اطلاعات دیباگ</option>
+                <option value="all">همه موارد</option>
+              </select>
+              <div class="fluent-form-text">سطح ثبت لاگ‌های هوش مصنوعی.</div>
+            </div>
+            
+            <div class="fluent-form-group">
+              <label for="cacheEnabled" class="fluent-form-label">ذخیره‌سازی پاسخ‌ها (کش)</label>
+              <div class="fluent-form-check form-switch">
+                <input type="checkbox" class="fluent-form-check-input" id="cacheEnabled" name="cacheEnabled">
+              </div>
+              <div class="fluent-form-text">پاسخ‌های تکراری ذخیره شوند تا در درخواست‌های مشابه سریع‌تر پاسخ داده شود و مصرف API کاهش یابد.</div>
+            </div>
+            
+            <div class="fluent-form-group" id="cacheTimeoutContainer">
+              <label for="cacheTimeout" class="fluent-form-label">مدت زمان ذخیره‌سازی (دقیقه)</label>
+              <input type="number" class="fluent-form-control" id="cacheTimeout" name="cacheTimeout" min="5" max="10080" value="60">
+              <div class="fluent-form-text">مدت زمان (به دقیقه) که پاسخ‌ها در کش ذخیره می‌شوند.</div>
+            </div>
+            
+            <div class="fluent-form-check fluent-mb-3">
+              <input type="checkbox" class="fluent-form-check-input" id="streamResponses" name="streamResponses">
+              <label class="fluent-form-check-label" for="streamResponses">نمایش پاسخ‌ها به صورت زنده (Streaming)</label>
+              <div class="fluent-form-text">پاسخ‌ها کاراکتر به کاراکتر نمایش داده شوند (مانند تایپ کردن).</div>
+            </div>
+            
+            <div class="fluent-form-check fluent-mb-3">
+              <input type="checkbox" class="fluent-form-check-input" id="logUserQueries" name="logUserQueries">
+              <label class="fluent-form-check-label" for="logUserQueries">ثبت پرسش‌های کاربران</label>
+              <div class="fluent-form-text">پرسش‌های کاربران برای بهبود سیستم ذخیره شوند.</div>
+            </div>
+            
+            <div class="fluent-form-check fluent-mb-3">
+              <input type="checkbox" class="fluent-form-check-input" id="aiEnabled" name="aiEnabled" checked>
+              <label class="fluent-form-check-label" for="aiEnabled">هوش مصنوعی فعال است</label>
+              <div class="fluent-form-text">در صورت غیرفعال کردن، تمامی قابلیت‌های هوش مصنوعی غیرفعال می‌شوند.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- دکمه‌های ذخیره/لغو -->
+    <div class="fluent-row fluent-mb-4">
+      <div class="fluent-col-12 fluent-text-end">
+        <button type="button" class="fluent-btn fluent-btn-secondary fluent-me-2" id="btnResetAISettings">بازنشانی به تنظیمات پیش‌فرض</button>
+        <button type="button" class="fluent-btn fluent-btn-primary" id="btnSaveAISettingsBottom">ذخیره تنظیمات</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- مودال بازنشانی تنظیمات -->
+<div class="fluent-modal" id="resetSettingsModal">
+  <div class="fluent-modal-dialog">
+    <div class="fluent-modal-content">
+      <div class="fluent-modal-header">
+        <h3 class="fluent-modal-title">بازنشانی تنظیمات هوش مصنوعی</h3>
+        <button type="button" class="fluent-modal-close" data-dismiss="modal">&times;</button>
+      </div>
+      <div class="fluent-modal-body">
+        <p>آیا از بازنشانی تنظیمات هوش مصنوعی به حالت پیش‌فرض اطمینان دارید؟</p>
+        <p class="fluent-text-danger">این عملیات غیرقابل بازگشت است!</p>
+      </div>
+      <div class="fluent-modal-footer">
+        <button type="button" class="fluent-btn fluent-btn-secondary" data-dismiss="modal">انصراف</button>
+        <button type="button" class="fluent-btn fluent-btn-danger" id="confirmResetSettings">بله، بازنشانی شود</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // نمایش/مخفی کردن فیلد مدل سفارشی
+    document.getElementById('aiModel').addEventListener('change', function() {
+      const customModelContainer = document.getElementById('customModelContainer');
+      customModelContainer.style.display = this.value === 'custom' ? 'block' : 'none';
+    });
+    
+    // نمایش/مخفی کردن لیست نقش‌های مجاز
+    document.getElementById('userAccessLevel').addEventListener('change', function() {
+      const customRolesContainer = document.getElementById('customRolesContainer');
+      customRolesContainer.style.display = this.value === 'custom' ? 'block' : 'none';
+    });
+    
+    // نمایش/مخفی کردن تنظیمات کش
+    document.getElementById('cacheEnabled').addEventListener('change', function() {
+      const cacheTimeoutContainer = document.getElementById('cacheTimeoutContainer');
+      cacheTimeoutContainer.style.display = this.checked ? 'block' : 'none';
+    });
+    
+    // نمایش مقدار دمای مدل
+    document.getElementById('temperature').addEventListener('input', function() {
+      document.getElementById('temperatureValue').textContent = this.value;
+    });
+    
+    // رویداد دکمه‌های ذخیره تنظیمات
+    document.getElementById('btnSaveAISettings').addEventListener('click', saveAISettings);
+    document.getElementById('btnSaveAISettingsBottom').addEventListener('click', saveAISettings);
+    
+    // رویداد دکمه بارگذاری مجدد
+    document.getElementById('btnRefreshAISettings').addEventListener('click', loadAISettings);
+    
+    // رویداد دکمه بازنشانی تنظیمات
+    document.getElementById('btnResetAISettings').addEventListener('click', function() {
+      FluentUI.Modal.show('resetSettingsModal');
+    });
+    
+    // رویداد دکمه تایید بازنشانی تنظیمات
+    document.getElementById('confirmResetSettings').addEventListener('click', resetAISettings);
+    
+    // رویداد دکمه‌های نمایش/مخفی کردن رمز عبور
+    document.querySelectorAll('.toggle-password').forEach(button => {
+      button.addEventListener('click', function() {
+        const input = this.previousElementSibling;
+        const icon = this.querySelector('i');
+        
+        if (input.type === 'password') {
+          input.type = 'text';
+          icon.classList.remove('fa-eye');
+          icon.classList.add('fa-eye-slash');
+        } else {
+          input.type = 'password';
+          icon.classList.remove('fa-eye-slash');
+          icon.classList.add('fa-eye');
+        }
+      });
+    });
+    
+    // بارگذاری اولیه تنظیمات
+    loadAISettings();
+    
+    /**
+     * بارگذاری تنظیمات هوش مصنوعی
+     */
+    function loadAISettings() {
+      // در حالت واقعی، اینجا از API برای دریافت تنظیمات استفاده می‌شود
+      fetch('/admin/api/ai-settings')
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            populateAISettings(data.settings);
+          } else {
+            FluentUI.Toast.error(data.message || 'خطا در بارگذاری تنظیمات هوش مصنوعی');
+          }
+        })
+        .catch(error => {
+          console.error('Error loading AI settings:', error);
+          FluentUI.Toast.error('خطا در بارگذاری تنظیمات هوش مصنوعی');
+        });
+    }
+    
+    /**
+     * پر کردن فرم با تنظیمات دریافت شده
+     * @param {Object} settings تنظیمات هوش مصنوعی
+     */
+    function populateAISettings(settings) {
+      if (!settings) return;
+      
+      // تنظیمات عمومی
+      document.getElementById('aiProvider').value = settings.provider || 'openai';
+      document.getElementById('aiModel').value = settings.model || 'gpt-3.5-turbo';
+      document.getElementById('customModel').value = settings.customModel || '';
+      document.getElementById('customModelContainer').style.display = settings.model === 'custom' ? 'block' : 'none';
+      document.getElementById('apiKey').value = settings.apiKey || '';
+      document.getElementById('temperature').value = settings.temperature || 0.7;
+      document.getElementById('temperatureValue').textContent = settings.temperature || 0.7;
+      document.getElementById('maxTokens').value = settings.maxTokens || 2000;
+      
+      // تنظیمات کاربری
+      document.getElementById('userAccessLevel').value = settings.userAccessLevel || 'all';
+      document.getElementById('customRolesContainer').style.display = settings.userAccessLevel === 'custom' ? 'block' : 'none';
+      
+      // نقش‌های مجاز
+      const allowedRoles = settings.allowedRoles || [];
+      document.querySelectorAll('input[name="allowedRoles[]"]').forEach(checkbox => {
+        checkbox.checked = allowedRoles.includes(checkbox.value);
+      });
+      
+      document.getElementById('dailyLimit').value = settings.dailyLimit || 10;
+      document.getElementById('premiumDailyLimit').value = settings.premiumDailyLimit || 50;
+      document.getElementById('costPerUse').value = settings.costPerUse || 5;
+      document.getElementById('cooldown').value = settings.cooldown || 30;
+      
+      // تنظیمات محتوا
+      document.getElementById('contentFilter').value = settings.contentFilter || 'moderate';
+      
+      // موضوعات ممنوعه
+      const blockedTopics = settings.blockedTopics || [];
+      document.querySelectorAll('input[name="blockedTopics[]"]').forEach(checkbox => {
+        checkbox.checked = blockedTopics.includes(checkbox.value);
+      });
+      
+      document.getElementById('systemPrompt').value = settings.systemPrompt || '';
+      
+      // تنظیمات پیشرفته
+      document.getElementById('fallbackProvider').value = settings.fallbackProvider || 'none';
+      document.getElementById('logLevel').value = settings.logLevel || 'info';
+      document.getElementById('cacheEnabled').checked = settings.cacheEnabled || false;
+      document.getElementById('cacheTimeoutContainer').style.display = settings.cacheEnabled ? 'block' : 'none';
+      document.getElementById('cacheTimeout').value = settings.cacheTimeout || 60;
+      document.getElementById('streamResponses').checked = settings.streamResponses || false;
+      document.getElementById('logUserQueries').checked = settings.logUserQueries || false;
+      document.getElementById('aiEnabled').checked = settings.aiEnabled !== false; // پیش‌فرض: فعال
+      
+      FluentUI.Toast.success('تنظیمات هوش مصنوعی با موفقیت بارگذاری شدند');
+    }
+    
+    /**
+     * ذخیره تنظیمات هوش مصنوعی
+     */
+    function saveAISettings() {
+      // جمع‌آوری تنظیمات از فرم
+      const settings = {
+        // تنظیمات عمومی
+        provider: document.getElementById('aiProvider').value,
+        model: document.getElementById('aiModel').value,
+        customModel: document.getElementById('aiModel').value === 'custom' ? document.getElementById('customModel').value : '',
+        apiKey: document.getElementById('apiKey').value,
+        temperature: parseFloat(document.getElementById('temperature').value),
+        maxTokens: parseInt(document.getElementById('maxTokens').value),
+        
+        // تنظیمات کاربری
+        userAccessLevel: document.getElementById('userAccessLevel').value,
+        allowedRoles: Array.from(document.querySelectorAll('input[name="allowedRoles[]"]:checked')).map(cb => cb.value),
+        dailyLimit: parseInt(document.getElementById('dailyLimit').value),
+        premiumDailyLimit: parseInt(document.getElementById('premiumDailyLimit').value),
+        costPerUse: parseInt(document.getElementById('costPerUse').value),
+        cooldown: parseInt(document.getElementById('cooldown').value),
+        
+        // تنظیمات محتوا
+        contentFilter: document.getElementById('contentFilter').value,
+        blockedTopics: Array.from(document.querySelectorAll('input[name="blockedTopics[]"]:checked')).map(cb => cb.value),
+        systemPrompt: document.getElementById('systemPrompt').value,
+        
+        // تنظیمات پیشرفته
+        fallbackProvider: document.getElementById('fallbackProvider').value,
+        logLevel: document.getElementById('logLevel').value,
+        cacheEnabled: document.getElementById('cacheEnabled').checked,
+        cacheTimeout: parseInt(document.getElementById('cacheTimeout').value),
+        streamResponses: document.getElementById('streamResponses').checked,
+        logUserQueries: document.getElementById('logUserQueries').checked,
+        aiEnabled: document.getElementById('aiEnabled').checked
+      };
+      
+      // در حالت واقعی، اینجا از API برای ذخیره تنظیمات استفاده می‌شود
+      fetch('/admin/api/ai-settings/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(settings)
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            FluentUI.Toast.success('تنظیمات هوش مصنوعی با موفقیت ذخیره شدند');
+          } else {
+            FluentUI.Toast.error(data.message || 'خطا در ذخیره تنظیمات هوش مصنوعی');
+          }
+        })
+        .catch(error => {
+          console.error('Error saving AI settings:', error);
+          FluentUI.Toast.error('خطا در ذخیره تنظیمات هوش مصنوعی');
+        });
+    }
+    
+    /**
+     * بازنشانی تنظیمات هوش مصنوعی به حالت پیش‌فرض
+     */
+    function resetAISettings() {
+      // در حالت واقعی، اینجا از API برای بازنشانی تنظیمات استفاده می‌شود
+      fetch('/admin/api/ai-settings/reset', {
+        method: 'POST'
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            FluentUI.Toast.success('تنظیمات هوش مصنوعی با موفقیت به حالت پیش‌فرض بازنشانی شدند');
+            FluentUI.Modal.hide('resetSettingsModal');
+            loadAISettings();
+          } else {
+            FluentUI.Toast.error(data.message || 'خطا در بازنشانی تنظیمات هوش مصنوعی');
+          }
+        })
+        .catch(error => {
+          console.error('Error resetting AI settings:', error);
+          FluentUI.Toast.error('خطا در بازنشانی تنظیمات هوش مصنوعی');
+        });
+    }
+  });
+</script>
