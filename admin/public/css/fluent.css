@@ -1,5 +1,58 @@
 /* استایل‌های اصلی Fluent UI برای پنل مدیریت CCOIN */
 
+/* تعریف متغیرهای سفارشی رنگ بر اساس Fluent UI */
+:root {
+    /* رنگ‌های اصلی */
+    --accent: #0078d4;
+    --accent-dark: #106ebe;
+    --accent-light: #2b88d8;
+    --accent-lighter: #c7e0f4;
+    
+    /* پس‌زمینه‌ها */
+    --neutral-background-primary: #ffffff;
+    --neutral-background-secondary: #f5f5f5;
+    --neutral-background-tertiary: #f0f0f0;
+    
+    /* رنگ‌های متن */
+    --text-primary: #323130;
+    --text-secondary: #605e5c;
+    --text-disabled: #a19f9d;
+    --text-white: #ffffff;
+    
+    /* مرزها */
+    --border-color: #edebe9;
+    --border-color-dark: #c8c6c4;
+    
+    /* رنگ‌های وضعیت */
+    --success: #107c10;
+    --success-light: #dff6dd;
+    --success-lighter: #e6ffdf;
+    --warning: #ffaa44;
+    --warning-light: #fff4ce;
+    --warning-lighter: #fffae8;
+    --error: #d13438;
+    --error-light: #fde7e9;
+    --error-lighter: #fef5f6;
+    --info: #0078d4;
+    --info-light: #c7e0f4;
+    --info-lighter: #e7f5fe;
+    
+    /* انیمیشن‌ها */
+    --animation-fast: 0.1s ease;
+    --animation-normal: 0.2s ease;
+    --animation-slow: 0.3s ease;
+    
+    /* سایه‌ها */
+    --shadow-small: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --shadow-medium: 0 4px 8px rgba(0, 0, 0, 0.1);
+    --shadow-large: 0 8px 16px rgba(0, 0, 0, 0.1);
+    
+    /* شعاع گوشه‌ها */
+    --border-radius-small: 2px;
+    --border-radius-medium: 4px;
+    --border-radius-large: 6px;
+}
+
 /* تنظیمات کلی صفحه */
 * {
     box-sizing: border-box;
