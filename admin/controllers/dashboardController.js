@@ -13,39 +13,129 @@ import * as statsService from '../services/statsService.js';
  */
 export async function showDashboard(req, res) {
   try {
+    console.log('🔍 نمایش داشبورد برای کاربر:', req.session.user?.username);
+    
+    // داده‌های پیش‌فرض برای جلوگیری از خطا
+    const defaultStats = {
+      onlineUsers: 0,
+      totalCommands: 0,
+      coinsCirculation: 0,
+      serverLoad: 0,
+      userActivity: {
+        labels: ["شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه"],
+        values: [0, 0, 0, 0, 0, 0, 0]
+      },
+      economy: {
+        labels: ["شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه"],
+        transactions: [0, 0, 0, 0, 0, 0, 0]
+      },
+      recentEvents: [],
+      recentActivities: []
+    };
+    
     // آمار عمومی سیستم
-    const stats = await getSystemStats();
+    console.log('📊 دریافت آمار عمومی سیستم...');
+    let stats;
+    try {
+      stats = await getSystemStats();
+    } catch (statsError) {
+      console.error('❌ خطا در دریافت آمار سیستم:', statsError);
+      stats = defaultStats;
+    }
     
     // آمار کاربران اخیر
-    const recentUsers = await userService.getRecentUsers(5);
+    console.log('👥 دریافت آمار کاربران اخیر...');
+    let recentUsers;
+    try {
+      recentUsers = await userService.getRecentUsers(5);
+    } catch (usersError) {
+      console.error('❌ خطا در دریافت کاربران اخیر:', usersError);
+      recentUsers = [];
+    }
     
     // تراکنش‌های اخیر
-    const recentTransactions = await economyService.getRecentTransactions(10);
+    console.log('💰 دریافت تراکنش‌های اخیر...');
+    let recentTransactions;
+    try {
+      recentTransactions = await economyService.getRecentTransactions(10);
+    } catch (transactionsError) {
+      console.error('❌ خطا در دریافت تراکنش‌های اخیر:', transactionsError);
+      recentTransactions = [];
+    }
     
     // رویدادهای اخیر
-    const recentEvents = await getRecentEvents(5);
+    console.log('📅 دریافت رویدادهای اخیر...');
+    let recentEvents;
+    try {
+      recentEvents = await getRecentEvents(5);
+    } catch (eventsError) {
+      console.error('❌ خطا در دریافت رویدادهای اخیر:', eventsError);
+      recentEvents = [];
+    }
     
     // آمار بازار سهام
-    const stockMarketStats = await economyService.getStockMarketOverview();
+    console.log('📈 دریافت آمار بازار سهام...');
+    let stockMarketStats;
+    try {
+      stockMarketStats = await economyService.getStockMarketOverview();
+    } catch (stockError) {
+      console.error('❌ خطا در دریافت آمار بازار سهام:', stockError);
+      stockMarketStats = {};
+    }
     
     // فعالیت‌های اخیر در بات
-    const recentActivities = await getRecentActivities(10);
+    console.log('🤖 دریافت فعالیت‌های اخیر بات...');
+    let recentActivities;
+    try {
+      recentActivities = await getRecentActivities(10);
+    } catch (activitiesError) {
+      console.error('❌ خطا در دریافت فعالیت‌های اخیر بات:', activitiesError);
+      recentActivities = [];
+    }
     
-    res.render('dashboard/index', {
+    // آماده سازی داده‌های نهایی
+    const viewData = {
       title: 'داشبورد',
-      stats,
+      stats: {
+        ...defaultStats,
+        ...stats,
+        recentEvents,
+        recentActivities
+      },
       recentUsers,
       recentTransactions,
       recentEvents,
       stockMarketStats,
       recentActivities,
-    });
+    };
+    
+    console.log('✅ رندر نمایش داشبورد با داده‌های آماده...');
+    res.render('dashboard/index', viewData);
   } catch (error) {
-    console.error('خطا در نمایش داشبورد:', error);
+    console.error('❌ خطای کلی در نمایش داشبورد:', error);
     req.flash('error', 'خطایی در بارگذاری داشبورد رخ داده است');
+    
+    // داده‌های پیش‌فرض برای رندر داشبورد در صورت خطا
+    const defaultStats = {
+      onlineUsers: 0,
+      totalCommands: 0,
+      coinsCirculation: 0,
+      serverLoad: 0,
+      userActivity: {
+        labels: ["شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه"],
+        values: [0, 0, 0, 0, 0, 0, 0]
+      },
+      economy: {
+        labels: ["شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه"],
+        transactions: [0, 0, 0, 0, 0, 0, 0]
+      },
+      recentEvents: [],
+      recentActivities: []
+    };
+    
     res.render('dashboard/index', {
       title: 'داشبورد',
-      stats: {},
+      stats: defaultStats,
       recentUsers: [],
       recentTransactions: [],
       recentEvents: [],

@@ -56,13 +56,17 @@ export function setupAdminPanel(app) {
   // تنظیم جلسه‌ها
   app.use('/admin', session({
     secret: SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
+    resave: true,
+    saveUninitialized: true,
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // اطمینان از کار کردن در محیط توسعه
       maxAge: 24 * 60 * 60 * 1000, // 24 ساعت
+      path: '/admin', // محدود کردن کوکی به مسیر admin
     },
   }));
+  
+  // اطلاعات دیباگ جلسه‌ها
+  console.log('🔑 تنظیمات جلسه با کلید مخفی انجام شد');
 
   // تنظیم فلش‌ها
   app.use('/admin', flash());
@@ -87,6 +91,9 @@ export function setupAdminPanel(app) {
 
   // فایل‌های استاتیک
   app.use('/admin/public', express.static(path.join(__dirname, 'public')));
+  
+  // اطمینان از وجود دایرکتوری پابلیک (دیباگ)
+  console.log('📁 مسیر فایل‌های استاتیک:', path.join(__dirname, 'public'));
 
   // مسیرها
   app.use('/admin', authRoutes);

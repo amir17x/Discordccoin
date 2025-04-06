@@ -23,47 +23,60 @@ export async function showLogin(req, res) {
  */
 export async function processLogin(req, res) {
   try {
+    console.log('🔐 شروع فرآیند ورود کاربر...');
     const { username, password } = req.body;
+    console.log(`👤 نام کاربری وارد شده: ${username}`);
     
     // بررسی وجود نام کاربری و رمز عبور
     if (!username || !password) {
+      console.log('❌ نام کاربری یا رمز عبور وارد نشده است');
       req.flash('error', 'لطفاً نام کاربری و رمز عبور را وارد کنید');
       return res.redirect('/admin/login');
     }
     
     // یافتن کاربر در پایگاه داده
+    console.log(`🔍 جستجوی کاربر با نام کاربری: ${username}`);
     const user = await AdminUser.findOne({ username });
     
     // بررسی وجود کاربر
     if (!user) {
+      console.log(`❌ کاربری با نام کاربری ${username} یافت نشد`);
       req.flash('error', 'نام کاربری یا رمز عبور اشتباه است');
       return res.redirect('/admin/login');
     }
     
+    console.log(`✅ کاربر ${username} در پایگاه داده یافت شد`);
+    console.log(`👤 اطلاعات کاربر: نام: ${user.name}, فعال: ${user.active}, قفل: ${user.locked}`);
+    
     // بررسی فعال بودن کاربر
     if (!user.active) {
+      console.log(`❌ حساب کاربری ${username} غیرفعال است`);
       req.flash('error', 'حساب کاربری شما غیرفعال شده است. لطفاً با مدیر سیستم تماس بگیرید');
       return res.redirect('/admin/login');
     }
     
     // بررسی قفل بودن کاربر
     if (user.locked) {
+      console.log(`❌ حساب کاربری ${username} قفل شده است`);
       req.flash('error', 'حساب کاربری شما قفل شده است. لطفاً با مدیر سیستم تماس بگیرید');
       return res.redirect('/admin/login');
     }
     
     // بررسی صحت رمز عبور
+    console.log('🔑 بررسی صحت رمز عبور...');
     const isPasswordValid = await bcrypt.compare(password, user.password);
     
     if (!isPasswordValid) {
       // افزایش تعداد تلاش‌های ناموفق
       user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
+      console.log(`❌ رمز عبور نادرست است. تعداد تلاش‌های ناموفق: ${user.failedLoginAttempts}`);
       
       // قفل کردن کاربر بعد از 5 تلاش ناموفق
       if (user.failedLoginAttempts >= 5) {
         user.locked = true;
         user.lockedAt = new Date();
         await user.save();
+        console.log(`🔒 حساب کاربری ${username} به دلیل 5 تلاش ناموفق قفل شد`);
         req.flash('error', 'حساب کاربری شما به دلیل 5 تلاش ناموفق قفل شده است');
         return res.redirect('/admin/login');
       }
@@ -74,11 +87,14 @@ export async function processLogin(req, res) {
     }
     
     // ریست کردن تعداد تلاش‌های ناموفق
+    console.log('✅ رمز عبور صحیح است');
     user.failedLoginAttempts = 0;
     user.lastLogin = new Date();
     await user.save();
+    console.log('💾 اطلاعات آخرین ورود کاربر ذخیره شد');
     
     // ذخیره اطلاعات کاربر در جلسه
+    console.log('🔑 در حال ذخیره اطلاعات کاربر در جلسه...');
     req.session.user = {
       id: user._id,
       username: user.username,
@@ -87,14 +103,21 @@ export async function processLogin(req, res) {
       permissions: user.permissions,
     };
     
-    // ثبت ورود موفق به سیستم در لاگ
-    // TODO: ثبت لاگ
+    console.log('💾 اطلاعات جلسه ذخیره شد:', req.session.user);
     
     // ریدایرکت به داشبورد
+    console.log('🔀 ریدایرکت به داشبورد...');
     req.flash('success', `${user.name} عزیز، خوش آمدید`);
-    res.redirect('/admin/dashboard');
+    
+    // ذخیره نشست قبل از ریدایرکت
+    req.session.save(err => {
+      if (err) {
+        console.error('❌ خطا در ذخیره جلسه:', err);
+      }
+      res.redirect('/admin/dashboard');
+    });
   } catch (error) {
-    console.error('خطا در پردازش فرم ورود:', error);
+    console.error('❌ خطا در پردازش فرم ورود:', error);
     req.flash('error', 'خطایی در سیستم رخ داده است');
     res.redirect('/admin/login');
   }

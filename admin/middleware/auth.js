@@ -9,12 +9,17 @@
  * @param {Function} next میدلویر بعدی
  */
 export function isAuthenticated(req, res, next) {
+  console.log('🔒 بررسی احراز هویت کاربر...');
+  console.log('📝 اطلاعات نشست:', req.session);
+  
   if (req.session && req.session.user) {
+    console.log('✅ کاربر احراز هویت شده است:', req.session.user.username);
     return next();
   }
   
   // ذخیره URL درخواست شده برای بازگشت بعد از لاگین
   req.session.returnTo = req.originalUrl;
+  console.log(`❌ کاربر احراز هویت نشده است. ریدایرکت به صفحه ورود. (بازگشت به: ${req.originalUrl})`);
   
   req.flash('error', 'لطفاً ابتدا وارد حساب کاربری خود شوید');
   res.redirect('/admin/login');
