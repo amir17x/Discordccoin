@@ -5,7 +5,7 @@
  */
 
 import express from 'express';
-import { serversController } from '../controllers/serversController.js';
+import * as serversController from '../controllers/serversController.js';
 
 const router = express.Router();
 

@@ -12,36 +12,82 @@ import { getServersList, getServerDetails, updateServer } from '../services/serv
  * @param {Request} req درخواست اکسپرس
  * @param {Response} res پاسخ اکسپرس
  */
-const showDashboard = async (req, res) => {
+export async function showDashboard(req, res) {
   try {
+    console.log('🔍 دریافت لیست سرورها...');
     // دریافت لیست سرورها
     const servers = await getServersList();
     
     // محاسبه آمار کلی
     const totalServers = servers.length;
-    const activeServers = servers.filter(server => server.isActive).length;
-    const totalMembers = servers.reduce((total, server) => total + server.memberCount, 0);
-    const premiumServers = servers.filter(server => server.isPremium).length;
+    const activeServers = servers.filter(server => server.active).length;
+    const inactiveServers = totalServers - activeServers;
+    const totalMembers = servers.reduce((total, server) => total + (server.memberCount || 0), 0);
     
-    res.render('servers/dashboard', {
-      title: 'مدیریت سرورها',
+    // آماده‌سازی آمار برای نمایش
+    const stats = {
       totalServers,
       activeServers,
-      totalMembers,
-      premiumServers,
-      recentServers: servers.slice(0, 5) // 5 سرور اخیر
-    });
+      inactiveServers,
+      totalMembers
+    };
+    
+    // سرورهای اخیر
+    const recentServers = servers
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 5); // 5 سرور اخیر
+    
+    console.log(`✅ ${servers.length} سرور یافت شد. نمایش داشبورد سرورها...`);
+    
+    if (process.env.USE_FLUENT_UI === 'true') {
+      console.log('🎨 استفاده از رابط کاربری Fluent برای صفحه مدیریت سرورها');
+      
+      res.render('fluent-servers', {
+        title: 'مدیریت سرورها',
+        currentRoute: req.path,
+        layout: 'layouts/fluent-main',
+        user: req.session.user,
+        servers,
+        stats,
+        recentServers
+      });
+    } else {
+      res.render('servers/dashboard', {
+        title: 'مدیریت سرورها',
+        totalServers,
+        activeServers,
+        totalMembers,
+        recentServers
+      });
+    }
   } catch (error) {
-    console.error('Servers dashboard error:', error);
+    console.error('❌ خطا در نمایش داشبورد سرورها:', error);
     req.flash('error', 'خطا در بارگذاری داشبورد سرورها');
-    res.render('servers/dashboard', {
-      title: 'مدیریت سرورها',
-      totalServers: 0,
-      activeServers: 0,
-      totalMembers: 0,
-      premiumServers: 0,
-      recentServers: []
-    });
+    
+    if (process.env.USE_FLUENT_UI === 'true') {
+      res.render('fluent-servers', {
+        title: 'مدیریت سرورها',
+        currentRoute: req.path,
+        layout: 'layouts/fluent-main',
+        user: req.session.user,
+        servers: [],
+        stats: {
+          totalServers: 0,
+          activeServers: 0,
+          inactiveServers: 0,
+          totalMembers: 0
+        },
+        recentServers: []
+      });
+    } else {
+      res.render('servers/dashboard', {
+        title: 'مدیریت سرورها',
+        totalServers: 0,
+        activeServers: 0,
+        totalMembers: 0,
+        recentServers: []
+      });
+    }
   }
 };
 
