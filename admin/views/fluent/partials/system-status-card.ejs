@@ -1,0 +1,162 @@
+<!-- وضعیت سیستم -->
+<div class="fluent-card fluent-mb-4">
+  <div class="fluent-card-header">
+    <h3 class="fluent-card-title">
+      <i class="fas fa-tachometer-alt"></i>
+      وضعیت سیستم
+    </h3>
+  </div>
+  <div class="fluent-card-body">
+    <!-- اطلاعات اتصال و پینگ -->
+    <div class="fluent-system-connection">
+      <h4 class="fluent-section-title">
+        <i class="fas fa-wifi"></i>
+        اطلاعات اتصال و پینگ
+      </h4>
+      <div class="fluent-connection-grid">
+        <!-- پینگ دیسکورد -->
+        <div class="fluent-connection-item">
+          <div class="fluent-connection-icon">
+            <i class="fab fa-discord"></i>
+          </div>
+          <div class="fluent-connection-details">
+            <div class="fluent-connection-name">پینگ دیسکورد</div>
+            <div class="fluent-connection-status">
+              <% if (systemStatus.ping && systemStatus.ping.discord) { %>
+                <% const discordPingClass = systemStatus.ping.discord.status === 'excellent' ? 'fluent-status-success' : 
+                   (systemStatus.ping.discord.status === 'good' ? 'fluent-status-success' : 
+                   (systemStatus.ping.discord.status === 'average' ? 'fluent-status-warning' : 'fluent-status-danger')) %>
+                <span class="fluent-status-indicator <%= discordPingClass %>">
+                  <%= systemStatus.ping.discord.value %> میلی‌ثانیه
+                </span>
+              <% } else { %>
+                <span class="fluent-status-indicator fluent-status-warning">نامشخص</span>
+              <% } %>
+            </div>
+          </div>
+        </div>
+        
+        <!-- پینگ دیتابیس -->
+        <div class="fluent-connection-item">
+          <div class="fluent-connection-icon">
+            <i class="fas fa-database"></i>
+          </div>
+          <div class="fluent-connection-details">
+            <div class="fluent-connection-name">پینگ دیتابیس</div>
+            <div class="fluent-connection-status">
+              <% if (systemStatus.ping && systemStatus.ping.database) { %>
+                <% const dbPingClass = systemStatus.ping.database.status === 'excellent' ? 'fluent-status-success' : 
+                   (systemStatus.ping.database.status === 'good' ? 'fluent-status-success' : 
+                   (systemStatus.ping.database.status === 'average' ? 'fluent-status-warning' : 'fluent-status-danger')) %>
+                <span class="fluent-status-indicator <%= dbPingClass %>">
+                  <%= systemStatus.ping.database.value %> میلی‌ثانیه
+                </span>
+              <% } else { %>
+                <span class="fluent-status-indicator fluent-status-warning">نامشخص</span>
+              <% } %>
+            </div>
+          </div>
+        </div>
+        
+        <!-- پینگ هوش مصنوعی -->
+        <div class="fluent-connection-item">
+          <div class="fluent-connection-icon">
+            <i class="fas fa-brain"></i>
+          </div>
+          <div class="fluent-connection-details">
+            <div class="fluent-connection-name">پینگ هوش مصنوعی</div>
+            <div class="fluent-connection-status">
+              <% if (systemStatus.ping && systemStatus.ping.ai) { %>
+                <% const aiPingClass = systemStatus.ping.ai.status === 'excellent' ? 'fluent-status-success' : 
+                   (systemStatus.ping.ai.status === 'good' ? 'fluent-status-success' : 
+                   (systemStatus.ping.ai.status === 'average' ? 'fluent-status-warning' : 'fluent-status-danger')) %>
+                <span class="fluent-status-indicator <%= aiPingClass %>">
+                  <%= systemStatus.ping.ai.value %> میلی‌ثانیه
+                </span>
+              <% } else { %>
+                <span class="fluent-status-indicator fluent-status-warning">نامشخص</span>
+              <% } %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- زمان آنلاین بودن -->
+    <div class="fluent-uptime-section">
+      <h4 class="fluent-section-title">
+        <i class="fas fa-clock"></i>
+        زمان آنلاین بودن ربات
+      </h4>
+      <div class="fluent-uptime-value">
+        <% if (systemStatus.uptime) { %>
+          <%= systemStatus.uptime %>
+        <% } else { %>
+          نامشخص
+        <% } %>
+      </div>
+    </div>
+    
+    <!-- وضعیت‌های اصلی سیستم -->
+    <div class="fluent-system-status-grid">
+      <!-- وضعیت بازار سهام -->
+      <div class="fluent-status-box">
+        <div class="fluent-status-box-title">
+          <i class="fas fa-chart-line"></i>
+          وضعیت بازار سهام
+        </div>
+        <div class="fluent-status-box-value">
+          <% if (systemStatus.stockMarket === 'bull') { %>
+            <span class="fluent-status-indicator fluent-status-success">رونق</span>
+          <% } else if (systemStatus.stockMarket === 'bear') { %>
+            <span class="fluent-status-indicator fluent-status-danger">رکود</span>
+          <% } else if (systemStatus.stockMarket === 'crisis') { %>
+            <span class="fluent-status-indicator fluent-status-danger">بحران</span>
+          <% } else { %>
+            <span class="fluent-status-indicator fluent-status-warning">ثبات</span>
+          <% } %>
+        </div>
+        <div class="fluent-status-note">نرخ تورم: <%= systemStatus.inflationRate || '0' %>%</div>
+      </div>
+
+      <!-- وضعیت بانک -->
+      <div class="fluent-status-box">
+        <div class="fluent-status-box-title">
+          <i class="fas fa-university"></i>
+          وضعیت بانک
+        </div>
+        <div class="fluent-status-box-value">
+          <% if (systemStatus.bankStatus === 'healthy') { %>
+            <span class="fluent-status-indicator fluent-status-success">سالم</span>
+          <% } else if (systemStatus.bankStatus === 'risky') { %>
+            <span class="fluent-status-indicator fluent-status-warning">ریسکی</span>
+          <% } else { %>
+            <span class="fluent-status-indicator fluent-status-danger">بحرانی</span>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- وضعیت دیسکورد -->
+      <div class="fluent-status-box">
+        <div class="fluent-status-box-title">
+          <i class="fab fa-discord"></i>
+          وضعیت دیسکورد بات
+        </div>
+        <div class="fluent-status-box-value">
+          <% if (systemStatus.botStatus === 'online') { %>
+            <span class="fluent-status-indicator fluent-status-success">آنلاین</span>
+          <% } else { %>
+            <span class="fluent-status-indicator fluent-status-danger">آفلاین</span>
+          <% } %>
+        </div>
+        <div class="fluent-status-note">آخرین به‌روزرسانی: <%= systemStatus.lastUpdate || 'نامشخص' %></div>
+      </div>
+    </div>
+  </div>
+  <div class="fluent-card-footer">
+    <button class="fluent-btn fluent-btn-primary fluent-btn-sm" id="refresh-status">
+      <i class="fas fa-sync-alt"></i>
+      به‌روزرسانی وضعیت
+    </button>
+  </div>
+</div>

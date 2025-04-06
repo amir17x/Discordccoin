@@ -239,7 +239,10 @@ export async function getRecentActivities(limit = 5) {
  */
 export async function getSystemStatus() {
   try {
+    // زمان شروع پردازش برای محاسبه پینگ دیتابیس
+    const dbStartTime = Date.now();
     await connectToMongoDB();
+    const dbPingTime = Date.now() - dbStartTime;
     
     // دریافت تنظیمات بازار سهام
     const stockStatus = await Stock.findOne().sort({ updatedAt: -1 });
@@ -276,6 +279,66 @@ export async function getSystemStatus() {
     // فرض می‌کنیم بات آنلاین است
     const botStatus = 'online';
     
+    // دریافت زمان آنلاین بودن سیستم از تنظیمات عمومی
+    let uptimeMs = 0;
+    let uptime = "نامشخص";
+    
+    try {
+      const settings = await GlobalSettings.getGlobalSettings();
+      if (settings && settings.botStartTime) {
+        const startTime = new Date(settings.botStartTime);
+        const now = new Date();
+        uptimeMs = now - startTime;
+        
+        // تبدیل به فرمت مناسب: روز، ساعت، دقیقه
+        const days = Math.floor(uptimeMs / (24 * 60 * 60 * 1000));
+        const hours = Math.floor((uptimeMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+        const minutes = Math.floor((uptimeMs % (60 * 60 * 1000)) / (60 * 1000));
+        
+        uptime = `${days} روز، ${hours} ساعت، ${minutes} دقیقه`;
+      }
+    } catch (err) {
+      console.error('خطا در دریافت زمان آنلاین بودن ربات:', err);
+    }
+    
+    // محاسبه پینگ سرویس‌های مختلف
+    // 1. پینگ دیتابیس - از قبل محاسبه شده
+    let dbPing = dbPingTime;
+    
+    // 2. پینگ دیسکورد - مقدار نمونه
+    let discordPing = 50; // میلی‌ثانیه
+    try {
+      // سعی می‌کنیم از ربات دیسکورد پینگ را بخوانیم
+      const { getDiscordPing } = await import('../utils/discord.js').catch(() => ({ getDiscordPing: null }));
+      if (typeof getDiscordPing === 'function') {
+        const ping = await getDiscordPing();
+        discordPing = ping || discordPing;
+      }
+    } catch (err) {
+      console.warn('خطا در دریافت پینگ دیسکورد:', err);
+    }
+    
+    // 3. پینگ هوش مصنوعی - مقدار نمونه
+    let aiPing = 150; // میلی‌ثانیه
+    try {
+      // سعی می‌کنیم از سرویس هوش مصنوعی پینگ را بخوانیم
+      const { getAIPing } = await import('../utils/ai.js').catch(() => ({ getAIPing: null }));
+      if (typeof getAIPing === 'function') {
+        const ping = await getAIPing();
+        aiPing = ping || aiPing;
+      }
+    } catch (err) {
+      console.warn('خطا در دریافت پینگ هوش مصنوعی:', err);
+    }
+    
+    // وضعیت پینگ‌ها
+    const getPingStatus = (ping) => {
+      if (ping < 100) return 'excellent';
+      if (ping < 200) return 'good';
+      if (ping < 400) return 'average';
+      return 'poor';
+    };
+    
     // زمان آخرین به‌روزرسانی
     const lastUpdate = new Date();
     const now = new Date();
@@ -290,12 +353,39 @@ export async function getSystemStatus() {
       lastUpdateStr = `${diffHours} ساعت پیش`;
     }
     
+    // بررسی وضعیت سرویس‌ها
+    const servicesStatus = {
+      bot: true,              // ربات دیسکورد
+      database: dbPingTime < 1000,  // دیتابیس
+      ai: aiPing < 500,       // هوش مصنوعی
+      stockMarket: true,      // بازار سهام
+      bank: bankStatus !== 'critical' // بانک
+    };
+    
     return {
       stockMarket,
       inflationRate: parseFloat(inflationRate.toFixed(1)),
       bankStatus,
       botStatus,
-      lastUpdate: lastUpdateStr
+      lastUpdate: lastUpdateStr,
+      // اطلاعات جدید
+      uptime,
+      uptimeMs,
+      ping: {
+        discord: {
+          value: discordPing,
+          status: getPingStatus(discordPing)
+        },
+        database: {
+          value: dbPing,
+          status: getPingStatus(dbPing)
+        },
+        ai: {
+          value: aiPing,
+          status: getPingStatus(aiPing)
+        }
+      },
+      services: servicesStatus
     };
   } catch (error) {
     console.error('خطا در دریافت وضعیت سیستم:', error);

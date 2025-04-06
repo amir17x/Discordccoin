@@ -217,7 +217,10 @@ export function showServers(req, res) {
 export async function showUsers(req, res) {
   try {
     // واردات سرویس‌های MongoDB
-    const { getUsers } = await import('../services/mongoService.js');
+    const { getUsers, connectToMongoDB } = await import('../services/mongoService.js');
+    
+    // اطمینان از اتصال به پایگاه داده
+    await connectToMongoDB();
     
     // دریافت پارامترهای صفحه‌بندی از query
     const page = parseInt(req.query.page) || 1;
@@ -226,14 +229,28 @@ export async function showUsers(req, res) {
     // دریافت لیست کاربران از پایگاه داده
     const { users, pagination } = await getUsers(page, limit);
     
-    console.log(`📊 تعداد ${users.length} کاربر با موفقیت از پایگاه داده دریافت شدند`);
+    console.log(`📊 تعداد ${users ? users.length : 0} کاربر با موفقیت از پایگاه داده دریافت شدند`);
+    
+    // فرمت کردن داده‌ها برای نمایش در جدول
+    const formattedUsers = users ? users.map(user => {
+      // تبدیل تاریخ به فرمت خوانا
+      const lastActivity = user.lastActivity ? new Date(user.lastActivity) : null;
+      const lastActivityStr = lastActivity ? lastActivity.toLocaleDateString('fa-IR') : 'نامشخص';
+      
+      // برگرداندن داده‌های فرمت شده
+      return {
+        ...user,
+        _id: user._id ? user._id.toString() : 'نامشخص',
+        lastActivity: lastActivityStr
+      };
+    }) : [];
     
     // ارسال داده‌ها به قالب
     res.render('fluent/users', {
       title: 'مدیریت کاربران',
       activePage: 'users',
       user: req.session.user,
-      users,
+      users: formattedUsers,
       pagination,
       flashMessages: req.flash()
     });
@@ -248,7 +265,7 @@ export async function showUsers(req, res) {
       error: 'خطا در دریافت اطلاعات کاربران از پایگاه داده. لطفاً صفحه را دوباره بارگذاری کنید.',
       users: [],
       pagination: { total: 0, page: 1, limit: 20, totalPages: 0 },
-      flashMessages: req.flash('error', 'خطا در بارگذاری اطلاعات کاربران از پایگاه داده')
+      flashMessages: req.flash('error', `خطا در بارگذاری اطلاعات کاربران از پایگاه داده: ${error.message}`)
     });
   }
 }

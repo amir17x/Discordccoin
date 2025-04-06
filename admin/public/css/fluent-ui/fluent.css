@@ -653,6 +653,96 @@ a:hover {
   gap: var(--fluent-space-m);
 }
 
+/* استایل‌های بخش اتصال و پینگ */
+.fluent-system-connection {
+  margin-bottom: 1.5rem;
+  background-color: var(--fluent-bg-subtle);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.fluent-section-title {
+  display: flex;
+  align-items: center;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--fluent-text-primary);
+}
+
+.fluent-section-title i {
+  margin-left: 0.5rem;
+  color: var(--fluent-text-primary);
+}
+
+.fluent-connection-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .fluent-connection-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.fluent-connection-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  background-color: var(--fluent-bg-card);
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.fluent-connection-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--fluent-bg-primary-subtle);
+  color: var(--fluent-text-primary);
+  border-radius: 50%;
+  margin-left: 1rem;
+  font-size: 1rem;
+}
+
+.fluent-connection-details {
+  flex: 1;
+}
+
+.fluent-connection-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--fluent-text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.fluent-connection-status .fluent-status-indicator {
+  font-size: 0.813rem;
+}
+
+/* استایل‌های بخش زمان آنلاین بودن */
+.fluent-uptime-section {
+  margin-bottom: 1.5rem;
+  background-color: var(--fluent-bg-subtle);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.fluent-uptime-value {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--fluent-text-primary);
+  text-align: center;
+  padding: 0.5rem;
+  background-color: var(--fluent-bg-card);
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
 @media (max-width: 992px) {
   .fluent-system-status-grid {
     grid-template-columns: repeat(2, 1fr);
