@@ -1,0 +1,591 @@
+/**
+ * مایکروسافت فلوئنت UI - دیالوگ‌ها و مودال‌ها
+ * بر اساس مستندات و طراحی فلوئنت UI مایکروسافت
+ */
+
+/* پس‌زمینه تیره هنگام نمایش دیالوگ */
+.fluent-dialog-backdrop {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  transition: opacity var(--fluent-duration-normal) var(--fluent-ease-out);
+}
+
+.fluent-dialog-backdrop.show {
+  opacity: 1;
+}
+
+/* محتوای اصلی دیالوگ */
+.fluent-dialog {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--fluent-bg-surface);
+  border-radius: var(--fluent-radius-lg);
+  box-shadow: var(--fluent-shadow-lg);
+  width: 100%;
+  max-width: 440px;
+  max-height: calc(100vh - 64px);
+  overflow: hidden;
+  position: relative;
+  animation: fluent-dialog-entrance var(--fluent-duration-slow) var(--fluent-ease);
+}
+
+@keyframes fluent-dialog-entrance {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* هدر دیالوگ */
+.fluent-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--fluent-gray-30);
+}
+
+.fluent-dialog-title {
+  margin: 0;
+  font-size: var(--fluent-font-size-lg);
+  font-weight: var(--fluent-font-weight-semibold);
+  color: var(--fluent-text-primary);
+  line-height: 24px;
+}
+
+.fluent-dialog-close {
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  border-radius: var(--fluent-radius);
+  color: var(--fluent-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fluent-dialog-close:hover {
+  background-color: var(--fluent-gray-20);
+  color: var(--fluent-text-primary);
+}
+
+.fluent-dialog-close:focus-visible {
+  outline: 2px solid var(--fluent-primary);
+  outline-offset: 1px;
+}
+
+.fluent-dialog-close i,
+.fluent-dialog-close svg {
+  width: 16px;
+  height: 16px;
+  font-size: 16px;
+}
+
+/* بدنه دیالوگ */
+.fluent-dialog-body {
+  padding: 16px 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* پاورقی دیالوگ */
+.fluent-dialog-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 16px 24px;
+  border-top: 1px solid var(--fluent-gray-30);
+  gap: 8px;
+}
+
+/* سایزهای مختلف دیالوگ */
+.fluent-dialog-sm {
+  max-width: 360px;
+}
+
+.fluent-dialog-lg {
+  max-width: 600px;
+}
+
+.fluent-dialog-xl {
+  max-width: 800px;
+}
+
+.fluent-dialog-fullscreen {
+  max-width: none;
+  width: calc(100vw - 64px);
+  height: calc(100vh - 64px);
+  border-radius: var(--fluent-radius-lg);
+}
+
+@media (max-width: 640px) {
+  .fluent-dialog {
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 32px);
+  }
+  
+  .fluent-dialog-lg,
+  .fluent-dialog-xl {
+    max-width: calc(100vw - 32px);
+  }
+  
+  .fluent-dialog-fullscreen {
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+  }
+}
+
+/* انواع دیالوگ */
+.fluent-dialog-alert {
+  max-width: 400px;
+}
+
+.fluent-dialog-confirm {
+  max-width: 400px;
+}
+
+.fluent-dialog-form {
+  max-width: 480px;
+}
+
+/* دیالوگ‌های هشدار */
+.fluent-dialog-warning .fluent-dialog-icon,
+.fluent-dialog-error .fluent-dialog-icon,
+.fluent-dialog-success .fluent-dialog-icon,
+.fluent-dialog-info .fluent-dialog-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin-bottom: 16px;
+}
+
+.fluent-dialog-warning .fluent-dialog-icon {
+  background-color: rgba(216, 59, 1, 0.1);
+  color: var(--fluent-warning);
+}
+
+.fluent-dialog-error .fluent-dialog-icon {
+  background-color: rgba(168, 0, 0, 0.1);
+  color: var(--fluent-error);
+}
+
+.fluent-dialog-success .fluent-dialog-icon {
+  background-color: rgba(16, 124, 16, 0.1);
+  color: var(--fluent-success);
+}
+
+.fluent-dialog-info .fluent-dialog-icon {
+  background-color: rgba(0, 120, 212, 0.1);
+  color: var(--fluent-primary);
+}
+
+.fluent-dialog-icon i,
+.fluent-dialog-icon svg {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+/* چیدمان عمودی یا افقی دیالوگ‌های هشدار */
+.fluent-dialog-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 24px;
+}
+
+.fluent-dialog-message.horizontal {
+  flex-direction: row;
+  align-items: flex-start;
+  text-align: right;
+}
+
+.fluent-dialog-message.horizontal .fluent-dialog-icon {
+  margin-bottom: 0;
+  margin-left: 16px;
+}
+
+.fluent-dialog-message-title {
+  margin: 0 0 8px 0;
+  font-size: var(--fluent-font-size-md);
+  font-weight: var(--fluent-font-weight-semibold);
+}
+
+.fluent-dialog-message-content {
+  margin: 0;
+  color: var(--fluent-text-secondary);
+  font-size: var(--fluent-font-size-base);
+}
+
+/* مودال‌های کناری (Drawer) */
+.fluent-drawer-backdrop {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  transition: opacity var(--fluent-duration-normal) var(--fluent-ease-out);
+}
+
+.fluent-drawer-backdrop.show {
+  opacity: 1;
+}
+
+.fluent-drawer {
+  position: fixed;
+  background-color: var(--fluent-bg-surface);
+  box-shadow: var(--fluent-shadow-lg);
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--fluent-duration-slow) var(--fluent-ease-out);
+}
+
+/* جهت‌های کشو */
+.fluent-drawer-right {
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 320px;
+  transform: translateX(-100%);
+}
+
+.fluent-drawer-right.show {
+  transform: translateX(0);
+}
+
+.fluent-drawer-left {
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: 320px;
+  transform: translateX(100%);
+}
+
+.fluent-drawer-left.show {
+  transform: translateX(0);
+}
+
+.fluent-drawer-top {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 320px;
+  transform: translateY(-100%);
+}
+
+.fluent-drawer-top.show {
+  transform: translateY(0);
+}
+
+.fluent-drawer-bottom {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 320px;
+  transform: translateY(100%);
+}
+
+.fluent-drawer-bottom.show {
+  transform: translateY(0);
+}
+
+/* هدر کشو */
+.fluent-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid var(--fluent-gray-30);
+}
+
+.fluent-drawer-title {
+  margin: 0;
+  font-size: var(--fluent-font-size-md);
+  font-weight: var(--fluent-font-weight-semibold);
+}
+
+.fluent-drawer-close {
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  border-radius: var(--fluent-radius);
+  color: var(--fluent-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fluent-drawer-close:hover {
+  background-color: var(--fluent-gray-20);
+  color: var(--fluent-text-primary);
+}
+
+/* بدنه کشو */
+.fluent-drawer-body {
+  padding: 16px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* پاورقی کشو */
+.fluent-drawer-footer {
+  padding: 16px;
+  border-top: 1px solid var(--fluent-gray-30);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* سایزهای مختلف کشو */
+.fluent-drawer-sm {
+  width: 240px;
+}
+
+.fluent-drawer-md {
+  width: 320px;
+}
+
+.fluent-drawer-lg {
+  width: 480px;
+}
+
+.fluent-drawer-xl {
+  width: 640px;
+}
+
+.fluent-drawer-top.fluent-drawer-sm,
+.fluent-drawer-bottom.fluent-drawer-sm {
+  height: 240px;
+  width: 100%;
+}
+
+.fluent-drawer-top.fluent-drawer-md,
+.fluent-drawer-bottom.fluent-drawer-md {
+  height: 320px;
+  width: 100%;
+}
+
+.fluent-drawer-top.fluent-drawer-lg,
+.fluent-drawer-bottom.fluent-drawer-lg {
+  height: 480px;
+  width: 100%;
+}
+
+.fluent-drawer-top.fluent-drawer-xl,
+.fluent-drawer-bottom.fluent-drawer-xl {
+  height: 640px;
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .fluent-drawer-left,
+  .fluent-drawer-right {
+    width: 100%;
+  }
+  
+  .fluent-drawer-top,
+  .fluent-drawer-bottom {
+    height: 50vh;
+  }
+}
+
+/* پاپ‌آور (Popover) */
+.fluent-popover {
+  position: absolute;
+  background-color: var(--fluent-bg-surface);
+  box-shadow: var(--fluent-shadow);
+  border-radius: var(--fluent-radius);
+  z-index: 100;
+  min-width: 200px;
+  max-width: 300px;
+  animation: fluent-popover-entrance 0.15s var(--fluent-ease-out);
+}
+
+@keyframes fluent-popover-entrance {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.fluent-popover-content {
+  padding: 8px;
+}
+
+.fluent-popover-arrow {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  transform: rotate(45deg);
+  background-color: var(--fluent-bg-surface);
+}
+
+.fluent-popover-top .fluent-popover-arrow {
+  bottom: -6px;
+}
+
+.fluent-popover-bottom .fluent-popover-arrow {
+  top: -6px;
+}
+
+.fluent-popover-left .fluent-popover-arrow {
+  right: -6px;
+}
+
+.fluent-popover-right .fluent-popover-arrow {
+  left: -6px;
+}
+
+/* توست (Toast) */
+.fluent-toast-container {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+}
+
+.fluent-toast {
+  display: flex;
+  align-items: center;
+  background-color: var(--fluent-bg-surface);
+  box-shadow: var(--fluent-shadow-md);
+  border-radius: var(--fluent-radius);
+  padding: 12px 16px;
+  min-width: 300px;
+  max-width: 400px;
+  animation: fluent-toast-entrance 0.3s var(--fluent-ease);
+}
+
+@keyframes fluent-toast-entrance {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fluent-toast-icon {
+  margin-left: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fluent-toast-content {
+  flex: 1;
+}
+
+.fluent-toast-title {
+  font-weight: var(--fluent-font-weight-semibold);
+  margin: 0 0 2px 0;
+}
+
+.fluent-toast-message {
+  margin: 0;
+  font-size: var(--fluent-font-size-sm);
+  color: var(--fluent-text-secondary);
+}
+
+.fluent-toast-close {
+  background: none;
+  border: none;
+  padding: 4px;
+  margin-right: 4px;
+  cursor: pointer;
+  border-radius: var(--fluent-radius);
+  color: var(--fluent-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fluent-toast-close:hover {
+  background-color: var(--fluent-gray-20);
+  color: var(--fluent-text-primary);
+}
+
+.fluent-toast-success {
+  border-right: 3px solid var(--fluent-success);
+}
+
+.fluent-toast-success .fluent-toast-icon {
+  color: var(--fluent-success);
+}
+
+.fluent-toast-error {
+  border-right: 3px solid var(--fluent-error);
+}
+
+.fluent-toast-error .fluent-toast-icon {
+  color: var(--fluent-error);
+}
+
+.fluent-toast-warning {
+  border-right: 3px solid var(--fluent-warning);
+}
+
+.fluent-toast-warning .fluent-toast-icon {
+  color: var(--fluent-warning);
+}
+
+.fluent-toast-info {
+  border-right: 3px solid var(--fluent-primary);
+}
+
+.fluent-toast-info .fluent-toast-icon {
+  color: var(--fluent-primary);
+}
+
+/* تاییدیه با پاپ‌آور */
+.fluent-confirmation-popover {
+  padding: 12px;
+}
+
+.fluent-confirmation-popover-message {
+  margin: 0 0 12px 0;
+  font-size: var(--fluent-font-size-sm);
+}
+
+.fluent-confirmation-popover-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

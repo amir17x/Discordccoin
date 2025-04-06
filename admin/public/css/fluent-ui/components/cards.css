@@ -1,0 +1,452 @@
+/**
+ * مایکروسافت فلوئنت UI - کارت‌ها
+ * بر اساس مستندات و طراحی فلوئنت UI مایکروسافت
+ */
+
+/* استایل‌های پایه کارت */
+.fluent-card {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--fluent-bg-surface);
+  border-radius: var(--fluent-radius-lg);
+  box-shadow: var(--fluent-shadow);
+  transition: box-shadow var(--fluent-duration-normal) var(--fluent-ease-out);
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.fluent-card:hover {
+  box-shadow: var(--fluent-shadow-md);
+}
+
+/* اجزای کارت */
+.fluent-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid var(--fluent-gray-30);
+}
+
+.fluent-card-title {
+  margin: 0;
+  font-size: var(--fluent-font-size-md);
+  font-weight: var(--fluent-font-weight-semibold);
+  color: var(--fluent-text-primary);
+}
+
+.fluent-card-subtitle {
+  margin: 4px 0 0 0;
+  font-size: var(--fluent-font-size-sm);
+  color: var(--fluent-text-secondary);
+}
+
+.fluent-card-header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.fluent-card-body {
+  padding: 16px;
+  flex: 1 1 auto;
+}
+
+.fluent-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--fluent-gray-30);
+  background-color: var(--fluent-gray-10);
+}
+
+/* تصویر کارت */
+.fluent-card-image {
+  position: relative;
+  width: 100%;
+  height: 0;
+  padding-bottom: 56.25%; /* نسبت 16:9 */
+  overflow: hidden;
+}
+
+.fluent-card-image img,
+.fluent-card-image picture {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.fluent-card-image-top {
+  order: -1;
+}
+
+.fluent-card-image-bottom {
+  order: 999;
+}
+
+/* سایزهای کارت */
+.fluent-card-sm {
+  max-width: 300px;
+}
+
+.fluent-card-md {
+  max-width: 400px;
+}
+
+.fluent-card-lg {
+  max-width: 500px;
+}
+
+/* وریانت‌های کارت */
+.fluent-card-outlined {
+  box-shadow: none;
+  border: 1px solid var(--fluent-gray-30);
+}
+
+.fluent-card-outlined:hover {
+  box-shadow: var(--fluent-shadow-sm);
+}
+
+.fluent-card-filled {
+  background-color: var(--fluent-gray-10);
+}
+
+.fluent-card-filled:hover {
+  background-color: var(--fluent-bg-surface);
+}
+
+.fluent-card-elevated {
+  box-shadow: var(--fluent-shadow-md);
+}
+
+.fluent-card-elevated:hover {
+  box-shadow: var(--fluent-shadow-lg);
+}
+
+/* کارت قابل کلیک */
+.fluent-card-clickable {
+  cursor: pointer;
+  transition: transform var(--fluent-duration-normal) var(--fluent-ease-out),
+              box-shadow var(--fluent-duration-normal) var(--fluent-ease-out);
+}
+
+.fluent-card-clickable:hover {
+  transform: translateY(-4px);
+}
+
+.fluent-card-clickable:active {
+  transform: translateY(-2px);
+}
+
+/* کارت‌های تعاملی */
+.fluent-card-interactive {
+  position: relative;
+  overflow: hidden;
+}
+
+.fluent-card-interactive::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: transparent;
+  pointer-events: none;
+  transition: background-color var(--fluent-duration-faster) var(--fluent-ease-out);
+}
+
+.fluent-card-interactive:hover::after {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.fluent-card-interactive:active::after {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* کارت با آیکون */
+.fluent-card-icon {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fluent-card-icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--fluent-radius);
+  background-color: var(--fluent-primary-lighter);
+  color: var(--fluent-primary);
+  flex-shrink: 0;
+}
+
+.fluent-card-icon-container i,
+.fluent-card-icon-container svg {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+/* کارت آمار (Stat Card) */
+.fluent-stat-card {
+  padding: 16px;
+}
+
+.fluent-stat-value {
+  font-size: var(--fluent-font-size-xxl);
+  font-weight: var(--fluent-font-weight-semibold);
+  color: var(--fluent-text-primary);
+  margin: 8px 0 4px;
+}
+
+.fluent-stat-label {
+  font-size: var(--fluent-font-size-base);
+  color: var(--fluent-text-secondary);
+  margin: 0;
+}
+
+.fluent-stat-change {
+  display: flex;
+  align-items: center;
+  font-size: var(--fluent-font-size-sm);
+  margin-top: 8px;
+}
+
+.fluent-stat-change.increase {
+  color: var(--fluent-success);
+}
+
+.fluent-stat-change.decrease {
+  color: var(--fluent-error);
+}
+
+.fluent-stat-change i,
+.fluent-stat-change svg {
+  margin-left: 4px;
+}
+
+/* کارت با حاشیه رنگی */
+.fluent-card-border-top {
+  border-top: 3px solid var(--fluent-primary);
+}
+
+.fluent-card-border-primary {
+  border-top-color: var(--fluent-primary);
+}
+
+.fluent-card-border-success {
+  border-top-color: var(--fluent-success);
+}
+
+.fluent-card-border-warning {
+  border-top-color: var(--fluent-warning);
+}
+
+.fluent-card-border-error {
+  border-top-color: var(--fluent-error);
+}
+
+.fluent-card-border-info {
+  border-top-color: var(--fluent-info);
+}
+
+/* کارت‌های اطلاعات سریع (Info Cards) */
+.fluent-info-card {
+  padding: 0;
+}
+
+.fluent-info-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--fluent-gray-30);
+}
+
+.fluent-info-card-title {
+  margin: 0;
+  font-size: var(--fluent-font-size-base);
+  font-weight: var(--fluent-font-weight-semibold);
+}
+
+.fluent-info-card-body {
+  padding: 0;
+}
+
+.fluent-info-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.fluent-info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--fluent-gray-20);
+}
+
+.fluent-info-item:last-child {
+  border-bottom: none;
+}
+
+.fluent-info-label {
+  color: var(--fluent-text-secondary);
+  font-size: var(--fluent-font-size-sm);
+}
+
+.fluent-info-value {
+  font-weight: var(--fluent-font-weight-medium);
+}
+
+/* کارت‌های رسانه‌ای */
+.fluent-media-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.fluent-media-card.horizontal {
+  flex-direction: row;
+}
+
+.fluent-media-card.horizontal .fluent-card-media {
+  width: 120px;
+  height: 100%;
+}
+
+.fluent-media-card.horizontal .fluent-card-content {
+  flex: 1;
+}
+
+.fluent-card-media {
+  position: relative;
+  overflow: hidden;
+}
+
+.fluent-card-media img,
+.fluent-card-media video {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.fluent-card-content {
+  padding: 16px;
+}
+
+/* کارت‌ها با سایه */
+.fluent-card-shadow-none {
+  box-shadow: none;
+}
+
+.fluent-card-shadow-sm {
+  box-shadow: var(--fluent-shadow-sm);
+}
+
+.fluent-card-shadow {
+  box-shadow: var(--fluent-shadow);
+}
+
+.fluent-card-shadow-md {
+  box-shadow: var(--fluent-shadow-md);
+}
+
+.fluent-card-shadow-lg {
+  box-shadow: var(--fluent-shadow-lg);
+}
+
+/* کارت‌های با پوشش تصویر */
+.fluent-card-image-overlay {
+  position: relative;
+  color: white;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.fluent-card-image-overlay::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.8) 100%);
+  z-index: 1;
+}
+
+.fluent-card-image-overlay .fluent-card-title,
+.fluent-card-image-overlay .fluent-card-subtitle,
+.fluent-card-image-overlay .fluent-card-body {
+  position: relative;
+  z-index: 2;
+  color: white;
+}
+
+.fluent-card-image-overlay .fluent-card-body {
+  padding-top: 0;
+}
+
+.fluent-card-image-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+/* کارت‌های تقسیم‌شده (Split Cards) */
+.fluent-card-split {
+  display: flex;
+  flex-direction: row;
+}
+
+.fluent-card-split-side {
+  width: 30%;
+  background-color: var(--fluent-primary-lighter);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.fluent-card-split-main {
+  flex: 1;
+}
+
+/* وضعیت غیرفعال */
+.fluent-card-disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* انیمیشن برای کارت‌ها */
+.fluent-card-animate {
+  animation: fluent-card-fade-in 0.3s ease-out;
+}
+
+@keyframes fluent-card-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
