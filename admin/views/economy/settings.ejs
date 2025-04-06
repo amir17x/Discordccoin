@@ -1,0 +1,205 @@
+<div class="section-header">
+    <h2 class="section-title">تنظیمات اقتصادی</h2>
+    <div class="section-tools">
+        <button type="button" class="btn btn-light" onclick="resetForm()">
+            <span class="icons8-icon icons8-refresh"></span> بازنشانی فرم
+        </button>
+    </div>
+</div>
+
+<div class="card fluent-card">
+    <div class="card-body">
+        <form id="economySettingsForm" action="/admin/economy/settings" method="POST">
+            <div class="row">
+                <div class="col-md-6">
+                    <h4 class="mb-3">تنظیمات پایه</h4>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="startingBalance">موجودی اولیه کاربران</label>
+                        <input type="number" id="startingBalance" name="startingBalance" class="form-control" value="<%= settings.startingBalance || 100 %>" required>
+                        <small class="form-text text-muted">مقدار سکه‌ای که کاربران جدید هنگام ثبت‌نام دریافت می‌کنند</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input type="checkbox" id="dailyBonusEnabled" name="dailyBonusEnabled" class="form-check-input" <%= settings.dailyBonusEnabled ? 'checked' : '' %>>
+                            <label class="form-check-label" for="dailyBonusEnabled">فعال‌سازی جایزه روزانه</label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="dailyBonus">مقدار جایزه روزانه</label>
+                        <input type="number" id="dailyBonus" name="dailyBonus" class="form-control" value="<%= settings.dailyBonus || 50 %>" <%= !settings.dailyBonusEnabled ? 'disabled' : '' %>>
+                        <small class="form-text text-muted">مقدار سکه‌ای که کاربران با ورود روزانه دریافت می‌کنند</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="currencyName">نام رسمی ارز</label>
+                        <input type="text" id="currencyName" name="currencyName" class="form-control" value="<%= settings.currencyName || 'سکه' %>" required>
+                        <small class="form-text text-muted">نام رسمی ارز در سیستم (مثلاً: سکه، کوین، ژتون)</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="currencySymbol">نماد ارز</label>
+                        <input type="text" id="currencySymbol" name="currencySymbol" class="form-control" value="<%= settings.currencySymbol || '🪙' %>" required>
+                        <small class="form-text text-muted">نماد اختصاری یا ایموجی برای ارز</small>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <h4 class="mb-3">تنظیمات انتقال سکه</h4>
+                    
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input type="checkbox" id="transferEnabled" name="transferEnabled" class="form-check-input" <%= settings.transferEnabled ? 'checked' : '' %>>
+                            <label class="form-check-label" for="transferEnabled">فعال‌سازی انتقال سکه بین کاربران</label>
+                        </div>
+                        <small class="form-text text-muted">اجازه انتقال سکه بین کاربران</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="transferFeePercent">درصد کارمزد انتقال</label>
+                        <input type="number" id="transferFeePercent" name="transferFeePercent" step="0.1" min="0" max="100" class="form-control" value="<%= settings.transferFeePercent || 0 %>" <%= !settings.transferEnabled ? 'disabled' : '' %>>
+                        <small class="form-text text-muted">درصد کارمزد برای هر انتقال (0 = بدون کارمزد)</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="minTransferAmount">حداقل مبلغ انتقال</label>
+                        <input type="number" id="minTransferAmount" name="minTransferAmount" class="form-control" value="<%= settings.minTransferAmount || 10 %>" <%= !settings.transferEnabled ? 'disabled' : '' %>>
+                        <small class="form-text text-muted">حداقل مبلغی که کاربر می‌تواند انتقال دهد</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input type="checkbox" id="giftEnabled" name="giftEnabled" class="form-check-input" <%= settings.giftEnabled ? 'checked' : '' %>>
+                            <label class="form-check-label" for="giftEnabled">فعال‌سازی هدیه دادن سکه</label>
+                        </div>
+                        <small class="form-text text-muted">اجازه هدیه دادن سکه به کاربران دیگر (بدون کارمزد)</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <h4 class="mb-3">تنظیمات پیشرفته</h4>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="maxCoinCap">حداکثر ذخیره سکه کاربران</label>
+                        <input type="number" id="maxCoinCap" name="maxCoinCap" class="form-control" value="<%= settings.maxCoinCap || 1000000 %>">
+                        <small class="form-text text-muted">حداکثر تعداد سکه‌ای که هر کاربر می‌تواند داشته باشد (0 = بدون محدودیت)</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="economyResetInterval">بازه زمانی ریست اقتصادی (روز)</label>
+                        <input type="number" id="economyResetInterval" name="economyResetInterval" class="form-control" value="<%= settings.economyResetInterval || 0 %>">
+                        <small class="form-text text-muted">تعداد روزهای بین هر ریست اقتصادی (0 = بدون ریست)</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="lotteryFeePercent">درصد کارمزد قرعه‌کشی</label>
+                        <input type="number" id="lotteryFeePercent" name="lotteryFeePercent" step="0.1" min="0" max="100" class="form-control" value="<%= settings.lotteryFeePercent || 10 %>">
+                        <small class="form-text text-muted">درصد کارمزد برای شرکت در قرعه‌کشی</small>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <h4 class="mb-3">تنظیمات بازار سهام</h4>
+                    
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input type="checkbox" id="stockMarketEnabled" name="stockMarketEnabled" class="form-check-input" <%= settings.stockMarketEnabled ? 'checked' : '' %>>
+                            <label class="form-check-label" for="stockMarketEnabled">فعال‌سازی بازار سهام</label>
+                        </div>
+                        <small class="form-text text-muted">فعال‌سازی بازار سهام برای کاربران</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="stockMarketFeePercent">درصد کارمزد معاملات</label>
+                        <input type="number" id="stockMarketFeePercent" name="stockMarketFeePercent" step="0.1" min="0" max="100" class="form-control" value="<%= settings.stockMarketFeePercent || 1 %>" <%= !settings.stockMarketEnabled ? 'disabled' : '' %>>
+                        <small class="form-text text-muted">درصد کارمزد برای خرید و فروش سهام</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="stockUpdateInterval">بازه زمانی به‌روزرسانی قیمت‌ها (دقیقه)</label>
+                        <input type="number" id="stockUpdateInterval" name="stockUpdateInterval" class="form-control" value="<%= settings.stockUpdateInterval || 30 %>" <%= !settings.stockMarketEnabled ? 'disabled' : '' %>>
+                        <small class="form-text text-muted">فاصله زمانی بین به‌روزرسانی خودکار قیمت‌های سهام</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="maxStockVolatility">حداکثر نوسان قیمت (درصد)</label>
+                        <input type="number" id="maxStockVolatility" name="maxStockVolatility" step="0.1" min="0" max="100" class="form-control" value="<%= settings.maxStockVolatility || 5 %>" <%= !settings.stockMarketEnabled ? 'disabled' : '' %>>
+                        <small class="form-text text-muted">حداکثر درصد تغییر قیمت سهام در هر به‌روزرسانی</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <span class="icons8-icon icons8-save"></span> ذخیره تغییرات
+                </button>
+                
+                <button type="button" class="btn btn-secondary mr-2" onclick="resetForm()">
+                    <span class="icons8-icon icons8-refresh"></span> بازنشانی
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // فعال/غیرفعال کردن فیلدهای وابسته
+    const dailyBonusEnabled = document.getElementById('dailyBonusEnabled');
+    const dailyBonus = document.getElementById('dailyBonus');
+    
+    dailyBonusEnabled.addEventListener('change', function() {
+        dailyBonus.disabled = !this.checked;
+    });
+    
+    const transferEnabled = document.getElementById('transferEnabled');
+    const transferFeePercent = document.getElementById('transferFeePercent');
+    const minTransferAmount = document.getElementById('minTransferAmount');
+    
+    transferEnabled.addEventListener('change', function() {
+        transferFeePercent.disabled = !this.checked;
+        minTransferAmount.disabled = !this.checked;
+    });
+    
+    const stockMarketEnabled = document.getElementById('stockMarketEnabled');
+    const stockMarketFeePercent = document.getElementById('stockMarketFeePercent');
+    const stockUpdateInterval = document.getElementById('stockUpdateInterval');
+    const maxStockVolatility = document.getElementById('maxStockVolatility');
+    
+    stockMarketEnabled.addEventListener('change', function() {
+        stockMarketFeePercent.disabled = !this.checked;
+        stockUpdateInterval.disabled = !this.checked;
+        maxStockVolatility.disabled = !this.checked;
+    });
+});
+
+// تابع بازنشانی فرم به مقادیر اولیه
+function resetForm() {
+    if (confirm('آیا از بازنشانی فرم به مقادیر فعلی اطمینان دارید؟')) {
+        document.getElementById('economySettingsForm').reset();
+        
+        // وابستگی‌ها را دوباره اعمال کنید
+        const dailyBonusEnabled = document.getElementById('dailyBonusEnabled');
+        const dailyBonus = document.getElementById('dailyBonus');
+        dailyBonus.disabled = !dailyBonusEnabled.checked;
+        
+        const transferEnabled = document.getElementById('transferEnabled');
+        const transferFeePercent = document.getElementById('transferFeePercent');
+        const minTransferAmount = document.getElementById('minTransferAmount');
+        transferFeePercent.disabled = !transferEnabled.checked;
+        minTransferAmount.disabled = !transferEnabled.checked;
+        
+        const stockMarketEnabled = document.getElementById('stockMarketEnabled');
+        const stockMarketFeePercent = document.getElementById('stockMarketFeePercent');
+        const stockUpdateInterval = document.getElementById('stockUpdateInterval');
+        const maxStockVolatility = document.getElementById('maxStockVolatility');
+        stockMarketFeePercent.disabled = !stockMarketEnabled.checked;
+        stockUpdateInterval.disabled = !stockMarketEnabled.checked;
+        maxStockVolatility.disabled = !stockMarketEnabled.checked;
+    }
+}
+</script>

@@ -1,0 +1,173 @@
+<div class="section-header">
+    <h2 class="section-title">مدیریت تراکنش‌ها</h2>
+    <div class="section-tools">
+        <a href="/admin/economy/transactions/export" class="btn btn-success">
+            <span class="icons8-icon icons8-download"></span> خروجی اکسل
+        </a>
+    </div>
+</div>
+
+<div class="card fluent-card mb-4">
+    <div class="card-header">
+        <h3 class="card-title">جستجو و فیلتر</h3>
+    </div>
+    <div class="card-body">
+        <form action="/admin/economy/transactions" method="get" class="row">
+            <div class="col-md-3 col-sm-6">
+                <div class="form-group">
+                    <label class="form-label">جستجو</label>
+                    <div class="search-box">
+                        <input type="text" name="q" value="<%= query %>" placeholder="شناسه کاربر یا شناسه تراکنش..." class="form-control">
+                        <span class="icons8-icon icons8-search"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="form-group">
+                    <label class="form-label">نوع تراکنش</label>
+                    <select name="type" class="form-select">
+                        <option value="">همه</option>
+                        <option value="transfer" <%= type === 'transfer' ? 'selected' : '' %>>انتقال</option>
+                        <option value="purchase" <%= type === 'purchase' ? 'selected' : '' %>>خرید</option>
+                        <option value="sale" <%= type === 'sale' ? 'selected' : '' %>>فروش</option>
+                        <option value="game_reward" <%= type === 'game_reward' ? 'selected' : '' %>>پاداش بازی</option>
+                        <option value="game_loss" <%= type === 'game_loss' ? 'selected' : '' %>>باخت بازی</option>
+                        <option value="admin_add" <%= type === 'admin_add' ? 'selected' : '' %>>افزایش توسط ادمین</option>
+                        <option value="admin_remove" <%= type === 'admin_remove' ? 'selected' : '' %>>کاهش توسط ادمین</option>
+                        <option value="interest" <%= type === 'interest' ? 'selected' : '' %>>سود بانکی</option>
+                        <option value="gift" <%= type === 'gift' ? 'selected' : '' %>>هدیه</option>
+                        <option value="other" <%= type === 'other' ? 'selected' : '' %>>سایر</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2 col-sm-6">
+                <div class="form-group">
+                    <label class="form-label">از تاریخ</label>
+                    <input type="date" name="startDate" value="<%= startDate %>" class="form-control">
+                </div>
+            </div>
+            <div class="col-md-2 col-sm-6">
+                <div class="form-group">
+                    <label class="form-label">تا تاریخ</label>
+                    <input type="date" name="endDate" value="<%= endDate %>" class="form-control">
+                </div>
+            </div>
+            <div class="col-md-2 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <span class="icons8-icon icons8-filter"></span> اعمال فیلتر
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card fluent-card">
+    <div class="card-body">
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>شناسه</th>
+                        <th>کاربر</th>
+                        <th>نوع</th>
+                        <th>مبلغ</th>
+                        <th>توضیحات</th>
+                        <th>تاریخ</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (transactions && transactions.length > 0) { %>
+                        <% transactions.forEach((transaction) => { %>
+                            <tr>
+                                <td><%= transaction._id.toString().substr(-6) %></td>
+                                <td>
+                                    <a href="/admin/users/<%= transaction.userId %>">
+                                        <%= transaction.username %>
+                                    </a>
+                                </td>
+                                <td>
+                                    <% if (transaction.type === 'transfer') { %>
+                                        <span class="badge badge-primary">انتقال</span>
+                                    <% } else if (transaction.type === 'purchase') { %>
+                                        <span class="badge badge-info">خرید</span>
+                                    <% } else if (transaction.type === 'sale') { %>
+                                        <span class="badge badge-success">فروش</span>
+                                    <% } else if (transaction.type === 'game_reward') { %>
+                                        <span class="badge badge-success">پاداش بازی</span>
+                                    <% } else if (transaction.type === 'game_loss') { %>
+                                        <span class="badge badge-danger">باخت بازی</span>
+                                    <% } else if (transaction.type === 'admin_add') { %>
+                                        <span class="badge badge-success">افزایش ادمین</span>
+                                    <% } else if (transaction.type === 'admin_remove') { %>
+                                        <span class="badge badge-danger">کاهش ادمین</span>
+                                    <% } else if (transaction.type === 'interest') { %>
+                                        <span class="badge badge-info">سود بانکی</span>
+                                    <% } else if (transaction.type === 'gift') { %>
+                                        <span class="badge badge-primary">هدیه</span>
+                                    <% } else { %>
+                                        <span class="badge badge-secondary">سایر</span>
+                                    <% } %>
+                                </td>
+                                <td class="<%= transaction.amount >= 0 ? 'text-success' : 'text-danger' %>">
+                                    <%= transaction.amount >= 0 ? '+' : '' %><%= formatCurrency(transaction.amount) %>
+                                </td>
+                                <td>
+                                    <%= transaction.reason || 'بدون توضیحات' %>
+                                </td>
+                                <td>
+                                    <%= formatDate(transaction.createdAt, true) %>
+                                </td>
+                                <td class="action-buttons">
+                                    <a href="/admin/economy/transactions/<%= transaction._id %>" class="btn btn-sm btn-info">
+                                        <span class="icons8-icon icons8-view icons8-sm"></span>
+                                    </a>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="7" class="text-center">هیچ تراکنشی یافت نشد.</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+        
+        <% if (pagination && pagination.totalPages > 1) { %>
+            <div class="pagination">
+                <div class="pagination-info">
+                    نمایش <%= ((pagination.page - 1) * pagination.limit) + 1 %> تا <%= Math.min(pagination.page * pagination.limit, pagination.totalTransactions) %> از <%= pagination.totalTransactions %> مورد
+                </div>
+                <div class="pagination-controls">
+                    <% if (pagination.page > 1) { %>
+                        <a href="/admin/economy/transactions?page=1&limit=<%= pagination.limit %>&q=<%= query %>&type=<%= type %>&startDate=<%= startDate %>&endDate=<%= endDate %>" class="btn btn-sm btn-light">
+                            ابتدا
+                        </a>
+                        <a href="/admin/economy/transactions?page=<%= pagination.page - 1 %>&limit=<%= pagination.limit %>&q=<%= query %>&type=<%= type %>&startDate=<%= startDate %>&endDate=<%= endDate %>" class="btn btn-sm btn-light">
+                            قبلی
+                        </a>
+                    <% } %>
+                    
+                    <% for(let i = Math.max(1, pagination.page - 2); i <= Math.min(pagination.totalPages, pagination.page + 2); i++) { %>
+                        <a href="/admin/economy/transactions?page=<%= i %>&limit=<%= pagination.limit %>&q=<%= query %>&type=<%= type %>&startDate=<%= startDate %>&endDate=<%= endDate %>" class="btn btn-sm <%= pagination.page === i ? 'btn-primary' : 'btn-light' %>">
+                            <%= i %>
+                        </a>
+                    <% } %>
+                    
+                    <% if (pagination.page < pagination.totalPages) { %>
+                        <a href="/admin/economy/transactions?page=<%= pagination.page + 1 %>&limit=<%= pagination.limit %>&q=<%= query %>&type=<%= type %>&startDate=<%= startDate %>&endDate=<%= endDate %>" class="btn btn-sm btn-light">
+                            بعدی
+                        </a>
+                        <a href="/admin/economy/transactions?page=<%= pagination.totalPages %>&limit=<%= pagination.limit %>&q=<%= query %>&type=<%= type %>&startDate=<%= startDate %>&endDate=<%= endDate %>" class="btn btn-sm btn-light">
+                            انتها
+                        </a>
+                    <% } %>
+                </div>
+            </div>
+        <% } %>
+    </div>
+</div>

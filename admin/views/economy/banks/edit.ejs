@@ -1,0 +1,138 @@
+<div class="section-header">
+    <h2 class="section-title">ویرایش بانک <%= bank.name %></h2>
+    <div class="section-tools">
+        <a href="/admin/economy/banks" class="btn btn-secondary">
+            <span class="icons8-icon icons8-bank"></span> بازگشت به لیست
+        </a>
+    </div>
+</div>
+
+<div class="card fluent-card">
+    <div class="card-body">
+        <form action="/admin/economy/banks/<%= bank._id %>/edit" method="POST">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label" for="name">نام بانک</label>
+                        <input type="text" id="name" name="name" class="form-control" value="<%= bank.name %>" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="interestRate">نرخ سود (درصد)</label>
+                        <input type="number" id="interestRate" name="interestRate" step="0.1" min="0" max="100" class="form-control" value="<%= bank.interestRate %>" required>
+                        <small class="form-text text-muted">نرخ سود سالانه به درصد (مثلاً 2.5 معادل 2.5٪ است)</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="minDeposit">حداقل مبلغ سپرده</label>
+                        <input type="number" id="minDeposit" name="minDeposit" class="form-control" value="<%= bank.minDeposit %>" required>
+                        <small class="form-text text-muted">حداقل مبلغی که کاربر می‌تواند سپرده‌گذاری کند</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="maxDeposit">حداکثر مبلغ سپرده</label>
+                        <input type="number" id="maxDeposit" name="maxDeposit" class="form-control" value="<%= bank.maxDeposit %>" required>
+                        <small class="form-text text-muted">حداکثر مبلغی که کاربر می‌تواند سپرده‌گذاری کند</small>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label" for="description">توضیحات</label>
+                        <textarea id="description" name="description" class="form-control" rows="5"><%= bank.description %></textarea>
+                        <small class="form-text text-muted">توضیحات درباره بانک (اختیاری)</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input type="checkbox" id="active" name="active" class="form-check-input" <%= bank.active ? 'checked' : '' %>>
+                            <label class="form-check-label" for="active">بانک فعال باشد</label>
+                        </div>
+                        <small class="form-text text-muted">در صورت غیرفعال بودن، کاربران نمی‌توانند در این بانک سپرده‌گذاری کنند</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">اطلاعات زمانی</label>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="text-muted">
+                                    <strong>تاریخ ایجاد:</strong><br>
+                                    <%= formatDate(bank.createdAt) %>
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="text-muted">
+                                    <strong>آخرین به‌روزرسانی:</strong><br>
+                                    <%= formatDate(bank.updatedAt) %>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <span class="icons8-icon icons8-save"></span> ذخیره تغییرات
+                </button>
+                
+                <a href="/admin/economy/banks" class="btn btn-secondary mr-2">
+                    <span class="icons8-icon icons8-cancel"></span> انصراف
+                </a>
+                
+                <% if (bank.active) { %>
+                    <a href="/admin/economy/banks/<%= bank._id %>/deactivate" class="btn btn-warning mr-2" data-confirm="آیا از غیرفعال کردن این بانک اطمینان دارید؟">
+                        <span class="icons8-icon icons8-ban"></span> غیرفعال کردن
+                    </a>
+                <% } else { %>
+                    <a href="/admin/economy/banks/<%= bank._id %>/activate" class="btn btn-success mr-2">
+                        <span class="icons8-icon icons8-unban"></span> فعال کردن
+                    </a>
+                <% } %>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card fluent-card mt-4">
+    <div class="card-header">
+        <h3 class="card-title">خلاصه وضعیت</h3>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="stat-card primary">
+                    <div class="stat-icon">
+                        <span class="icons8-icon icons8-users icons8-lg"></span>
+                    </div>
+                    <div class="stat-label">تعداد سپرده‌گذاران</div>
+                    <div class="stat-value">
+                        <%= bank.depositorCount || 0 %>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card success">
+                    <div class="stat-icon">
+                        <span class="icons8-icon icons8-coins icons8-lg"></span>
+                    </div>
+                    <div class="stat-label">کل سپرده‌ها</div>
+                    <div class="stat-value">
+                        <%= formatCurrency(bank.totalDeposits || 0) %>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card warning">
+                    <div class="stat-icon">
+                        <span class="icons8-icon icons8-transaction icons8-lg"></span>
+                    </div>
+                    <div class="stat-label">کل سود پرداختی</div>
+                    <div class="stat-value">
+                        <%= formatCurrency(bank.totalInterestPaid || 0) %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

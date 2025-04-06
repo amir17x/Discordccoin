@@ -1,0 +1,150 @@
+<div class="section-header">
+    <h2 class="section-title">ویرایش سهام <%= stock.name %></h2>
+    <div class="section-tools">
+        <a href="/admin/economy/stocks" class="btn btn-secondary">
+            <span class="icons8-icon icons8-stocks"></span> بازگشت به لیست
+        </a>
+    </div>
+</div>
+
+<div class="card fluent-card">
+    <div class="card-body">
+        <form action="/admin/economy/stocks/<%= stock._id %>/edit" method="POST">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label" for="name">نام شرکت</label>
+                        <input type="text" id="name" name="name" class="form-control" value="<%= stock.name %>" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="symbol">نماد</label>
+                        <input type="text" id="symbol" name="symbol" class="form-control" value="<%= stock.symbol %>" required>
+                        <small class="form-text text-muted">نماد معاملاتی شرکت (معمولاً 3-5 حرف)</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="price">قیمت فعلی</label>
+                        <input type="number" id="price" name="price" class="form-control" value="<%= stock.price %>" required>
+                        <small class="form-text text-muted">قیمت فعلی هر سهم</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="minPrice">حداقل قیمت</label>
+                        <input type="number" id="minPrice" name="minPrice" class="form-control" value="<%= stock.minPrice %>" required>
+                        <small class="form-text text-muted">حداقل قیمتی که سهام می‌تواند داشته باشد</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="maxPrice">حداکثر قیمت</label>
+                        <input type="number" id="maxPrice" name="maxPrice" class="form-control" value="<%= stock.maxPrice %>" required>
+                        <small class="form-text text-muted">حداکثر قیمتی که سهام می‌تواند داشته باشد</small>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label" for="description">توضیحات</label>
+                        <textarea id="description" name="description" class="form-control" rows="5"><%= stock.description %></textarea>
+                        <small class="form-text text-muted">توضیحات درباره شرکت و سهام آن (اختیاری)</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="volatility">نوسان قیمت (درصد)</label>
+                        <input type="number" id="volatility" name="volatility" step="0.1" min="0" max="100" class="form-control" value="<%= stock.volatility %>" required>
+                        <small class="form-text text-muted">میزان نوسان قیمت در هر به‌روزرسانی (درصد)</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input type="checkbox" id="active" name="active" class="form-check-input" <%= stock.active ? 'checked' : '' %>>
+                            <label class="form-check-label" for="active">سهام فعال باشد</label>
+                        </div>
+                        <small class="form-text text-muted">در صورت غیرفعال بودن، کاربران نمی‌توانند این سهام را خرید و فروش کنند</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">اطلاعات زمانی</label>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="text-muted">
+                                    <strong>تاریخ ایجاد:</strong><br>
+                                    <%= formatDate(stock.createdAt) %>
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="text-muted">
+                                    <strong>آخرین به‌روزرسانی:</strong><br>
+                                    <%= formatDate(stock.updatedAt) %>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <span class="icons8-icon icons8-save"></span> ذخیره تغییرات
+                </button>
+                
+                <a href="/admin/economy/stocks" class="btn btn-secondary mr-2">
+                    <span class="icons8-icon icons8-cancel"></span> انصراف
+                </a>
+                
+                <% if (stock.active) { %>
+                    <a href="/admin/economy/stocks/<%= stock._id %>/deactivate" class="btn btn-warning mr-2" data-confirm="آیا از غیرفعال کردن این سهام اطمینان دارید؟">
+                        <span class="icons8-icon icons8-ban"></span> غیرفعال کردن
+                    </a>
+                <% } else { %>
+                    <a href="/admin/economy/stocks/<%= stock._id %>/activate" class="btn btn-success mr-2">
+                        <span class="icons8-icon icons8-unban"></span> فعال کردن
+                    </a>
+                <% } %>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card fluent-card mt-4">
+    <div class="card-header">
+        <h3 class="card-title">خلاصه وضعیت</h3>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="stat-card primary">
+                    <div class="stat-icon">
+                        <span class="icons8-icon icons8-chart icons8-lg"></span>
+                    </div>
+                    <div class="stat-label">تغییرات اخیر</div>
+                    <div class="stat-value <%= stock.change > 0 ? 'text-success' : stock.change < 0 ? 'text-danger' : 'text-muted' %>">
+                        <%= stock.change > 0 ? '+' : '' %><%= stock.change %>%
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card success">
+                    <div class="stat-icon">
+                        <span class="icons8-icon icons8-transaction icons8-lg"></span>
+                    </div>
+                    <div class="stat-label">حجم معاملات</div>
+                    <div class="stat-value">
+                        <%= formatCurrency(stock.volume || 0) %>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card warning">
+                    <div class="stat-icon">
+                        <span class="icons8-icon icons8-users icons8-lg"></span>
+                    </div>
+                    <div class="stat-label">تعداد سهامداران</div>
+                    <div class="stat-value">
+                        <%= stock.holderCount || 0 %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

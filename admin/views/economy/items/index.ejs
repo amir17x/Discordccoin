@@ -1,0 +1,65 @@
+<div class="section-header">
+    <h2 class="section-title">مدیریت آیتم‌ها</h2>
+    <div class="section-tools">
+        <a href="/admin/economy/items/create" class="btn btn-primary">
+            <span class="icons8-icon icons8-add"></span> افزودن آیتم جدید
+        </a>
+    </div>
+</div>
+
+<div class="alert alert-info">
+    <span class="icons8-icon icons8-info"></span>
+    این بخش در حال توسعه است.
+</div>
+
+<div class="card fluent-card">
+    <div class="card-body">
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>نام آیتم</th>
+                        <th>توضیحات</th>
+                        <th>قیمت</th>
+                        <th>فروشگاه</th>
+                        <th>وضعیت</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (items && items.length > 0) { %>
+                        <% items.forEach((item, index) => { %>
+                            <tr>
+                                <td><%= index + 1 %></td>
+                                <td><%= item.name %></td>
+                                <td><%= item.description %></td>
+                                <td><%= item.price %> سکه</td>
+                                <td><%= item.shopName || '---' %></td>
+                                <td>
+                                    <% if (item.active) { %>
+                                        <span class="badge badge-success">فعال</span>
+                                    <% } else { %>
+                                        <span class="badge badge-danger">غیرفعال</span>
+                                    <% } %>
+                                </td>
+                                <td class="action-buttons">
+                                    <a href="/admin/economy/items/<%= item._id %>/edit" class="btn btn-sm btn-primary">
+                                        <span class="icons8-icon icons8-edit icons8-sm"></span>
+                                    </a>
+                                    <a href="/admin/economy/items/<%= item._id %>" class="btn btn-sm btn-info">
+                                        <span class="icons8-icon icons8-view icons8-sm"></span>
+                                    </a>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="7" class="text-center">هیچ آیتمی یافت نشد.</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

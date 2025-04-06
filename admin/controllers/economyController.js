@@ -1,1221 +1,1026 @@
 /**
- * کنترلر مدیریت اقتصاد
- * 
- * این ماژول شامل توابع مدیریت سیستم اقتصادی، سکه‌ها، کریستال‌ها، بانک‌ها،
- * تراکنش‌ها، فروشگاه‌ها، آیتم‌ها و بازار سهام است.
+ * کنترلر مدیریت اقتصادی
  */
 
-import { Economy } from '../models/economy.js';
-import { AdminStock } from '../models/stock.js';
-import { Transaction } from '../models/transaction.js';
-import { Bank } from '../models/bank.js';
-import { Shop } from '../models/shop.js';
-import { Item } from '../models/item.js';
-import { User } from '../models/user.js';
+import * as economyService from '../services/economyService.js';
+import * as userService from '../services/userService.js';
 
 /**
- * کنترلر اقتصاد
+ * نمایش صفحه اصلی بخش اقتصادی
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
  */
-// صحیح کردن صادرات کنترلر (مشکل باعث خطای Route.get() requires a callback function but got a [object Undefined] می‌شود)
-export function showEconomyDashboard(req, res) {
-  return economyController.showDashboard(req, res);
-}
-
-export function showTransactions(req, res) {
-  return economyController.showTransactions(req, res);
-}
-
-export function showStocks(req, res) {
-  return economyController.showStocks ? economyController.showStocks(req, res) : res.render('economy/stocks');
-}
-
-export function showBanks(req, res) {
-  return economyController.showBanks(req, res);
-}
-
-export function showShops(req, res) {
-  return economyController.showShops ? economyController.showShops(req, res) : res.render('economy/shops');
-}
-
-export function showItems(req, res) {
-  return economyController.showItems ? economyController.showItems(req, res) : res.render('economy/items');
-}
-
-export function showCoupons(req, res) {
-  return economyController.showCoupons ? economyController.showCoupons(req, res) : res.render('economy/coupons');
-}
-
-export function showEconomySettings(req, res) {
-  return economyController.showEconomySettings ? economyController.showEconomySettings(req, res) : res.render('economy/settings');
-}
-
-export function createStock(req, res) {
-  return economyController.createStock ? economyController.createStock(req, res) : res.redirect('/admin/economy/stocks');
-}
-
-export function editStock(req, res) {
-  return economyController.editStock ? economyController.editStock(req, res) : res.redirect('/admin/economy/stocks');
-}
-
-export function updateStockPrice(req, res) {
-  return economyController.updateStockPrice ? economyController.updateStockPrice(req, res) : res.redirect('/admin/economy/stocks');
-}
-
-export function createItem(req, res) {
-  return economyController.createItem ? economyController.createItem(req, res) : res.redirect('/admin/economy/items');
-}
-
-export function editItem(req, res) {
-  return economyController.editItem ? economyController.editItem(req, res) : res.redirect('/admin/economy/items');
-}
-
-export function deleteItem(req, res) {
-  return economyController.deleteItem ? economyController.deleteItem(req, res) : res.redirect('/admin/economy/items');
-}
-
-export function generateEconomyReport(req, res) {
-  return economyController.generateEconomyReport ? economyController.generateEconomyReport(req, res) : res.redirect('/admin/economy');
-}
-
-// اینجا اشیا اصلی برای مرجع استفاده می‌شود
-const economyController = {
-  /**
-   * نمایش داشبورد مدیریت اقتصاد
-   */
-  showDashboard: async (req, res) => {
-    try {
-      // آمار کلی اقتصاد
-      const userCount = await User.countDocuments();
-      const totalCoins = await Economy.aggregate([
-        { $group: { _id: null, total: { $sum: "$coins" } } }
-      ]);
-      const totalCrystals = await Economy.aggregate([
-        { $group: { _id: null, total: { $sum: "$crystals" } } }
-      ]);
-      const recentTransactions = await Transaction.find()
-        .sort({ createdAt: -1 })
-        .limit(10)
-        .populate('userId');
-      
-      res.render('economy/dashboard', {
-        title: 'مدیریت اقتصاد',
-        totalCoins: totalCoins.length > 0 ? totalCoins[0].total : 0,
-        totalCrystals: totalCrystals.length > 0 ? totalCrystals[0].total : 0,
-        userCount,
-        recentTransactions
-      });
-    } catch (error) {
-      req.flash('error', `خطا در بارگذاری داشبورد اقتصاد: ${error.message}`);
-      res.redirect('/admin/dashboard');
-    }
-  },
-
-  /**
-   * نمایش صفحه مدیریت سکه‌ها
-   */
-  showCoinsManagement: async (req, res) => {
-    try {
-      const page = parseInt(req.query.page) || 1;
-      const limit = 20;
-      const skip = (page - 1) * limit;
-      
-      // یافتن کاربران و مقادیر سکه آنها
-      const usersWithCoins = await Economy.find()
-        .populate('userId')
-        .sort({ coins: -1 })
-        .skip(skip)
-        .limit(limit);
-        
-      const total = await Economy.countDocuments();
-      
-      res.render('economy/coins', {
-        title: 'مدیریت سکه‌ها',
-        users: usersWithCoins,
-        pagination: {
-          page,
-          pageCount: Math.ceil(total / limit)
+export async function showEconomyDashboard(req, res) {
+  try {
+    console.log('📊 نمایش داشبورد اقتصادی');
+    
+    // دریافت آمار اقتصادی
+    const economyStats = await economyService.getEconomyStats();
+    
+    // دریافت تراکنش‌های اخیر
+    const recentTransactions = await economyService.getRecentTransactions(5);
+    
+    // دریافت آمار بازار سهام
+    const stockMarketStats = await economyService.getStockMarketOverview();
+    
+    res.render('economy/dashboard', {
+      title: 'داشبورد اقتصادی',
+      economyStats,
+      recentTransactions,
+      stockMarketStats,
+      formatCurrency: (amount) => {
+        if (typeof amount !== 'number') {
+          amount = parseInt(amount || 0);
         }
-      });
-    } catch (error) {
-      req.flash('error', `خطا در بارگذاری صفحه مدیریت سکه‌ها: ${error.message}`);
-      res.redirect('/admin/economy');
-    }
-  },
-
-  /**
-   * افزودن سکه به کاربر
-   */
-  addCoins: async (req, res) => {
-    try {
-      const { userId, amount, reason } = req.body;
-      if (!userId || !amount) {
-        req.flash('error', 'شناسه کاربر و مقدار سکه الزامی است');
-        return res.redirect('/admin/economy/coins');
+        return amount.toLocaleString('fa-IR');
+      },
+      formatDate: (date) => {
+        if (!date) return '-';
+        return new Date(date).toLocaleDateString('fa-IR');
       }
-      
-      const amountNum = parseInt(amount);
-      if (isNaN(amountNum) || amountNum <= 0) {
-        req.flash('error', 'مقدار سکه باید عددی مثبت باشد');
-        return res.redirect('/admin/economy/coins');
-      }
-      
-      // افزودن سکه به کاربر
-      await Economy.findOneAndUpdate(
-        { userId },
-        { $inc: { coins: amountNum } },
-        { upsert: true }
-      );
-      
-      // ثبت تراکنش
-      await Transaction.create({
-        userId,
-        type: 'admin_add',
-        amount: amountNum,
-        currency: 'coin',
-        description: reason || 'افزودن سکه توسط ادمین',
-        adminId: req.session.user._id
-      });
-      
-      req.flash('success', `${amountNum} سکه به کاربر با موفقیت اضافه شد`);
-      res.redirect('/admin/economy/coins');
-    } catch (error) {
-      req.flash('error', `خطا در افزودن سکه: ${error.message}`);
-      res.redirect('/admin/economy/coins');
-    }
-  },
-
-  /**
-   * کسر سکه از کاربر
-   */
-  deductCoins: async (req, res) => {
-    try {
-      const { userId, amount, reason } = req.body;
-      if (!userId || !amount) {
-        req.flash('error', 'شناسه کاربر و مقدار سکه الزامی است');
-        return res.redirect('/admin/economy/coins');
-      }
-      
-      const amountNum = parseInt(amount);
-      if (isNaN(amountNum) || amountNum <= 0) {
-        req.flash('error', 'مقدار سکه باید عددی مثبت باشد');
-        return res.redirect('/admin/economy/coins');
-      }
-      
-      // کسر سکه از کاربر
-      const economy = await Economy.findOne({ userId });
-      if (!economy || economy.coins < amountNum) {
-        req.flash('error', 'سکه‌های کاربر کافی نیست');
-        return res.redirect('/admin/economy/coins');
-      }
-      
-      await Economy.findOneAndUpdate(
-        { userId },
-        { $inc: { coins: -amountNum } }
-      );
-      
-      // ثبت تراکنش
-      await Transaction.create({
-        userId,
-        type: 'admin_deduct',
-        amount: -amountNum,
-        currency: 'coin',
-        description: reason || 'کسر سکه توسط ادمین',
-        adminId: req.session.user._id
-      });
-      
-      req.flash('success', `${amountNum} سکه از کاربر با موفقیت کسر شد`);
-      res.redirect('/admin/economy/coins');
-    } catch (error) {
-      req.flash('error', `خطا در کسر سکه: ${error.message}`);
-      res.redirect('/admin/economy/coins');
-    }
-  },
-
-  /**
-   * ریست مقدار سکه کاربر
-   */
-  resetCoins: async (req, res) => {
-    try {
-      const { userId, reason } = req.body;
-      if (!userId) {
-        req.flash('error', 'شناسه کاربر الزامی است');
-        return res.redirect('/admin/economy/coins');
-      }
-      
-      // یافتن مقدار فعلی سکه‌ها
-      const economy = await Economy.findOne({ userId });
-      if (!economy) {
-        req.flash('error', 'اطلاعات اقتصادی کاربر یافت نشد');
-        return res.redirect('/admin/economy/coins');
-      }
-      
-      const currentCoins = economy.coins;
-      
-      // ریست مقدار سکه‌ها
-      await Economy.findOneAndUpdate(
-        { userId },
-        { $set: { coins: 0 } }
-      );
-      
-      // ثبت تراکنش
-      await Transaction.create({
-        userId,
-        type: 'admin_reset',
-        amount: -currentCoins,
-        currency: 'coin',
-        description: reason || 'ریست سکه توسط ادمین',
-        adminId: req.session.user._id
-      });
-      
-      req.flash('success', `سکه‌های کاربر با موفقیت ریست شد`);
-      res.redirect('/admin/economy/coins');
-    } catch (error) {
-      req.flash('error', `خطا در ریست سکه: ${error.message}`);
-      res.redirect('/admin/economy/coins');
-    }
-  },
-
-  /**
-   * نمایش صفحه مدیریت کریستال‌ها
-   */
-  showCrystalsManagement: async (req, res) => {
-    try {
-      const page = parseInt(req.query.page) || 1;
-      const limit = 20;
-      const skip = (page - 1) * limit;
-      
-      // یافتن کاربران و مقادیر کریستال آنها
-      const usersWithCrystals = await Economy.find()
-        .populate('userId')
-        .sort({ crystals: -1 })
-        .skip(skip)
-        .limit(limit);
-        
-      const total = await Economy.countDocuments();
-      
-      res.render('economy/crystals', {
-        title: 'مدیریت کریستال‌ها',
-        users: usersWithCrystals,
-        pagination: {
-          page,
-          pageCount: Math.ceil(total / limit)
-        }
-      });
-    } catch (error) {
-      req.flash('error', `خطا در بارگذاری صفحه مدیریت کریستال‌ها: ${error.message}`);
-      res.redirect('/admin/economy');
-    }
-  },
-
-  /**
-   * افزودن کریستال به کاربر
-   */
-  addCrystals: async (req, res) => {
-    try {
-      const { userId, amount, reason } = req.body;
-      if (!userId || !amount) {
-        req.flash('error', 'شناسه کاربر و مقدار کریستال الزامی است');
-        return res.redirect('/admin/economy/crystals');
-      }
-      
-      const amountNum = parseInt(amount);
-      if (isNaN(amountNum) || amountNum <= 0) {
-        req.flash('error', 'مقدار کریستال باید عددی مثبت باشد');
-        return res.redirect('/admin/economy/crystals');
-      }
-      
-      // افزودن کریستال به کاربر
-      await Economy.findOneAndUpdate(
-        { userId },
-        { $inc: { crystals: amountNum } },
-        { upsert: true }
-      );
-      
-      // ثبت تراکنش
-      await Transaction.create({
-        userId,
-        type: 'admin_add',
-        amount: amountNum,
-        currency: 'crystal',
-        description: reason || 'افزودن کریستال توسط ادمین',
-        adminId: req.session.user._id
-      });
-      
-      req.flash('success', `${amountNum} کریستال به کاربر با موفقیت اضافه شد`);
-      res.redirect('/admin/economy/crystals');
-    } catch (error) {
-      req.flash('error', `خطا در افزودن کریستال: ${error.message}`);
-      res.redirect('/admin/economy/crystals');
-    }
-  },
-
-  /**
-   * کسر کریستال از کاربر
-   */
-  deductCrystals: async (req, res) => {
-    try {
-      const { userId, amount, reason } = req.body;
-      if (!userId || !amount) {
-        req.flash('error', 'شناسه کاربر و مقدار کریستال الزامی است');
-        return res.redirect('/admin/economy/crystals');
-      }
-      
-      const amountNum = parseInt(amount);
-      if (isNaN(amountNum) || amountNum <= 0) {
-        req.flash('error', 'مقدار کریستال باید عددی مثبت باشد');
-        return res.redirect('/admin/economy/crystals');
-      }
-      
-      // کسر کریستال از کاربر
-      const economy = await Economy.findOne({ userId });
-      if (!economy || economy.crystals < amountNum) {
-        req.flash('error', 'کریستال‌های کاربر کافی نیست');
-        return res.redirect('/admin/economy/crystals');
-      }
-      
-      await Economy.findOneAndUpdate(
-        { userId },
-        { $inc: { crystals: -amountNum } }
-      );
-      
-      // ثبت تراکنش
-      await Transaction.create({
-        userId,
-        type: 'admin_deduct',
-        amount: -amountNum,
-        currency: 'crystal',
-        description: reason || 'کسر کریستال توسط ادمین',
-        adminId: req.session.user._id
-      });
-      
-      req.flash('success', `${amountNum} کریستال از کاربر با موفقیت کسر شد`);
-      res.redirect('/admin/economy/crystals');
-    } catch (error) {
-      req.flash('error', `خطا در کسر کریستال: ${error.message}`);
-      res.redirect('/admin/economy/crystals');
-    }
-  },
-
-  /**
-   * ریست مقدار کریستال کاربر
-   */
-  resetCrystals: async (req, res) => {
-    try {
-      const { userId, reason } = req.body;
-      if (!userId) {
-        req.flash('error', 'شناسه کاربر الزامی است');
-        return res.redirect('/admin/economy/crystals');
-      }
-      
-      // یافتن مقدار فعلی کریستال‌ها
-      const economy = await Economy.findOne({ userId });
-      if (!economy) {
-        req.flash('error', 'اطلاعات اقتصادی کاربر یافت نشد');
-        return res.redirect('/admin/economy/crystals');
-      }
-      
-      const currentCrystals = economy.crystals;
-      
-      // ریست مقدار کریستال‌ها
-      await Economy.findOneAndUpdate(
-        { userId },
-        { $set: { crystals: 0 } }
-      );
-      
-      // ثبت تراکنش
-      await Transaction.create({
-        userId,
-        type: 'admin_reset',
-        amount: -currentCrystals,
-        currency: 'crystal',
-        description: reason || 'ریست کریستال توسط ادمین',
-        adminId: req.session.user._id
-      });
-      
-      req.flash('success', `کریستال‌های کاربر با موفقیت ریست شد`);
-      res.redirect('/admin/economy/crystals');
-    } catch (error) {
-      req.flash('error', `خطا در ریست کریستال: ${error.message}`);
-      res.redirect('/admin/economy/crystals');
-    }
-  },
-
-  // مدیریت بانک‌ها
-  showBanks: async (req, res) => {
-    try {
-      const banks = await Bank.find().sort({ createdAt: -1 });
-      res.render('economy/banks/index', {
-        title: 'مدیریت بانک‌ها',
-        banks
-      });
-    } catch (error) {
-      req.flash('error', `خطا در بارگذاری بانک‌ها: ${error.message}`);
-      res.redirect('/admin/economy');
-    }
-  },
-
-  showCreateBank: (req, res) => {
-    res.render('economy/banks/create', {
-      title: 'ایجاد بانک جدید'
     });
-  },
+  } catch (error) {
+    console.error('❌ خطا در نمایش داشبورد اقتصادی:', error);
+    req.flash('error', 'خطایی در بارگیری داشبورد اقتصادی رخ داده است');
+    res.redirect('/admin/dashboard');
+  }
+}
 
-  createBank: async (req, res) => {
-    try {
-      const { name, description, interestRate, minDeposit, maxDeposit } = req.body;
-      await Bank.create({
-        name,
-        description,
-        interestRate: parseFloat(interestRate) || 0,
-        minDeposit: parseInt(minDeposit) || 0,
-        maxDeposit: parseInt(maxDeposit) || 0
-      });
-      req.flash('success', 'بانک جدید با موفقیت ایجاد شد');
-      res.redirect('/admin/economy/banks');
-    } catch (error) {
-      req.flash('error', `خطا در ایجاد بانک: ${error.message}`);
-      res.redirect('/admin/economy/banks/new');
+/**
+ * نمایش لیست تراکنش‌ها
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ */
+export async function listTransactions(req, res) {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const query = req.query.q || '';
+    const type = req.query.type || '';
+    const startDate = req.query.startDate || '';
+    const endDate = req.query.endDate || '';
+    
+    console.log(`💰 دریافت لیست تراکنش‌ها: صفحه ${page}، تعداد ${limit}، جستجو: "${query}", نوع: "${type}"`);
+    
+    // تبدیل تاریخ‌ها به شی Date
+    const dateFilter = {};
+    if (startDate) {
+      dateFilter.start = new Date(startDate);
     }
-  },
-
-  showBank: async (req, res) => {
-    try {
-      const bank = await Bank.findById(req.params.id);
-      if (!bank) {
-        req.flash('error', 'بانک مورد نظر یافت نشد');
-        return res.redirect('/admin/economy/banks');
-      }
-      res.render('economy/banks/edit', {
-        title: `ویرایش بانک ${bank.name}`,
-        bank
-      });
-    } catch (error) {
-      req.flash('error', `خطا در بارگذاری اطلاعات بانک: ${error.message}`);
-      res.redirect('/admin/economy/banks');
+    if (endDate) {
+      const endDateObj = new Date(endDate);
+      endDateObj.setDate(endDateObj.getDate() + 1); // شامل روز انتخاب شده
+      dateFilter.end = endDateObj;
     }
-  },
-
-  updateBank: async (req, res) => {
-    try {
-      const { name, description, interestRate, minDeposit, maxDeposit, active } = req.body;
-      await Bank.findByIdAndUpdate(req.params.id, {
-        name,
-        description,
-        interestRate: parseFloat(interestRate) || 0,
-        minDeposit: parseInt(minDeposit) || 0,
-        maxDeposit: parseInt(maxDeposit) || 0,
-        active: active === 'on'
-      });
-      req.flash('success', 'بانک با موفقیت به‌روزرسانی شد');
-      res.redirect('/admin/economy/banks');
-    } catch (error) {
-      req.flash('error', `خطا در به‌روزرسانی بانک: ${error.message}`);
-      res.redirect(`/admin/economy/banks/${req.params.id}`);
+    
+    // فیلترها
+    const filters = {};
+    
+    if (type) {
+      filters.type = type;
     }
-  },
-
-  deleteBank: async (req, res) => {
-    try {
-      await Bank.findByIdAndDelete(req.params.id);
-      req.flash('success', 'بانک با موفقیت حذف شد');
-      res.redirect('/admin/economy/banks');
-    } catch (error) {
-      req.flash('error', `خطا در حذف بانک: ${error.message}`);
-      res.redirect('/admin/economy/banks');
+    
+    if (Object.keys(dateFilter).length > 0) {
+      filters.date = dateFilter;
     }
-  },
-
-  // مدیریت تراکنش‌ها
-  showTransactions: async (req, res) => {
-    try {
-      const page = parseInt(req.query.page) || 1;
-      const limit = 20;
-      const skip = (page - 1) * limit;
-      
-      const transactions = await Transaction.find()
-        .populate('userId')
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit);
-        
-      const total = await Transaction.countDocuments();
-      
-      res.render('economy/transactions/index', {
-        title: 'مدیریت تراکنش‌ها',
-        transactions,
-        pagination: {
-          page,
-          pageCount: Math.ceil(total / limit)
+    
+    const result = await economyService.getTransactions({
+      page,
+      limit,
+      query,
+      filters
+    });
+    
+    res.render('economy/transactions/index', {
+      title: 'مدیریت تراکنش‌ها',
+      transactions: result.transactions || [],
+      query,
+      type,
+      startDate,
+      endDate,
+      pagination: {
+        page,
+        limit,
+        totalPages: result.totalPages || 1,
+        totalTransactions: result.total || 0
+      },
+      formatCurrency: (amount) => {
+        if (typeof amount !== 'number') {
+          amount = parseInt(amount || 0);
         }
-      });
-    } catch (error) {
-      req.flash('error', `خطا در بارگذاری تراکنش‌ها: ${error.message}`);
-      res.redirect('/admin/economy');
-    }
-  },
-
-  showTransaction: async (req, res) => {
-    try {
-      const transaction = await Transaction.findById(req.params.id)
-        .populate('userId')
-        .populate('adminId');
-        
-      if (!transaction) {
-        req.flash('error', 'تراکنش مورد نظر یافت نشد');
-        return res.redirect('/admin/economy/transactions');
-      }
-      
-      res.render('economy/transactions/view', {
-        title: 'جزئیات تراکنش',
-        transaction
-      });
-    } catch (error) {
-      req.flash('error', `خطا در بارگذاری اطلاعات تراکنش: ${error.message}`);
-      res.redirect('/admin/economy/transactions');
-    }
-  },
-
-  exportTransactions: async (req, res) => {
-    try {
-      const { start, end, type, currency } = req.query;
-      let query = {};
-      
-      if (start && end) {
-        query.createdAt = {
-          $gte: new Date(start),
-          $lte: new Date(end)
+        return amount.toLocaleString('fa-IR');
+      },
+      formatDate: (date, includeTime = false) => {
+        if (!date) return '-';
+        const options = {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
         };
-      }
-      
-      if (type) {
-        query.type = type;
-      }
-      
-      if (currency) {
-        query.currency = currency;
-      }
-      
-      const transactions = await Transaction.find(query)
-        .populate('userId')
-        .sort({ createdAt: -1 });
         
-      // تبدیل به CSV
-      let csv = 'تاریخ,کاربر,نوع,مقدار,واحد,توضیحات\n';
-      transactions.forEach(t => {
-        const date = new Date(t.createdAt).toLocaleDateString('fa-IR');
-        const username = t.userId ? t.userId.username : 'ناشناس';
-        csv += `${date},${username},${t.type},${t.amount},${t.currency},${t.description}\n`;
-      });
-      
-      res.header('Content-Type', 'text/csv');
-      res.attachment('transactions.csv');
-      res.send(csv);
-    } catch (error) {
-      req.flash('error', `خطا در استخراج تراکنش‌ها: ${error.message}`);
-      res.redirect('/admin/economy/transactions');
-    }
-  },
-
-  // مدیریت فروشگاه‌ها
-  showShops: async (req, res) => {
-    try {
-      const shops = await Shop.find().sort({ name: 1 });
-      res.render('economy/shops/index', {
-        title: 'مدیریت فروشگاه‌ها',
-        shops
-      });
-    } catch (error) {
-      req.flash('error', `خطا در بارگذاری فروشگاه‌ها: ${error.message}`);
-      res.redirect('/admin/economy');
-    }
-  },
-
-  showCreateShop: (req, res) => {
-    res.render('economy/shops/create', {
-      title: 'ایجاد فروشگاه جدید'
-    });
-  },
-
-  createShop: async (req, res) => {
-    try {
-      const { name, description, serverId, channels } = req.body;
-      await Shop.create({
-        name,
-        description,
-        serverId,
-        channels: channels ? channels.split(',') : []
-      });
-      req.flash('success', 'فروشگاه جدید با موفقیت ایجاد شد');
-      res.redirect('/admin/economy/shops');
-    } catch (error) {
-      req.flash('error', `خطا در ایجاد فروشگاه: ${error.message}`);
-      res.redirect('/admin/economy/shops/new');
-    }
-  },
-
-  showShop: async (req, res) => {
-    try {
-      const shop = await Shop.findById(req.params.id);
-      if (!shop) {
-        req.flash('error', 'فروشگاه مورد نظر یافت نشد');
-        return res.redirect('/admin/economy/shops');
-      }
-      
-      // دریافت آیتم‌های مرتبط با این فروشگاه
-      const items = await Item.find({ shopId: shop._id });
-      
-      res.render('economy/shops/edit', {
-        title: `ویرایش فروشگاه ${shop.name}`,
-        shop,
-        items
-      });
-    } catch (error) {
-      req.flash('error', `خطا در بارگذاری اطلاعات فروشگاه: ${error.message}`);
-      res.redirect('/admin/economy/shops');
-    }
-  },
-
-  updateShop: async (req, res) => {
-    try {
-      const { name, description, serverId, channels, active } = req.body;
-      await Shop.findByIdAndUpdate(req.params.id, {
-        name,
-        description,
-        serverId,
-        channels: channels ? channels.split(',') : [],
-        active: active === 'on'
-      });
-      req.flash('success', 'فروشگاه با موفقیت به‌روزرسانی شد');
-      res.redirect('/admin/economy/shops');
-    } catch (error) {
-      req.flash('error', `خطا در به‌روزرسانی فروشگاه: ${error.message}`);
-      res.redirect(`/admin/economy/shops/${req.params.id}`);
-    }
-  },
-
-  deleteShop: async (req, res) => {
-    try {
-      // بررسی وجود آیتم‌های وابسته
-      const itemCount = await Item.countDocuments({ shopId: req.params.id });
-      if (itemCount > 0) {
-        req.flash('error', 'این فروشگاه دارای آیتم است و نمی‌تواند حذف شود');
-        return res.redirect('/admin/economy/shops');
-      }
-      
-      await Shop.findByIdAndDelete(req.params.id);
-      req.flash('success', 'فروشگاه با موفقیت حذف شد');
-      res.redirect('/admin/economy/shops');
-    } catch (error) {
-      req.flash('error', `خطا در حذف فروشگاه: ${error.message}`);
-      res.redirect('/admin/economy/shops');
-    }
-  },
-
-  // مدیریت آیتم‌ها
-  showItems: async (req, res) => {
-    try {
-      const items = await Item.find().populate('shopId').sort({ name: 1 });
-      const shops = await Shop.find().sort({ name: 1 });
-      
-      res.render('economy/items/index', {
-        title: 'مدیریت آیتم‌ها',
-        items,
-        shops
-      });
-    } catch (error) {
-      req.flash('error', `خطا در بارگذاری آیتم‌ها: ${error.message}`);
-      res.redirect('/admin/economy');
-    }
-  },
-
-  showCreateItem: async (req, res) => {
-    try {
-      const shops = await Shop.find({ active: true }).sort({ name: 1 });
-      res.render('economy/items/create', {
-        title: 'ایجاد آیتم جدید',
-        shops
-      });
-    } catch (error) {
-      req.flash('error', `خطا در بارگذاری اطلاعات: ${error.message}`);
-      res.redirect('/admin/economy/items');
-    }
-  },
-
-  createItem: async (req, res) => {
-    try {
-      const { 
-        name, description, shopId, price, currency, 
-        stock, maxPerUser, roles, commands, image 
-      } = req.body;
-      
-      await Item.create({
-        name,
-        description,
-        shopId,
-        price: parseInt(price) || 0,
-        currency: currency || 'coin',
-        stock: parseInt(stock) || -1, // -1 برای نامحدود
-        maxPerUser: parseInt(maxPerUser) || -1,
-        roles: roles ? roles.split(',') : [],
-        commands: commands ? commands.split('\n') : [],
-        image: image || null
-      });
-      
-      req.flash('success', 'آیتم جدید با موفقیت ایجاد شد');
-      res.redirect('/admin/economy/items');
-    } catch (error) {
-      req.flash('error', `خطا در ایجاد آیتم: ${error.message}`);
-      res.redirect('/admin/economy/items/new');
-    }
-  },
-
-  showItem: async (req, res) => {
-    try {
-      const item = await Item.findById(req.params.id);
-      if (!item) {
-        req.flash('error', 'آیتم مورد نظر یافت نشد');
-        return res.redirect('/admin/economy/items');
-      }
-      
-      const shops = await Shop.find({ active: true }).sort({ name: 1 });
-      
-      res.render('economy/items/edit', {
-        title: `ویرایش آیتم ${item.name}`,
-        item,
-        shops
-      });
-    } catch (error) {
-      req.flash('error', `خطا در بارگذاری اطلاعات آیتم: ${error.message}`);
-      res.redirect('/admin/economy/items');
-    }
-  },
-
-  updateItem: async (req, res) => {
-    try {
-      const { 
-        name, description, shopId, price, currency, 
-        stock, maxPerUser, roles, commands, image, active 
-      } = req.body;
-      
-      await Item.findByIdAndUpdate(req.params.id, {
-        name,
-        description,
-        shopId,
-        price: parseInt(price) || 0,
-        currency: currency || 'coin',
-        stock: parseInt(stock) || -1,
-        maxPerUser: parseInt(maxPerUser) || -1,
-        roles: roles ? roles.split(',') : [],
-        commands: commands ? commands.split('\n') : [],
-        image: image || null,
-        active: active === 'on'
-      });
-      
-      req.flash('success', 'آیتم با موفقیت به‌روزرسانی شد');
-      res.redirect('/admin/economy/items');
-    } catch (error) {
-      req.flash('error', `خطا در به‌روزرسانی آیتم: ${error.message}`);
-      res.redirect(`/admin/economy/items/${req.params.id}`);
-    }
-  },
-
-  deleteItem: async (req, res) => {
-    try {
-      await Item.findByIdAndDelete(req.params.id);
-      req.flash('success', 'آیتم با موفقیت حذف شد');
-      res.redirect('/admin/economy/items');
-    } catch (error) {
-      req.flash('error', `خطا در حذف آیتم: ${error.message}`);
-      res.redirect('/admin/economy/items');
-    }
-  },
-
-  // مدیریت سهام
-  showStocks: async (req, res) => {
-    try {
-      const stocks = await AdminStock.find().sort({ name: 1 });
-      res.render('economy/stocks/index', {
-        title: 'مدیریت بازار سهام',
-        stocks
-      });
-    } catch (error) {
-      req.flash('error', `خطا در بارگذاری اطلاعات سهام: ${error.message}`);
-      res.redirect('/admin/economy');
-    }
-  },
-
-  showCreateStock: (req, res) => {
-    res.render('economy/stocks/create', {
-      title: 'ایجاد سهام جدید'
-    });
-  },
-
-  createStock: async (req, res) => {
-    try {
-      const { name, symbol, description, initialPrice, volatility } = req.body;
-      
-      await AdminStock.create({
-        name,
-        symbol,
-        description,
-        currentPrice: parseInt(initialPrice) || 1000,
-        initialPrice: parseInt(initialPrice) || 1000,
-        volatility: parseFloat(volatility) || 5.0
-      });
-      
-      req.flash('success', 'سهام جدید با موفقیت ایجاد شد');
-      res.redirect('/admin/economy/stocks');
-    } catch (error) {
-      req.flash('error', `خطا در ایجاد سهام: ${error.message}`);
-      res.redirect('/admin/economy/stocks/new');
-    }
-  },
-
-  showStock: async (req, res) => {
-    try {
-      const stock = await AdminStock.findById(req.params.id);
-      if (!stock) {
-        req.flash('error', 'سهام مورد نظر یافت نشد');
-        return res.redirect('/admin/economy/stocks');
-      }
-      
-      res.render('economy/stocks/edit', {
-        title: `ویرایش سهام ${stock.name}`,
-        stock
-      });
-    } catch (error) {
-      req.flash('error', `خطا در بارگذاری اطلاعات سهام: ${error.message}`);
-      res.redirect('/admin/economy/stocks');
-    }
-  },
-
-  updateStock: async (req, res) => {
-    try {
-      const { name, symbol, description, volatility, active } = req.body;
-      
-      await AdminStock.findByIdAndUpdate(req.params.id, {
-        name,
-        symbol,
-        description,
-        volatility: parseFloat(volatility) || 5.0,
-        active: active === 'on'
-      });
-      
-      req.flash('success', 'سهام با موفقیت به‌روزرسانی شد');
-      res.redirect('/admin/economy/stocks');
-    } catch (error) {
-      req.flash('error', `خطا در به‌روزرسانی سهام: ${error.message}`);
-      res.redirect(`/admin/economy/stocks/${req.params.id}`);
-    }
-  },
-
-  updateStockPrice: async (req, res) => {
-    try {
-      const { price } = req.body;
-      const newPrice = parseInt(price);
-      
-      if (isNaN(newPrice) || newPrice <= 0) {
-        req.flash('error', 'قیمت باید عددی مثبت باشد');
-        return res.redirect(`/admin/economy/stocks/${req.params.id}`);
-      }
-      
-      const stock = await AdminStock.findById(req.params.id);
-      if (!stock) {
-        req.flash('error', 'سهام مورد نظر یافت نشد');
-        return res.redirect('/admin/economy/stocks');
-      }
-      
-      const oldPrice = stock.currentPrice;
-      const percentChange = ((newPrice - oldPrice) / oldPrice) * 100;
-      
-      await AdminStock.findByIdAndUpdate(req.params.id, {
-        currentPrice: newPrice,
-        priceHistory: [
-          ...stock.priceHistory,
-          {
-            price: newPrice,
-            timestamp: new Date(),
-            percentChange: percentChange.toFixed(2)
-          }
-        ]
-      });
-      
-      req.flash('success', `قیمت سهام ${stock.name} به ${newPrice} تغییر کرد (${percentChange.toFixed(2)}%)`);
-      res.redirect('/admin/economy/stocks');
-    } catch (error) {
-      req.flash('error', `خطا در به‌روزرسانی قیمت سهام: ${error.message}`);
-      res.redirect(`/admin/economy/stocks/${req.params.id}`);
-    }
-  },
-
-  deleteStock: async (req, res) => {
-    try {
-      await Stock.findByIdAndDelete(req.params.id);
-      req.flash('success', 'سهام با موفقیت حذف شد');
-      res.redirect('/admin/economy/stocks');
-    } catch (error) {
-      req.flash('error', `خطا در حذف سهام: ${error.message}`);
-      res.redirect('/admin/economy/stocks');
-    }
-  },
-
-  simulateStockMarket: async (req, res) => {
-    try {
-      const stocks = await Stock.find({ active: true });
-      const marketCondition = req.body.marketCondition || 'normal'; // boom, normal, recession
-      
-      for (const stock of stocks) {
-        let volatilityFactor = 1.0;
-        
-        // تنظیم ضریب نوسان براساس شرایط بازار
-        if (marketCondition === 'boom') {
-          volatilityFactor = 1.5; // نوسان بیشتر در شرایط رونق
-        } else if (marketCondition === 'recession') {
-          volatilityFactor = 2.0; // نوسان بیشتر در شرایط رکود
+        if (includeTime) {
+          options.hour = '2-digit';
+          options.minute = '2-digit';
         }
         
-        // محاسبه درصد تغییر قیمت
-        const baseVolatility = stock.volatility * volatilityFactor;
-        let percentChange = (Math.random() * 2 * baseVolatility) - baseVolatility;
-        
-        // اعمال گرایش بازار
-        if (marketCondition === 'boom') {
-          percentChange += 2; // گرایش مثبت در شرایط رونق
-        } else if (marketCondition === 'recession') {
-          percentChange -= 2; // گرایش منفی در شرایط رکود
-        }
-        
-        // محدود کردن تغییرات به ±15%
-        percentChange = Math.max(-15, Math.min(15, percentChange));
-        
-        // محاسبه قیمت جدید
-        const oldPrice = stock.currentPrice;
-        const newPrice = Math.round(oldPrice * (1 + (percentChange / 100)));
-        
-        // به‌روزرسانی قیمت
-        await Stock.findByIdAndUpdate(stock._id, {
-          currentPrice: newPrice,
-          priceHistory: [
-            ...stock.priceHistory,
-            {
-              price: newPrice,
-              timestamp: new Date(),
-              percentChange: percentChange.toFixed(2)
-            }
-          ]
-        });
+        return new Date(date).toLocaleDateString('fa-IR', options);
       }
-      
-      req.flash('success', `شبیه‌سازی بازار سهام با موفقیت انجام شد (${stocks.length} سهام به‌روزرسانی شد)`);
-      res.redirect('/admin/economy/stocks');
-    } catch (error) {
-      req.flash('error', `خطا در شبیه‌سازی بازار سهام: ${error.message}`);
-      res.redirect('/admin/economy/stocks');
-    }
-  },
-
-  // تنظیمات اقتصادی
-  showSettings: async (req, res) => {
-    try {
-      // دریافت تنظیمات فعلی از دیتابیس
-      // این بخش بستگی به ساختار دیتابیس شما دارد
-      
-      res.render('economy/settings', {
-        title: 'تنظیمات اقتصادی',
-        settings: {} // تنظیمات پیش‌فرض
-      });
-    } catch (error) {
-      req.flash('error', `خطا در بارگذاری تنظیمات: ${error.message}`);
-      res.redirect('/admin/economy');
-    }
-  },
-
-  updateSettings: async (req, res) => {
-    try {
-      // به‌روزرسانی تنظیمات
-      
-      req.flash('success', 'تنظیمات با موفقیت به‌روزرسانی شد');
-      res.redirect('/admin/economy/settings');
-    } catch (error) {
-      req.flash('error', `خطا در به‌روزرسانی تنظیمات: ${error.message}`);
-      res.redirect('/admin/economy/settings');
-    }
-  },
-
-  // آمار و گزارشات
-  showReports: (req, res) => {
-    res.render('economy/reports/index', {
-      title: 'گزارشات اقتصادی'
     });
-  },
-
-  getDailyReport: async (req, res) => {
-    try {
-      // محاسبه تاریخ شروع (ابتدای امروز)
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      // آمار تراکنش‌های امروز
-      const transactions = await Transaction.find({
-        createdAt: { $gte: today }
-      });
-      
-      // محاسبه آمار
-      const stats = calculateTransactionStats(transactions);
-      
-      res.render('economy/reports/daily', {
-        title: 'گزارش روزانه',
-        date: today.toLocaleDateString('fa-IR'),
-        stats,
-        transactions
-      });
-    } catch (error) {
-      req.flash('error', `خطا در دریافت گزارش روزانه: ${error.message}`);
-      res.redirect('/admin/economy/reports');
-    }
-  },
-
-  getWeeklyReport: async (req, res) => {
-    try {
-      // محاسبه تاریخ شروع (7 روز قبل)
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - 7);
-      startDate.setHours(0, 0, 0, 0);
-      
-      // آمار تراکنش‌های هفته اخیر
-      const transactions = await Transaction.find({
-        createdAt: { $gte: startDate }
-      });
-      
-      // محاسبه آمار
-      const stats = calculateTransactionStats(transactions);
-      
-      res.render('economy/reports/weekly', {
-        title: 'گزارش هفتگی',
-        startDate: startDate.toLocaleDateString('fa-IR'),
-        endDate: new Date().toLocaleDateString('fa-IR'),
-        stats,
-        transactions
-      });
-    } catch (error) {
-      req.flash('error', `خطا در دریافت گزارش هفتگی: ${error.message}`);
-      res.redirect('/admin/economy/reports');
-    }
-  },
-
-  getMonthlyReport: async (req, res) => {
-    try {
-      // محاسبه تاریخ شروع (30 روز قبل)
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - 30);
-      startDate.setHours(0, 0, 0, 0);
-      
-      // آمار تراکنش‌های ماه اخیر
-      const transactions = await Transaction.find({
-        createdAt: { $gte: startDate }
-      });
-      
-      // محاسبه آمار
-      const stats = calculateTransactionStats(transactions);
-      
-      res.render('economy/reports/monthly', {
-        title: 'گزارش ماهانه',
-        startDate: startDate.toLocaleDateString('fa-IR'),
-        endDate: new Date().toLocaleDateString('fa-IR'),
-        stats,
-        transactions
-      });
-    } catch (error) {
-      req.flash('error', `خطا در دریافت گزارش ماهانه: ${error.message}`);
-      res.redirect('/admin/economy/reports');
-    }
-  },
-
-  getCustomReport: async (req, res) => {
-    try {
-      const { start, end } = req.query;
-      
-      if (!start || !end) {
-        return res.render('economy/reports/custom', {
-          title: 'گزارش سفارشی',
-          stats: null,
-          transactions: null
-        });
-      }
-      
-      const startDate = new Date(start);
-      const endDate = new Date(end);
-      endDate.setHours(23, 59, 59, 999); // پایان روز
-      
-      // آمار تراکنش‌های بازه زمانی
-      const transactions = await Transaction.find({
-        createdAt: {
-          $gte: startDate,
-          $lte: endDate
-        }
-      });
-      
-      // محاسبه آمار
-      const stats = calculateTransactionStats(transactions);
-      
-      res.render('economy/reports/custom', {
-        title: 'گزارش سفارشی',
-        startDate: startDate.toLocaleDateString('fa-IR'),
-        endDate: endDate.toLocaleDateString('fa-IR'),
-        stats,
-        transactions
-      });
-    } catch (error) {
-      req.flash('error', `خطا در دریافت گزارش سفارشی: ${error.message}`);
-      res.redirect('/admin/economy/reports');
-    }
+  } catch (error) {
+    console.error('❌ خطا در نمایش لیست تراکنش‌ها:', error);
+    req.flash('error', 'خطایی در بارگیری لیست تراکنش‌ها رخ داده است');
+    res.redirect('/admin/economy');
   }
-};
+}
 
 /**
- * محاسبه آمار تراکنش‌ها
- * @param {Array} transactions آرایه تراکنش‌ها
- * @returns {Object} آمار محاسبه شده
+ * نمایش جزئیات یک تراکنش
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
  */
-function calculateTransactionStats(transactions) {
-  const stats = {
-    total: transactions.length,
-    totalCoinsAdded: 0,
-    totalCoinsDeducted: 0,
-    totalCrystalsAdded: 0,
-    totalCrystalsDeducted: 0,
-    byType: {},
-    byCurrency: {
-      coin: 0,
-      crystal: 0
-    }
-  };
-  
-  for (const tx of transactions) {
-    // آمار براساس نوع تراکنش
-    if (!stats.byType[tx.type]) {
-      stats.byType[tx.type] = 0;
-    }
-    stats.byType[tx.type]++;
+export async function viewTransaction(req, res) {
+  try {
+    const transactionId = req.params.id;
+    console.log(`💰 نمایش جزئیات تراکنش: ${transactionId}`);
     
-    // آمار براساس واحد پول
-    stats.byCurrency[tx.currency]++;
-    
-    // محاسبه مجموع افزایش/کاهش
-    if (tx.currency === 'coin') {
-      if (tx.amount > 0) {
-        stats.totalCoinsAdded += tx.amount;
-      } else {
-        stats.totalCoinsDeducted += Math.abs(tx.amount);
-      }
-    } else if (tx.currency === 'crystal') {
-      if (tx.amount > 0) {
-        stats.totalCrystalsAdded += tx.amount;
-      } else {
-        stats.totalCrystalsDeducted += Math.abs(tx.amount);
-      }
+    const transaction = await economyService.getTransactionById(transactionId);
+    if (!transaction) {
+      req.flash('error', 'تراکنش مورد نظر یافت نشد');
+      return res.redirect('/admin/economy/transactions');
     }
+    
+    // دریافت اطلاعات کاربر
+    const user = await userService.getUserById(transaction.userId);
+    
+    res.render('economy/transactions/view', {
+      title: `جزئیات تراکنش #${transaction._id.toString().substr(-6)}`,
+      transaction,
+      user,
+      formatCurrency: (amount) => {
+        if (typeof amount !== 'number') {
+          amount = parseInt(amount || 0);
+        }
+        return amount.toLocaleString('fa-IR');
+      },
+      formatDate: (date, includeTime = false) => {
+        if (!date) return '-';
+        const options = {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        };
+        
+        if (includeTime) {
+          options.hour = '2-digit';
+          options.minute = '2-digit';
+        }
+        
+        return new Date(date).toLocaleDateString('fa-IR', options);
+      }
+    });
+  } catch (error) {
+    console.error(`❌ خطا در نمایش جزئیات تراکنش ${req.params.id}:`, error);
+    req.flash('error', 'خطایی در بارگیری اطلاعات تراکنش رخ داده است');
+    res.redirect('/admin/economy/transactions');
   }
-  
-  return stats;
+}
+
+/**
+ * خروجی اکسل تراکنش‌ها
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ */
+export async function exportTransactions(req, res) {
+  try {
+    const query = req.query.q || '';
+    const type = req.query.type || '';
+    const startDate = req.query.startDate || '';
+    const endDate = req.query.endDate || '';
+    
+    console.log(`📋 خروجی اکسل تراکنش‌ها - جستجو: "${query}", نوع: "${type}"`);
+    
+    // تبدیل تاریخ‌ها به شی Date
+    const dateFilter = {};
+    if (startDate) {
+      dateFilter.start = new Date(startDate);
+    }
+    if (endDate) {
+      const endDateObj = new Date(endDate);
+      endDateObj.setDate(endDateObj.getDate() + 1); // شامل روز انتخاب شده
+      dateFilter.end = endDateObj;
+    }
+    
+    // فیلترها
+    const filters = {};
+    
+    if (type) {
+      filters.type = type;
+    }
+    
+    if (Object.keys(dateFilter).length > 0) {
+      filters.date = dateFilter;
+    }
+    
+    // دریافت تمام تراکنش‌ها بدون صفحه‌بندی
+    const transactions = await economyService.getAllTransactions({
+      query,
+      filters
+    });
+    
+    // تنظیم هدرهای پاسخ برای دانلود فایل
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=transactions.csv');
+    
+    // عناوین ستون‌ها
+    res.write('شناسه,کاربر,شناسه دیسکورد,نوع,مبلغ,توضیحات,تاریخ\n');
+    
+    // تبدیل نوع تراکنش به فارسی
+    const getTransactionTypeInPersian = (type) => {
+      const types = {
+        'transfer': 'انتقال',
+        'purchase': 'خرید',
+        'sale': 'فروش',
+        'game_reward': 'پاداش بازی',
+        'game_loss': 'باخت بازی',
+        'admin_add': 'افزایش توسط ادمین',
+        'admin_remove': 'کاهش توسط ادمین',
+        'interest': 'سود بانکی',
+        'gift': 'هدیه',
+        'other': 'سایر'
+      };
+      
+      return types[type] || 'نامشخص';
+    };
+    
+    // داده‌های تراکنش‌ها
+    transactions.forEach(transaction => {
+      const createdAt = new Date(transaction.createdAt).toLocaleDateString('fa-IR');
+      const type = getTransactionTypeInPersian(transaction.type);
+      const amount = transaction.amount.toString();
+      const reason = transaction.reason || '';
+      
+      res.write(`${transaction._id},${transaction.username || 'نامشخص'},${transaction.discordId || 'نامشخص'},${type},${amount},"${reason}",${createdAt}\n`);
+    });
+    
+    res.end();
+  } catch (error) {
+    console.error('❌ خطا در خروجی اکسل تراکنش‌ها:', error);
+    req.flash('error', 'خطایی در تهیه خروجی اکسل تراکنش‌ها رخ داده است');
+    res.redirect('/admin/economy/transactions');
+  }
+}
+
+/**
+ * نمایش لیست سهام
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ */
+export async function listStocks(req, res) {
+  try {
+    console.log('📈 دریافت لیست سهام');
+    
+    // دریافت سهام
+    const stocksResult = await economyService.getStocks();
+    const stocks = stocksResult.stocks || [];
+    
+    // دریافت آمار معاملات
+    const tradeStats = {
+      dailyVolume: 0,
+      dailyTrades: 0,
+      activeTraders: 0
+    };
+    
+    try {
+      const statsResult = await economyService.getStockTradeStats();
+      Object.assign(tradeStats, statsResult);
+    } catch (error) {
+      console.error('⚠️ خطا در دریافت آمار معاملات سهام:', error);
+    }
+    
+    // تعیین وضعیت کلی بازار
+    let marketStatus = 'neutral';
+    let marketTrend = 0;
+    
+    if (stocks.length > 0) {
+      // محاسبه میانگین تغییرات قیمت
+      const totalChange = stocks.reduce((sum, stock) => sum + (stock.change || 0), 0);
+      marketTrend = Math.round((totalChange / stocks.length) * 100) / 100;
+      
+      if (marketTrend > 1) {
+        marketStatus = 'up';
+      } else if (marketTrend < -1) {
+        marketStatus = 'down';
+      }
+    }
+    
+    res.render('economy/stocks/index', {
+      title: 'مدیریت بازار سهام',
+      stocks,
+      tradeStats,
+      marketStatus,
+      marketTrend,
+      formatCurrency: (amount) => {
+        if (typeof amount !== 'number') {
+          amount = parseInt(amount || 0);
+        }
+        return amount.toLocaleString('fa-IR');
+      }
+    });
+  } catch (error) {
+    console.error('❌ خطا در نمایش لیست سهام:', error);
+    req.flash('error', 'خطایی در بارگیری لیست سهام رخ داده است');
+    res.redirect('/admin/economy');
+  }
+}
+
+/**
+ * نمایش فرم ایجاد سهام جدید
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ */
+export async function createStockForm(req, res) {
+  try {
+    console.log('📈 نمایش فرم ایجاد سهام جدید');
+    
+    res.render('economy/stocks/create', {
+      title: 'ایجاد سهام جدید',
+      stock: {
+        name: '',
+        symbol: '',
+        description: '',
+        price: 100,
+        minPrice: 10,
+        maxPrice: 1000,
+        volatility: 5,
+        active: true
+      }
+    });
+  } catch (error) {
+    console.error('❌ خطا در نمایش فرم ایجاد سهام:', error);
+    req.flash('error', 'خطایی در بارگیری فرم ایجاد سهام رخ داده است');
+    res.redirect('/admin/economy/stocks');
+  }
+}
+
+/**
+ * ذخیره سهام جدید
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ */
+export async function saveNewStock(req, res) {
+  try {
+    const stockData = req.body;
+    console.log('📈 ذخیره سهام جدید:', stockData.name);
+    
+    // تبدیل مقادیر عددی
+    stockData.price = parseFloat(stockData.price);
+    stockData.minPrice = parseFloat(stockData.minPrice);
+    stockData.maxPrice = parseFloat(stockData.maxPrice);
+    stockData.volatility = parseFloat(stockData.volatility);
+    
+    // تبدیل وضعیت فعال بودن
+    stockData.active = stockData.active === 'on' || stockData.active === true;
+    
+    // اضافه کردن داده‌های پیش‌فرض
+    stockData.volume = 0;
+    stockData.change = 0;
+    stockData.createdAt = new Date();
+    stockData.updatedAt = new Date();
+    
+    const result = await economyService.createStock(stockData);
+    
+    if (result.success) {
+      req.flash('success', 'سهام جدید با موفقیت ایجاد شد');
+      return res.redirect('/admin/economy/stocks');
+    } else {
+      req.flash('error', result.message || 'خطایی در ایجاد سهام رخ داده است');
+      return res.redirect('/admin/economy/stocks/create');
+    }
+  } catch (error) {
+    console.error('❌ خطا در ذخیره سهام جدید:', error);
+    req.flash('error', 'خطایی در ایجاد سهام رخ داده است');
+    res.redirect('/admin/economy/stocks/create');
+  }
+}
+
+/**
+ * نمایش جزئیات سهام
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ */
+export async function viewStock(req, res) {
+  try {
+    const stockId = req.params.id;
+    console.log(`📈 نمایش جزئیات سهام: ${stockId}`);
+    
+    const stock = await economyService.getStockById(stockId);
+    if (!stock) {
+      req.flash('error', 'سهام مورد نظر یافت نشد');
+      return res.redirect('/admin/economy/stocks');
+    }
+    
+    // دریافت تاریخچه قیمت
+    const priceHistory = await economyService.getStockPriceHistory(stockId);
+    
+    // دریافت معاملات اخیر
+    const recentTrades = await economyService.getStockRecentTrades(stockId, 10);
+    
+    // دریافت لیست سهامداران برتر
+    const topHolders = await economyService.getStockTopHolders(stockId, 10);
+    
+    res.render('economy/stocks/view', {
+      title: `سهام ${stock.name}`,
+      stock,
+      priceHistory: priceHistory || [],
+      recentTrades: recentTrades || [],
+      topHolders: topHolders || [],
+      formatCurrency: (amount) => {
+        if (typeof amount !== 'number') {
+          amount = parseInt(amount || 0);
+        }
+        return amount.toLocaleString('fa-IR');
+      },
+      formatDate: (date, includeTime = false) => {
+        if (!date) return '-';
+        const options = {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        };
+        
+        if (includeTime) {
+          options.hour = '2-digit';
+          options.minute = '2-digit';
+        }
+        
+        return new Date(date).toLocaleDateString('fa-IR', options);
+      }
+    });
+  } catch (error) {
+    console.error(`❌ خطا در نمایش جزئیات سهام ${req.params.id}:`, error);
+    req.flash('error', 'خطایی در بارگیری اطلاعات سهام رخ داده است');
+    res.redirect('/admin/economy/stocks');
+  }
+}
+
+/**
+ * نمایش فرم ویرایش سهام
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ */
+export async function editStockForm(req, res) {
+  try {
+    const stockId = req.params.id;
+    console.log(`📈 نمایش فرم ویرایش سهام: ${stockId}`);
+    
+    const stock = await economyService.getStockById(stockId);
+    if (!stock) {
+      req.flash('error', 'سهام مورد نظر یافت نشد');
+      return res.redirect('/admin/economy/stocks');
+    }
+    
+    res.render('economy/stocks/edit', {
+      title: `ویرایش سهام ${stock.name}`,
+      stock
+    });
+  } catch (error) {
+    console.error(`❌ خطا در نمایش فرم ویرایش سهام ${req.params.id}:`, error);
+    req.flash('error', 'خطایی در بارگیری اطلاعات سهام رخ داده است');
+    res.redirect('/admin/economy/stocks');
+  }
+}
+
+/**
+ * به‌روزرسانی سهام
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ */
+export async function updateStock(req, res) {
+  try {
+    const stockId = req.params.id;
+    const updateData = req.body;
+    
+    console.log(`📈 به‌روزرسانی سهام: ${stockId}`);
+    
+    // تبدیل مقادیر عددی
+    updateData.price = parseFloat(updateData.price);
+    updateData.minPrice = parseFloat(updateData.minPrice);
+    updateData.maxPrice = parseFloat(updateData.maxPrice);
+    updateData.volatility = parseFloat(updateData.volatility);
+    
+    // تبدیل وضعیت فعال بودن
+    updateData.active = updateData.active === 'on' || updateData.active === true;
+    
+    // به‌روزرسانی زمان
+    updateData.updatedAt = new Date();
+    
+    const result = await economyService.updateStock(stockId, updateData);
+    
+    if (result.success) {
+      req.flash('success', 'سهام با موفقیت به‌روزرسانی شد');
+    } else {
+      req.flash('error', result.message || 'خطایی در به‌روزرسانی سهام رخ داده است');
+    }
+    
+    res.redirect(`/admin/economy/stocks/${stockId}/edit`);
+  } catch (error) {
+    console.error(`❌ خطا در به‌روزرسانی سهام ${req.params.id}:`, error);
+    req.flash('error', 'خطایی در به‌روزرسانی سهام رخ داده است');
+    res.redirect(`/admin/economy/stocks/${req.params.id}/edit`);
+  }
+}
+
+/**
+ * فعال/غیرفعال کردن سهام
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ */
+export async function toggleStockStatus(req, res) {
+  try {
+    const stockId = req.params.id;
+    const activate = req.path.endsWith('/activate');
+    
+    console.log(`📈 ${activate ? 'فعال' : 'غیرفعال'} کردن سهام: ${stockId}`);
+    
+    const result = await economyService.updateStock(stockId, {
+      active: activate,
+      updatedAt: new Date()
+    });
+    
+    if (result.success) {
+      req.flash('success', `سهام با موفقیت ${activate ? 'فعال' : 'غیرفعال'} شد`);
+    } else {
+      req.flash('error', result.message || `خطایی در ${activate ? 'فعال' : 'غیرفعال'} کردن سهام رخ داده است`);
+    }
+    
+    res.redirect('/admin/economy/stocks');
+  } catch (error) {
+    console.error(`❌ خطا در تغییر وضعیت سهام ${req.params.id}:`, error);
+    req.flash('error', 'خطایی در تغییر وضعیت سهام رخ داده است');
+    res.redirect('/admin/economy/stocks');
+  }
+}
+
+/**
+ * نمایش معاملات یک سهام
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ */
+export async function stockTrades(req, res) {
+  try {
+    const stockId = req.params.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    
+    console.log(`📈 نمایش معاملات سهام: ${stockId}, صفحه ${page}, تعداد ${limit}`);
+    
+    const stock = await economyService.getStockById(stockId);
+    if (!stock) {
+      req.flash('error', 'سهام مورد نظر یافت نشد');
+      return res.redirect('/admin/economy/stocks');
+    }
+    
+    const result = await economyService.getStockTradesPaginated(stockId, page, limit);
+    
+    res.render('economy/stocks/trades', {
+      title: `معاملات سهام ${stock.name}`,
+      stock,
+      trades: result.trades || [],
+      pagination: {
+        page,
+        limit,
+        totalPages: result.totalPages || 1,
+        totalTrades: result.total || 0
+      },
+      formatCurrency: (amount) => {
+        if (typeof amount !== 'number') {
+          amount = parseInt(amount || 0);
+        }
+        return amount.toLocaleString('fa-IR');
+      },
+      formatDate: (date, includeTime = false) => {
+        if (!date) return '-';
+        const options = {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        };
+        
+        if (includeTime) {
+          options.hour = '2-digit';
+          options.minute = '2-digit';
+        }
+        
+        return new Date(date).toLocaleDateString('fa-IR', options);
+      }
+    });
+  } catch (error) {
+    console.error(`❌ خطا در نمایش معاملات سهام ${req.params.id}:`, error);
+    req.flash('error', 'خطایی در بارگیری معاملات سهام رخ داده است');
+    res.redirect('/admin/economy/stocks');
+  }
+}
+
+/**
+ * نمایش لیست بانک‌ها
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ */
+export async function showBanks(req, res) {
+  try {
+    console.log('🏦 دریافت لیست بانک‌ها');
+    
+    // دریافت بانک‌ها
+    const banks = await economyService.getBanks();
+    
+    // دریافت آمار بانک‌ها
+    let bankStats = {
+      totalBanks: banks.length,
+      totalDeposits: 0,
+      totalDepositors: 0,
+      depositGrowth: 0
+    };
+    
+    try {
+      const statsResult = await economyService.getBankStats();
+      Object.assign(bankStats, statsResult);
+    } catch (error) {
+      console.error('⚠️ خطا در دریافت آمار بانک‌ها:', error);
+    }
+    
+    res.render('economy/banks/index', {
+      title: 'مدیریت بانک‌ها',
+      banks,
+      bankStats,
+      formatCurrency: (amount) => {
+        if (typeof amount !== 'number') {
+          amount = parseInt(amount || 0);
+        }
+        return amount.toLocaleString('fa-IR');
+      }
+    });
+  } catch (error) {
+    console.error('❌ خطای پنل ادمین:', error);
+    req.flash('error', 'خطایی در بارگیری لیست بانک‌ها رخ داده است');
+    res.redirect('/admin/economy');
+  }
+}
+
+/**
+ * نمایش فرم ایجاد بانک جدید
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ */
+export async function createBankForm(req, res) {
+  try {
+    console.log('🏦 نمایش فرم ایجاد بانک جدید');
+    
+    res.render('economy/banks/create', {
+      title: 'ایجاد بانک جدید',
+      bank: {
+        name: '',
+        description: '',
+        interestRate: 2.5,
+        minDeposit: 100,
+        maxDeposit: 100000,
+        active: true
+      }
+    });
+  } catch (error) {
+    console.error('❌ خطا در نمایش فرم ایجاد بانک:', error);
+    req.flash('error', 'خطایی در بارگیری فرم ایجاد بانک رخ داده است');
+    res.redirect('/admin/economy/banks');
+  }
+}
+
+/**
+ * ذخیره بانک جدید
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ */
+export async function saveNewBank(req, res) {
+  try {
+    const bankData = req.body;
+    console.log('🏦 ذخیره بانک جدید:', bankData.name);
+    
+    // تبدیل مقادیر عددی
+    bankData.interestRate = parseFloat(bankData.interestRate);
+    bankData.minDeposit = parseInt(bankData.minDeposit);
+    bankData.maxDeposit = parseInt(bankData.maxDeposit);
+    
+    // تبدیل وضعیت فعال بودن
+    bankData.active = bankData.active === 'on' || bankData.active === true;
+    
+    // اضافه کردن داده‌های پیش‌فرض
+    bankData.createdAt = new Date();
+    bankData.updatedAt = new Date();
+    
+    const result = await economyService.createBank(bankData);
+    
+    if (result.success) {
+      req.flash('success', 'بانک جدید با موفقیت ایجاد شد');
+      return res.redirect('/admin/economy/banks');
+    } else {
+      req.flash('error', result.message || 'خطایی در ایجاد بانک رخ داده است');
+      return res.redirect('/admin/economy/banks/create');
+    }
+  } catch (error) {
+    console.error('❌ خطا در ذخیره بانک جدید:', error);
+    req.flash('error', 'خطایی در ایجاد بانک رخ داده است');
+    res.redirect('/admin/economy/banks/create');
+  }
+}
+
+/**
+ * نمایش جزئیات بانک
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ */
+export async function viewBank(req, res) {
+  try {
+    const bankId = req.params.id;
+    console.log(`🏦 نمایش جزئیات بانک: ${bankId}`);
+    
+    const bank = await economyService.getBankById(bankId);
+    if (!bank) {
+      req.flash('error', 'بانک مورد نظر یافت نشد');
+      return res.redirect('/admin/economy/banks');
+    }
+    
+    // دریافت سپرده‌های اخیر
+    const recentDeposits = await economyService.getBankRecentDeposits(bankId, 10);
+    
+    // دریافت پرداخت‌های سود اخیر
+    const recentInterestPayments = await economyService.getBankRecentInterestPayments(bankId, 10);
+    
+    // دریافت لیست سپرده‌گذاران برتر
+    const topDepositors = await economyService.getBankTopDepositors(bankId, 10);
+    
+    res.render('economy/banks/view', {
+      title: `بانک ${bank.name}`,
+      bank,
+      recentDeposits: recentDeposits || [],
+      recentInterestPayments: recentInterestPayments || [],
+      topDepositors: topDepositors || [],
+      formatCurrency: (amount) => {
+        if (typeof amount !== 'number') {
+          amount = parseInt(amount || 0);
+        }
+        return amount.toLocaleString('fa-IR');
+      },
+      formatDate: (date, includeTime = false) => {
+        if (!date) return '-';
+        const options = {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        };
+        
+        if (includeTime) {
+          options.hour = '2-digit';
+          options.minute = '2-digit';
+        }
+        
+        return new Date(date).toLocaleDateString('fa-IR', options);
+      }
+    });
+  } catch (error) {
+    console.error(`❌ خطا در نمایش جزئیات بانک ${req.params.id}:`, error);
+    req.flash('error', 'خطایی در بارگیری اطلاعات بانک رخ داده است');
+    res.redirect('/admin/economy/banks');
+  }
+}
+
+/**
+ * نمایش فرم ویرایش بانک
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ */
+export async function editBankForm(req, res) {
+  try {
+    const bankId = req.params.id;
+    console.log(`🏦 نمایش فرم ویرایش بانک: ${bankId}`);
+    
+    const bank = await economyService.getBankById(bankId);
+    if (!bank) {
+      req.flash('error', 'بانک مورد نظر یافت نشد');
+      return res.redirect('/admin/economy/banks');
+    }
+    
+    res.render('economy/banks/edit', {
+      title: `ویرایش بانک ${bank.name}`,
+      bank
+    });
+  } catch (error) {
+    console.error(`❌ خطا در نمایش فرم ویرایش بانک ${req.params.id}:`, error);
+    req.flash('error', 'خطایی در بارگیری اطلاعات بانک رخ داده است');
+    res.redirect('/admin/economy/banks');
+  }
+}
+
+/**
+ * به‌روزرسانی بانک
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ */
+export async function updateBank(req, res) {
+  try {
+    const bankId = req.params.id;
+    const updateData = req.body;
+    
+    console.log(`🏦 به‌روزرسانی بانک: ${bankId}`);
+    
+    // تبدیل مقادیر عددی
+    updateData.interestRate = parseFloat(updateData.interestRate);
+    updateData.minDeposit = parseInt(updateData.minDeposit);
+    updateData.maxDeposit = parseInt(updateData.maxDeposit);
+    
+    // تبدیل وضعیت فعال بودن
+    updateData.active = updateData.active === 'on' || updateData.active === true;
+    
+    // به‌روزرسانی زمان
+    updateData.updatedAt = new Date();
+    
+    const result = await economyService.updateBank(bankId, updateData);
+    
+    if (result.success) {
+      req.flash('success', 'بانک با موفقیت به‌روزرسانی شد');
+    } else {
+      req.flash('error', result.message || 'خطایی در به‌روزرسانی بانک رخ داده است');
+    }
+    
+    res.redirect(`/admin/economy/banks/${bankId}/edit`);
+  } catch (error) {
+    console.error(`❌ خطا در به‌روزرسانی بانک ${req.params.id}:`, error);
+    req.flash('error', 'خطایی در به‌روزرسانی بانک رخ داده است');
+    res.redirect(`/admin/economy/banks/${req.params.id}/edit`);
+  }
+}
+
+/**
+ * فعال/غیرفعال کردن بانک
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ */
+export async function toggleBankStatus(req, res) {
+  try {
+    const bankId = req.params.id;
+    const activate = req.path.endsWith('/activate');
+    
+    console.log(`🏦 ${activate ? 'فعال' : 'غیرفعال'} کردن بانک: ${bankId}`);
+    
+    const result = await economyService.updateBank(bankId, {
+      active: activate,
+      updatedAt: new Date()
+    });
+    
+    if (result.success) {
+      req.flash('success', `بانک با موفقیت ${activate ? 'فعال' : 'غیرفعال'} شد`);
+    } else {
+      req.flash('error', result.message || `خطایی در ${activate ? 'فعال' : 'غیرفعال'} کردن بانک رخ داده است`);
+    }
+    
+    res.redirect('/admin/economy/banks');
+  } catch (error) {
+    console.error(`❌ خطا در تغییر وضعیت بانک ${req.params.id}:`, error);
+    req.flash('error', 'خطایی در تغییر وضعیت بانک رخ داده است');
+    res.redirect('/admin/economy/banks');
+  }
+}
+
+/**
+ * نمایش لیست فروشگاه‌ها
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ */
+export async function listShops(req, res) {
+  try {
+    console.log('🛒 دریافت لیست فروشگاه‌ها');
+    
+    // دریافت فروشگاه‌ها
+    const shops = await economyService.getShops();
+    
+    res.render('economy/shops/index', {
+      title: 'مدیریت فروشگاه‌ها',
+      shops
+    });
+  } catch (error) {
+    console.error('❌ خطا در نمایش لیست فروشگاه‌ها:', error);
+    req.flash('error', 'خطایی در بارگیری لیست فروشگاه‌ها رخ داده است');
+    res.redirect('/admin/economy');
+  }
+}
+
+/**
+ * نمایش لیست آیتم‌ها
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ */
+export async function listItems(req, res) {
+  try {
+    console.log('🎁 دریافت لیست آیتم‌ها');
+    
+    // دریافت آیتم‌ها
+    const items = await economyService.getItems();
+    
+    res.render('economy/items/index', {
+      title: 'مدیریت آیتم‌ها',
+      items
+    });
+  } catch (error) {
+    console.error('❌ خطا در نمایش لیست آیتم‌ها:', error);
+    req.flash('error', 'خطایی در بارگیری لیست آیتم‌ها رخ داده است');
+    res.redirect('/admin/economy');
+  }
+}
+
+/**
+ * API برای دریافت آمار آنلاین
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ */
+export async function getRealtimeStats(req, res) {
+  try {
+    console.log('📊 دریافت آمار آنلاین');
+    
+    // دریافت آمار اقتصادی
+    const economyStats = await economyService.getEconomyStats();
+    
+    res.json({
+      totalCoins: economyStats.totalCoins || 0,
+      dailyTransactions: economyStats.dailyTransactions || 0,
+      weeklyTransactions: economyStats.weeklyTransactions || 0,
+      activeUsers: economyStats.activeUsers || 0,
+      inflationRate: economyStats.inflationRate || 0
+    });
+  } catch (error) {
+    console.error('❌ خطا در API آمار آنلاین:', error);
+    res.json({
+      totalCoins: 0,
+      dailyTransactions: 0,
+      weeklyTransactions: 0,
+      activeUsers: 0,
+      inflationRate: 0
+    });
+  }
+}
+
+/**
+ * نمایش صفحه تنظیمات اقتصادی
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ */
+export async function showEconomySettings(req, res) {
+  try {
+    console.log('⚙️ نمایش تنظیمات اقتصادی');
+    
+    // دریافت تنظیمات اقتصادی
+    const settings = await economyService.getEconomySettings();
+    
+    res.render('economy/settings', {
+      title: 'تنظیمات اقتصادی',
+      settings
+    });
+  } catch (error) {
+    console.error('❌ خطا در نمایش تنظیمات اقتصادی:', error);
+    req.flash('error', 'خطایی در بارگیری تنظیمات اقتصادی رخ داده است');
+    res.redirect('/admin/economy');
+  }
+}
+
+/**
+ * ذخیره تنظیمات اقتصادی
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ */
+export async function saveEconomySettings(req, res) {
+  try {
+    const settingsData = req.body;
+    console.log('⚙️ ذخیره تنظیمات اقتصادی');
+    
+    // تبدیل مقادیر عددی
+    settingsData.startingBalance = parseInt(settingsData.startingBalance);
+    settingsData.dailyBonus = parseInt(settingsData.dailyBonus);
+    settingsData.transferFeePercent = parseFloat(settingsData.transferFeePercent);
+    settingsData.minTransferAmount = parseInt(settingsData.minTransferAmount);
+    
+    // تبدیل وضعیت‌های بولین
+    settingsData.transferEnabled = settingsData.transferEnabled === 'on' || settingsData.transferEnabled === true;
+    settingsData.dailyBonusEnabled = settingsData.dailyBonusEnabled === 'on' || settingsData.dailyBonusEnabled === true;
+    settingsData.giftEnabled = settingsData.giftEnabled === 'on' || settingsData.giftEnabled === true;
+    
+    const result = await economyService.updateEconomySettings(settingsData);
+    
+    if (result.success) {
+      req.flash('success', 'تنظیمات اقتصادی با موفقیت به‌روزرسانی شد');
+    } else {
+      req.flash('error', result.message || 'خطایی در به‌روزرسانی تنظیمات اقتصادی رخ داده است');
+    }
+    
+    res.redirect('/admin/economy/settings');
+  } catch (error) {
+    console.error('❌ خطا در ذخیره تنظیمات اقتصادی:', error);
+    req.flash('error', 'خطایی در به‌روزرسانی تنظیمات اقتصادی رخ داده است');
+    res.redirect('/admin/economy/settings');
+  }
 }

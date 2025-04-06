@@ -10,10 +10,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- آیکون‌ها -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <!-- استایل‌ها -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/admin/public/css/fluent.css">
     <link rel="stylesheet" href="/admin/public/css/admin.css">
     
     <!-- اسکریپت‌های اضافی -->
@@ -31,80 +30,80 @@
             </div>
             <ul class="sidebar-menu">
                 <li>
-                    <a href="/admin/dashboard">
-                        <i class="fas fa-tachometer-alt"></i>
+                    <a href="/admin/dashboard" class="<%= (currentPath === '/admin/dashboard') ? 'active' : '' %>">
+                        <span class="icons8-icon icons8-dashboard"></span>
                         داشبورد
                     </a>
                 </li>
                 <li>
-                    <a href="/admin/users">
-                        <i class="fas fa-users"></i>
+                    <a href="/admin/users" class="<%= (currentPath && currentPath.startsWith('/admin/users')) ? 'active' : '' %>">
+                        <span class="icons8-icon icons8-users"></span>
                         مدیریت کاربران
                     </a>
                 </li>
                 <li>
-                    <a href="/admin/economy">
-                        <i class="fas fa-coins"></i>
+                    <a href="/admin/economy" class="<%= (currentPath && currentPath.startsWith('/admin/economy')) ? 'active' : '' %>">
+                        <span class="icons8-icon icons8-coins"></span>
                         سیستم اقتصادی
                     </a>
                 </li>
                 <li>
-                    <a href="/admin/economy/transactions">
-                        <i class="fas fa-exchange-alt"></i>
+                    <a href="/admin/economy/transactions" class="<%= (currentPath === '/admin/economy/transactions') ? 'active' : '' %>">
+                        <span class="icons8-icon icons8-transaction"></span>
                         تراکنش‌ها
                     </a>
                 </li>
                 <li>
-                    <a href="/admin/economy/stocks">
-                        <i class="fas fa-chart-line"></i>
+                    <a href="/admin/economy/stocks" class="<%= (currentPath === '/admin/economy/stocks') ? 'active' : '' %>">
+                        <span class="icons8-icon icons8-stocks"></span>
                         بازار سهام
                     </a>
                 </li>
                 <li>
-                    <a href="/admin/economy/banks">
-                        <i class="fas fa-university"></i>
+                    <a href="/admin/economy/banks" class="<%= (currentPath === '/admin/economy/banks') ? 'active' : '' %>">
+                        <span class="icons8-icon icons8-bank"></span>
                         بانک‌ها
                     </a>
                 </li>
                 <li>
-                    <a href="/admin/economy/shops">
-                        <i class="fas fa-store"></i>
+                    <a href="/admin/economy/shops" class="<%= (currentPath === '/admin/economy/shops') ? 'active' : '' %>">
+                        <span class="icons8-icon icons8-shop"></span>
                         فروشگاه‌ها
                     </a>
                 </li>
                 <li>
-                    <a href="/admin/economy/items">
-                        <i class="fas fa-box"></i>
+                    <a href="/admin/economy/items" class="<%= (currentPath === '/admin/economy/items') ? 'active' : '' %>">
+                        <span class="icons8-icon icons8-items"></span>
                         آیتم‌ها
                     </a>
                 </li>
                 <li>
-                    <a href="/admin/games">
-                        <i class="fas fa-gamepad"></i>
+                    <a href="/admin/games" class="<%= (currentPath && currentPath.startsWith('/admin/games')) ? 'active' : '' %>">
+                        <span class="icons8-icon icons8-games"></span>
                         مدیریت بازی‌ها
                     </a>
                 </li>
                 <li>
-                    <a href="/admin/events">
-                        <i class="fas fa-calendar-alt"></i>
+                    <a href="/admin/events" class="<%= (currentPath && currentPath.startsWith('/admin/events')) ? 'active' : '' %>">
+                        <span class="icons8-icon icons8-events"></span>
                         رویدادها
                     </a>
                 </li>
                 <li>
-                    <a href="/admin/ai">
-                        <i class="fas fa-robot"></i>
+                    <a href="/admin/ai" class="<%= (currentPath && currentPath.startsWith('/admin/ai')) ? 'active' : '' %>">
+                        <span class="icons8-icon icons8-ai"></span>
                         تنظیمات هوش مصنوعی
                     </a>
                 </li>
                 <li>
-                    <a href="/admin/settings">
-                        <i class="fas fa-cog"></i>
+                    <a href="/admin/settings" class="<%= (currentPath === '/admin/settings') ? 'active' : '' %>">
+                        <span class="icons8-icon icons8-settings"></span>
                         تنظیمات
                     </a>
                 </li>
                 <li>
                     <a href="/admin/logout">
-                        <i class="fas fa-sign-out-alt"></i>
+                        <span class="icons8-icon icons8-logout"></span>
                         خروج
                     </a>
                 </li>
@@ -115,22 +114,22 @@
         <header class="header">
             <div class="header-left">
                 <button class="toggle-sidebar">
-                    <i class="fas fa-bars"></i>
+                    <span class="icons8-icon icons8-menu"></span>
                 </button>
                 <h2 class="page-title"><%= title %></h2>
             </div>
             <div class="header-right">
                 <div class="user-dropdown">
-                    <span><i class="fas fa-user-circle"></i> <%= user.username %></span>
+                    <span><span class="icons8-icon icons8-profile"></span> <%= user.username %></span>
                     <div class="dropdown-menu">
                         <a href="/admin/profile" class="dropdown-item">
-                            <i class="fas fa-user"></i> پروفایل
+                            <span class="icons8-icon icons8-user"></span> پروفایل
                         </a>
                         <a href="/admin/settings" class="dropdown-item">
-                            <i class="fas fa-cog"></i> تنظیمات
+                            <span class="icons8-icon icons8-settings"></span> تنظیمات
                         </a>
                         <a href="/admin/logout" class="dropdown-item">
-                            <i class="fas fa-sign-out-alt"></i> خروج
+                            <span class="icons8-icon icons8-logout"></span> خروج
                         </a>
                     </div>
                 </div>
@@ -143,28 +142,28 @@
             <% if (typeof messages !== 'undefined') { %>
                 <% if (messages.success && messages.success.length > 0) { %>
                     <div class="alert alert-success">
-                        <i class="fas fa-check-circle"></i>
+                        <span class="icons8-icon icons8-success"></span>
                         <%= messages.success %>
                     </div>
                 <% } %>
                 
                 <% if (messages.error && messages.error.length > 0) { %>
                     <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-circle"></i>
+                        <span class="icons8-icon icons8-error"></span>
                         <%= messages.error %>
                     </div>
                 <% } %>
                 
                 <% if (messages.info && messages.info.length > 0) { %>
                     <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i>
+                        <span class="icons8-icon icons8-info"></span>
                         <%= messages.info %>
                     </div>
                 <% } %>
                 
                 <% if (messages.warning && messages.warning.length > 0) { %>
                     <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle"></i>
+                        <span class="icons8-icon icons8-warning"></span>
                         <%= messages.warning %>
                     </div>
                 <% } %>
@@ -182,3 +181,14 @@
     <% } %>
 </body>
 </html>
+
+<!-- کتابخانه Feather Icons -->
+<script src="https://unpkg.com/feather-icons"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // فعال‌سازی آیکون‌ها
+    if (typeof feather !== 'undefined') {
+      feather.replace();
+    }
+  });
+</script>

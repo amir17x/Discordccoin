@@ -1,66 +1,77 @@
 /**
- * کنترلر مدیریت کاربران پنل ادمین
+ * کنترلر مدیریت کاربران
  */
 
-import {
-  getAllUsers,
-  getUserById,
-  updateUser,
-  banUser as banUserService,
-  unbanUser as unbanUserService,
-  addUserCoins,
-  removeUserCoins,
-  addUserItem,
-  resetUserData,
-  exportUsersToCsv
-} from '../services/userService.js';
+import * as userService from '../services/userService.js';
+import * as economyService from '../services/economyService.js';
 
 /**
  * نمایش لیست کاربران
  * @param {Object} req درخواست
  * @param {Object} res پاسخ
  */
-export async function showUsersList(req, res) {
+export async function listUsers(req, res) {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const search = req.query.search || '';
-    const sortBy = req.query.sortBy || 'createdAt';
-    const sortOrder = req.query.sortOrder || 'desc';
+    const limit = parseInt(req.query.limit) || 10;
+    const query = req.query.q || '';
+    const status = req.query.status || '';
+    const sort = req.query.sort || 'createdAt_desc';
     
-    // فیلترها
-    const filter = {};
-    if (req.query.isActive === 'true') filter.isActive = true;
-    if (req.query.isActive === 'false') filter.isActive = false;
-    if (req.query.isBanned === 'true') filter.isBanned = true;
-    if (req.query.isBanned === 'false') filter.isBanned = false;
-    if (req.query.minCoins) filter.minCoins = parseInt(req.query.minCoins);
-    if (req.query.maxCoins) filter.maxCoins = parseInt(req.query.maxCoins);
-    if (req.query.minLevel) filter.minLevel = parseInt(req.query.minLevel);
-    if (req.query.maxLevel) filter.maxLevel = parseInt(req.query.maxLevel);
+    console.log(`🔍 دریافت لیست کاربران: صفحه ${page}، تعداد ${limit}، جستجو: "${query}", وضعیت: "${status}", مرتب‌سازی: "${sort}"`);
     
-    const result = await getAllUsers({
+    // تبدیل پارامتر مرتب‌سازی به فرمت مناسب برای سرویس
+    const [sortField, sortDirection] = sort.split('_');
+    const sortOptions = {
+      field: sortField,
+      direction: sortDirection === 'asc' ? 1 : -1
+    };
+    
+    // وضعیت‌های فیلتر
+    const filterOptions = {};
+    if (status === 'active') {
+      filterOptions.banned = false;
+      filterOptions.inactive = false;
+    } else if (status === 'banned') {
+      filterOptions.banned = true;
+    } else if (status === 'inactive') {
+      filterOptions.inactive = true;
+    }
+    
+    const result = await userService.getUsers({
       page,
       limit,
-      search,
-      sortBy,
-      sortOrder,
-      filter
+      query,
+      filters: filterOptions,
+      sort: sortOptions
     });
     
     res.render('users/index', {
       title: 'مدیریت کاربران',
-      users: result.users,
-      pagination: result.pagination,
-      search,
-      sortBy,
-      sortOrder,
-      filter: req.query
+      users: result.users || [],
+      query,
+      status,
+      sort,
+      pagination: {
+        page,
+        limit,
+        totalPages: result.totalPages || 1,
+        totalUsers: result.total || 0
+      }
     });
   } catch (error) {
-    console.error('خطا در نمایش لیست کاربران:', error);
-    req.flash('error_msg', 'خطا در بارگذاری لیست کاربران');
-    res.redirect('/admin/dashboard');
+    console.error('❌ خطا در نمایش لیست کاربران:', error);
+    req.flash('error', 'خطایی در بارگیری لیست کاربران رخ داده است');
+    res.render('users/index', {
+      title: 'مدیریت کاربران',
+      users: [],
+      pagination: {
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+        totalUsers: 0
+      }
+    });
   }
 }
 
@@ -69,24 +80,32 @@ export async function showUsersList(req, res) {
  * @param {Object} req درخواست
  * @param {Object} res پاسخ
  */
-export async function showUserDetails(req, res) {
+export async function viewUser(req, res) {
   try {
     const userId = req.params.id;
+    console.log(`🔍 نمایش جزئیات کاربر: ${userId}`);
     
-    const user = await getUserById(userId);
-    
+    const user = await userService.getUserById(userId);
     if (!user) {
-      req.flash('error_msg', 'کاربر مورد نظر یافت نشد');
+      req.flash('error', 'کاربر مورد نظر یافت نشد');
       return res.redirect('/admin/users');
     }
     
+    // دریافت تاریخچه تراکنش‌ها
+    const transactions = await economyService.getUserTransactions(userId, 10);
+    
+    // دریافت آمار فعالیت کاربر
+    const userStats = await userService.getUserStats(userId);
+    
     res.render('users/view', {
-      title: `جزئیات کاربر: ${user.username}`,
-      user
+      title: `پروفایل ${user.name}`,
+      user,
+      transactions: transactions || [],
+      stats: userStats || {}
     });
   } catch (error) {
-    console.error('خطا در نمایش جزئیات کاربر:', error);
-    req.flash('error_msg', 'خطا در بارگذاری اطلاعات کاربر');
+    console.error('❌ خطا در نمایش جزئیات کاربر:', error);
+    req.flash('error', 'خطایی در بارگیری اطلاعات کاربر رخ داده است');
     res.redirect('/admin/users');
   }
 }
@@ -96,227 +115,103 @@ export async function showUserDetails(req, res) {
  * @param {Object} req درخواست
  * @param {Object} res پاسخ
  */
-export async function showUserEdit(req, res) {
+export async function editUserForm(req, res) {
   try {
     const userId = req.params.id;
+    console.log(`🔍 نمایش فرم ویرایش کاربر: ${userId}`);
     
-    const user = await getUserById(userId);
-    
+    const user = await userService.getUserById(userId);
     if (!user) {
-      req.flash('error_msg', 'کاربر مورد نظر یافت نشد');
+      req.flash('error', 'کاربر مورد نظر یافت نشد');
       return res.redirect('/admin/users');
     }
     
     res.render('users/edit', {
-      title: `ویرایش کاربر: ${user.username}`,
+      title: `ویرایش ${user.name}`,
       user
     });
   } catch (error) {
-    console.error('خطا در نمایش فرم ویرایش کاربر:', error);
-    req.flash('error_msg', 'خطا در بارگذاری اطلاعات کاربر');
+    console.error('❌ خطا در نمایش فرم ویرایش کاربر:', error);
+    req.flash('error', 'خطایی در بارگیری اطلاعات کاربر رخ داده است');
     res.redirect('/admin/users');
   }
 }
 
 /**
- * پردازش فرم ویرایش کاربر
+ * ذخیره تغییرات کاربر
  * @param {Object} req درخواست
  * @param {Object} res پاسخ
  */
-export async function processUserEdit(req, res) {
+export async function updateUser(req, res) {
   try {
     const userId = req.params.id;
-    const { displayName, isActive } = req.body;
+    const updateData = req.body;
     
-    const updatedUser = await updateUser(userId, {
-      displayName,
-      isActive: isActive === 'true'
+    console.log(`✏️ ویرایش کاربر: ${userId}`);
+    
+    const result = await userService.updateUser(userId, updateData);
+    if (result.success) {
+      req.flash('success', 'اطلاعات کاربر با موفقیت به‌روزرسانی شد');
+    } else {
+      req.flash('error', result.message || 'خطایی در به‌روزرسانی اطلاعات کاربر رخ داده است');
+    }
+    
+    res.redirect(`/admin/users/${userId}/edit`);
+  } catch (error) {
+    console.error('❌ خطا در ویرایش کاربر:', error);
+    req.flash('error', 'خطایی در به‌روزرسانی اطلاعات کاربر رخ داده است');
+    res.redirect(`/admin/users/${req.params.id}/edit`);
+  }
+}
+
+/**
+ * نمایش فرم تایید حذف کاربر
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ */
+export async function deleteUserConfirmation(req, res) {
+  try {
+    const userId = req.params.id;
+    console.log(`🔍 نمایش فرم تایید حذف کاربر: ${userId}`);
+    
+    const user = await userService.getUserById(userId);
+    if (!user) {
+      req.flash('error', 'کاربر مورد نظر یافت نشد');
+      return res.redirect('/admin/users');
+    }
+    
+    res.render('users/delete', {
+      title: `حذف ${user.name}`,
+      user
     });
-    
-    if (!updatedUser) {
-      req.flash('error_msg', 'کاربر مورد نظر یافت نشد یا بروزرسانی با خطا مواجه شد');
-      return res.redirect('/admin/users');
-    }
-    
-    req.flash('success_msg', 'اطلاعات کاربر با موفقیت بروزرسانی شد');
-    res.redirect(`/admin/users/view/${userId}`);
   } catch (error) {
-    console.error('خطا در پردازش فرم ویرایش کاربر:', error);
-    req.flash('error_msg', 'خطا در بروزرسانی اطلاعات کاربر');
+    console.error('❌ خطا در نمایش فرم تایید حذف کاربر:', error);
+    req.flash('error', 'خطایی در بارگیری اطلاعات کاربر رخ داده است');
     res.redirect('/admin/users');
   }
 }
 
 /**
- * افزودن سکه به کاربر
+ * حذف کاربر
  * @param {Object} req درخواست
  * @param {Object} res پاسخ
  */
-export async function addCoins(req, res) {
+export async function deleteUser(req, res) {
   try {
-    // اگر از صفحه جزئیات کاربر آمده باشد، از پارامتر id استفاده می‌کنیم
-    // در غیر این صورت از فیلد userId در بدنه درخواست استفاده می‌کنیم (فرم مودال)
-    const userId = req.params.id || req.body.userId;
-    const { amount, description, reason } = req.body;
+    const userId = req.params.id;
+    console.log(`❌ حذف کاربر: ${userId}`);
     
-    if (!userId) {
-      req.flash('error_msg', 'شناسه کاربر الزامی است');
-      return res.redirect('/admin/users');
-    }
-    
-    if (!amount || isNaN(amount) || parseInt(amount) <= 0) {
-      req.flash('error_msg', 'مقدار سکه باید عددی بزرگتر از صفر باشد');
-      
-      // اگر از صفحه جزئیات آمده، به همان صفحه برگردیم
-      if (req.params.id) {
-        return res.redirect(`/admin/users/view/${req.params.id}`);
-      }
-      
-      return res.redirect('/admin/users');
-    }
-    
-    // ترکیب دلیل و توضیحات
-    const finalDescription = reason ? 
-      (description ? `${reason}: ${description}` : reason) : 
-      (description || 'افزودن سکه توسط ادمین');
-    
-    const result = await addUserCoins(userId, parseInt(amount), finalDescription);
-    
-    req.flash('success_msg', `${amount} سکه با موفقیت به کاربر اضافه شد`);
-    
-    // اگر از صفحه جزئیات آمده، به همان صفحه برگردیم
-    if (req.params.id) {
-      return res.redirect(`/admin/users/view/${req.params.id}`);
+    const result = await userService.deleteUser(userId);
+    if (result.success) {
+      req.flash('success', 'کاربر با موفقیت حذف شد');
+    } else {
+      req.flash('error', result.message || 'خطایی در حذف کاربر رخ داده است');
     }
     
     res.redirect('/admin/users');
   } catch (error) {
-    console.error('خطا در افزودن سکه به کاربر:', error);
-    req.flash('error_msg', `خطا در افزودن سکه: ${error.message}`);
-    
-    // اگر از صفحه جزئیات آمده، به همان صفحه برگردیم
-    if (req.params.id) {
-      return res.redirect(`/admin/users/view/${req.params.id}`);
-    }
-    
-    res.redirect('/admin/users');
-  }
-}
-
-/**
- * کم کردن سکه از کاربر
- * @param {Object} req درخواست
- * @param {Object} res پاسخ
- */
-export async function removeCoins(req, res) {
-  try {
-    // اگر از صفحه جزئیات کاربر آمده باشد، از پارامتر id استفاده می‌کنیم
-    // در غیر این صورت از فیلد userId در بدنه درخواست استفاده می‌کنیم (فرم مودال)
-    const userId = req.params.id || req.body.userId;
-    const { amount, description, reason } = req.body;
-    
-    if (!userId) {
-      req.flash('error_msg', 'شناسه کاربر الزامی است');
-      return res.redirect('/admin/users');
-    }
-    
-    if (!amount || isNaN(amount) || parseInt(amount) <= 0) {
-      req.flash('error_msg', 'مقدار سکه باید عددی بزرگتر از صفر باشد');
-      
-      // اگر از صفحه جزئیات آمده، به همان صفحه برگردیم
-      if (req.params.id) {
-        return res.redirect(`/admin/users/view/${req.params.id}`);
-      }
-      
-      return res.redirect('/admin/users');
-    }
-    
-    // ترکیب دلیل و توضیحات
-    const finalDescription = reason ? 
-      (description ? `${reason}: ${description}` : reason) : 
-      (description || 'کم کردن سکه توسط ادمین');
-    
-    const result = await removeUserCoins(userId, parseInt(amount), finalDescription);
-    
-    req.flash('success_msg', `${amount} سکه با موفقیت از کاربر کم شد`);
-    
-    // اگر از صفحه جزئیات آمده، به همان صفحه برگردیم
-    if (req.params.id) {
-      return res.redirect(`/admin/users/view/${req.params.id}`);
-    }
-    
-    res.redirect('/admin/users');
-  } catch (error) {
-    console.error('خطا در کم کردن سکه از کاربر:', error);
-    req.flash('error_msg', `خطا در کم کردن سکه: ${error.message}`);
-    
-    // اگر از صفحه جزئیات آمده، به همان صفحه برگردیم
-    if (req.params.id) {
-      return res.redirect(`/admin/users/view/${req.params.id}`);
-    }
-    
-    res.redirect('/admin/users');
-  }
-}
-
-/**
- * افزودن آیتم به کاربر
- * @param {Object} req درخواست
- * @param {Object} res پاسخ
- */
-export async function addItem(req, res) {
-  try {
-    // اگر از صفحه جزئیات کاربر آمده باشد، از پارامتر id استفاده می‌کنیم
-    // در غیر این صورت از فیلد userId در بدنه درخواست استفاده می‌کنیم (فرم مودال)
-    const userId = req.params.id || req.body.userId;
-    const { itemId, quantity, reason, description } = req.body;
-    
-    if (!userId) {
-      req.flash('error_msg', 'شناسه کاربر الزامی است');
-      return res.redirect('/admin/users');
-    }
-    
-    if (!itemId) {
-      req.flash('error_msg', 'انتخاب آیتم الزامی است');
-      
-      // اگر از صفحه جزئیات آمده، به همان صفحه برگردیم
-      if (req.params.id) {
-        return res.redirect(`/admin/users/view/${req.params.id}`);
-      }
-      
-      return res.redirect('/admin/users');
-    }
-    
-    if (!quantity || isNaN(quantity) || parseInt(quantity) <= 0) {
-      req.flash('error_msg', 'تعداد آیتم باید عددی بزرگتر از صفر باشد');
-      
-      // اگر از صفحه جزئیات آمده، به همان صفحه برگردیم
-      if (req.params.id) {
-        return res.redirect(`/admin/users/view/${req.params.id}`);
-      }
-      
-      return res.redirect('/admin/users');
-    }
-    
-    const result = await addUserItem(userId, itemId, parseInt(quantity));
-    
-    req.flash('success_msg', result.message);
-    
-    // اگر از صفحه جزئیات آمده، به همان صفحه برگردیم
-    if (req.params.id) {
-      return res.redirect(`/admin/users/view/${req.params.id}`);
-    }
-    
-    res.redirect('/admin/users');
-  } catch (error) {
-    console.error('خطا در افزودن آیتم به کاربر:', error);
-    req.flash('error_msg', `خطا در افزودن آیتم: ${error.message}`);
-    
-    // اگر از صفحه جزئیات آمده، به همان صفحه برگردیم
-    if (req.params.id) {
-      return res.redirect(`/admin/users/view/${req.params.id}`);
-    }
-    
+    console.error('❌ خطا در حذف کاربر:', error);
+    req.flash('error', 'خطایی در حذف کاربر رخ داده است');
     res.redirect('/admin/users');
   }
 }
@@ -329,16 +224,21 @@ export async function addItem(req, res) {
 export async function banUser(req, res) {
   try {
     const userId = req.params.id;
-    const { reason } = req.body;
+    console.log(`🚫 مسدود کردن کاربر: ${userId}`);
     
-    const result = await banUserService(userId, reason);
+    const result = await userService.banUser(userId);
+    if (result.success) {
+      req.flash('success', 'کاربر با موفقیت مسدود شد');
+    } else {
+      req.flash('error', result.message || 'خطایی در مسدود کردن کاربر رخ داده است');
+    }
     
-    req.flash('success_msg', 'کاربر با موفقیت مسدود شد');
-    res.redirect(`/admin/users/view/${userId}`);
+    // بازگشت به صفحه قبل یا لیست کاربران
+    res.redirect(req.query.returnTo || '/admin/users');
   } catch (error) {
-    console.error('خطا در مسدود کردن کاربر:', error);
-    req.flash('error_msg', `خطا در مسدود کردن کاربر: ${error.message}`);
-    res.redirect(`/admin/users/view/${req.params.id}`);
+    console.error('❌ خطا در مسدود کردن کاربر:', error);
+    req.flash('error', 'خطایی در مسدود کردن کاربر رخ داده است');
+    res.redirect('/admin/users');
   }
 }
 
@@ -350,231 +250,185 @@ export async function banUser(req, res) {
 export async function unbanUser(req, res) {
   try {
     const userId = req.params.id;
+    console.log(`✅ رفع مسدودیت کاربر: ${userId}`);
     
-    const result = await unbanUserService(userId);
+    const result = await userService.unbanUser(userId);
+    if (result.success) {
+      req.flash('success', 'مسدودیت کاربر با موفقیت برداشته شد');
+    } else {
+      req.flash('error', result.message || 'خطایی در رفع مسدودیت کاربر رخ داده است');
+    }
     
-    req.flash('success_msg', 'مسدودیت کاربر با موفقیت رفع شد');
-    res.redirect(`/admin/users/view/${userId}`);
+    // بازگشت به صفحه قبل یا لیست کاربران
+    res.redirect(req.query.returnTo || '/admin/users');
   } catch (error) {
-    console.error('خطا در رفع مسدودیت کاربر:', error);
-    req.flash('error_msg', `خطا در رفع مسدودیت کاربر: ${error.message}`);
-    res.redirect(`/admin/users/view/${req.params.id}`);
+    console.error('❌ خطا در رفع مسدودیت کاربر:', error);
+    req.flash('error', 'خطایی در رفع مسدودیت کاربر رخ داده است');
+    res.redirect('/admin/users');
   }
 }
 
 /**
- * ریست کردن اطلاعات کاربر
+ * افزودن سکه به کاربر
  * @param {Object} req درخواست
  * @param {Object} res پاسخ
  */
-export async function resetUser(req, res) {
+export async function addCoinsToUser(req, res) {
   try {
-    const userId = req.params.id;
-    const {
-      resetCoins,
-      resetCrystals,
-      resetItems,
-      resetLevel,
-      resetBank
-    } = req.body;
+    const { discordId, amount, reason } = req.body;
     
-    // تبدیل مقادیر به بولین
-    const options = {
-      resetCoins: resetCoins === 'on',
-      resetCrystals: resetCrystals === 'on',
-      resetItems: resetItems === 'on',
-      resetLevel: resetLevel === 'on',
-      resetBank: resetBank === 'on'
-    };
+    console.log(`💰 افزودن ${amount} سکه به کاربر با شناسه دیسکورد ${discordId}`);
     
-    // بررسی انتخاب حداقل یک گزینه
-    if (!Object.values(options).some(val => val)) {
-      req.flash('error_msg', 'حداقل یک گزینه باید انتخاب شود');
-      return res.redirect(`/admin/users/view/${userId}`);
+    if (!discordId || !amount || amount <= 0) {
+      req.flash('error', 'شناسه دیسکورد و مقدار سکه (مثبت) باید وارد شود');
+      return res.redirect('/admin/users');
     }
     
-    const result = await resetUserData(userId, options);
+    const result = await economyService.addCoinsToUser({
+      discordId,
+      amount: parseInt(amount),
+      reason: reason || 'افزودن سکه توسط ادمین',
+      adminId: req.session.user.id
+    });
     
-    req.flash('success_msg', result.message);
-    res.redirect(`/admin/users/view/${userId}`);
+    if (result.success) {
+      req.flash('success', `${amount} سکه با موفقیت به کاربر با شناسه ${discordId} اضافه شد`);
+    } else {
+      req.flash('error', result.message || 'خطایی در افزودن سکه رخ داده است');
+    }
+    
+    res.redirect('/admin/users');
   } catch (error) {
-    console.error('خطا در ریست کردن اطلاعات کاربر:', error);
-    req.flash('error_msg', `خطا در ریست کردن اطلاعات کاربر: ${error.message}`);
-    res.redirect(`/admin/users/view/${req.params.id}`);
+    console.error('❌ خطا در افزودن سکه به کاربر:', error);
+    req.flash('error', 'خطایی در افزودن سکه به کاربر رخ داده است');
+    res.redirect('/admin/users');
   }
 }
 
 /**
- * خروجی لیست کاربران
+ * کسر سکه از کاربر
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ */
+export async function removeCoinsFromUser(req, res) {
+  try {
+    const { discordId, amount, reason } = req.body;
+    
+    console.log(`💰 کسر ${amount} سکه از کاربر با شناسه دیسکورد ${discordId}`);
+    
+    if (!discordId || !amount || amount <= 0) {
+      req.flash('error', 'شناسه دیسکورد و مقدار سکه (مثبت) باید وارد شود');
+      return res.redirect('/admin/users');
+    }
+    
+    const result = await economyService.removeCoinsFromUser({
+      discordId,
+      amount: parseInt(amount),
+      reason: reason || 'کسر سکه توسط ادمین',
+      adminId: req.session.user.id
+    });
+    
+    if (result.success) {
+      req.flash('success', `${amount} سکه با موفقیت از کاربر با شناسه ${discordId} کسر شد`);
+    } else {
+      req.flash('error', result.message || 'خطایی در کسر سکه رخ داده است');
+    }
+    
+    res.redirect('/admin/users');
+  } catch (error) {
+    console.error('❌ خطا در کسر سکه از کاربر:', error);
+    req.flash('error', 'خطایی در کسر سکه از کاربر رخ داده است');
+    res.redirect('/admin/users');
+  }
+}
+
+/**
+ * خروجی اکسل کاربران
  * @param {Object} req درخواست
  * @param {Object} res پاسخ
  */
 export async function exportUsers(req, res) {
   try {
-    const { search, isActive, isBanned, sortBy, sortOrder } = req.query;
+    const query = req.query.q || '';
+    const status = req.query.status || '';
     
-    // فیلترها
-    const filter = {};
-    if (isActive === 'true') filter.isActive = true;
-    if (isActive === 'false') filter.isActive = false;
-    if (isBanned === 'true') filter.isBanned = true;
-    if (isBanned === 'false') filter.isBanned = false;
+    console.log(`📋 خروجی اکسل کاربران - جستجو: "${query}", وضعیت: "${status}"`);
     
-    // مرتب‌سازی
-    const sort = {
-      field: sortBy || 'createdAt',
-      order: sortOrder || 'desc'
-    };
+    // وضعیت‌های فیلتر
+    const filterOptions = {};
+    if (status === 'active') {
+      filterOptions.banned = false;
+      filterOptions.inactive = false;
+    } else if (status === 'banned') {
+      filterOptions.banned = true;
+    } else if (status === 'inactive') {
+      filterOptions.inactive = true;
+    }
     
-    const csvContent = await exportUsersToCsv(search, filter, sort);
+    // دریافت تمام کاربران بدون صفحه‌بندی
+    const users = await userService.getAllUsers({
+      query,
+      filters: filterOptions
+    });
     
-    // تنظیم هدرهای HTTP
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', 'attachment; filename=users-export.csv');
+    // تنظیم هدرهای پاسخ برای دانلود فایل
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=users.csv');
     
-    // ارسال فایل CSV
-    res.send(csvContent);
+    // عناوین ستون‌ها
+    res.write('شناسه,نام کاربری,شناسه دیسکورد,موجودی,وضعیت,تاریخ عضویت\n');
+    
+    // داده‌های کاربران
+    users.forEach(user => {
+      const status = user.banned ? 'مسدود' : (user.inactive ? 'غیرفعال' : 'فعال');
+      const createdAt = new Date(user.createdAt).toLocaleDateString('fa-IR');
+      
+      res.write(`${user._id},${user.name},${user.discordId},${user.balance || 0},${status},${createdAt}\n`);
+    });
+    
+    res.end();
   } catch (error) {
-    console.error('خطا در خروجی لیست کاربران:', error);
-    req.flash('error_msg', `خطا در تهیه خروجی: ${error.message}`);
+    console.error('❌ خطا در خروجی اکسل کاربران:', error);
+    req.flash('error', 'خطایی در تهیه خروجی اکسل کاربران رخ داده است');
     res.redirect('/admin/users');
   }
 }
 
-// تعریف کنترلر برای ارائه به صورت یک آبجکت
-// حذف export اضافی که باعث تداخل می‌شود
-/*
-export const usersController = {
-  showDashboard: (req, res) => {
-    res.render('users/dashboard', { title: 'مدیریت کاربران' });
-  },
-  showUsersList,
-  filterUsers: (req, res) => {
-    // بازیابی پارامترهای فیلتر از بدنه درخواست
-    const { search, isActive, isBanned, minCoins, maxCoins, minLevel, maxLevel } = req.body;
+/**
+ * دریافت تراکنش‌های کاربر
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ */
+export async function getUserTransactions(req, res) {
+  try {
+    const userId = req.params.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
     
-    // ساخت URL با پارامترهای فیلتر
-    let url = '/admin/users/list?';
-    if (search) url += `search=${encodeURIComponent(search)}&`;
-    if (isActive) url += `isActive=${isActive}&`;
-    if (isBanned) url += `isBanned=${isBanned}&`;
-    if (minCoins) url += `minCoins=${minCoins}&`;
-    if (maxCoins) url += `maxCoins=${maxCoins}&`;
-    if (minLevel) url += `minLevel=${minLevel}&`;
-    if (maxLevel) url += `maxLevel=${maxLevel}&`;
+    console.log(`💰 دریافت تراکنش‌های کاربر: ${userId}, صفحه ${page}, تعداد ${limit}`);
     
-    res.redirect(url);
-  },
-  showUserDetails,
-  showUserEdit,
-  updateUser: processUserEdit,
-  addCoins,
-  removeCoins,
-  addItem,
-  banUser,
-  unbanUser,
-  resetUser,
-  exportUsers,
-  
-  // توابع اضافی که در routes/users.js استفاده شده است
-  showUserEconomy: (req, res) => {
-    res.render('users/economy', { title: 'اقتصاد کاربر', userId: req.params.id });
-  },
-  updateUserEconomy: (req, res) => {
-    // پیاده‌سازی به‌روزرسانی اقتصاد کاربر
-    res.redirect(`/admin/users/${req.params.id}/economy`);
-  },
-  addUserTransaction: (req, res) => {
-    // پیاده‌سازی افزودن تراکنش
-    res.redirect(`/admin/users/${req.params.id}/economy/transactions`);
-  },
-  showUserTransactions: (req, res) => {
-    res.render('users/transactions', { title: 'تراکنش‌های کاربر', userId: req.params.id });
-  },
-  showUserStats: (req, res) => {
-    res.render('users/stats', { title: 'آمار کاربر', userId: req.params.id });
-  },
-  resetUserStats: (req, res) => {
-    // پیاده‌سازی ریست آمار کاربر
-    res.redirect(`/admin/users/${req.params.id}/stats`);
-  },
-  showUserFriends: (req, res) => {
-    res.render('users/friends', { title: 'دوستان کاربر', userId: req.params.id });
-  },
-  addUserFriend: (req, res) => {
-    // پیاده‌سازی افزودن دوست
-    res.redirect(`/admin/users/${req.params.id}/friends`);
-  },
-  removeUserFriend: (req, res) => {
-    // پیاده‌سازی حذف دوست
-    res.redirect(`/admin/users/${req.params.id}/friends`);
-  },
-  showUserInventory: (req, res) => {
-    res.render('users/inventory', { title: 'کوله‌پشتی کاربر', userId: req.params.id });
-  },
-  addItemToInventory: (req, res) => {
-    // پیاده‌سازی افزودن آیتم به کوله‌پشتی
-    res.redirect(`/admin/users/${req.params.id}/inventory`);
-  },
-  removeItemFromInventory: (req, res) => {
-    // پیاده‌سازی حذف آیتم از کوله‌پشتی
-    res.redirect(`/admin/users/${req.params.id}/inventory`);
-  },
-  showUserRewards: (req, res) => {
-    res.render('users/rewards', { title: 'جوایز کاربر', userId: req.params.id });
-  },
-  addUserReward: (req, res) => {
-    // پیاده‌سازی افزودن جایزه
-    res.redirect(`/admin/users/${req.params.id}/rewards`);
-  },
-  removeUserReward: (req, res) => {
-    // پیاده‌سازی حذف جایزه
-    res.redirect(`/admin/users/${req.params.id}/rewards`);
-  },
-  showUserRoles: (req, res) => {
-    res.render('users/roles', { title: 'نقش‌های کاربر', userId: req.params.id });
-  },
-  addUserRole: (req, res) => {
-    // پیاده‌سازی افزودن نقش
-    res.redirect(`/admin/users/${req.params.id}/roles`);
-  },
-  removeUserRole: (req, res) => {
-    // پیاده‌سازی حذف نقش
-    res.redirect(`/admin/users/${req.params.id}/roles`);
-  },
-  showUserBanks: (req, res) => {
-    res.render('users/banks', { title: 'حساب‌های بانکی کاربر', userId: req.params.id });
-  },
-  updateUserBank: (req, res) => {
-    // پیاده‌سازی به‌روزرسانی حساب بانکی
-    res.redirect(`/admin/users/${req.params.id}/bank`);
-  },
-  showUserStocks: (req, res) => {
-    res.render('users/stocks', { title: 'سهام کاربر', userId: req.params.id });
-  },
-  updateUserStocks: (req, res) => {
-    // پیاده‌سازی به‌روزرسانی سهام
-    res.redirect(`/admin/users/${req.params.id}/stocks`);
-  },
-  showUserLogs: (req, res) => {
-    res.render('users/logs', { title: 'لاگ‌های کاربر', userId: req.params.id });
-  },
-  filterUserLogs: (req, res) => {
-    // پیاده‌سازی فیلتر لاگ‌ها
-    res.redirect(`/admin/users/${req.params.id}/logs`);
-  },
-  exportUserLogs: (req, res) => {
-    // پیاده‌سازی خروجی لاگ‌ها
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', 'attachment; filename=user-logs.csv');
-    res.send('لاگ‌های کاربر');
-  },
-  showSettings: (req, res) => {
-    res.render('users/settings', { title: 'تنظیمات کاربران' });
-  },
-  updateSettings: (req, res) => {
-    // پیاده‌سازی به‌روزرسانی تنظیمات
-    res.redirect('/admin/users/settings');
+    const user = await userService.getUserById(userId);
+    if (!user) {
+      req.flash('error', 'کاربر مورد نظر یافت نشد');
+      return res.redirect('/admin/users');
+    }
+    
+    const result = await economyService.getUserTransactionsPaginated(userId, page, limit);
+    
+    res.render('users/transactions', {
+      title: `تراکنش‌های ${user.name}`,
+      user,
+      transactions: result.transactions || [],
+      pagination: {
+        page,
+        limit,
+        totalPages: result.totalPages || 1,
+        totalTransactions: result.total || 0
+      }
+    });
+  } catch (error) {
+    console.error('❌ خطا در دریافت تراکنش‌های کاربر:', error);
+    req.flash('error', 'خطایی در بارگیری تراکنش‌های کاربر رخ داده است');
+    res.redirect('/admin/users');
   }
-};
-*/
+}

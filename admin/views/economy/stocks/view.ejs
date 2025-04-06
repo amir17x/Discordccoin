@@ -1,0 +1,304 @@
+<div class="section-header">
+    <h2 class="section-title">جزئیات سهام <%= stock.name %></h2>
+    <div class="section-tools">
+        <a href="/admin/economy/stocks" class="btn btn-secondary">
+            <span class="icons8-icon icons8-stocks"></span> بازگشت به لیست
+        </a>
+        <a href="/admin/economy/stocks/<%= stock._id %>/edit" class="btn btn-primary">
+            <span class="icons8-icon icons8-edit"></span> ویرایش
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card fluent-card mb-4">
+            <div class="card-header">
+                <h3 class="card-title">اطلاعات پایه</h3>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <tbody>
+                        <tr>
+                            <th>نام شرکت:</th>
+                            <td><%= stock.name %></td>
+                        </tr>
+                        <tr>
+                            <th>نماد:</th>
+                            <td><strong><%= stock.symbol %></strong></td>
+                        </tr>
+                        <tr>
+                            <th>قیمت فعلی:</th>
+                            <td><%= formatCurrency(stock.price) %> سکه</td>
+                        </tr>
+                        <tr>
+                            <th>تغییر (24 ساعت):</th>
+                            <td class="<%= stock.change > 0 ? 'text-success' : stock.change < 0 ? 'text-danger' : 'text-muted' %>">
+                                <%= stock.change > 0 ? '+' : '' %><%= stock.change %>%
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>حجم معاملات:</th>
+                            <td><%= formatCurrency(stock.volume) %></td>
+                        </tr>
+                        <tr>
+                            <th>وضعیت:</th>
+                            <td>
+                                <% if (stock.active) { %>
+                                    <span class="badge badge-success">فعال</span>
+                                <% } else { %>
+                                    <span class="badge badge-danger">غیرفعال</span>
+                                <% } %>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>نوسان قیمت:</th>
+                            <td><%= stock.volatility %>%</td>
+                        </tr>
+                        <tr>
+                            <th>محدوده قیمت:</th>
+                            <td><%= formatCurrency(stock.minPrice) %> - <%= formatCurrency(stock.maxPrice) %></td>
+                        </tr>
+                        <tr>
+                            <th>تاریخ ایجاد:</th>
+                            <td><%= formatDate(stock.createdAt) %></td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <% if (stock.description) { %>
+                    <div class="mt-3">
+                        <h5>توضیحات</h5>
+                        <p><%= stock.description %></p>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+        
+        <div class="card fluent-card">
+            <div class="card-header">
+                <h3 class="card-title">آمار کلی</h3>
+            </div>
+            <div class="card-body">
+                <ul class="list-group">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        تعداد سهامداران
+                        <span class="badge badge-primary"><%= topHolders.length %></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        کل سهام در دست مردم
+                        <span class="badge badge-success"><%= formatCurrency(topHolders.reduce((sum, holder) => sum + holder.shares, 0)) %></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        میانگین سهام هر سهامدار
+                        <span class="badge badge-info">
+                            <%= formatCurrency(topHolders.length > 0 ? topHolders.reduce((sum, holder) => sum + holder.shares, 0) / topHolders.length : 0) %>
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        تعداد معاملات اخیر (24 ساعت)
+                        <span class="badge badge-warning">
+                            <%= formatCurrency(recentTrades.length) %>
+                        </span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card fluent-card mb-4">
+            <div class="card-header">
+                <h3 class="card-title">نمودار قیمت</h3>
+            </div>
+            <div class="card-body">
+                <% if (priceHistory && priceHistory.length > 0) { %>
+                    <div id="stockPriceChart" style="height: 300px;"></div>
+                <% } else { %>
+                    <div class="alert alert-info">
+                        <span class="icons8-icon icons8-info"></span>
+                        تاریخچه قیمت برای این سهام موجود نیست.
+                    </div>
+                <% } %>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card fluent-card">
+                    <div class="card-header">
+                        <h3 class="card-title">سهامداران برتر</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>کاربر</th>
+                                        <th>تعداد سهام</th>
+                                        <th>ارزش</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% if (topHolders && topHolders.length > 0) { %>
+                                        <% topHolders.forEach(holder => { %>
+                                            <tr>
+                                                <td>
+                                                    <a href="/admin/users/<%= holder.userId %>">
+                                                        <%= holder.username %>
+                                                    </a>
+                                                </td>
+                                                <td><%= formatCurrency(holder.shares) %></td>
+                                                <td><%= formatCurrency(holder.shares * stock.price) %></td>
+                                            </tr>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <tr>
+                                            <td colspan="3" class="text-center">هیچ سهامداری یافت نشد.</td>
+                                        </tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card fluent-card">
+                    <div class="card-header">
+                        <h3 class="card-title">معاملات اخیر</h3>
+                        <div class="card-tools">
+                            <a href="/admin/economy/stocks/<%= stock._id %>/trades" class="btn btn-sm btn-primary">
+                                همه معاملات
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>کاربر</th>
+                                        <th>نوع</th>
+                                        <th>تعداد</th>
+                                        <th>قیمت</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% if (recentTrades && recentTrades.length > 0) { %>
+                                        <% recentTrades.forEach(trade => { %>
+                                            <tr>
+                                                <td>
+                                                    <a href="/admin/users/<%= trade.userId %>">
+                                                        <%= trade.username %>
+                                                    </a>
+                                                </td>
+                                                <td>
+                                                    <% if (trade.type === 'buy') { %>
+                                                        <span class="badge badge-success">خرید</span>
+                                                    <% } else { %>
+                                                        <span class="badge badge-danger">فروش</span>
+                                                    <% } %>
+                                                </td>
+                                                <td><%= formatCurrency(trade.shares) %></td>
+                                                <td><%= formatCurrency(trade.price) %></td>
+                                            </tr>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <tr>
+                                            <td colspan="4" class="text-center">هیچ معامله‌ای یافت نشد.</td>
+                                        </tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<% if (priceHistory && priceHistory.length > 0) { %>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // آماده‌سازی داده‌های نمودار
+    const priceData = [
+        <% priceHistory.forEach(point => { %>
+            {
+                x: new Date('<%= point.date %>').getTime(),
+                y: <%= point.price %>
+            },
+        <% }); %>
+    ];
+    
+    // تنظیمات نمودار
+    const options = {
+        series: [{
+            name: 'قیمت سهام',
+            data: priceData
+        }],
+        chart: {
+            type: 'area',
+            height: 300,
+            fontFamily: 'Vazirmatn, sans-serif',
+            toolbar: {
+                show: true,
+                tools: {
+                    download: true,
+                    selection: true,
+                    zoom: true,
+                    zoomin: true,
+                    zoomout: true,
+                    pan: true,
+                    reset: true
+                }
+            }
+        },
+        dataLabels: {
+            enabled: false
+        },
+        stroke: {
+            curve: 'smooth',
+            width: 2
+        },
+        fill: {
+            type: 'gradient',
+            gradient: {
+                shadeIntensity: 1,
+                opacityFrom: 0.7,
+                opacityTo: 0.3,
+                stops: [0, 90, 100]
+            }
+        },
+        colors: ['#0078d4'],
+        xaxis: {
+            type: 'datetime',
+            labels: {
+                formatter: function(val) {
+                    return new Date(val).toLocaleDateString('fa-IR');
+                }
+            }
+        },
+        yaxis: {
+            labels: {
+                formatter: function(val) {
+                    return val.toLocaleString('fa-IR');
+                }
+            }
+        },
+        tooltip: {
+            x: {
+                format: 'dd MMM yyyy'
+            }
+        }
+    };
+    
+    // ایجاد نمودار
+    const chart = new ApexCharts(document.querySelector('#stockPriceChart'), options);
+    chart.render();
+});
+</script>
+<% } %>

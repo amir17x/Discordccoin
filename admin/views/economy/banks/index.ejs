@@ -1,0 +1,104 @@
+<div class="section-header">
+    <h2 class="section-title">مدیریت بانک‌ها</h2>
+    <div class="section-tools">
+        <a href="/admin/economy/banks/create" class="btn btn-primary">
+            <span class="icons8-icon icons8-add"></span> افزودن بانک جدید
+        </a>
+    </div>
+</div>
+
+<div class="card fluent-card">
+    <div class="card-body">
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>نام بانک</th>
+                        <th>نرخ سود</th>
+                        <th>حداقل سپرده</th>
+                        <th>حداکثر سپرده</th>
+                        <th>وضعیت</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (banks && banks.length > 0) { %>
+                        <% banks.forEach((bank, index) => { %>
+                            <tr>
+                                <td><%= index + 1 %></td>
+                                <td><%= bank.name %></td>
+                                <td><%= bank.interestRate %>%</td>
+                                <td><%= formatCurrency(bank.minDeposit) %> سکه</td>
+                                <td><%= formatCurrency(bank.maxDeposit) %> سکه</td>
+                                <td>
+                                    <% if (bank.active) { %>
+                                        <span class="badge badge-success">فعال</span>
+                                    <% } else { %>
+                                        <span class="badge badge-danger">غیرفعال</span>
+                                    <% } %>
+                                </td>
+                                <td class="action-buttons">
+                                    <a href="/admin/economy/banks/<%= bank._id %>/edit" class="btn btn-sm btn-primary">
+                                        <span class="icons8-icon icons8-edit icons8-sm"></span>
+                                    </a>
+                                    <a href="/admin/economy/banks/<%= bank._id %>" class="btn btn-sm btn-info">
+                                        <span class="icons8-icon icons8-view icons8-sm"></span>
+                                    </a>
+                                    <a href="/admin/economy/banks/<%= bank._id %>/delete" class="btn btn-sm btn-danger" data-confirm="آیا از حذف این بانک اطمینان دارید؟">
+                                        <span class="icons8-icon icons8-delete icons8-sm"></span>
+                                    </a>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="7" class="text-center">هیچ بانکی یافت نشد.</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card fluent-card mt-4">
+    <div class="card-header">
+        <h3 class="card-title">آمار کلی بانک‌ها</h3>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-4">
+                <div class="stat-card primary">
+                    <div class="stat-icon">
+                        <span class="icons8-icon icons8-bank icons8-lg"></span>
+                    </div>
+                    <div class="stat-label">تعداد بانک‌ها</div>
+                    <div class="stat-value"><%= bankStats.totalBanks || 0 %></div>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="stat-card success">
+                    <div class="stat-icon">
+                        <span class="icons8-icon icons8-coins icons8-lg"></span>
+                    </div>
+                    <div class="stat-label">کل سپرده‌ها</div>
+                    <div class="stat-value"><%= formatCurrency(bankStats.totalDeposits) %></div>
+                    <div class="stat-change text-success">
+                        <span class="icons8-icon icons8-chart"></span>
+                        <%= bankStats.depositGrowth %>% رشد در ماه اخیر
+                    </div>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="stat-card secondary">
+                    <div class="stat-icon">
+                        <span class="icons8-icon icons8-users icons8-lg"></span>
+                    </div>
+                    <div class="stat-label">تعداد سپرده‌گذاران</div>
+                    <div class="stat-value"><%= formatCurrency(bankStats.totalDepositors) %></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,172 @@
+<div class="section-header">
+    <h2 class="section-title">جزئیات تراکنش</h2>
+    <div class="section-tools">
+        <a href="/admin/economy/transactions" class="btn btn-secondary">
+            <span class="icons8-icon icons8-transaction"></span> بازگشت به لیست
+        </a>
+    </div>
+</div>
+
+<div class="card fluent-card">
+    <div class="card-header">
+        <h3 class="card-title">اطلاعات تراکنش #<%= transaction._id.toString().substr(-6) %></h3>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <table class="table">
+                    <tbody>
+                        <tr>
+                            <th>شناسه تراکنش:</th>
+                            <td><%= transaction._id %></td>
+                        </tr>
+                        <tr>
+                            <th>کاربر:</th>
+                            <td>
+                                <% if (user) { %>
+                                    <a href="/admin/users/<%= user._id %>"><%= user.name %> (<%= user.discordId %>)</a>
+                                <% } else { %>
+                                    <%= transaction.discordId || 'کاربر ناشناس' %>
+                                <% } %>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>مبلغ:</th>
+                            <td class="<%= transaction.amount >= 0 ? 'text-success' : 'text-danger' %>">
+                                <strong><%= transaction.amount >= 0 ? '+' : '' %><%= formatCurrency(transaction.amount) %> سکه</strong>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>نوع تراکنش:</th>
+                            <td>
+                                <% if (transaction.type === 'transfer') { %>
+                                    <span class="badge badge-primary">انتقال</span>
+                                <% } else if (transaction.type === 'purchase') { %>
+                                    <span class="badge badge-info">خرید</span>
+                                <% } else if (transaction.type === 'sale') { %>
+                                    <span class="badge badge-success">فروش</span>
+                                <% } else if (transaction.type === 'game_reward') { %>
+                                    <span class="badge badge-success">پاداش بازی</span>
+                                <% } else if (transaction.type === 'game_loss') { %>
+                                    <span class="badge badge-danger">باخت بازی</span>
+                                <% } else if (transaction.type === 'admin_add') { %>
+                                    <span class="badge badge-success">افزایش ادمین</span>
+                                <% } else if (transaction.type === 'admin_remove') { %>
+                                    <span class="badge badge-danger">کاهش ادمین</span>
+                                <% } else if (transaction.type === 'interest') { %>
+                                    <span class="badge badge-info">سود بانکی</span>
+                                <% } else if (transaction.type === 'gift') { %>
+                                    <span class="badge badge-primary">هدیه</span>
+                                <% } else { %>
+                                    <span class="badge badge-secondary">سایر</span>
+                                <% } %>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table">
+                    <tbody>
+                        <tr>
+                            <th>تاریخ:</th>
+                            <td><%= formatDate(transaction.createdAt, true) %></td>
+                        </tr>
+                        <tr>
+                            <th>دلیل:</th>
+                            <td><%= transaction.reason || 'بدون توضیحات' %></td>
+                        </tr>
+                        <tr>
+                            <th>ادمین:</th>
+                            <td>
+                                <% if (transaction.adminId) { %>
+                                    <%= transaction.adminId %>
+                                <% } else { %>
+                                    -
+                                <% } %>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>آیتم مرتبط:</th>
+                            <td>
+                                <% if (transaction.itemId) { %>
+                                    <a href="/admin/economy/items/<%= transaction.itemId %>"><%= transaction.itemName || transaction.itemId %></a>
+                                <% } else { %>
+                                    -
+                                <% } %>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <% if (transaction.metadata && Object.keys(transaction.metadata).length > 0) { %>
+            <div class="mt-4">
+                <h4>اطلاعات اضافی</h4>
+                <pre class="bg-light p-3 rounded"><%= JSON.stringify(transaction.metadata, null, 2) %></pre>
+            </div>
+        <% } %>
+        
+        <% if (user) { %>
+            <div class="mt-4">
+                <h4>اطلاعات کاربر</h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table">
+                            <tbody>
+                                <tr>
+                                    <th>نام کاربر:</th>
+                                    <td><%= user.name %></td>
+                                </tr>
+                                <tr>
+                                    <th>شناسه دیسکورد:</th>
+                                    <td><%= user.discordId %></td>
+                                </tr>
+                                <tr>
+                                    <th>تاریخ عضویت:</th>
+                                    <td><%= formatDate(user.createdAt) %></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table">
+                            <tbody>
+                                <tr>
+                                    <th>موجودی فعلی:</th>
+                                    <td><strong><%= formatCurrency(user.balance || 0) %> سکه</strong></td>
+                                </tr>
+                                <tr>
+                                    <th>وضعیت:</th>
+                                    <td>
+                                        <% if (user.banned) { %>
+                                            <span class="badge badge-danger">مسدود</span>
+                                        <% } else if (user.inactive) { %>
+                                            <span class="badge badge-warning">غیرفعال</span>
+                                        <% } else { %>
+                                            <span class="badge badge-success">فعال</span>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>آخرین فعالیت:</th>
+                                    <td><%= formatDate(user.lastActive || user.updatedAt) %></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <a href="/admin/users/<%= user._id %>" class="btn btn-primary">
+                        <span class="icons8-icon icons8-user"></span> مشاهده پروفایل کاربر
+                    </a>
+                    <a href="/admin/users/<%= user._id %>/transactions" class="btn btn-info">
+                        <span class="icons8-icon icons8-transaction"></span> تراکنش‌های کاربر
+                    </a>
+                </div>
+            </div>
+        <% } %>
+    </div>
+</div>

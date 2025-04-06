@@ -1,0 +1,224 @@
+<div class="section-header">
+    <h2 class="section-title">جزئیات بانک <%= bank.name %></h2>
+    <div class="section-tools">
+        <a href="/admin/economy/banks" class="btn btn-secondary">
+            <span class="icons8-icon icons8-bank"></span> بازگشت به لیست
+        </a>
+        <a href="/admin/economy/banks/<%= bank._id %>/edit" class="btn btn-primary">
+            <span class="icons8-icon icons8-edit"></span> ویرایش
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card fluent-card mb-4">
+            <div class="card-header">
+                <h3 class="card-title">اطلاعات پایه</h3>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <tbody>
+                        <tr>
+                            <th>نام:</th>
+                            <td><%= bank.name %></td>
+                        </tr>
+                        <tr>
+                            <th>وضعیت:</th>
+                            <td>
+                                <% if (bank.active) { %>
+                                    <span class="badge badge-success">فعال</span>
+                                <% } else { %>
+                                    <span class="badge badge-danger">غیرفعال</span>
+                                <% } %>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>نرخ سود:</th>
+                            <td><%= bank.interestRate %>%</td>
+                        </tr>
+                        <tr>
+                            <th>حداقل سپرده:</th>
+                            <td><%= formatCurrency(bank.minDeposit) %> سکه</td>
+                        </tr>
+                        <tr>
+                            <th>حداکثر سپرده:</th>
+                            <td><%= formatCurrency(bank.maxDeposit) %> سکه</td>
+                        </tr>
+                        <tr>
+                            <th>تاریخ ایجاد:</th>
+                            <td><%= formatDate(bank.createdAt) %></td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <% if (bank.description) { %>
+                    <div class="mt-3">
+                        <h5>توضیحات</h5>
+                        <p><%= bank.description %></p>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+        
+        <div class="card fluent-card">
+            <div class="card-header">
+                <h3 class="card-title">آمار کلی</h3>
+            </div>
+            <div class="card-body">
+                <ul class="list-group">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        تعداد سپرده‌گذاران
+                        <span class="badge badge-primary"><%= topDepositors.length %></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        مجموع سپرده‌ها
+                        <span class="badge badge-success"><%= formatCurrency(topDepositors.reduce((sum, depositor) => sum + depositor.amount, 0)) %></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        میانگین سپرده
+                        <span class="badge badge-info">
+                            <%= formatCurrency(topDepositors.length > 0 ? topDepositors.reduce((sum, depositor) => sum + depositor.amount, 0) / topDepositors.length : 0) %>
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        کل سود پرداختی
+                        <span class="badge badge-warning">
+                            <%= formatCurrency(recentInterestPayments.reduce((sum, payment) => sum + payment.amount, 0)) %>
+                        </span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card fluent-card mb-4">
+            <div class="card-header">
+                <h3 class="card-title">سپرده‌گذاران برتر</h3>
+            </div>
+            <div class="card-body">
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>کاربر</th>
+                                <th>مبلغ سپرده</th>
+                                <th>تاریخ سپرده‌گذاری</th>
+                                <th>آخرین سود</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (topDepositors && topDepositors.length > 0) { %>
+                                <% topDepositors.forEach(depositor => { %>
+                                    <tr>
+                                        <td>
+                                            <a href="/admin/users/<%= depositor.userId %>">
+                                                <%= depositor.username %>
+                                            </a>
+                                        </td>
+                                        <td><%= formatCurrency(depositor.amount) %> سکه</td>
+                                        <td><%= formatDate(depositor.depositDate) %></td>
+                                        <td><%= formatDate(depositor.lastInterestDate) %></td>
+                                        <td>
+                                            <a href="/admin/users/<%= depositor.userId %>" class="btn btn-sm btn-info">
+                                                <span class="icons8-icon icons8-view icons8-sm"></span>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="5" class="text-center">هیچ سپرده‌گذاری یافت نشد.</td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card fluent-card">
+                    <div class="card-header">
+                        <h3 class="card-title">سپرده‌های اخیر</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>کاربر</th>
+                                        <th>مبلغ</th>
+                                        <th>تاریخ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% if (recentDeposits && recentDeposits.length > 0) { %>
+                                        <% recentDeposits.forEach(deposit => { %>
+                                            <tr>
+                                                <td>
+                                                    <a href="/admin/users/<%= deposit.userId %>">
+                                                        <%= deposit.username %>
+                                                    </a>
+                                                </td>
+                                                <td><%= formatCurrency(deposit.amount) %> سکه</td>
+                                                <td><%= formatDate(deposit.depositDate) %></td>
+                                            </tr>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <tr>
+                                            <td colspan="3" class="text-center">هیچ سپرده‌ای یافت نشد.</td>
+                                        </tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card fluent-card">
+                    <div class="card-header">
+                        <h3 class="card-title">پرداخت‌های سود اخیر</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>کاربر</th>
+                                        <th>مبلغ</th>
+                                        <th>تاریخ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% if (recentInterestPayments && recentInterestPayments.length > 0) { %>
+                                        <% recentInterestPayments.forEach(payment => { %>
+                                            <tr>
+                                                <td>
+                                                    <a href="/admin/users/<%= payment.userId %>">
+                                                        <%= payment.username %>
+                                                    </a>
+                                                </td>
+                                                <td class="text-success">+<%= formatCurrency(payment.amount) %> سکه</td>
+                                                <td><%= formatDate(payment.paymentDate) %></td>
+                                            </tr>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <tr>
+                                            <td colspan="3" class="text-center">هیچ پرداخت سودی یافت نشد.</td>
+                                        </tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

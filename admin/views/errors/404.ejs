@@ -1,0 +1,35 @@
+<div class="error-container text-center">
+    <div class="error-icon">
+        <span class="icons8-icon icons8-error icons8-xl"></span>
+    </div>
+    <h1 class="error-title">404</h1>
+    <p class="error-message">صفحه مورد نظر یافت نشد</p>
+    <div class="error-actions mt-4">
+        <a href="<%= returnUrl || '/admin/dashboard' %>" class="btn btn-primary">
+            <span class="icons8-icon icons8-dashboard"></span>
+            بازگشت به داشبورد
+        </a>
+    </div>
+</div>
+
+<style>
+.error-container {
+    padding: 3rem 1rem;
+}
+
+.error-icon {
+    margin-bottom: 2rem;
+}
+
+.error-title {
+    font-size: 5rem;
+    font-weight: bold;
+    color: var(--gray-100);
+}
+
+.error-message {
+    font-size: 1.5rem;
+    color: var(--gray-90);
+    margin-bottom: 2rem;
+}
+</style>

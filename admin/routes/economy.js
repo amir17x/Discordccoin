@@ -1,59 +1,51 @@
 /**
- * مسیرهای مدیریت اقتصاد پنل ادمین
+ * مسیرهای بخش اقتصادی
  */
 import express from 'express';
-import { authMiddleware, checkPermissions } from '../middleware/auth.js';
 import * as economyController from '../controllers/economyController.js';
 
 const router = express.Router();
 
-// اعمال میدلویر احراز هویت برای تمام مسیرها
-router.use(authMiddleware);
-router.use(checkPermissions('economy'));
-
-// نمایش داشبورد اقتصادی
+// مسیر اصلی - داشبورد اقتصادی
 router.get('/', economyController.showEconomyDashboard);
 
-// مدیریت تراکنش‌ها
-router.get('/transactions', economyController.showTransactions);
+// مسیرهای API
+router.get('/api/realtime-stats', economyController.getRealtimeStats);
 
-// مدیریت بازار سهام
-router.get('/stocks', economyController.showStocks);
+// مسیرهای تراکنش‌ها
+router.get('/transactions', economyController.listTransactions);
+router.get('/transactions/export', economyController.exportTransactions);
+router.get('/transactions/:id', economyController.viewTransaction);
 
-// مدیریت بانک‌ها
+// مسیرهای بازار سهام
+router.get('/stocks', economyController.listStocks);
+router.get('/stocks/create', economyController.createStockForm);
+router.post('/stocks/create', economyController.saveNewStock);
+router.get('/stocks/:id', economyController.viewStock);
+router.get('/stocks/:id/edit', economyController.editStockForm);
+router.post('/stocks/:id/edit', economyController.updateStock);
+router.get('/stocks/:id/activate', economyController.toggleStockStatus);
+router.get('/stocks/:id/deactivate', economyController.toggleStockStatus);
+router.get('/stocks/:id/trades', economyController.stockTrades);
+
+// مسیرهای بانک‌ها
 router.get('/banks', economyController.showBanks);
+router.get('/banks/create', economyController.createBankForm);
+router.post('/banks/create', economyController.saveNewBank);
+router.get('/banks/:id', economyController.viewBank);
+router.get('/banks/:id/edit', economyController.editBankForm);
+router.post('/banks/:id/edit', economyController.updateBank);
+router.get('/banks/:id/activate', economyController.toggleBankStatus);
+router.get('/banks/:id/deactivate', economyController.toggleBankStatus);
 
-// مدیریت فروشگاه‌ها
-router.get('/shops', economyController.showShops);
+// مسیرهای فروشگاه‌ها
+router.get('/shops', economyController.listShops);
 
-// مدیریت آیتم‌ها
-router.get('/items', economyController.showItems);
+// مسیرهای آیتم‌ها
+router.get('/items', economyController.listItems);
 
-// مدیریت کوپن‌ها و هدیه‌ها
-router.get('/coupons', economyController.showCoupons);
-
-// تنظیمات اقتصادی
+// مسیرهای تنظیمات اقتصادی
 router.get('/settings', economyController.showEconomySettings);
-
-// ایجاد سهام جدید
-router.post('/stocks/create', economyController.createStock);
-
-// ویرایش سهام
-router.post('/stocks/edit/:id', economyController.editStock);
-
-// به‌روزرسانی قیمت سهام
-router.post('/stocks/update-price/:id', economyController.updateStockPrice);
-
-// ایجاد آیتم جدید
-router.post('/items/create', economyController.createItem);
-
-// ویرایش آیتم
-router.post('/items/edit/:id', economyController.editItem);
-
-// حذف آیتم
-router.post('/items/delete/:id', economyController.deleteItem);
-
-// گزارش وضعیت اقتصادی
-router.get('/report', economyController.generateEconomyReport);
+router.post('/settings', economyController.saveEconomySettings);
 
 export default router;

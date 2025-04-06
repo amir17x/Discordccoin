@@ -1,64 +1,49 @@
 /**
- * مسیرهای اصلی پنل ادمین CCOIN
- * 
- * این ماژول همه مسیرهای پنل ادمین را تنظیم می‌کند.
+ * مسیرهای اصلی پنل ادمین
  */
-
-import express from 'express';
-import authRoutes from './auth.js';
 import dashboardRoutes from './dashboard.js';
+import authRoutes from './auth.js';
 import usersRoutes from './users.js';
 import economyRoutes from './economy.js';
-import gamesRoutes from './games.js';
-import eventsRoutes from './events.js';
-import aiRoutes from './ai.js';
-import settingsRoutes from './settings.js';
-import { isAuthenticated } from '../middleware/auth.js';
 
-const router = express.Router();
-
-// مسیر صفحه اصلی - ریدایرکت به داشبورد
-router.get('/', (req, res) => {
-  if (req.session && req.session.user) {
+/**
+ * راه‌اندازی مسیرهای اپلیکیشن
+ * @param {Express} app اپلیکیشن اکسپرس
+ */
+export function setupRoutes(app) {
+  // مسیرهای احراز هویت
+  app.use('/admin', authRoutes);
+  
+  // مسیرهای داشبورد
+  app.use('/admin/dashboard', dashboardRoutes);
+  
+  // مسیرهای کاربران
+  app.use('/admin/users', usersRoutes);
+  
+  // مسیرهای اقتصادی
+  app.use('/admin/economy', economyRoutes);
+  
+  // ریدایرکت صفحه اصلی به داشبورد
+  app.get('/admin', (req, res) => {
     res.redirect('/admin/dashboard');
-  } else {
-    res.redirect('/admin/login');
-  }
-});
-
-// مسیرهای احراز هویت
-router.use('/', authRoutes);
-
-// اعمال میدلویر احراز هویت برای همه مسیرهای زیر
-router.use(isAuthenticated);
-
-// مسیرهای داشبورد
-router.use('/dashboard', dashboardRoutes);
-
-// مسیرهای مدیریت کاربران
-router.use('/users', usersRoutes);
-
-// مسیرهای مدیریت اقتصاد
-router.use('/economy', economyRoutes);
-
-// مسیرهای مدیریت بازی‌ها
-router.use('/games', gamesRoutes);
-
-// مسیرهای مدیریت رویدادها
-router.use('/events', eventsRoutes);
-
-// مسیرهای هوش مصنوعی
-router.use('/ai', aiRoutes);
-
-// مسیرهای تنظیمات
-router.use('/settings', settingsRoutes);
-
-// صفحه 404 برای مسیرهای نامعتبر
-router.use((req, res) => {
-  res.status(404).render('404', {
-    title: 'صفحه یافت نشد',
-    layout: false
   });
-});
-
-export default router;
+  
+  // مسیر API آمار آنلاین
+  app.get('/admin/api/realtime-stats', async (req, res) => {
+    try {
+      const economyController = await import('../controllers/economyController.js');
+      economyController.getRealtimeStats(req, res);
+    } catch (error) {
+      console.error('خطا در API آمار آنلاین:', error);
+      res.status(500).json({ error: 'خطای سرور داخلی' });
+    }
+  });
+  
+  // مسیر 404 برای مسیرهای نامعتبر
+  app.use('/admin/*', (req, res) => {
+    res.status(404).render('errors/404', { 
+      title: 'صفحه مورد نظر یافت نشد',
+      returnUrl: '/admin/dashboard'
+    });
+  });
+}
