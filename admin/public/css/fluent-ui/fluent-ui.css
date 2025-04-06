@@ -1,0 +1,804 @@
+/**
+ * مایکروسافت فلوئنت UI - استایل‌های اصلی
+ * 
+ * این فایل شامل استایل‌های اصلی و کلاس‌های مورد نیاز برای فلوئنت UI است
+ * از متغیرهای فایل fluent-variables.css استفاده می‌کند
+ */
+
+@import './fluent-variables.css';
+@import './components/buttons.css';
+@import './components/cards.css';
+@import './components/dialogs.css';
+@import './components/forms.css';
+@import './components/navigation.css';
+@import './components/tables.css';
+
+/**
+ * استایل‌های کلی
+ */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--fluent-font-family);
+  font-size: var(--fluent-font-size-base);
+  line-height: var(--fluent-line-height-base);
+  background-color: var(--fluent-bg-body);
+  color: var(--fluent-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  direction: rtl;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin-top: 0;
+  margin-bottom: var(--fluent-spacing);
+  font-weight: var(--fluent-font-weight-semibold);
+  line-height: var(--fluent-line-height-tight);
+}
+
+h1 {
+  font-size: var(--fluent-font-size-3xl);
+}
+
+h2 {
+  font-size: var(--fluent-font-size-xxl);
+}
+
+h3 {
+  font-size: var(--fluent-font-size-xl);
+}
+
+h4 {
+  font-size: var(--fluent-font-size-lg);
+}
+
+h5 {
+  font-size: var(--fluent-font-size-md);
+}
+
+h6 {
+  font-size: var(--fluent-font-size-base);
+}
+
+p {
+  margin-top: 0;
+  margin-bottom: var(--fluent-spacing);
+}
+
+a {
+  color: var(--fluent-primary);
+  text-decoration: none;
+  transition: color var(--fluent-duration-normal) var(--fluent-ease-out);
+}
+
+a:hover {
+  color: var(--fluent-primary-dark);
+  text-decoration: underline;
+}
+
+/**
+ * لایه بندی فلوئنت
+ */
+.fluent-app {
+  display: flex;
+  min-height: 100vh;
+  max-width: 100vw;
+}
+
+.fluent-sidebar {
+  width: 280px;
+  background-color: var(--fluent-bg-surface);
+  border-left: 1px solid var(--fluent-gray-30);
+  box-shadow: var(--fluent-shadow);
+  z-index: 100;
+  overflow-y: auto;
+  transition: transform var(--fluent-duration-normal) var(--fluent-ease-out);
+  display: flex;
+  flex-direction: column;
+}
+
+.fluent-sidebar-collapsed {
+  width: 48px;
+}
+
+.fluent-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* برای جلوگیری از سرریز محتوا */
+}
+
+.fluent-header {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--fluent-spacing);
+  background-color: var(--fluent-bg-surface);
+  border-bottom: 1px solid var(--fluent-gray-30);
+  box-shadow: var(--fluent-shadow-sm);
+  z-index: 10;
+}
+
+.fluent-content {
+  flex: 1;
+  padding: var(--fluent-spacing);
+  overflow-y: auto;
+  background-color: var(--fluent-bg-canvas);
+}
+
+.fluent-footer {
+  padding: var(--fluent-spacing);
+  background-color: var(--fluent-bg-surface);
+  border-top: 1px solid var(--fluent-gray-30);
+}
+
+/**
+ * سیستم گرید فلوئنت
+ */
+.fluent-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: var(--fluent-spacing);
+}
+
+.fluent-col-1 { grid-column: span 1; }
+.fluent-col-2 { grid-column: span 2; }
+.fluent-col-3 { grid-column: span 3; }
+.fluent-col-4 { grid-column: span 4; }
+.fluent-col-5 { grid-column: span 5; }
+.fluent-col-6 { grid-column: span 6; }
+.fluent-col-7 { grid-column: span 7; }
+.fluent-col-8 { grid-column: span 8; }
+.fluent-col-9 { grid-column: span 9; }
+.fluent-col-10 { grid-column: span 10; }
+.fluent-col-11 { grid-column: span 11; }
+.fluent-col-12 { grid-column: span 12; }
+
+@media (max-width: 1024px) {
+  .fluent-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+  .fluent-col-md-1 { grid-column: span 1; }
+  .fluent-col-md-2 { grid-column: span 2; }
+  .fluent-col-md-3 { grid-column: span 3; }
+  .fluent-col-md-4 { grid-column: span 4; }
+  .fluent-col-md-5 { grid-column: span 5; }
+  .fluent-col-md-6 { grid-column: span 6; }
+}
+
+@media (max-width: 768px) {
+  .fluent-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .fluent-col-sm-1 { grid-column: span 1; }
+  .fluent-col-sm-2 { grid-column: span 2; }
+  .fluent-col-sm-3 { grid-column: span 3; }
+  .fluent-col-sm-4 { grid-column: span 4; }
+}
+
+/**
+ * کلاس‌های کمکی
+ */
+.fluent-text-center { text-align: center; }
+.fluent-text-right { text-align: right; }
+.fluent-text-left { text-align: left; }
+
+.fluent-flex { display: flex; }
+.fluent-flex-row { flex-direction: row; }
+.fluent-flex-column { flex-direction: column; }
+.fluent-flex-wrap { flex-wrap: wrap; }
+.fluent-flex-nowrap { flex-wrap: nowrap; }
+.fluent-flex-grow { flex-grow: 1; }
+.fluent-flex-shrink { flex-shrink: 1; }
+
+.fluent-align-start { align-items: flex-start; }
+.fluent-align-center { align-items: center; }
+.fluent-align-end { align-items: flex-end; }
+.fluent-align-stretch { align-items: stretch; }
+
+.fluent-justify-start { justify-content: flex-start; }
+.fluent-justify-center { justify-content: center; }
+.fluent-justify-end { justify-content: flex-end; }
+.fluent-justify-between { justify-content: space-between; }
+.fluent-justify-around { justify-content: space-around; }
+.fluent-justify-evenly { justify-content: space-evenly; }
+
+.fluent-m-0 { margin: 0; }
+.fluent-mt-0 { margin-top: 0; }
+.fluent-mr-0 { margin-right: 0; }
+.fluent-mb-0 { margin-bottom: 0; }
+.fluent-ml-0 { margin-left: 0; }
+
+.fluent-m-1 { margin: var(--fluent-spacing-xs); }
+.fluent-mt-1 { margin-top: var(--fluent-spacing-xs); }
+.fluent-mr-1 { margin-right: var(--fluent-spacing-xs); }
+.fluent-mb-1 { margin-bottom: var(--fluent-spacing-xs); }
+.fluent-ml-1 { margin-left: var(--fluent-spacing-xs); }
+
+.fluent-m-2 { margin: var(--fluent-spacing-s); }
+.fluent-mt-2 { margin-top: var(--fluent-spacing-s); }
+.fluent-mr-2 { margin-right: var(--fluent-spacing-s); }
+.fluent-mb-2 { margin-bottom: var(--fluent-spacing-s); }
+.fluent-ml-2 { margin-left: var(--fluent-spacing-s); }
+
+.fluent-m-3 { margin: var(--fluent-spacing); }
+.fluent-mt-3 { margin-top: var(--fluent-spacing); }
+.fluent-mr-3 { margin-right: var(--fluent-spacing); }
+.fluent-mb-3 { margin-bottom: var(--fluent-spacing); }
+.fluent-ml-3 { margin-left: var(--fluent-spacing); }
+
+.fluent-m-4 { margin: var(--fluent-spacing-l); }
+.fluent-mt-4 { margin-top: var(--fluent-spacing-l); }
+.fluent-mr-4 { margin-right: var(--fluent-spacing-l); }
+.fluent-mb-4 { margin-bottom: var(--fluent-spacing-l); }
+.fluent-ml-4 { margin-left: var(--fluent-spacing-l); }
+
+.fluent-m-5 { margin: var(--fluent-spacing-xl); }
+.fluent-mt-5 { margin-top: var(--fluent-spacing-xl); }
+.fluent-mr-5 { margin-right: var(--fluent-spacing-xl); }
+.fluent-mb-5 { margin-bottom: var(--fluent-spacing-xl); }
+.fluent-ml-5 { margin-left: var(--fluent-spacing-xl); }
+
+.fluent-p-0 { padding: 0; }
+.fluent-pt-0 { padding-top: 0; }
+.fluent-pr-0 { padding-right: 0; }
+.fluent-pb-0 { padding-bottom: 0; }
+.fluent-pl-0 { padding-left: 0; }
+
+.fluent-p-1 { padding: var(--fluent-spacing-xs); }
+.fluent-pt-1 { padding-top: var(--fluent-spacing-xs); }
+.fluent-pr-1 { padding-right: var(--fluent-spacing-xs); }
+.fluent-pb-1 { padding-bottom: var(--fluent-spacing-xs); }
+.fluent-pl-1 { padding-left: var(--fluent-spacing-xs); }
+
+.fluent-p-2 { padding: var(--fluent-spacing-s); }
+.fluent-pt-2 { padding-top: var(--fluent-spacing-s); }
+.fluent-pr-2 { padding-right: var(--fluent-spacing-s); }
+.fluent-pb-2 { padding-bottom: var(--fluent-spacing-s); }
+.fluent-pl-2 { padding-left: var(--fluent-spacing-s); }
+
+.fluent-p-3 { padding: var(--fluent-spacing); }
+.fluent-pt-3 { padding-top: var(--fluent-spacing); }
+.fluent-pr-3 { padding-right: var(--fluent-spacing); }
+.fluent-pb-3 { padding-bottom: var(--fluent-spacing); }
+.fluent-pl-3 { padding-left: var(--fluent-spacing); }
+
+.fluent-p-4 { padding: var(--fluent-spacing-l); }
+.fluent-pt-4 { padding-top: var(--fluent-spacing-l); }
+.fluent-pr-4 { padding-right: var(--fluent-spacing-l); }
+.fluent-pb-4 { padding-bottom: var(--fluent-spacing-l); }
+.fluent-pl-4 { padding-left: var(--fluent-spacing-l); }
+
+.fluent-p-5 { padding: var(--fluent-spacing-xl); }
+.fluent-pt-5 { padding-top: var(--fluent-spacing-xl); }
+.fluent-pr-5 { padding-right: var(--fluent-spacing-xl); }
+.fluent-pb-5 { padding-bottom: var(--fluent-spacing-xl); }
+.fluent-pl-5 { padding-left: var(--fluent-spacing-xl); }
+
+.fluent-rounded-none { border-radius: 0; }
+.fluent-rounded-sm { border-radius: var(--fluent-radius-sm); }
+.fluent-rounded { border-radius: var(--fluent-radius); }
+.fluent-rounded-md { border-radius: var(--fluent-radius-md); }
+.fluent-rounded-lg { border-radius: var(--fluent-radius-lg); }
+.fluent-rounded-xl { border-radius: var(--fluent-radius-xl); }
+.fluent-rounded-full { border-radius: 50%; }
+.fluent-rounded-pill { border-radius: var(--fluent-radius-pill); }
+
+.fluent-shadow-none { box-shadow: none; }
+.fluent-shadow-sm { box-shadow: var(--fluent-shadow-sm); }
+.fluent-shadow { box-shadow: var(--fluent-shadow); }
+.fluent-shadow-md { box-shadow: var(--fluent-shadow-md); }
+.fluent-shadow-lg { box-shadow: var(--fluent-shadow-lg); }
+
+.fluent-text-xs { font-size: var(--fluent-font-size-xs); }
+.fluent-text-sm { font-size: var(--fluent-font-size-sm); }
+.fluent-text-base { font-size: var(--fluent-font-size-base); }
+.fluent-text-md { font-size: var(--fluent-font-size-md); }
+.fluent-text-lg { font-size: var(--fluent-font-size-lg); }
+.fluent-text-xl { font-size: var(--fluent-font-size-xl); }
+.fluent-text-xxl { font-size: var(--fluent-font-size-xxl); }
+.fluent-text-3xl { font-size: var(--fluent-font-size-3xl); }
+
+.fluent-font-normal { font-weight: var(--fluent-font-weight-regular); }
+.fluent-font-medium { font-weight: var(--fluent-font-weight-medium); }
+.fluent-font-semibold { font-weight: var(--fluent-font-weight-semibold); }
+.fluent-font-bold { font-weight: var(--fluent-font-weight-bold); }
+
+.fluent-text-primary { color: var(--fluent-text-primary); }
+.fluent-text-secondary { color: var(--fluent-text-secondary); }
+.fluent-text-disabled { color: var(--fluent-text-disabled); }
+.fluent-text-white { color: var(--fluent-text-white); }
+
+.fluent-bg-none { background: none; }
+.fluent-bg-body { background-color: var(--fluent-bg-body); }
+.fluent-bg-surface { background-color: var(--fluent-bg-surface); }
+.fluent-bg-canvas { background-color: var(--fluent-bg-canvas); }
+.fluent-bg-subtle { background-color: var(--fluent-bg-subtle); }
+.fluent-bg-disabled { background-color: var(--fluent-bg-disabled); }
+.fluent-bg-primary { background-color: var(--fluent-primary); }
+.fluent-bg-primary-light { background-color: var(--fluent-primary-light); }
+.fluent-bg-primary-dark { background-color: var(--fluent-primary-dark); }
+.fluent-bg-secondary { background-color: var(--fluent-secondary); }
+.fluent-bg-success { background-color: var(--fluent-success); }
+.fluent-bg-warning { background-color: var(--fluent-warning); }
+.fluent-bg-error { background-color: var(--fluent-error); }
+.fluent-bg-info { background-color: var(--fluent-info); }
+
+.fluent-w-auto { width: auto; }
+.fluent-w-full { width: 100%; }
+.fluent-w-screen { width: 100vw; }
+.fluent-w-min { width: min-content; }
+.fluent-w-max { width: max-content; }
+.fluent-w-fit { width: fit-content; }
+
+.fluent-h-auto { height: auto; }
+.fluent-h-full { height: 100%; }
+.fluent-h-screen { height: 100vh; }
+.fluent-h-min { height: min-content; }
+.fluent-h-max { height: max-content; }
+.fluent-h-fit { height: fit-content; }
+
+.fluent-overflow-auto { overflow: auto; }
+.fluent-overflow-hidden { overflow: hidden; }
+.fluent-overflow-visible { overflow: visible; }
+.fluent-overflow-scroll { overflow: scroll; }
+.fluent-overflow-x-auto { overflow-x: auto; }
+.fluent-overflow-y-auto { overflow-y: auto; }
+.fluent-overflow-x-hidden { overflow-x: hidden; }
+.fluent-overflow-y-hidden { overflow-y: hidden; }
+
+.fluent-hidden { display: none; }
+.fluent-visible { visibility: visible; }
+.fluent-invisible { visibility: hidden; }
+
+.fluent-opacity-0 { opacity: 0; }
+.fluent-opacity-25 { opacity: 0.25; }
+.fluent-opacity-50 { opacity: 0.5; }
+.fluent-opacity-75 { opacity: 0.75; }
+.fluent-opacity-100 { opacity: 1; }
+
+/* انیمیشن‌های پایه */
+@keyframes fluent-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fluent-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes fluent-slide-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fluent-slide-down {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fluent-slide-left {
+  from { transform: translateX(20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fluent-slide-right {
+  from { transform: translateX(-20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.fluent-animate-fade-in {
+  animation: fluent-fade-in var(--fluent-duration-normal) var(--fluent-ease-out) forwards;
+}
+
+.fluent-animate-fade-out {
+  animation: fluent-fade-out var(--fluent-duration-normal) var(--fluent-ease-out) forwards;
+}
+
+.fluent-animate-slide-up {
+  animation: fluent-slide-up var(--fluent-duration-normal) var(--fluent-ease-out) forwards;
+}
+
+.fluent-animate-slide-down {
+  animation: fluent-slide-down var(--fluent-duration-normal) var(--fluent-ease-out) forwards;
+}
+
+.fluent-animate-slide-left {
+  animation: fluent-slide-left var(--fluent-duration-normal) var(--fluent-ease-out) forwards;
+}
+
+.fluent-animate-slide-right {
+  animation: fluent-slide-right var(--fluent-duration-normal) var(--fluent-ease-out) forwards;
+}
+
+/**
+ * کامپوننت‌های فلوئنت UI پایه
+ */
+
+/* بج‌ها */
+.fluent-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--fluent-spacing-xxs) var(--fluent-spacing-xs);
+  border-radius: var(--fluent-radius-pill);
+  font-size: var(--fluent-font-size-xs);
+  font-weight: var(--fluent-font-weight-medium);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.fluent-badge-primary {
+  background-color: var(--fluent-primary);
+  color: var(--fluent-text-white);
+}
+
+.fluent-badge-success {
+  background-color: var(--fluent-success);
+  color: var(--fluent-text-white);
+}
+
+.fluent-badge-warning {
+  background-color: var(--fluent-warning);
+  color: var(--fluent-text-white);
+}
+
+.fluent-badge-error {
+  background-color: var(--fluent-error);
+  color: var(--fluent-text-white);
+}
+
+.fluent-badge-info {
+  background-color: var(--fluent-info);
+  color: var(--fluent-text-white);
+}
+
+.fluent-badge-subtle-primary {
+  background-color: rgba(0, 120, 212, 0.1);
+  color: var(--fluent-primary);
+}
+
+.fluent-badge-subtle-success {
+  background-color: rgba(16, 124, 16, 0.1);
+  color: var(--fluent-success);
+}
+
+.fluent-badge-subtle-warning {
+  background-color: rgba(216, 59, 1, 0.1);
+  color: var(--fluent-warning);
+}
+
+.fluent-badge-subtle-error {
+  background-color: rgba(168, 0, 0, 0.1);
+  color: var(--fluent-error);
+}
+
+.fluent-badge-subtle-info {
+  background-color: rgba(0, 120, 212, 0.1);
+  color: var(--fluent-info);
+}
+
+/* دیوایدر (خط جداکننده) */
+.fluent-divider {
+  border: 0;
+  border-top: 1px solid var(--fluent-gray-30);
+  margin: var(--fluent-spacing) 0;
+}
+
+.fluent-divider-vertical {
+  border: 0;
+  border-left: 1px solid var(--fluent-gray-30);
+  margin: 0 var(--fluent-spacing);
+  align-self: stretch;
+  height: auto;
+  display: inline-block;
+}
+
+/* آیکون */
+.fluent-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1em;
+  height: 1em;
+}
+
+/* لودینگ (اسپینر) */
+.fluent-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(0, 120, 212, 0.2);
+  border-radius: 50%;
+  border-top-color: var(--fluent-primary);
+  animation: fluent-spin 0.8s linear infinite;
+}
+
+@keyframes fluent-spin {
+  to { transform: rotate(360deg); }
+}
+
+.fluent-spinner-sm {
+  width: 16px;
+  height: 16px;
+  border-width: 1.5px;
+}
+
+.fluent-spinner-lg {
+  width: 24px;
+  height: 24px;
+  border-width: 2.5px;
+}
+
+/* تولتیپ */
+.fluent-tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.fluent-tooltip-content {
+  position: absolute;
+  z-index: 1000;
+  visibility: hidden;
+  opacity: 0;
+  padding: var(--fluent-spacing-xs) var(--fluent-spacing-s);
+  background-color: var(--fluent-gray-160);
+  color: var(--fluent-text-white);
+  border-radius: var(--fluent-radius);
+  font-size: var(--fluent-font-size-sm);
+  line-height: 1.4;
+  max-width: 250px;
+  box-shadow: var(--fluent-shadow);
+  white-space: normal;
+  word-wrap: break-word;
+  transition: opacity var(--fluent-duration-normal) var(--fluent-ease-out),
+              visibility var(--fluent-duration-normal) var(--fluent-ease-out),
+              transform var(--fluent-duration-normal) var(--fluent-ease-out);
+}
+
+.fluent-tooltip:hover .fluent-tooltip-content {
+  visibility: visible;
+  opacity: 1;
+}
+
+.fluent-tooltip-top .fluent-tooltip-content {
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+  margin-bottom: 8px;
+}
+
+.fluent-tooltip-top .fluent-tooltip-content::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -4px;
+  border-width: 4px;
+  border-style: solid;
+  border-color: var(--fluent-gray-160) transparent transparent transparent;
+}
+
+.fluent-tooltip-bottom .fluent-tooltip-content {
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  margin-top: 8px;
+}
+
+.fluent-tooltip-bottom .fluent-tooltip-content::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  margin-left: -4px;
+  border-width: 4px;
+  border-style: solid;
+  border-color: transparent transparent var(--fluent-gray-160) transparent;
+}
+
+.fluent-tooltip-left .fluent-tooltip-content {
+  top: 50%;
+  right: 100%;
+  transform: translateY(-50%) translateX(-4px);
+  margin-right: 8px;
+}
+
+.fluent-tooltip-left .fluent-tooltip-content::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  margin-top: -4px;
+  border-width: 4px;
+  border-style: solid;
+  border-color: transparent transparent transparent var(--fluent-gray-160);
+}
+
+.fluent-tooltip-right .fluent-tooltip-content {
+  top: 50%;
+  left: 100%;
+  transform: translateY(-50%) translateX(4px);
+  margin-left: 8px;
+}
+
+.fluent-tooltip-right .fluent-tooltip-content::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  margin-top: -4px;
+  border-width: 4px;
+  border-style: solid;
+  border-color: transparent var(--fluent-gray-160) transparent transparent;
+}
+
+/* وضعیت لودینگ صفحه */
+.fluent-loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(4px);
+}
+
+.fluent-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.fluent-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(0, 120, 212, 0.2);
+  border-radius: 50%;
+  border-top-color: var(--fluent-primary);
+  animation: fluent-spin 1s linear infinite;
+  margin-bottom: var(--fluent-spacing);
+}
+
+.fluent-loading-text {
+  font-size: var(--fluent-font-size-base);
+  color: var(--fluent-text-primary);
+  margin-top: var(--fluent-spacing-s);
+}
+
+/* افکت‌های تعاملی (Interaction effects) */
+.fluent-interactive {
+  transition: transform var(--fluent-duration-faster) var(--fluent-ease-out),
+              box-shadow var(--fluent-duration-faster) var(--fluent-ease-out);
+}
+
+.fluent-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--fluent-shadow-md);
+}
+
+.fluent-interactive:active {
+  transform: translateY(0);
+  box-shadow: var(--fluent-shadow);
+}
+
+/* افکت ریپل */
+.fluent-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.fluent-ripple::after {
+  content: "";
+  display: block;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, #fff 10%, transparent 10.01%);
+  background-repeat: no-repeat;
+  background-position: 50%;
+  transform: scale(10, 10);
+  opacity: 0;
+  transition: transform 0.5s, opacity 1s;
+}
+
+.fluent-ripple:active::after {
+  transform: scale(0, 0);
+  opacity: 0.3;
+  transition: 0s;
+}
+
+/* اسکلتون (حالت لودینگ اجزاء) */
+.fluent-skeleton {
+  display: block;
+  width: 100%;
+  min-height: 1rem;
+  background: linear-gradient(90deg, 
+    var(--fluent-gray-30) 0%, 
+    var(--fluent-gray-20) 50%, 
+    var(--fluent-gray-30) 100%);
+  background-size: 200% 100%;
+  animation: fluent-skeleton-loading 1.5s ease-in-out infinite;
+  border-radius: var(--fluent-radius);
+}
+
+@keyframes fluent-skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.fluent-skeleton-text {
+  margin-bottom: 0.5rem;
+  height: 1rem;
+}
+
+.fluent-skeleton-circle {
+  border-radius: 50%;
+  height: 48px;
+  width: 48px;
+}
+
+.fluent-skeleton-rectangle {
+  width: 100%;
+  height: 120px;
+  border-radius: var(--fluent-radius);
+}
+
+/* اسکرول‌بار سفارشی */
+.fluent-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--fluent-gray-70) transparent;
+}
+
+.fluent-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.fluent-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.fluent-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--fluent-gray-70);
+  border-radius: 4px;
+  border: 2px solid transparent;
+}
+
+.fluent-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: var(--fluent-gray-90);
+}
+
+/* برای پشتیبانی از شیوه‌های دارک مود */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* رنگ‌های متن */
+    --fluent-text-primary: #ffffff;
+    --fluent-text-secondary: #d2d0ce;
+    --fluent-text-disabled: #605e5c;
+    
+    /* رنگ‌های پس‌زمینه */
+    --fluent-bg-body: #201f1e;
+    --fluent-bg-surface: #323130;
+    --fluent-bg-canvas: #3b3a39;
+    --fluent-bg-subtle: #484644;
+    --fluent-bg-disabled: #3b3a39;
+  }
+}

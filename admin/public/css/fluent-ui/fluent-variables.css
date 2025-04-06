@@ -1,0 +1,152 @@
+/**
+ * مایکروسافت فلوئنت UI - متغیرهای CSS
+ * 
+ * این فایل شامل متغیرهای CSS اصلی برای فلوئنت UI است
+ * برای تنظیم قالب فلوئنت UI، این متغیرها را تغییر دهید
+ */
+
+:root {
+  /* رنگ‌های اصلی */
+  --fluent-primary: #0078d4;                /* رنگ اصلی */
+  --fluent-primary-dark: #005a9e;          /* رنگ اصلی - تیره */
+  --fluent-primary-light: #2b88d8;         /* رنگ اصلی - روشن */
+  --fluent-primary-lighter: #deecf9;       /* رنگ اصلی - خیلی روشن */
+  --fluent-primary-darker: #004578;        /* رنگ اصلی - خیلی تیره */
+  
+  /* رنگ‌های فرعی */
+  --fluent-secondary: #2b579a;             /* رنگ فرعی */
+  --fluent-secondary-light: #4f6bed;       /* رنگ فرعی - روشن */
+  --fluent-accent: #ffaa44;                /* رنگ تاکیدی */
+  
+  /* رنگ‌های وضعیت */
+  --fluent-success: #107c10;               /* رنگ موفقیت */
+  --fluent-warning: #d83b01;               /* رنگ هشدار */
+  --fluent-error: #a80000;                 /* رنگ خطا */
+  --fluent-info: #0078d4;                  /* رنگ اطلاعات */
+  
+  /* رنگ‌های خنثی */
+  --fluent-black: #000000;                 /* مشکی */
+  --fluent-gray-220: #11100f;              /* خاکستری 220 */
+  --fluent-gray-210: #161514;              /* خاکستری 210 */
+  --fluent-gray-200: #1b1a19;              /* خاکستری 200 */
+  --fluent-gray-190: #201f1e;              /* خاکستری 190 */
+  --fluent-gray-180: #252423;              /* خاکستری 180 */
+  --fluent-gray-170: #292827;              /* خاکستری 170 */
+  --fluent-gray-160: #323130;              /* خاکستری 160 */
+  --fluent-gray-150: #3b3a39;              /* خاکستری 150 */
+  --fluent-gray-140: #484644;              /* خاکستری 140 */
+  --fluent-gray-130: #605e5c;              /* خاکستری 130 */
+  --fluent-gray-120: #797775;              /* خاکستری 120 */
+  --fluent-gray-110: #8a8886;              /* خاکستری 110 */
+  --fluent-gray-100: #979593;              /* خاکستری 100 */
+  --fluent-gray-90: #a19f9d;               /* خاکستری 90 */
+  --fluent-gray-80: #b3b0ad;               /* خاکستری 80 */
+  --fluent-gray-70: #bebbb8;               /* خاکستری 70 */
+  --fluent-gray-60: #c8c6c4;               /* خاکستری 60 */
+  --fluent-gray-50: #d2d0ce;               /* خاکستری 50 */
+  --fluent-gray-40: #e1dfdd;               /* خاکستری 40 */
+  --fluent-gray-30: #edebe9;               /* خاکستری 30 */
+  --fluent-gray-20: #f3f2f1;               /* خاکستری 20 */
+  --fluent-gray-10: #faf9f8;               /* خاکستری 10 */
+  --fluent-white: #ffffff;                 /* سفید */
+  
+  /* رنگ‌های متن */
+  --fluent-text-primary: #323130;          /* متن اصلی */
+  --fluent-text-secondary: #605e5c;        /* متن فرعی */
+  --fluent-text-disabled: #a19f9d;         /* متن غیرفعال */
+  --fluent-text-white: #ffffff;            /* متن سفید */
+  
+  /* رنگ‌های پس‌زمینه */
+  --fluent-bg-body: #faf9f8;               /* پس‌زمینه بدنه */
+  --fluent-bg-surface: #ffffff;            /* پس‌زمینه سطوح */
+  --fluent-bg-canvas: #f5f5f5;             /* پس‌زمینه کنواس */
+  --fluent-bg-subtle: #f3f2f1;             /* پس‌زمینه کمرنگ */
+  --fluent-bg-disabled: #f3f2f1;           /* پس‌زمینه غیرفعال */
+  
+  /* سایه‌ها */
+  --fluent-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --fluent-shadow: 0 4px 8px rgba(0, 0, 0, 0.14), 0 0 1px rgba(0, 0, 0, 0.2);
+  --fluent-shadow-md: 0 8px 16px rgba(0, 0, 0, 0.14), 0 0 1px rgba(0, 0, 0, 0.2);
+  --fluent-shadow-lg: 0 16px 32px rgba(0, 0, 0, 0.14), 0 0 1px rgba(0, 0, 0, 0.2);
+  --fluent-shadow-focus: 0 0 0 2px rgba(0, 120, 212, 0.5);
+  
+  /* شعاع گوشه‌ها */
+  --fluent-radius-sm: 2px;                /* شعاع کوچک */
+  --fluent-radius: 4px;                   /* شعاع استاندارد */
+  --fluent-radius-md: 6px;                /* شعاع متوسط */
+  --fluent-radius-lg: 8px;                /* شعاع بزرگ */
+  --fluent-radius-xl: 12px;               /* شعاع خیلی بزرگ */
+  --fluent-radius-pill: 999px;            /* شعاع کپسول */
+  
+  /* انیمیشن‌ها و گذارها */
+  --fluent-duration-ultra-fast: 50ms;      /* مدت خیلی سریع */
+  --fluent-duration-faster: 100ms;         /* مدت سریع‌تر */
+  --fluent-duration-fast: 150ms;           /* مدت سریع */
+  --fluent-duration-normal: 200ms;         /* مدت نرمال */
+  --fluent-duration-slow: 300ms;           /* مدت کُند */
+  --fluent-duration-slower: 400ms;         /* مدت کُندتر */
+  --fluent-duration-ultra-slow: 500ms;     /* مدت خیلی کُند */
+  
+  --fluent-ease-out: cubic-bezier(0, 0, 0, 1);  /* تابع ease-out */
+  --fluent-ease-in: cubic-bezier(1, 0, 1, 1);   /* تابع ease-in */
+  --fluent-ease: cubic-bezier(0.33, 0, 0.67, 1);   /* تابع ease */
+  
+  /* فاصله‌گذاری */
+  --fluent-spacing-xxs: 2px;               /* فضای خیلی خیلی کوچک */
+  --fluent-spacing-xs: 4px;                /* فضای خیلی کوچک */
+  --fluent-spacing-s: 8px;                 /* فضای کوچک */
+  --fluent-spacing-m: 12px;                /* فضای متوسط */
+  --fluent-spacing: 16px;                  /* فضای استاندارد */
+  --fluent-spacing-l: 20px;                /* فضای بزرگ */
+  --fluent-spacing-xl: 24px;               /* فضای خیلی بزرگ */
+  --fluent-spacing-xxl: 32px;              /* فضای خیلی خیلی بزرگ */
+  --fluent-spacing-3xl: 40px;              /* فضای 3x بزرگ */
+  --fluent-spacing-4xl: 48px;              /* فضای 4x بزرگ */
+  --fluent-spacing-5xl: 64px;              /* فضای 5x بزرگ */
+  
+  /* فونت‌ها */
+  --fluent-font-family: 'Vazirmatn', 'Segoe UI', 'Segoe UI Web (West European)', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif;
+  
+  /* اندازه فونت */
+  --fluent-font-size-base: 14px;           /* اندازه پایه */
+  --fluent-font-size-xs: 10px;             /* اندازه خیلی کوچک */
+  --fluent-font-size-sm: 12px;             /* اندازه کوچک */
+  --fluent-font-size-md: 16px;             /* اندازه متوسط */
+  --fluent-font-size-lg: 20px;             /* اندازه بزرگ */
+  --fluent-font-size-xl: 24px;             /* اندازه خیلی بزرگ */
+  --fluent-font-size-xxl: 28px;            /* اندازه خیلی خیلی بزرگ */
+  --fluent-font-size-3xl: 32px;            /* اندازه 3x بزرگ */
+  
+  /* وزن فونت */
+  --fluent-font-weight-regular: 400;       /* وزن معمولی */
+  --fluent-font-weight-medium: 500;        /* وزن متوسط */
+  --fluent-font-weight-semibold: 600;      /* وزن نیمه‌ضخیم */
+  --fluent-font-weight-bold: 700;          /* وزن ضخیم */
+  
+  /* ارتفاع خط */
+  --fluent-line-height-base: 1.4;          /* ارتفاع خط پایه */
+  --fluent-line-height-tight: 1.2;         /* ارتفاع خط فشرده */
+  --fluent-line-height-loose: 1.6;         /* ارتفاع خط آزاد */
+}
+
+/* تاریک (دارک مود) */
+.fluent-dark {
+  /* رنگ‌های اصلی */
+  --fluent-primary: #2b88d8;
+  --fluent-primary-dark: #0078d4;
+  --fluent-primary-light: #71afe5;
+  --fluent-primary-lighter: #deecf9;
+  --fluent-primary-darker: #004578;
+  
+  /* رنگ‌های متن */
+  --fluent-text-primary: #ffffff;
+  --fluent-text-secondary: #d2d0ce;
+  --fluent-text-disabled: #605e5c;
+  
+  /* رنگ‌های پس‌زمینه */
+  --fluent-bg-body: #201f1e;
+  --fluent-bg-surface: #323130;
+  --fluent-bg-canvas: #3b3a39;
+  --fluent-bg-subtle: #484644;
+  --fluent-bg-disabled: #3b3a39;
+}
