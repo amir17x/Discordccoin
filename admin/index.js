@@ -27,7 +27,7 @@ const __dirname = path.dirname(__filename);
 
 // راه‌اندازی مسیرها
 import { setupRoutes } from './routes/index.js';
-import { isAuthenticated, setUser } from './middleware/auth.js';
+import { isAuthenticated, setUser, ensureAdminUser } from './middleware/auth.js';
 
 /**
  * راه‌اندازی پنل مدیریت
@@ -49,8 +49,65 @@ export function setupAdminPanel(app) {
   app.use(methodOverride('_method'));
   app.use(morgan('dev'));
   
+  // همیشه تنظیم session در پنل ادمین (با استفاده از MongoStore)
+  console.log('⏳ تنظیم session در پنل ادمین با استفاده از MongoStore...');
+  
+  try {
+    // تنظیم session با MongoStore برای ذخیره‌سازی پایدار
+    const sessionOptions = {
+      secret: process.env.SESSION_SECRET || 'ccoin-secret-key',
+      resave: false,
+      saveUninitialized: false,
+      cookie: { 
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 24 * 60 * 60 * 1000, // 24 ساعت
+        httpOnly: true
+      }
+    };
+    
+    // افزودن MongoStore به session
+    try {
+      const mongoStoreOptions = {
+        mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/ccoin',
+        ttl: 24 * 60 * 60, // 24 ساعت
+        autoRemove: 'native',
+        touchAfter: 24 * 3600, // 1 روز (آپدیت حداکثر 1 بار در روز)
+        crypto: {
+          secret: process.env.SESSION_SECRET || 'ccoin-session-secret'
+        }
+      };
+      
+      sessionOptions.store = MongoStore.create(mongoStoreOptions);
+      console.log('✅ MongoStore با موفقیت به تنظیمات session اضافه شد');
+    } catch (storeError) {
+      console.error('❌ خطا در تنظیم MongoStore:', storeError);
+      console.log('⚠️ استفاده از store پیش‌فرض برای session...');
+    }
+    
+    // اعمال تنظیمات session
+    app.use(session(sessionOptions));
+    console.log('✅ Session با موفقیت در پنل ادمین تنظیم شد');
+  } catch (sessionError) {
+    console.error('❌ خطای اصلی در تنظیم session:', sessionError);
+  }
+  
   // راه‌اندازی flash messages
   app.use(flash());
+  
+  // بررسی وجود کاربر ادمین پیش‌فرض
+  try {
+    ensureAdminUser().then(admin => {
+      if (admin) {
+        console.log('👤 کاربر ادمین پیش‌فرض ایجاد شد:', admin.username);
+      } else {
+        console.log('👤 کاربر ادمین در سیستم وجود دارد');
+      }
+    }).catch(err => {
+      console.error('❌ خطا در بررسی کاربر ادمین:', err);
+    });
+  } catch (adminError) {
+    console.error('❌ خطای استثنایی در بررسی کاربر ادمین:', adminError);
+  }
   
   // middleware برای دسترسی به متغیرهای عمومی در تمام قالب‌ها
   app.use((req, res, next) => {
@@ -97,7 +154,7 @@ export function setupAdminPanel(app) {
   app.use('/admin', setUser);
   
   // مسیرهایی که نیاز به احراز هویت ندارند
-  const publicPaths = ['/admin/login', '/admin/logout', '/admin/forgot-password', '/admin/reset-password'];
+  const publicPaths = ['/admin/login', '/admin/logout', '/admin/forgot-password', '/admin/reset-password', '/admin/public'];
   
   // اعمال middleware احراز هویت برای مسیرهای خصوصی
   app.use('/admin', (req, res, next) => {

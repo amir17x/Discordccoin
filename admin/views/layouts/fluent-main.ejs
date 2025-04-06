@@ -17,8 +17,11 @@
     <!-- استایل‌های فلوئنت UI -->
     <link rel="stylesheet" href="/admin/public/css/fluent.css">
     
-    <!-- استایل‌های قبلی برای حفظ سازگاری -->
-    <link rel="stylesheet" href="/admin/public/css/admin.css">
+    <!-- چارت.جی‌اس برای نمودارها -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- اسکریپت آیکون‌های feather -->
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
     
     <!-- اسکریپت‌های اضافی -->
     <% if (typeof extraStyles !== 'undefined') { %>
@@ -34,7 +37,7 @@
         <aside class="fluent-sidebar">
             <div class="fluent-sidebar-header">
                 <div class="fluent-sidebar-logo">
-                    <img src="/admin/public/img/ccoin-logo.png" alt="CCOIN">
+                    <img src="/admin/public/img/ccoin-logo.svg" alt="CCOIN">
                     <span>CCOIN</span>
                 </div>
                 <button class="fluent-sidebar-close-btn" id="closeSidebarBtn">
@@ -52,207 +55,178 @@
                             </a>
                         </li>
                         
-                        <li class="<%= currentRoute.startsWith('/admin/users') ? 'active' : '' %>">
+                        <li class="<%= currentRoute && currentRoute.startsWith('/admin/users') ? 'active' : '' %>">
                             <a href="/admin/users">
                                 <i class="fa-solid fa-users"></i>
                                 <span>کاربران</span>
                             </a>
                         </li>
                         
-                        <li class="<%= currentRoute.startsWith('/admin/economy') ? 'active' : '' %>">
+                        <li class="<%= currentRoute && currentRoute.startsWith('/admin/economy') ? 'active' : '' %>">
                             <a href="/admin/economy">
-                                <i class="fa-solid fa-coins"></i>
+                                <i class="fa-solid fa-money-bill-trend-up"></i>
                                 <span>اقتصاد</span>
                             </a>
                         </li>
                         
-                        <li class="<%= currentRoute.startsWith('/admin/transactions') ? 'active' : '' %>">
-                            <a href="/admin/transactions">
-                                <i class="fa-solid fa-money-bill-transfer"></i>
-                                <span>تراکنش‌ها</span>
+                        <li class="<%= currentRoute && currentRoute.startsWith('/admin/servers') ? 'active' : '' %>">
+                            <a href="/admin/servers">
+                                <i class="fa-solid fa-server"></i>
+                                <span>سرورها</span>
                             </a>
                         </li>
                         
-                        <li class="<%= currentRoute.startsWith('/admin/games') ? 'active' : '' %>">
+                        <li class="<%= currentRoute && currentRoute.startsWith('/admin/shop') ? 'active' : '' %>">
+                            <a href="/admin/shop">
+                                <i class="fa-solid fa-shopping-cart"></i>
+                                <span>فروشگاه</span>
+                            </a>
+                        </li>
+                        
+                        <li class="<%= currentRoute && currentRoute.startsWith('/admin/games') ? 'active' : '' %>">
                             <a href="/admin/games">
                                 <i class="fa-solid fa-gamepad"></i>
                                 <span>بازی‌ها</span>
                             </a>
                         </li>
                         
-                        <li class="<%= currentRoute.startsWith('/admin/events') ? 'active' : '' %>">
+                        <li class="<%= currentRoute && currentRoute.startsWith('/admin/events') ? 'active' : '' %>">
                             <a href="/admin/events">
                                 <i class="fa-solid fa-calendar-days"></i>
                                 <span>رویدادها</span>
                             </a>
                         </li>
                         
-                        <li class="<%= currentRoute.startsWith('/admin/banks') ? 'active' : '' %>">
-                            <a href="/admin/banks">
-                                <i class="fa-solid fa-landmark"></i>
-                                <span>بانک‌ها</span>
+                        <li class="<%= currentRoute && currentRoute.startsWith('/admin/giftcodes') ? 'active' : '' %>">
+                            <a href="/admin/giftcodes">
+                                <i class="fa-solid fa-gift"></i>
+                                <span>کدهای هدیه</span>
                             </a>
                         </li>
                         
-                        <li class="<%= currentRoute.startsWith('/admin/logs') ? 'active' : '' %>">
+                        <li class="<%= currentRoute && currentRoute.startsWith('/admin/logs') ? 'active' : '' %>">
                             <a href="/admin/logs">
                                 <i class="fa-solid fa-list"></i>
                                 <span>لاگ‌ها</span>
                             </a>
                         </li>
                         
-                        <li class="<%= currentRoute.startsWith('/admin/settings') ? 'active' : '' %>">
+                        <li class="<%= currentRoute && currentRoute.startsWith('/admin/settings') ? 'active' : '' %>">
                             <a href="/admin/settings">
                                 <i class="fa-solid fa-gear"></i>
                                 <span>تنظیمات</span>
                             </a>
                         </li>
                         
-                        <li class="<%= currentRoute.startsWith('/admin/ai') ? 'active' : '' %>">
-                            <a href="/admin/ai">
-                                <i class="fa-solid fa-brain"></i>
-                                <span>هوش مصنوعی</span>
+                        <li class="<%= currentRoute && currentRoute.startsWith('/admin/admins') ? 'active' : '' %>">
+                            <a href="/admin/admins">
+                                <i class="fa-solid fa-user-shield"></i>
+                                <span>مدیران</span>
                             </a>
                         </li>
                     </ul>
                 </nav>
             </div>
+            
+            <div class="fluent-sidebar-footer">
+                <p>CCOIN Admin Panel v1.2</p>
+            </div>
         </aside>
-
+        
         <!-- محتوای اصلی -->
-        <main class="fluent-main-content">
+        <div class="fluent-content">
             <!-- هدر -->
             <header class="fluent-header">
-                <div class="fluent-header-left">
-                    <button class="fluent-menu-toggle" id="menuToggle">
-                        <i class="fa-solid fa-bars"></i>
-                    </button>
-                    <h1 class="fluent-page-title"><%= title %></h1>
-                </div>
+                <button class="fluent-mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
                 
-                <div class="fluent-header-right">
+                <div class="fluent-header-actions">
                     <div class="fluent-search">
-                        <i class="fa-solid fa-search"></i>
-                        <input type="text" placeholder="جستجو...">
-                    </div>
-                    
-                    <div class="fluent-notifications">
-                        <button class="fluent-icon-button" aria-label="اعلان‌ها">
-                            <i class="fa-solid fa-bell"></i>
-                            <span class="badge">3</span>
-                        </button>
+                        <input type="text" class="fluent-search-input" placeholder="جستجو...">
+                        <i class="fa-solid fa-search fluent-search-icon"></i>
                     </div>
                     
                     <div class="fluent-user-menu">
-                        <div class="fluent-user-info">
-                            <img src="/admin/public/img/user-avatar.png" alt="<%= user.username %>">
-                            <span><%= user.username %></span>
-                            <i class="fa-solid fa-chevron-down"></i>
+                        <div class="fluent-user-avatar">
+                            <img src="/admin/public/img/user-avatar.svg" alt="Admin">
                         </div>
+                        <span class="fluent-user-name"><%= user ? user.name || user.username : 'ادمین' %></span>
+                        <i class="fa-solid fa-chevron-down"></i>
                         
-                        <div class="fluent-dropdown-menu">
-                            <a href="/admin/settings/profile">
-                                <i class="fa-solid fa-user"></i>
-                                <span>پروفایل</span>
-                            </a>
-                            <a href="/admin/settings">
-                                <i class="fa-solid fa-gear"></i>
-                                <span>تنظیمات</span>
-                            </a>
-                            <div class="fluent-dropdown-divider"></div>
-                            <a href="/admin/logout">
-                                <i class="fa-solid fa-sign-out-alt"></i>
-                                <span>خروج</span>
-                            </a>
+                        <div class="fluent-user-dropdown">
+                            <ul>
+                                <li>
+                                    <a href="/admin/profile">
+                                        <i class="fa-solid fa-user"></i>
+                                        پروفایل
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="/admin/settings">
+                                        <i class="fa-solid fa-gear"></i>
+                                        تنظیمات
+                                    </a>
+                                </li>
+                                <div class="fluent-divider"></div>
+                                <li>
+                                    <a href="/admin/logout">
+                                        <i class="fa-solid fa-sign-out-alt"></i>
+                                        خروج
+                                    </a>
+                                </li>
+                            </ul>
                         </div>
                     </div>
                 </div>
             </header>
-
-            <!-- محتوا -->
-            <div class="fluent-content">
-                <% if (messages.error) { %>
-                    <div class="fluent-alert error">
-                        <i class="fa-solid fa-circle-exclamation"></i>
-                        <%= messages.error %>
+            
+            <!-- پیام‌های فلش -->
+            <% if (typeof messages !== 'undefined' && messages) { %>
+                <div class="fluent-flash-messages">
+                    <div class="fluent-content-body">
+                        <% if (messages.success && messages.success.length > 0) { %>
+                            <div class="fluent-alert success">
+                                <i class="fa-solid fa-check-circle"></i>
+                                <%= messages.success[0] %>
+                            </div>
+                        <% } %>
+                        
+                        <% if (messages.error && messages.error.length > 0) { %>
+                            <div class="fluent-alert error">
+                                <i class="fa-solid fa-times-circle"></i>
+                                <%= messages.error[0] %>
+                            </div>
+                        <% } %>
+                        
+                        <% if (messages.info && messages.info.length > 0) { %>
+                            <div class="fluent-alert info">
+                                <i class="fa-solid fa-info-circle"></i>
+                                <%= messages.info[0] %>
+                            </div>
+                        <% } %>
+                        
+                        <% if (messages.warning && messages.warning.length > 0) { %>
+                            <div class="fluent-alert warning">
+                                <i class="fa-solid fa-exclamation-triangle"></i>
+                                <%= messages.warning[0] %>
+                            </div>
+                        <% } %>
                     </div>
-                <% } %>
-                
-                <% if (messages.success) { %>
-                    <div class="fluent-alert success">
-                        <i class="fa-solid fa-circle-check"></i>
-                        <%= messages.success %>
-                    </div>
-                <% } %>
-                
-                <% if (messages.info) { %>
-                    <div class="fluent-alert info">
-                        <i class="fa-solid fa-circle-info"></i>
-                        <%= messages.info %>
-                    </div>
-                <% } %>
-                
-                <%- body %>
-            </div>
-        </main>
+                </div>
+            <% } %>
+            
+            <!-- محتوای اصلی صفحه -->
+            <%- body %>
+        </div>
     </div>
-
-    <!-- اسکریپت‌های فلوئنت -->
-    <script src="/admin/public/js/fluent-ui.js"></script>
     
-    <!-- اسکریپت‌های قبلی -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.6.0/chart.min.js"></script>
-    <script src="/admin/public/js/admin.js"></script>
+    <!-- اسکریپت‌های فلوئنت UI -->
+    <script src="/admin/public/js/fluent-ui.js"></script>
     
     <!-- اسکریپت‌های اضافی -->
     <% if (typeof extraScripts !== 'undefined') { %>
         <%- extraScripts %>
     <% } %>
-    
-    <script>
-        // فعال‌سازی عملکرد منوی موبایل
-        document.addEventListener('DOMContentLoaded', function() {
-            const menuToggle = document.getElementById('menuToggle');
-            const closeSidebarBtn = document.getElementById('closeSidebarBtn');
-            const backdrop = document.getElementById('mobileMenuBackdrop');
-            const sidebar = document.querySelector('.fluent-sidebar');
-            
-            if (menuToggle && closeSidebarBtn && backdrop && sidebar) {
-                menuToggle.addEventListener('click', function() {
-                    sidebar.classList.add('active');
-                    backdrop.classList.add('active');
-                    document.body.style.overflow = 'hidden';
-                });
-                
-                closeSidebarBtn.addEventListener('click', function() {
-                    sidebar.classList.remove('active');
-                    backdrop.classList.remove('active');
-                    document.body.style.overflow = '';
-                });
-                
-                backdrop.addEventListener('click', function() {
-                    sidebar.classList.remove('active');
-                    backdrop.classList.remove('active');
-                    document.body.style.overflow = '';
-                });
-            }
-            
-            // فعال‌سازی منوی کاربر
-            const userMenu = document.querySelector('.fluent-user-info');
-            const dropdownMenu = document.querySelector('.fluent-dropdown-menu');
-            
-            if (userMenu && dropdownMenu) {
-                userMenu.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    dropdownMenu.classList.toggle('active');
-                });
-                
-                document.addEventListener('click', function() {
-                    dropdownMenu.classList.remove('active');
-                });
-            }
-        });
-    </script>
 </body>
 </html>

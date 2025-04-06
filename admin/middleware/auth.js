@@ -3,7 +3,9 @@
  */
 
 import { ObjectId } from 'mongodb';
-import { connectToDatabase } from '../index.js';
+import bcrypt from 'bcryptjs';
+import { AdminUser } from '../models/adminUser.js';
+import { AdminRole } from '../models/adminRole.js';
 
 /**
  * هدایت کاربر به داشبورد اگر قبلاً وارد شده باشد
@@ -34,6 +36,23 @@ export function isAuthenticated(req, res, next) {
   console.log('🔒 بررسی احراز هویت کاربر...');
   console.log('📝 مسیر درخواست شده:', req.originalUrl);
   
+  // مسیرهایی که نیاز به احراز هویت ندارند
+  const publicPaths = [
+    '/admin/login',
+    '/admin/forgot-password',
+    '/admin/reset-password',
+    '/admin/public'
+  ];
+  
+  // بررسی اینکه آیا مسیر درخواستی جزء مسیرهای عمومی است یا خیر
+  const isPublicPath = publicPaths.some(path => req.originalUrl.startsWith(path));
+  
+  if (isPublicPath) {
+    console.log(`✅ مسیر ${req.originalUrl} به احراز هویت نیاز ندارد (مطابقت با ${publicPaths.find(path => req.originalUrl.startsWith(path))})`);
+    return next();
+  }
+  
+  // بررسی احراز هویت کاربر
   if (req.session && req.session.user) {
     console.log('📝 اطلاعات نشست:', req.session.user.username);
     console.log(`✅ کاربر احراز هویت شده است: ${req.session.user.username}`);
@@ -45,13 +64,6 @@ export function isAuthenticated(req, res, next) {
   // اگر درخواست API است، کد 401 برگردان
   if (req.originalUrl.includes('/api/')) {
     return res.status(401).json({ error: 'دسترسی غیرمجاز' });
-  }
-  
-  // در غیر این صورت، به صفحه ورود هدایت کن
-  // اگر مسیر فعلی صفحه ورود است، از ریدایرکت جلوگیری کن
-  if (req.originalUrl === '/admin/login') {
-    console.log('⚠️ از ریدایرکت به /admin/login خودداری شد (دور باطل)');
-    return next();
   }
   
   req.flash('info', 'لطفا ابتدا وارد شوید');
@@ -133,21 +145,21 @@ export function apiAuth(req, res, next) {
  */
 export async function ensureAdminUser() {
   try {
-    const { db } = await connectToDatabase();
-    
     // بررسی وجود کاربر ادمین
-    const adminUsersCount = await db.collection('admin_users').countDocuments();
+    const adminUsersCount = await AdminUser.countDocuments();
+    console.log(`👤 تعداد کاربران ادمین: ${adminUsersCount}`);
     
     if (adminUsersCount === 0) {
       console.log('⚠️ هیچ کاربر ادمینی یافت نشد. در حال ایجاد کاربر پیش‌فرض...');
       
-      // ایجاد کاربر پیش‌فرض
-      const defaultAdmin = {
-        username: 'admin',
-        password: 'ccoin123456', // در محیط واقعی باید هش شود
-        name: 'مدیر سیستم',
-        role: new ObjectId(),
-        permissions: [
+      // ابتدا یک نقش مدیریتی سیستم ایجاد می‌کنیم
+      let adminRole = await AdminRole.findOne({ name: 'مدیر سیستم' });
+      
+      if (!adminRole) {
+        console.log('⚠️ نقش مدیر سیستم یافت نشد. در حال ایجاد نقش پیش‌فرض...');
+        
+        // لیست همه دسترسی‌های ممکن
+        const allPermissions = [
           'dashboard:view',
           'users:view', 'users:create', 'users:edit', 'users:delete',
           'economy:view', 'economy:edit',
@@ -159,18 +171,47 @@ export async function ensureAdminUser() {
           'games:view', 'games:edit',
           'events:view', 'events:edit',
           'giftcodes:view', 'giftcodes:create', 'giftcodes:delete'
-        ],
+        ];
+        
+        // ایجاد نقش مدیر سیستم با تمام دسترسی‌ها
+        adminRole = new AdminRole({
+          name: 'مدیر سیستم',
+          description: 'نقش مدیریت سیستم با تمام دسترسی‌ها',
+          permissions: allPermissions,
+          isDefault: true
+        });
+        
+        await adminRole.save();
+        console.log('✅ نقش مدیر سیستم با موفقیت ایجاد شد');
+      }
+      
+      // هش کردن رمز عبور
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash('ccoin123456', salt);
+      
+      // ایجاد کاربر ادمین
+      const defaultAdmin = new AdminUser({
+        username: 'admin',
+        password: hashedPassword,
+        email: 'admin@ccoin.com',
+        name: 'مدیر سیستم',
+        role: adminRole._id, // استفاده از شناسه نقش ایجاد شده
+        active: true,
+        locked: false,
+        failedLoginAttempts: 0,
+        permissions: adminRole.permissions, // کپی دسترسی‌ها از نقش
+        lastLogin: new Date(),
         createdAt: new Date(),
         updatedAt: new Date()
-      };
+      });
       
-      const result = await db.collection('admin_users').insertOne(defaultAdmin);
+      await defaultAdmin.save();
       console.log('✅ کاربر ادمین پیش‌فرض ایجاد شد');
       
-      defaultAdmin._id = result.insertedId;
       return defaultAdmin;
     }
     
+    console.log('✅ کاربر ادمین در سیستم وجود دارد');
     return null;
   } catch (error) {
     console.error('❌ خطا در بررسی کاربر ادمین:', error);

@@ -1,0 +1,93 @@
+<div class="fluent-login-card">
+    <div class="fluent-login-header">
+        <img src="/admin/public/img/ccoin-logo.svg" alt="CCOIN" />
+        <h1 class="fluent-login-title">ورود به پنل مدیریت</h1>
+        <p class="fluent-login-subtitle">وارد حساب کاربری خود شوید</p>
+    </div>
+    
+    <form id="login-form" action="/admin/login" method="POST">
+        <div class="fluent-form-group">
+            <label for="username" class="fluent-label">نام کاربری</label>
+            <input type="text" id="username" name="username" class="fluent-input" placeholder="نام کاربری خود را وارد کنید" required autocomplete="username" />
+        </div>
+        
+        <div class="fluent-form-group">
+            <label for="password" class="fluent-label">رمز عبور</label>
+            <input type="password" id="password" name="password" class="fluent-input" placeholder="رمز عبور خود را وارد کنید" required autocomplete="current-password" />
+        </div>
+        
+        <div class="fluent-form-group">
+            <label class="fluent-checkbox">
+                <input type="checkbox" name="remember" value="true" />
+                <span class="fluent-checkbox-indicator"></span>
+                مرا به خاطر بسپار
+            </label>
+        </div>
+        
+        <button type="submit" id="login-button" class="fluent-button fluent-button-primary fluent-button-block">
+            <i class="fa-solid fa-sign-in-alt ml-2"></i>
+            ورود به سیستم
+        </button>
+    </form>
+    
+    <div class="fluent-login-links">
+        <a href="/admin/forgot-password">رمز عبور خود را فراموش کرده‌اید؟</a>
+    </div>
+</div>
+
+<script>
+// اسکریپت مخصوص صفحه ورود
+document.addEventListener('DOMContentLoaded', function() {
+    const loginForm = document.getElementById('login-form');
+    const loginButton = document.getElementById('login-button');
+    
+    if (loginForm && loginButton) {
+        loginForm.addEventListener('submit', function(event) {
+            // جلوگیری از ارسال پیش‌فرض فرم
+            event.preventDefault();
+            
+            // نمایش وضعیت در حال بارگذاری
+            loginButton.classList.add('loading');
+            loginButton.disabled = true;
+            loginButton.innerHTML = '<span class="spinner"></span> در حال پردازش...';
+            
+            // ارسال فرم به صورت دستی با fetch API
+            fetch('/admin/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams(new FormData(loginForm)),
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (response.redirected) {
+                    // اگر سرور ریدایرکت کرد، ما هم ریدایرکت می‌کنیم
+                    window.location.href = response.url;
+                } else {
+                    // بررسی وضعیت پاسخ
+                    return response.text().then(text => {
+                        // در صورت خطا، فرم را ری‌ست می‌کنیم
+                        loginButton.classList.remove('loading');
+                        loginButton.disabled = false;
+                        loginButton.innerHTML = '<i class="fa-solid fa-sign-in-alt ml-2"></i> ورود به سیستم';
+                        
+                        // ریدایرکت به همان صفحه برای نمایش پیام خطا
+                        window.location.href = '/admin/login';
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('خطا در ارسال فرم:', error);
+                // برگشت به حالت عادی
+                loginButton.classList.remove('loading');
+                loginButton.disabled = false;
+                loginButton.innerHTML = '<i class="fa-solid fa-sign-in-alt ml-2"></i> ورود به سیستم';
+                
+                // ریدایرکت به همان صفحه
+                window.location.href = '/admin/login';
+            });
+        });
+    }
+});
+</script>

@@ -84,8 +84,8 @@ export async function showDashboard(req, res) {
     
     console.log('✅ رندر نمایش داشبورد با داده‌های آماده...');
     
-    // آماده‌سازی داده‌ها برای نمایش
-    const viewData = {
+    // آماده‌سازی داده‌ها برای نمایش در قالب قدیمی
+    const baseViewData = {
       title: 'داشبورد',
       currentRoute: req.path, // افزودن مسیر فعلی برای استفاده در منوی ناوبری
       usersStats,
@@ -113,15 +113,100 @@ export async function showDashboard(req, res) {
     
     // استفاده از قالب Fluent UI برای صفحه داشبورد
     if (process.env.USE_FLUENT_UI === 'true') {
-      // اضافه کردن پارامترهای مورد نیاز برای قالب Fluent UI
-      viewData.layout = 'layouts/fluent-main';
-      res.render('fluent-dashboard', viewData);
+      console.log('🎨 استفاده از رابط کاربری Fluent برای صفحه داشبورد');
+      
+      // ایجاد داده‌های اضافی مورد نیاز برای قالب Fluent UI
+      const stats = {
+        // آمار کلی
+        totalUsers: usersStats.total || 0,
+        totalServers: 120, // مقدار پیش‌فرض
+        totalTransactions: recentTransactions.length > 0 ? 2500 : 0, // مقدار پیش‌فرض
+        totalGames: 45, // مقدار پیش‌فرض
+        
+        // درصد رشد
+        userGrowth: 12, // مقدار پیش‌فرض
+        serverGrowth: 8, // مقدار پیش‌فرض
+        transactionGrowth: 15, // مقدار پیش‌فرض
+        gameGrowth: 5, // مقدار پیش‌فرض
+        
+        // کاربران فعال اخیر (نمونه)
+        recentActiveUsers: [
+          {
+            id: '1',
+            username: 'user1',
+            userID: '123456789',
+            lastActive: new Date(),
+            status: 'online',
+            avatar: null
+          },
+          {
+            id: '2',
+            username: 'user2',
+            userID: '987654321',
+            lastActive: new Date(Date.now() - 30 * 60 * 1000), // 30 دقیقه قبل
+            status: 'away',
+            avatar: null
+          },
+          {
+            id: '3',
+            username: 'user3',
+            userID: '555555555',
+            lastActive: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 ساعت قبل
+            status: 'offline',
+            avatar: null
+          }
+        ],
+        
+        // رویدادهای اخیر (نمونه)
+        recentEvents: [
+          {
+            type: 'economy',
+            title: 'بازار سهام رشد کرد',
+            description: 'بازار سهام با رشد 5 درصدی همراه بود',
+            date: new Date(),
+            status: 'موفق'
+          },
+          {
+            type: 'game',
+            title: 'مسابقه هفتگی برگزار شد',
+            description: 'مسابقه هفتگی با شرکت 120 کاربر برگزار شد',
+            date: new Date(Date.now() - 12 * 60 * 60 * 1000), // 12 ساعت قبل
+            status: 'پایان یافته'
+          }
+        ],
+        
+        // داده‌های نمودار کاربران
+        userChartLabels: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور'],
+        userChartData: {
+          newUsers: [120, 150, 180, 220, 250, 300],
+          activeUsers: [80, 100, 130, 150, 200, 240]
+        },
+        
+        // داده‌های نمودار اقتصاد
+        economyChartLabels: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور'],
+        economyChartData: {
+          income: [5000, 6000, 7500, 8000, 9500, 11000],
+          expense: [2000, 2200, 3000, 3500, 4000, 4500],
+          profit: [3000, 3800, 4500, 4500, 5500, 6500]
+        }
+      };
+      
+      // ترکیب داده‌های پایه با داده‌های اضافی Fluent UI
+      const fluentViewData = {
+        ...baseViewData,
+        layout: 'layouts/fluent-main',
+        stats, // اضافه کردن آمار Fluent UI
+        user: req.session.user // ارسال اطلاعات کاربر به قالب
+      };
+      
+      res.render('fluent-dashboard', fluentViewData);
     } else {
-      res.render('dashboard/index', viewData);
+      res.render('dashboard/index', baseViewData);
     }
   } catch (error) {
     console.error('❌ خطا در نمایش داشبورد:', error);
-    const errorData = {
+    // آماده سازی داده‌های خطا برای قالب قدیمی
+    const baseErrorData = {
       title: 'داشبورد',
       currentRoute: req.path, // افزودن مسیر فعلی برای استفاده در منوی ناوبری
       usersStats: { total: 0, active: 0, new: 0 },
@@ -134,10 +219,53 @@ export async function showDashboard(req, res) {
     };
     
     if (process.env.USE_FLUENT_UI === 'true') {
-      errorData.layout = 'layouts/fluent-main';
-      res.render('fluent-dashboard', errorData);
+      console.log('🎨 استفاده از رابط کاربری Fluent برای صفحه خطای داشبورد');
+      
+      // ایجاد داده‌های خطا برای قالب Fluent UI
+      const stats = {
+        // آمار کلی با مقادیر خالی
+        totalUsers: 0,
+        totalServers: 0,
+        totalTransactions: 0,
+        totalGames: 0,
+        
+        // درصد رشد
+        userGrowth: 0,
+        serverGrowth: 0,
+        transactionGrowth: 0,
+        gameGrowth: 0,
+        
+        // لیست‌های خالی
+        recentActiveUsers: [],
+        recentEvents: [],
+        
+        // داده‌های نمودار خالی
+        userChartLabels: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور'],
+        userChartData: {
+          newUsers: [0, 0, 0, 0, 0, 0],
+          activeUsers: [0, 0, 0, 0, 0, 0]
+        },
+        
+        economyChartLabels: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور'],
+        economyChartData: {
+          income: [0, 0, 0, 0, 0, 0],
+          expense: [0, 0, 0, 0, 0, 0],
+          profit: [0, 0, 0, 0, 0, 0]
+        }
+      };
+      
+      // ترکیب داده‌های پایه با داده‌های Fluent UI
+      const fluentErrorData = {
+        ...baseErrorData,
+        layout: 'layouts/fluent-main',
+        stats,
+        user: req.session.user,
+        error: 'خطا در بارگیری داده‌های داشبورد' // پیام خطا
+      };
+      
+      res.render('fluent-dashboard', fluentErrorData);
     } else {
-      res.render('dashboard/index', errorData);
+      res.render('dashboard/index', baseErrorData);
     }
   }
 }

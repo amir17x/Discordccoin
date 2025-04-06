@@ -11,11 +11,17 @@ import { AdminUser } from '../models/adminUser.js';
  */
 export async function showLogin(req, res) {
   console.log('🎨 استفاده از رابط کاربری Fluent برای صفحه ورود');
-  // استفاده از تمپلیت کامل بدون استفاده از layout
-  res.render('auth/fluent-login', {
-    title: 'ورود به پنل مدیریت',
-    layout: false, // عدم استفاده از layout
-  });
+  
+  if (process.env.USE_FLUENT_UI === 'true') {
+    res.render('fluent-login', {
+      title: 'ورود به پنل مدیریت',
+      layout: 'layouts/fluent-auth' // استفاده از لایوت احراز هویت جدید
+    });
+  } else {
+    res.render('auth/login', {
+      title: 'ورود به پنل مدیریت'
+    });
+  }
 }
 
 /**
@@ -96,6 +102,17 @@ export async function processLogin(req, res) {
     
     // ذخیره اطلاعات کاربر در جلسه
     console.log('🔑 در حال ذخیره اطلاعات کاربر در جلسه...');
+    
+    // بررسی وضعیت جلسه
+    if (!req.session) {
+      console.error('❌ خطا: جلسه فعال (req.session) موجود نیست!');
+      req.flash('error', 'خطای سیستمی: جلسه کاربری در دسترس نیست');
+      return res.redirect('/admin/login');
+    }
+    
+    console.log('📝 وضعیت جلسه قبل از ذخیره اطلاعات کاربر:', req.session.id);
+    
+    // تنظیم اطلاعات کاربر در جلسه
     req.session.user = {
       id: user._id,
       username: user.username,
@@ -104,19 +121,30 @@ export async function processLogin(req, res) {
       permissions: user.permissions,
     };
     
-    console.log('💾 اطلاعات جلسه ذخیره شد:', req.session.user);
+    // ایجاد یک متغیر برای اطمینان از ذخیره موفق جلسه
+    req.session.isLoggedIn = true;
     
-    // ریدایرکت به داشبورد
-    console.log('🔀 ریدایرکت به داشبورد...');
-    req.flash('success', `${user.name} عزیز، خوش آمدید`);
+    console.log('💾 اطلاعات جلسه تنظیم شد:', req.session.user);
     
     // ذخیره نشست قبل از ریدایرکت
-    req.session.save(err => {
-      if (err) {
-        console.error('❌ خطا در ذخیره جلسه:', err);
-      }
-      res.redirect('/admin/dashboard');
-    });
+    try {
+      req.session.save(err => {
+        if (err) {
+          console.error('❌ خطا در ذخیره جلسه:', err);
+          req.flash('error', 'خطا در ذخیره اطلاعات ورود');
+          return res.redirect('/admin/login');
+        }
+        
+        console.log('✅ جلسه با موفقیت ذخیره شد');
+        console.log('🔀 ریدایرکت به داشبورد...');
+        req.flash('success', `${user.name} عزیز، خوش آمدید`);
+        res.redirect('/admin/dashboard');
+      });
+    } catch (sessionError) {
+      console.error('❌ خطای استثنایی در ذخیره جلسه:', sessionError);
+      req.flash('error', 'خطای سیستمی در ذخیره جلسه');
+      return res.redirect('/admin/login');
+    }
   } catch (error) {
     console.error('❌ خطا در پردازش فرم ورود:', error);
     req.flash('error', 'خطایی در سیستم رخ داده است');
@@ -143,11 +171,17 @@ export async function logout(req, res) {
  */
 export async function showForgotPassword(req, res) {
   console.log('🎨 استفاده از رابط کاربری Fluent برای صفحه فراموشی رمز عبور');
-  // استفاده از تمپلیت کامل بدون استفاده از layout
-  res.render('auth/fluent-forgot-password', {
-    title: 'فراموشی رمز عبور',
-    layout: false, // عدم استفاده از layout
-  });
+  
+  if (process.env.USE_FLUENT_UI === 'true') {
+    res.render('fluent-forgot-password', {
+      title: 'فراموشی رمز عبور',
+      layout: 'layouts/fluent-auth' // استفاده از لایوت احراز هویت جدید
+    });
+  } else {
+    res.render('auth/forgot-password', {
+      title: 'فراموشی رمز عبور'
+    });
+  }
 }
 
 /**
@@ -217,12 +251,19 @@ export async function showResetPassword(req, res) {
     }
     
     console.log('🎨 استفاده از رابط کاربری Fluent برای صفحه بازنشانی رمز عبور');
-    // استفاده از تمپلیت کامل بدون استفاده از layout
-    res.render('auth/fluent-reset-password', {
-      title: 'بازنشانی رمز عبور',
-      layout: false, // عدم استفاده از layout
-      token,
-    });
+    
+    if (process.env.USE_FLUENT_UI === 'true') {
+      res.render('fluent-reset-password', {
+        title: 'بازنشانی رمز عبور',
+        layout: 'layouts/fluent-auth', // استفاده از لایوت احراز هویت جدید
+        token
+      });
+    } else {
+      res.render('auth/reset-password', {
+        title: 'بازنشانی رمز عبور',
+        token
+      });
+    }
   } catch (error) {
     console.error('خطا در نمایش صفحه بازنشانی رمز عبور:', error);
     req.flash('error', 'خطایی در سیستم رخ داده است');

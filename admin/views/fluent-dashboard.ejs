@@ -1,138 +1,213 @@
-<!-- داشبورد با طراحی Fluent UI -->
-
-<div class="fluent-dashboard-page">
-    <!-- بخش خلاصه وضعیت -->
+<div class="fluent-content-body fluent-dashboard-page">
+    <h1 class="fluent-page-title">داشبورد</h1>
+    
+    <!-- خلاصه آمار -->
     <div class="fluent-dashboard-summary">
+        <!-- تعداد کاربران -->
         <div class="fluent-card fluent-stat-card">
             <div class="fluent-stat-card-content">
                 <div class="fluent-stat-card-icon fluent-bg-primary-lighter">
-                    <i data-feather="users"></i>
+                    <i class="fa-solid fa-users"></i>
                 </div>
                 <div class="fluent-stat-card-info">
-                    <p class="fluent-stat-card-title">تعداد کاربران</p>
-                    <h3 class="fluent-stat-card-value">
-                        <%= usersStats.total || 0 %>
-                        <span class="fluent-stat-card-change fluent-stat-card-change-up">
-                            <i data-feather="arrow-up"></i> 
-                            5.2%
-                        </span>
-                    </h3>
-                    <p class="fluent-stat-card-subtitle">نسبت به ماه گذشته</p>
+                    <div class="fluent-stat-card-title">کاربران</div>
+                    <div class="fluent-stat-card-value">
+                        <%= stats.totalUsers.toLocaleString('fa-IR') %>
+                        <% if (stats.userGrowth > 0) { %>
+                            <span class="fluent-stat-card-change fluent-stat-card-change-up">
+                                <i class="fa-solid fa-arrow-up"></i>
+                                <%= stats.userGrowth.toLocaleString('fa-IR') %>%
+                            </span>
+                        <% } else if (stats.userGrowth < 0) { %>
+                            <span class="fluent-stat-card-change fluent-stat-card-change-down">
+                                <i class="fa-solid fa-arrow-down"></i>
+                                <%= Math.abs(stats.userGrowth).toLocaleString('fa-IR') %>%
+                            </span>
+                        <% } else { %>
+                            <span class="fluent-stat-card-change fluent-stat-card-change-neutral">
+                                <i class="fa-solid fa-minus"></i>
+                                0%
+                            </span>
+                        <% } %>
+                    </div>
+                    <div class="fluent-stat-card-subtitle">نسبت به ماه گذشته</div>
                 </div>
             </div>
         </div>
         
-        <div class="fluent-card fluent-stat-card">
-            <div class="fluent-stat-card-content">
-                <div class="fluent-stat-card-icon fluent-bg-success-lighter">
-                    <i data-feather="activity"></i>
-                </div>
-                <div class="fluent-stat-card-info">
-                    <p class="fluent-stat-card-title">کاربران فعال</p>
-                    <h3 class="fluent-stat-card-value">
-                        <%= usersStats.active || 0 %>
-                        <span class="fluent-stat-card-change fluent-stat-card-change-up">
-                            <i data-feather="arrow-up"></i>
-                            3.1%
-                        </span>
-                    </h3>
-                    <p class="fluent-stat-card-subtitle">نسبت به ماه گذشته</p>
-                </div>
-            </div>
-        </div>
-        
+        <!-- تعداد سرورها -->
         <div class="fluent-card fluent-stat-card">
             <div class="fluent-stat-card-content">
                 <div class="fluent-stat-card-icon fluent-bg-info-lighter">
-                    <i data-feather="user-plus"></i>
+                    <i class="fa-solid fa-server"></i>
                 </div>
                 <div class="fluent-stat-card-info">
-                    <p class="fluent-stat-card-title">کاربران جدید</p>
-                    <h3 class="fluent-stat-card-value">
-                        <%= usersStats.new || 0 %>
-                        <span class="fluent-stat-card-change fluent-stat-card-change-up">
-                            <i data-feather="arrow-up"></i>
-                            7.4%
-                        </span>
-                    </h3>
-                    <p class="fluent-stat-card-subtitle">نسبت به ماه گذشته</p>
+                    <div class="fluent-stat-card-title">سرورها</div>
+                    <div class="fluent-stat-card-value">
+                        <%= stats.totalServers.toLocaleString('fa-IR') %>
+                        <% if (stats.serverGrowth > 0) { %>
+                            <span class="fluent-stat-card-change fluent-stat-card-change-up">
+                                <i class="fa-solid fa-arrow-up"></i>
+                                <%= stats.serverGrowth.toLocaleString('fa-IR') %>%
+                            </span>
+                        <% } else if (stats.serverGrowth < 0) { %>
+                            <span class="fluent-stat-card-change fluent-stat-card-change-down">
+                                <i class="fa-solid fa-arrow-down"></i>
+                                <%= Math.abs(stats.serverGrowth).toLocaleString('fa-IR') %>%
+                            </span>
+                        <% } else { %>
+                            <span class="fluent-stat-card-change fluent-stat-card-change-neutral">
+                                <i class="fa-solid fa-minus"></i>
+                                0%
+                            </span>
+                        <% } %>
+                    </div>
+                    <div class="fluent-stat-card-subtitle">نسبت به ماه گذشته</div>
                 </div>
             </div>
         </div>
         
+        <!-- تراکنش‌ها -->
+        <div class="fluent-card fluent-stat-card">
+            <div class="fluent-stat-card-content">
+                <div class="fluent-stat-card-icon fluent-bg-success-lighter">
+                    <i class="fa-solid fa-money-bill-transfer"></i>
+                </div>
+                <div class="fluent-stat-card-info">
+                    <div class="fluent-stat-card-title">تراکنش‌ها</div>
+                    <div class="fluent-stat-card-value">
+                        <%= stats.totalTransactions.toLocaleString('fa-IR') %>
+                        <% if (stats.transactionGrowth > 0) { %>
+                            <span class="fluent-stat-card-change fluent-stat-card-change-up">
+                                <i class="fa-solid fa-arrow-up"></i>
+                                <%= stats.transactionGrowth.toLocaleString('fa-IR') %>%
+                            </span>
+                        <% } else if (stats.transactionGrowth < 0) { %>
+                            <span class="fluent-stat-card-change fluent-stat-card-change-down">
+                                <i class="fa-solid fa-arrow-down"></i>
+                                <%= Math.abs(stats.transactionGrowth).toLocaleString('fa-IR') %>%
+                            </span>
+                        <% } else { %>
+                            <span class="fluent-stat-card-change fluent-stat-card-change-neutral">
+                                <i class="fa-solid fa-minus"></i>
+                                0%
+                            </span>
+                        <% } %>
+                    </div>
+                    <div class="fluent-stat-card-subtitle">نسبت به ماه گذشته</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- بازی‌ها -->
         <div class="fluent-card fluent-stat-card">
             <div class="fluent-stat-card-content">
                 <div class="fluent-stat-card-icon fluent-bg-warning-lighter">
-                    <i data-feather="trending-up"></i>
+                    <i class="fa-solid fa-gamepad"></i>
                 </div>
                 <div class="fluent-stat-card-info">
-                    <p class="fluent-stat-card-title">وضعیت بازار</p>
-                    <h3 class="fluent-stat-card-value">
-                        <%= stockMarket.marketStatus || 'خنثی' %>
-                        <span class="fluent-stat-card-change <%= stockMarket.marketStatus === 'رونق' ? 'fluent-stat-card-change-up' : (stockMarket.marketStatus === 'بحران' ? 'fluent-stat-card-change-down' : 'fluent-stat-card-change-neutral') %>">
-                            <i data-feather="<%= stockMarket.marketStatus === 'رونق' ? 'arrow-up' : (stockMarket.marketStatus === 'بحران' ? 'arrow-down' : 'minus') %>"></i>
-                            <%= stockMarket.totalStocks || 0 %> سهم
-                        </span>
-                    </h3>
-                    <p class="fluent-stat-card-subtitle">تعداد سهام: <%= stockMarket.totalStocks || 0 %></p>
+                    <div class="fluent-stat-card-title">بازی‌ها</div>
+                    <div class="fluent-stat-card-value">
+                        <%= stats.totalGames.toLocaleString('fa-IR') %>
+                        <% if (stats.gameGrowth > 0) { %>
+                            <span class="fluent-stat-card-change fluent-stat-card-change-up">
+                                <i class="fa-solid fa-arrow-up"></i>
+                                <%= stats.gameGrowth.toLocaleString('fa-IR') %>%
+                            </span>
+                        <% } else if (stats.gameGrowth < 0) { %>
+                            <span class="fluent-stat-card-change fluent-stat-card-change-down">
+                                <i class="fa-solid fa-arrow-down"></i>
+                                <%= Math.abs(stats.gameGrowth).toLocaleString('fa-IR') %>%
+                            </span>
+                        <% } else { %>
+                            <span class="fluent-stat-card-change fluent-stat-card-change-neutral">
+                                <i class="fa-solid fa-minus"></i>
+                                0%
+                            </span>
+                        <% } %>
+                    </div>
+                    <div class="fluent-stat-card-subtitle">نسبت به ماه گذشته</div>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- بخش دوم - چارت‌ها و جدول‌ها -->
+    <!-- نمودارها -->
     <div class="fluent-dashboard-charts-container">
-        <!-- نمودار تراکنش‌ها -->
+        <!-- نمودار رشد کاربران -->
         <div class="fluent-card fluent-chart-card">
             <div class="fluent-card-header">
-                <h3 class="fluent-card-title">تراکنش‌های اخیر</h3>
+                <h2 class="fluent-card-title">رشد کاربران</h2>
                 <div class="fluent-card-header-actions">
-                    <button class="fluent-icon-button small">
-                        <i class="fa-solid fa-download"></i>
+                    <button type="button" class="fluent-icon-button" data-tooltip="به‌روزرسانی">
+                        <i class="fa-solid fa-sync-alt"></i>
                     </button>
-                    <button class="fluent-icon-button small">
-                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    <button type="button" class="fluent-icon-button" data-tooltip="فیلترها">
+                        <i class="fa-solid fa-filter"></i>
                     </button>
                 </div>
             </div>
             <div class="fluent-card-content">
-                <div class="fluent-chart-container">
-                    <canvas id="transactionsChart"></canvas>
+                <div class="fluent-chart-container" id="usersChart" data-auto-height="true">
+                    <!-- نمودار اینجا رندر می‌شود -->
+                </div>
+                <div class="fluent-chart-legend">
+                    <div class="fluent-chart-legend-item">
+                        <span class="fluent-chart-legend-color" style="background-color: #0078d4;"></span>
+                        <span>کاربران جدید</span>
+                    </div>
+                    <div class="fluent-chart-legend-item">
+                        <span class="fluent-chart-legend-color" style="background-color: #c7e0f4;"></span>
+                        <span>کاربران فعال</span>
+                    </div>
                 </div>
             </div>
         </div>
         
-        <!-- نمودار کاربران -->
+        <!-- نمودار فعالیت‌های اقتصادی -->
         <div class="fluent-card fluent-chart-card">
             <div class="fluent-card-header">
-                <h3 class="fluent-card-title">کاربران جدید</h3>
+                <h2 class="fluent-card-title">فعالیت‌های اقتصادی</h2>
                 <div class="fluent-card-header-actions">
-                    <button class="fluent-icon-button small">
-                        <i class="fa-solid fa-download"></i>
+                    <button type="button" class="fluent-icon-button" data-tooltip="به‌روزرسانی">
+                        <i class="fa-solid fa-sync-alt"></i>
                     </button>
-                    <button class="fluent-icon-button small">
-                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    <button type="button" class="fluent-icon-button" data-tooltip="فیلترها">
+                        <i class="fa-solid fa-filter"></i>
                     </button>
                 </div>
             </div>
             <div class="fluent-card-content">
-                <div class="fluent-chart-container">
-                    <canvas id="usersChart"></canvas>
+                <div class="fluent-chart-container" id="economyChart" data-auto-height="true">
+                    <!-- نمودار اینجا رندر می‌شود -->
+                </div>
+                <div class="fluent-chart-legend">
+                    <div class="fluent-chart-legend-item">
+                        <span class="fluent-chart-legend-color" style="background-color: #107c10;"></span>
+                        <span>درآمد</span>
+                    </div>
+                    <div class="fluent-chart-legend-item">
+                        <span class="fluent-chart-legend-color" style="background-color: #d13438;"></span>
+                        <span>هزینه</span>
+                    </div>
+                    <div class="fluent-chart-legend-item">
+                        <span class="fluent-chart-legend-color" style="background-color: #ffaa44;"></span>
+                        <span>سود</span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- بخش سوم - لیست‌ها -->
+    
+    <!-- لیست‌ها -->
     <div class="fluent-dashboard-lists-container">
-        <!-- تراکنش‌های اخیر -->
+        <!-- کاربران فعال اخیر -->
         <div class="fluent-card">
             <div class="fluent-card-header">
-                <h3 class="fluent-card-title">تراکنش‌های اخیر</h3>
+                <h2 class="fluent-card-title">کاربران فعال اخیر</h2>
                 <div class="fluent-card-header-actions">
-                    <a href="/admin/transactions" class="fluent-button small">
+                    <a href="/admin/users" class="fluent-button fluent-button-secondary small">
                         مشاهده همه
-                        <i class="fa-solid fa-arrow-left"></i>
                     </a>
                 </div>
             </div>
@@ -142,39 +217,49 @@
                         <thead>
                             <tr>
                                 <th>کاربر</th>
-                                <th>نوع</th>
-                                <th>مبلغ</th>
-                                <th>تاریخ</th>
+                                <th>آخرین فعالیت</th>
                                 <th>وضعیت</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <% if (recentTransactions && recentTransactions.length > 0) { %>
-                                <% recentTransactions.forEach(transaction => { %>
-                                    <tr>
-                                        <td>
-                                            <div class="fluent-user-row">
-                                                <div class="fluent-avatar small">
-                                                    <img src="<%= transaction.user?.avatar || '/admin/public/img/default-avatar.png' %>" alt="<%= transaction.user?.username || 'کاربر' %>">
-                                                </div>
-                                                <span><%= transaction.user?.username || 'کاربر' %></span>
+                            <% stats.recentActiveUsers.forEach(user => { %>
+                                <tr data-href="/admin/users/<%= user.id %>">
+                                    <td>
+                                        <div class="fluent-user-row">
+                                            <div class="fluent-avatar">
+                                                <% if (user.avatar) { %>
+                                                    <img src="<%= user.avatar %>" alt="<%= user.username %>" />
+                                                <% } else { %>
+                                                    <%= user.username.charAt(0).toUpperCase() %>
+                                                <% } %>
                                             </div>
-                                        </td>
-                                        <td><%= transaction.type || 'نامشخص' %></td>
-                                        <td class="<%= transaction.amount > 0 ? 'text-success' : 'text-danger' %>">
-                                            <%= transaction.amount > 0 ? '+' : '' %><%= transaction.amount || 0 %> C
-                                        </td>
-                                        <td><%= transaction.date ? new Date(transaction.date).toLocaleDateString('fa-IR') : 'نامشخص' %></td>
-                                        <td>
-                                            <span class="fluent-badge <%= transaction.status === 'completed' ? 'success' : (transaction.status === 'pending' ? 'warning' : 'neutral') %>">
-                                                <%= transaction.status === 'completed' ? 'تکمیل شده' : (transaction.status === 'pending' ? 'در انتظار' : 'نامشخص') %>
-                                            </span>
-                                        </td>
-                                    </tr>
-                                <% }); %>
-                            <% } else { %>
+                                            <div>
+                                                <div><%= user.username %></div>
+                                                <div style="font-size: 12px; color: var(--text-secondary);"><%= user.userID %></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <%= new Date(user.lastActive).toLocaleDateString('fa-IR') %>
+                                        <div style="font-size: 12px; color: var(--text-secondary);">
+                                            <%= new Date(user.lastActive).toLocaleTimeString('fa-IR') %>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <% if (user.status === 'online') { %>
+                                            <span class="fluent-badge success">آنلاین</span>
+                                        <% } else if (user.status === 'away') { %>
+                                            <span class="fluent-badge warning">غایب</span>
+                                        <% } else { %>
+                                            <span class="fluent-badge neutral">آفلاین</span>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                            
+                            <% if (stats.recentActiveUsers.length === 0) { %>
                                 <tr>
-                                    <td colspan="5" class="text-center">تراکنشی یافت نشد</td>
+                                    <td colspan="3" class="text-center">کاربر فعالی یافت نشد</td>
                                 </tr>
                             <% } %>
                         </tbody>
@@ -183,44 +268,54 @@
             </div>
         </div>
         
-        <!-- رویدادهای اخیر -->
+        <!-- آخرین رویدادها -->
         <div class="fluent-card">
             <div class="fluent-card-header">
-                <h3 class="fluent-card-title">رویدادهای اخیر</h3>
+                <h2 class="fluent-card-title">آخرین رویدادها</h2>
                 <div class="fluent-card-header-actions">
-                    <a href="/admin/events" class="fluent-button small">
+                    <a href="/admin/events" class="fluent-button fluent-button-secondary small">
                         مشاهده همه
-                        <i class="fa-solid fa-arrow-left"></i>
                     </a>
                 </div>
             </div>
             <div class="fluent-card-content">
                 <div class="fluent-events-list">
-                    <% if (recentEvents && recentEvents.length > 0) { %>
-                        <% recentEvents.forEach(event => { %>
-                            <div class="fluent-event-item">
-                                <div class="fluent-event-icon fluent-bg-<%= event.type === 'giveaway' ? 'primary' : (event.type === 'lottery' ? 'success' : (event.type === 'market_crash' ? 'danger' : 'info')) %>-lighter">
-                                    <i data-feather="<%= getEventIcon(event.type) %>"></i>
-                                </div>
-                                <div class="fluent-event-content">
-                                    <h4 class="fluent-event-title"><%= event.title || 'رویداد' %></h4>
-                                    <p class="fluent-event-description"><%= event.description || 'توضیحات رویداد' %></p>
-                                    <div class="fluent-event-meta">
-                                        <span class="fluent-event-date">
-                                            <i data-feather="calendar"></i>
-                                            <%= event.date ? new Date(event.date).toLocaleDateString('fa-IR') : 'نامشخص' %>
-                                        </span>
-                                        <span class="fluent-event-status">
-                                            <i data-feather="<%= event.active ? 'check-circle' : 'clock' %>"></i>
-                                            <%= event.active ? 'فعال' : 'غیرفعال' %>
-                                        </span>
+                    <% stats.recentEvents.forEach(event => { %>
+                        <div class="fluent-event-item">
+                            <div class="fluent-event-icon">
+                                <% if (event.type === 'user') { %>
+                                    <i class="fa-solid fa-user"></i>
+                                <% } else if (event.type === 'server') { %>
+                                    <i class="fa-solid fa-server"></i>
+                                <% } else if (event.type === 'economy') { %>
+                                    <i class="fa-solid fa-money-bill"></i>
+                                <% } else if (event.type === 'game') { %>
+                                    <i class="fa-solid fa-gamepad"></i>
+                                <% } else { %>
+                                    <i class="fa-solid fa-bell"></i>
+                                <% } %>
+                            </div>
+                            <div class="fluent-event-content">
+                                <div class="fluent-event-title"><%= event.title %></div>
+                                <div class="fluent-event-description"><%= event.description %></div>
+                                <div class="fluent-event-meta">
+                                    <div class="fluent-event-date">
+                                        <i class="fa-solid fa-calendar"></i>
+                                        <%= new Date(event.date).toLocaleDateString('fa-IR') %>
+                                        <%= new Date(event.date).toLocaleTimeString('fa-IR') %>
+                                    </div>
+                                    <div class="fluent-event-status">
+                                        <i class="fa-solid fa-circle"></i>
+                                        <%= event.status %>
                                     </div>
                                 </div>
                             </div>
-                        <% }); %>
-                    <% } else { %>
+                        </div>
+                    <% }); %>
+                    
+                    <% if (stats.recentEvents.length === 0) { %>
                         <div class="fluent-empty-state">
-                            <i data-feather="calendar"></i>
+                            <i class="fa-solid fa-calendar-xmark"></i>
                             <p>رویدادی یافت نشد</p>
                         </div>
                     <% } %>
@@ -230,73 +325,176 @@
     </div>
 </div>
 
+<!-- اسکریپت‌های مربوط به نمودارها -->
 <script>
-    // اسکریپت‌های مخصوص صفحه داشبورد
     document.addEventListener('DOMContentLoaded', function() {
-        // بارگذاری آیکون‌های Feather
-        if (typeof feather !== 'undefined') {
-            feather.replace();
-        }
+        // نمودار رشد کاربران
+        const usersCtx = document.getElementById('usersChart').getContext('2d');
+        const usersLabels = <%= JSON.stringify(stats.userChartLabels) %>;
+        const usersData = <%= JSON.stringify(stats.userChartData) %>;
         
-        // نمودار تراکنش‌ها
-        const transactionsChart = document.getElementById('transactionsChart');
-        if (transactionsChart && typeof Chart !== 'undefined') {
-            new Chart(transactionsChart, {
-                type: 'line',
-                data: {
-                    labels: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'],
-                    datasets: [{
-                        label: 'تراکنش‌ها',
-                        data: [1200, 1900, 2300, 1800, 2500, 3000, 2800, 3200, 3500, 3800, 4000, 4200],
-                        borderColor: 'rgb(0, 120, 212)',
+        new Chart(usersCtx, {
+            type: 'line',
+            data: {
+                labels: usersLabels,
+                datasets: [
+                    {
+                        label: 'کاربران جدید',
+                        data: usersData.newUsers,
+                        borderColor: '#0078d4',
                         backgroundColor: 'rgba(0, 120, 212, 0.1)',
                         tension: 0.3,
                         fill: true
-                    }]
+                    },
+                    {
+                        label: 'کاربران فعال',
+                        data: usersData.activeUsers,
+                        borderColor: '#83beec',
+                        backgroundColor: 'rgba(131, 190, 236, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        rtl: true,
+                        titleFont: {
+                            family: 'Vazirmatn'
+                        },
+                        bodyFont: {
+                            family: 'Vazirmatn'
+                        },
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += context.parsed.y.toLocaleString('fa-IR');
+                                }
+                                return label;
+                            }
+                        }
+                    }
                 },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
+                scales: {
+                    x: {
+                        grid: {
                             display: false
+                        },
+                        ticks: {
+                            font: {
+                                family: 'Vazirmatn'
+                            }
                         }
                     },
-                    scales: {
-                        y: {
-                            beginAtZero: true
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            font: {
+                                family: 'Vazirmatn'
+                            },
+                            callback: function(value) {
+                                return value.toLocaleString('fa-IR');
+                            }
                         }
                     }
                 }
-            });
-        }
+            }
+        });
         
-        // نمودار کاربران
-        const usersChart = document.getElementById('usersChart');
-        if (usersChart && typeof Chart !== 'undefined') {
-            new Chart(usersChart, {
-                type: 'bar',
-                data: {
-                    labels: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور'],
-                    datasets: [{
-                        label: 'کاربران جدید',
-                        data: [65, 80, 91, 76, 85, 99],
-                        backgroundColor: 'rgb(0, 120, 212)'
-                    }]
+        // نمودار فعالیت‌های اقتصادی
+        const economyCtx = document.getElementById('economyChart').getContext('2d');
+        const economyLabels = <%= JSON.stringify(stats.economyChartLabels) %>;
+        const economyData = <%= JSON.stringify(stats.economyChartData) %>;
+        
+        new Chart(economyCtx, {
+            type: 'bar',
+            data: {
+                labels: economyLabels,
+                datasets: [
+                    {
+                        label: 'درآمد',
+                        data: economyData.income,
+                        backgroundColor: 'rgba(16, 124, 16, 0.8)',
+                    },
+                    {
+                        label: 'هزینه',
+                        data: economyData.expense,
+                        backgroundColor: 'rgba(209, 52, 56, 0.8)',
+                    },
+                    {
+                        label: 'سود',
+                        data: economyData.profit,
+                        backgroundColor: 'rgba(255, 170, 68, 0.8)',
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        rtl: true,
+                        titleFont: {
+                            family: 'Vazirmatn'
+                        },
+                        bodyFont: {
+                            family: 'Vazirmatn'
+                        },
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += context.parsed.y.toLocaleString('fa-IR') + ' CCOIN';
+                                }
+                                return label;
+                            }
+                        }
+                    }
                 },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
+                scales: {
+                    x: {
+                        grid: {
                             display: false
+                        },
+                        ticks: {
+                            font: {
+                                family: 'Vazirmatn'
+                            }
                         }
                     },
-                    scales: {
-                        y: {
-                            beginAtZero: true
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            font: {
+                                family: 'Vazirmatn'
+                            },
+                            callback: function(value) {
+                                return value.toLocaleString('fa-IR');
+                            }
                         }
                     }
                 }
-            });
-        }
+            }
+        });
     });
 </script>

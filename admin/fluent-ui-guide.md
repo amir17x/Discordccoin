@@ -1,296 +1,247 @@
-# راهنمای استفاده از Fluent UI در پنل مدیریت CCOIN
+# راهنمای پیاده‌سازی رابط کاربری Fluent در پنل مدیریت CCOIN
 
-این راهنما به شما کمک می‌کند تا نحوه استفاده از سیستم طراحی Fluent UI در پنل مدیریت CCOIN را یاد بگیرید.
-
-## فهرست مطالب
-
-1. [مقدمه](#مقدمه)
-2. [نحوه فعال‌سازی رابط کاربری Fluent](#نحوه-فعال‌سازی-رابط-کاربری-fluent)
-3. [ساختار فایل‌ها](#ساختار-فایل‌ها)
-4. [کامپوننت‌های اصلی](#کامپوننت‌های-اصلی)
-5. [نحوه ایجاد صفحات جدید](#نحوه-ایجاد-صفحات-جدید)
-6. [نکات مهم](#نکات-مهم)
+این راهنما برای توسعه‌دهندگانی است که قصد دارند قابلیت‌های جدید را به پنل مدیریت CCOIN با طراحی Fluent UI اضافه کنند.
 
 ## مقدمه
 
-سیستم طراحی Fluent UI یک سیستم طراحی منعطف و مدرن است که توسط مایکروسافت ایجاد شده است. در پنل مدیریت CCOIN، ما یک پیاده‌سازی سفارشی از این سیستم طراحی را ایجاد کرده‌ایم که با نیازهای پروژه ما مطابقت دارد.
+پنل مدیریت CCOIN از رابط کاربری Fluent UI مایکروسافت به عنوان سیستم طراحی اصلی استفاده می‌کند. این طراحی مدرن و یکپارچه، تجربه کاربری بهتری را برای مدیران سیستم فراهم می‌کند.
 
-## نحوه فعال‌سازی رابط کاربری Fluent
+## ساختار فایل‌ها
 
-برای فعال‌سازی رابط کاربری Fluent، متغیر `USE_FLUENT_UI` را در فایل `.env` برابر با `true` قرار دهید:
+```
+admin/
+├── public/
+│   ├── css/
+│   │   └── fluent.css       # استایل‌های اصلی فلوئنت UI
+│   ├── js/
+│   │   └── fluent-ui.js     # اسکریپت‌های مربوط به فلوئنت UI
+│   └── img/
+│       ├── ccoin-logo.svg   # لوگوی CCOIN
+│       └── user-avatar.svg  # آواتار پیش‌فرض کاربر
+├── views/
+│   ├── layouts/
+│   │   ├── fluent-main.ejs  # قالب اصلی برای صفحات پنل
+│   │   └── fluent-auth.ejs  # قالب احراز هویت
+│   ├── fluent-login.ejs            # صفحه ورود
+│   ├── fluent-forgot-password.ejs  # صفحه فراموشی رمز عبور
+│   ├── fluent-reset-password.ejs   # صفحه بازنشانی رمز عبور
+│   └── fluent-dashboard.ejs        # صفحه داشبورد
+└── fluent-ui-guide.md      # این راهنما
+```
+
+## فعال‌سازی رابط کاربری Fluent
+
+رابط کاربری Fluent با متغیر محیطی `USE_FLUENT_UI` کنترل می‌شود. برای فعال‌سازی آن، این مقدار را در فایل `.env` به `true` تنظیم کنید:
 
 ```
 USE_FLUENT_UI=true
 ```
 
-## ساختار فایل‌ها
+## نحوه اضافه کردن صفحات جدید
 
-فایل‌های مربوط به Fluent UI در مسیرهای زیر قرار دارند:
+برای ایجاد یک صفحه جدید با طراحی Fluent UI، مراحل زیر را دنبال کنید:
 
-- **استایل‌ها:** `admin/public/css/fluent.css`
-- **اسکریپت‌ها:** `admin/public/js/fluent-ui.js`
-- **قالب اصلی:** `admin/views/layouts/fluent-main.ejs`
-- **قالب‌های صفحات:** فایل‌هایی که با پیشوند `fluent-` در پوشه `admin/views` قرار دارند
+1. یک فایل قالب جدید با پیشوند `fluent-` در دایرکتوری `views/` ایجاد کنید.
+2. از قالب `layouts/fluent-main.ejs` برای صفحات اصلی پنل و `layouts/fluent-auth.ejs` برای صفحات احراز هویت استفاده کنید.
+3. در کنترلر مربوطه، شرایط تشخیص استفاده از قالب Fluent UI را اضافه کنید:
+
+```javascript
+if (process.env.USE_FLUENT_UI === 'true') {
+  // استفاده از قالب Fluent UI
+  res.render('fluent-page-name', {
+    title: 'عنوان صفحه',
+    layout: 'layouts/fluent-main',
+    // داده‌های مورد نیاز صفحه...
+  });
+} else {
+  // استفاده از قالب قدیمی
+  res.render('old-page-path', {
+    title: 'عنوان صفحه',
+    // داده‌های مورد نیاز صفحه...
+  });
+}
+```
 
 ## کامپوننت‌های اصلی
 
-### دکمه‌ها (Buttons)
+### کارت‌ها (Cards)
 
-دکمه‌های Fluent UI در چند نوع مختلف ارائه شده‌اند:
+برای ایجاد کارت‌ها از ساختار زیر استفاده کنید:
+
+```html
+<div class="fluent-card">
+  <div class="fluent-card-header">
+    <h2 class="fluent-card-title">عنوان کارت</h2>
+    <div class="fluent-card-header-actions">
+      <!-- دکمه‌ها یا عناصر کنترلی -->
+    </div>
+  </div>
+  <div class="fluent-card-content">
+    <!-- محتوای کارت -->
+  </div>
+</div>
+```
+
+### دکمه‌ها (Buttons)
 
 ```html
 <!-- دکمه اصلی -->
-<button class="fluent-button primary">دکمه اصلی</button>
+<button class="fluent-button fluent-button-primary">دکمه اصلی</button>
 
 <!-- دکمه ثانویه -->
-<button class="fluent-button">دکمه ثانویه</button>
+<button class="fluent-button fluent-button-secondary">دکمه ثانویه</button>
 
-<!-- دکمه خنثی -->
-<button class="fluent-button neutral">دکمه خنثی</button>
-
-<!-- دکمه خطر -->
-<button class="fluent-button danger">دکمه خطر</button>
+<!-- دکمه تمام عرض -->
+<button class="fluent-button fluent-button-primary fluent-button-block">دکمه تمام عرض</button>
 
 <!-- دکمه آیکون -->
-<button class="fluent-icon-button"><i class="fa-solid fa-search"></i></button>
+<button class="fluent-icon-button">
+  <i class="fa-solid fa-sync-alt"></i>
+</button>
 ```
 
 ### فرم‌ها (Forms)
 
-کامپوننت‌های فرم شامل:
-
 ```html
-<!-- گروه فرم -->
-<div class="fluent-form-group">
-    <label class="fluent-label" for="username">نام کاربری</label>
-    <input class="fluent-input" type="text" id="username" name="username" />
-</div>
-
-<!-- چک باکس -->
-<div class="fluent-checkbox">
-    <input type="checkbox" id="remember" name="remember" />
-    <label for="remember">مرا به خاطر بسپار</label>
-</div>
-
-<!-- رادیو باتن -->
-<div class="fluent-radio">
-    <input type="radio" id="option1" name="options" value="1" />
-    <label for="option1">گزینه ۱</label>
-</div>
-
-<!-- کادر انتخاب -->
-<select class="fluent-select" name="category">
-    <option value="">انتخاب کنید</option>
-    <option value="1">دسته ۱</option>
-    <option value="2">دسته ۲</option>
-</select>
-
-<!-- دکمه فرم -->
-<button type="submit" class="fluent-button primary">ارسال</button>
-```
-
-### کارت‌ها (Cards)
-
-```html
-<div class="fluent-card">
-    <div class="fluent-card-header">
-        <h2 class="fluent-card-title">عنوان کارت</h2>
-    </div>
-    <div class="fluent-card-content">
-        <p>محتوای کارت در اینجا قرار می‌گیرد...</p>
-    </div>
-    <div class="fluent-card-footer">
-        <button class="fluent-button">مشاهده جزئیات</button>
-    </div>
-</div>
+<form class="fluent-form">
+  <div class="fluent-form-group">
+    <label for="input-id" class="fluent-label">عنوان فیلد</label>
+    <input type="text" id="input-id" name="input-name" class="fluent-input" placeholder="متن راهنما">
+  </div>
+  
+  <div class="fluent-form-group">
+    <label for="select-id" class="fluent-label">انتخاب</label>
+    <select id="select-id" name="select-name" class="fluent-select">
+      <option value="">انتخاب کنید</option>
+      <option value="1">گزینه 1</option>
+      <option value="2">گزینه 2</option>
+    </select>
+  </div>
+  
+  <div class="fluent-form-group">
+    <label class="fluent-checkbox">
+      <input type="checkbox" name="checkbox-name" value="true">
+      <span class="fluent-checkbox-indicator"></span>
+      متن چک‌باکس
+    </label>
+  </div>
+  
+  <div class="fluent-form-actions">
+    <button type="button" class="fluent-button fluent-button-secondary">انصراف</button>
+    <button type="submit" class="fluent-button fluent-button-primary">ذخیره</button>
+  </div>
+</form>
 ```
 
 ### جدول‌ها (Tables)
 
 ```html
 <div class="fluent-table-container">
-    <table class="fluent-table">
-        <thead>
-            <tr>
-                <th>ردیف</th>
-                <th>نام کاربری</th>
-                <th>ایمیل</th>
-                <th>وضعیت</th>
-                <th>عملیات</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>۱</td>
-                <td>user1</td>
-                <td>user1@example.com</td>
-                <td><span class="fluent-badge success">فعال</span></td>
-                <td>
-                    <div class="fluent-action-buttons">
-                        <button class="fluent-icon-button small"><i class="fa-solid fa-edit"></i></button>
-                        <button class="fluent-icon-button small danger"><i class="fa-solid fa-trash"></i></button>
-                    </div>
-                </td>
-            </tr>
-        </tbody>
-    </table>
+  <table class="fluent-table" id="table-id">
+    <thead>
+      <tr>
+        <th>عنوان ستون 1</th>
+        <th>عنوان ستون 2</th>
+        <th>عملیات</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr data-href="/admin/path/to/item/1">
+        <td>مقدار 1</td>
+        <td>مقدار 2</td>
+        <td>
+          <div class="fluent-table-actions">
+            <button class="fluent-icon-button small">
+              <i class="fa-solid fa-edit"></i>
+            </button>
+            <button class="fluent-icon-button small">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
 </div>
 ```
 
-### اعلان‌ها (Alerts)
+### نمایش وضعیت (Status Badges)
 
 ```html
-<!-- اعلان موفقیت -->
-<div class="fluent-alert success">
-    <i class="fa-solid fa-check-circle"></i>
-    عملیات با موفقیت انجام شد.
-</div>
-
-<!-- اعلان خطا -->
-<div class="fluent-alert error">
-    <i class="fa-solid fa-exclamation-circle"></i>
-    خطایی رخ داده است.
-</div>
-
-<!-- اعلان اطلاعات -->
-<div class="fluent-alert info">
-    <i class="fa-solid fa-info-circle"></i>
-    اطلاعات مهم.
-</div>
-
-<!-- اعلان هشدار -->
-<div class="fluent-alert warning">
-    <i class="fa-solid fa-exclamation-triangle"></i>
-    هشدار!
-</div>
-```
-
-### نشان‌ها (Badges)
-
-```html
-<span class="fluent-badge">پیش‌فرض</span>
-<span class="fluent-badge primary">اصلی</span>
-<span class="fluent-badge success">موفقیت</span>
+<span class="fluent-badge success">موفق</span>
 <span class="fluent-badge warning">هشدار</span>
-<span class="fluent-badge danger">خطر</span>
+<span class="fluent-badge error">خطا</span>
 <span class="fluent-badge info">اطلاعات</span>
+<span class="fluent-badge neutral">خنثی</span>
 ```
 
-### تب‌ها (Tabs)
+### هشدارها (Alerts)
 
 ```html
-<div class="fluent-tabs">
-    <div class="fluent-tab-buttons">
-        <button class="fluent-tab-button active" data-tab="tab1">تب ۱</button>
-        <button class="fluent-tab-button" data-tab="tab2">تب ۲</button>
-        <button class="fluent-tab-button" data-tab="tab3">تب ۳</button>
-    </div>
-    
-    <div class="fluent-tab-content">
-        <div class="fluent-tab-panel active" id="tab1">
-            <p>محتوای تب ۱</p>
-        </div>
-        <div class="fluent-tab-panel" id="tab2">
-            <p>محتوای تب ۲</p>
-        </div>
-        <div class="fluent-tab-panel" id="tab3">
-            <p>محتوای تب ۳</p>
-        </div>
-    </div>
+<div class="fluent-alert success">
+  <i class="fa-solid fa-check-circle"></i>
+  پیام موفقیت
+</div>
+
+<div class="fluent-alert error">
+  <i class="fa-solid fa-times-circle"></i>
+  پیام خطا
+</div>
+
+<div class="fluent-alert info">
+  <i class="fa-solid fa-info-circle"></i>
+  پیام اطلاعاتی
+</div>
+
+<div class="fluent-alert warning">
+  <i class="fa-solid fa-exclamation-triangle"></i>
+  پیام هشدار
 </div>
 ```
 
-### نمودارها (Charts)
+## نمودارها (Charts)
 
-برای رسم نمودار از کتابخانه Chart.js استفاده می‌کنیم:
+برای ایجاد نمودارها از کتابخانه Chart.js استفاده می‌شود. نمونه کد:
 
 ```html
-<div class="fluent-chart-container">
-    <canvas id="myChart"></canvas>
+<div class="fluent-chart-container" id="chart-id" data-auto-height="true">
+  <!-- نمودار اینجا رندر می‌شود -->
 </div>
 
 <script>
-    // تنظیم نمودار با استفاده از Chart.js
-    const ctx = document.getElementById('myChart');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور'],
-            datasets: [{
-                label: 'فروش',
-                data: [12, 19, 3, 5, 2, 3],
-                borderColor: 'rgb(0, 120, 212)',
-                backgroundColor: 'rgba(0, 120, 212, 0.1)',
-                tension: 0.3,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
+  const ctx = document.getElementById('chart-id').getContext('2d');
+  new Chart(ctx, {
+    type: 'line', // یا 'bar', 'pie', etc.
+    data: {
+      labels: ['فروردین', 'اردیبهشت', 'خرداد'],
+      datasets: [{
+        label: 'داده‌ها',
+        data: [12, 19, 3],
+        borderColor: '#0078d4',
+        backgroundColor: 'rgba(0, 120, 212, 0.1)',
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      // تنظیمات بیشتر...
+    }
+  });
 </script>
 ```
 
-## نحوه ایجاد صفحات جدید
-
-برای ایجاد یک صفحه جدید با رابط کاربری Fluent، مراحل زیر را دنبال کنید:
-
-1. یک فایل EJS جدید با پیشوند `fluent-` در پوشه `admin/views` ایجاد کنید. مثلاً `fluent-users.ejs`
-
-2. در کنترلر مربوطه، از قالب Fluent UI استفاده کنید:
-
-```javascript
-// در کنترلر
-export async function showUsers(req, res) {
-  try {
-    // دریافت داده‌ها
-    const users = await userService.getAllUsers();
-    
-    // آماده‌سازی داده‌ها برای نمایش
-    const viewData = {
-      title: 'کاربران',
-      users
-    };
-    
-    // استفاده از قالب Fluent UI
-    if (process.env.USE_FLUENT_UI === 'true') {
-      viewData.layout = 'layouts/fluent-main';
-      res.render('fluent-users', viewData);
-    } else {
-      res.render('users/index', viewData);
-    }
-  } catch (error) {
-    console.error('❌ خطا در نمایش کاربران:', error);
-    // پردازش خطا
-  }
-}
-```
-
-3. محتوای صفحه را با استفاده از کامپوننت‌های Fluent UI ایجاد کنید.
-
 ## نکات مهم
 
-1. **سازگاری با مرورگرها:** رابط کاربری Fluent UI با مرورگرهای مدرن سازگار است.
+1. **آیکون‌ها**: از آیکون‌های Font Awesome و Feather Icons استفاده کنید.
+2. **رنگ‌ها**: از متغیرهای CSS تعریف شده در `fluent.css` استفاده کنید، تا ظاهر یکپارچه حفظ شود.
+3. **ریسپانسیو**: طراحی پنل به صورت ریسپانسیو است و در دستگاه‌های مختلف به درستی نمایش داده می‌شود.
+4. **جهت متن**: قالب‌ها برای زبان فارسی و جهت راست به چپ (RTL) بهینه شده‌اند.
 
-2. **پاسخگویی:** تمام کامپوننت‌های Fluent UI به صورت پاسخگو (Responsive) طراحی شده‌اند.
+## توابع JavaScript مفید
 
-3. **استفاده از آیکون‌ها:** برای آیکون‌ها از Font Awesome استفاده می‌کنیم.
+- `showToast(message, type, duration)`: نمایش پیام toast با انواع success، error، warning و info
+- `confirmAction(message, onConfirm, options)`: نمایش پنجره تأیید با دکمه‌های تأیید و انصراف
 
-4. **نامگذاری کلاس‌ها:** تمام کلاس‌های CSS با پیشوند `fluent-` نامگذاری شده‌اند.
+## پشتیبانی از حالت تاریک
 
-5. **جهت RTL:** رابط کاربری Fluent UI به طور کامل از جهت راست به چپ (RTL) پشتیبانی می‌کند.
-
----
-
-در صورت نیاز به راهنمایی بیشتر، لطفاً با تیم توسعه تماس بگیرید.
+قالب Fluent UI به صورت خودکار از حالت تاریک سیستم عامل پشتیبانی می‌کند. این قابلیت با استفاده از CSS Media Query `prefers-color-scheme` پیاده‌سازی شده است.
