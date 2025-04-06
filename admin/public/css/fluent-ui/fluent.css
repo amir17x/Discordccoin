@@ -120,8 +120,11 @@ a:hover {
   color: var(--fluent-white);
   padding: var(--fluent-space-m) var(--fluent-space-l);
   box-shadow: var(--fluent-shadow-md);
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
   z-index: 100;
 }
 
@@ -168,51 +171,77 @@ a:hover {
 /* نوار کناری */
 .fluent-sidebar {
   background-color: var(--fluent-white);
-  width: 250px;
+  width: 260px;
   height: calc(100vh - 60px);
-  box-shadow: var(--fluent-shadow-sm);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   position: fixed;
   top: 60px;
   right: 0;
   padding: var(--fluent-space-m) 0;
   z-index: 90;
   overflow-y: auto;
+  border-left: 1px solid var(--fluent-neutral-lighter-alt);
 }
 
 .fluent-sidebar-nav {
   list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 .fluent-sidebar-nav-item {
-  padding: var(--fluent-space-s) var(--fluent-space-l);
-  margin-bottom: var(--fluent-space-xs);
+  padding: var(--fluent-space-m) var(--fluent-space-l);
+  margin: var(--fluent-space-xs) var(--fluent-space-s);
   display: flex;
   align-items: center;
   color: var(--fluent-neutral-dark);
-  transition: var(--fluent-transition);
-  border-right: 3px solid transparent;
+  transition: all 0.2s ease;
+  border-radius: var(--fluent-radius-md);
+  position: relative;
+  overflow: hidden;
+  font-weight: 500;
 }
 
 .fluent-sidebar-nav-item:hover {
   background-color: var(--fluent-neutral-lightest);
+  color: var(--fluent-primary);
   text-decoration: none;
+  transform: translateX(-3px);
 }
 
 .fluent-sidebar-nav-item.active {
-  background-color: var(--fluent-primary-lighter);
-  border-right-color: var(--fluent-primary);
+  background-color: var(--fluent-primary);
+  color: var(--fluent-white);
   font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 120, 212, 0.4);
+}
+
+.fluent-sidebar-nav-item.active:hover {
+  background-color: var(--fluent-primary-dark);
+  transform: translateX(-3px);
 }
 
 .fluent-sidebar-nav-item i {
-  margin-left: var(--fluent-space-s);
-  font-size: 1.2rem;
+  margin-left: var(--fluent-space-m);
+  font-size: 1.3rem;
+  min-width: 24px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.fluent-sidebar-nav-item:hover i {
+  transform: scale(1.1);
+}
+
+.fluent-sidebar-nav-item.active i {
+  color: var(--fluent-white);
 }
 
 /* محتوای اصلی */
 .fluent-content {
-  margin-right: 250px;
+  margin-right: 260px;
   padding: var(--fluent-space-l);
+  margin-top: 80px; /* افزایش فاصله از بالا برای جلوگیری از همپوشانی با هدر */
 }
 
 .fluent-page-title {
@@ -494,12 +523,13 @@ a:hover {
   .fluent-content {
     margin-right: 0;
     padding: var(--fluent-space-m);
+    margin-top: 70px; /* کاهش فاصله از بالا در موبایل */
   }
   
   .fluent-sidebar {
     transform: translateX(100%);
     transition: transform 0.3s ease;
-    width: 250px;
+    width: 260px;
   }
   
   .fluent-sidebar.show {
@@ -515,6 +545,412 @@ a:hover {
     font-size: 1.2rem;
   }
 }
+
+/* استایل‌های داشبورد */
+.fluent-dashboard {
+  width: 100%;
+}
+
+/* کارت‌های آمار */
+.fluent-stats-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--fluent-space-m);
+  margin-bottom: var(--fluent-space-l);
+}
+
+@media (max-width: 1200px) {
+  .fluent-stats-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .fluent-stats-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+.fluent-stat-card {
+  display: flex;
+  align-items: center;
+  padding: var(--fluent-space-m);
+  border-radius: var(--fluent-radius-md);
+  background-color: var(--fluent-white);
+  box-shadow: var(--fluent-shadow-sm);
+  overflow: hidden;
+  position: relative;
+  height: 100px;
+}
+
+.fluent-stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.2);
+  margin-left: var(--fluent-space-m);
+  font-size: 1.5rem;
+}
+
+.fluent-stat-content {
+  flex: 1;
+}
+
+.fluent-stat-value {
+  display: flex;
+  align-items: baseline;
+  font-weight: 700;
+  margin-bottom: var(--fluent-space-xs);
+}
+
+.fluent-stat-number {
+  font-size: 1.8rem;
+  margin-left: var(--fluent-space-xs);
+}
+
+.fluent-stat-unit {
+  font-size: 1rem;
+  opacity: 0.7;
+}
+
+.fluent-stat-label {
+  font-size: 0.875rem;
+  opacity: 0.7;
+}
+
+.fluent-stat-card-primary {
+  background-color: var(--fluent-primary);
+  color: var(--fluent-white);
+}
+
+.fluent-stat-card-success {
+  background-color: var(--fluent-success);
+  color: var(--fluent-white);
+}
+
+.fluent-stat-card-warning {
+  background-color: var(--fluent-warning);
+  color: var(--fluent-white);
+}
+
+.fluent-stat-card-info {
+  background-color: #0099ff;
+  color: var(--fluent-white);
+}
+
+.fluent-stat-card-danger {
+  background-color: var(--fluent-error);
+  color: var(--fluent-white);
+}
+
+/* وضعیت سیستم */
+.fluent-system-status-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--fluent-space-m);
+}
+
+@media (max-width: 992px) {
+  .fluent-system-status-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .fluent-system-status-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.fluent-status-box {
+  background-color: var(--fluent-neutral-lightest);
+  border-radius: var(--fluent-radius-md);
+  padding: var(--fluent-space-m);
+  box-shadow: var(--fluent-shadow-sm);
+}
+
+.fluent-status-box-title {
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: var(--fluent-space-s);
+  color: var(--fluent-neutral-dark);
+}
+
+.fluent-status-box-title i {
+  margin-left: var(--fluent-space-xs);
+}
+
+.fluent-status-box-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: var(--fluent-space-s);
+}
+
+.fluent-status-note {
+  font-size: 0.8rem;
+  color: var(--fluent-neutral);
+}
+
+.fluent-status-indicator {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+}
+
+.fluent-status-indicator::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-left: 6px;
+}
+
+.fluent-status-success {
+  background-color: rgba(16, 124, 16, 0.1);
+  color: var(--fluent-success);
+}
+
+.fluent-status-success::before {
+  background-color: var(--fluent-success);
+}
+
+.fluent-status-warning {
+  background-color: rgba(255, 170, 68, 0.1);
+  color: var(--fluent-warning);
+}
+
+.fluent-status-warning::before {
+  background-color: var(--fluent-warning);
+}
+
+.fluent-status-danger {
+  background-color: rgba(164, 38, 44, 0.1);
+  color: var(--fluent-error);
+}
+
+.fluent-status-danger::before {
+  background-color: var(--fluent-error);
+}
+
+/* اطلاعیه‌ها */
+.fluent-announcements {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fluent-space-m);
+}
+
+.fluent-announcement {
+  padding: var(--fluent-space-m);
+  background-color: var(--fluent-neutral-lightest);
+  border-radius: var(--fluent-radius-md);
+  border-right: 3px solid var(--fluent-primary);
+}
+
+.fluent-announcement-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--fluent-space-s);
+}
+
+.fluent-announcement-title {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.fluent-announcement-date {
+  font-size: 0.8rem;
+  color: var(--fluent-neutral);
+}
+
+.fluent-announcement-content {
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+/* فعالیت‌های اخیر */
+.fluent-activity-timeline {
+  display: flex;
+  flex-direction: column;
+}
+
+.fluent-activity-item {
+  display: flex;
+  margin-bottom: var(--fluent-space-m);
+  position: relative;
+}
+
+.fluent-activity-item:last-child {
+  margin-bottom: 0;
+}
+
+.fluent-activity-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--fluent-primary-lighter);
+  color: var(--fluent-primary);
+  border-radius: 50%;
+  margin-left: var(--fluent-space-m);
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+.fluent-activity-item:not(:last-child) .fluent-activity-icon::after {
+  content: '';
+  position: absolute;
+  top: 32px;
+  right: 15px;
+  width: 2px;
+  height: calc(100% + var(--fluent-space-m) - 32px);
+  background-color: var(--fluent-primary-lighter);
+  z-index: 1;
+}
+
+.fluent-activity-content {
+  flex: 1;
+}
+
+.fluent-activity-time {
+  font-size: 0.75rem;
+  color: var(--fluent-neutral);
+  margin-bottom: var(--fluent-space-xs);
+}
+
+.fluent-activity-text {
+  font-size: 0.875rem;
+}
+
+/* تراکنش‌های اخیر */
+.fluent-transaction-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fluent-space-m);
+}
+
+.fluent-transaction-item {
+  display: flex;
+  padding: var(--fluent-space-s);
+  border-radius: var(--fluent-radius-md);
+  background-color: var(--fluent-neutral-lightest);
+  transition: var(--fluent-transition);
+}
+
+.fluent-transaction-item:hover {
+  background-color: rgba(0, 120, 212, 0.05);
+}
+
+.fluent-transaction-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--fluent-white);
+  border-radius: 50%;
+  margin-left: var(--fluent-space-s);
+  flex-shrink: 0;
+  font-size: 1rem;
+  box-shadow: var(--fluent-shadow-sm);
+}
+
+.fluent-transaction-content {
+  flex: 1;
+}
+
+.fluent-transaction-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--fluent-space-xs);
+}
+
+.fluent-transaction-user {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.fluent-transaction-amount {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.fluent-transaction-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+}
+
+.fluent-transaction-date {
+  color: var(--fluent-neutral);
+}
+
+/* جدول سهام */
+.fluent-stock-table th, 
+.fluent-stock-table td {
+  vertical-align: middle;
+}
+
+.fluent-stock-user {
+  display: flex;
+  align-items: center;
+}
+
+.fluent-stock-user-avatar {
+  margin-left: var(--fluent-space-s);
+}
+
+.fluent-avatar {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: var(--fluent-primary);
+  color: var(--fluent-white);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.fluent-avatar-sm {
+  width: 24px;
+  height: 24px;
+  font-size: 0.7rem;
+}
+
+.fluent-avatar-success {
+  background-color: var(--fluent-success);
+}
+
+.fluent-avatar-danger {
+  background-color: var(--fluent-error);
+}
+
+.fluent-avatar-warning {
+  background-color: var(--fluent-warning);
+}
+
+.fluent-stock-user-name {
+  font-size: 0.875rem;
+}
+
+/* متن‌های رنگی */
+.fluent-text-primary { color: var(--fluent-primary); }
+.fluent-text-success { color: var(--fluent-success); }
+.fluent-text-warning { color: var(--fluent-warning); }
+.fluent-text-danger { color: var(--fluent-error); }
+.fluent-text-info { color: var(--fluent-info); }
+.fluent-text-muted { color: var(--fluent-neutral); }
 
 /* کلاس‌های کمکی */
 .fluent-text-center { text-align: center; }
@@ -544,3 +980,15 @@ a:hover {
 .fluent-p-3 { padding: var(--fluent-space-m); }
 .fluent-p-4 { padding: var(--fluent-space-l); }
 .fluent-p-5 { padding: var(--fluent-space-xl); }
+
+.fluent-d-none { display: none; }
+.fluent-d-block { display: block; }
+.fluent-d-flex { display: flex; }
+
+@media (min-width: 768px) {
+  .fluent-d-md-none { display: none; }
+  .fluent-d-md-block { display: block; }
+  .fluent-d-md-flex { display: flex; }
+}
+
+.fluent-btn-block { display: block; width: 100%; }

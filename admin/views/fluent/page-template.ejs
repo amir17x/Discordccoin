@@ -1,0 +1,168 @@
+<div class="fluent-page-header">
+  <h1 class="fluent-page-title">
+    <i class="<%= pageIcon %>"></i> <%= pageTitle %>
+  </h1>
+</div>
+
+<div class="fluent-row">
+  <div class="fluent-col-12">
+    <div class="fluent-card">
+      <div class="fluent-card-header">
+        <h2 class="fluent-card-title">
+          <i class="fas fa-info-circle"></i> اطلاعات بخش
+        </h2>
+      </div>
+      <div class="fluent-card-body">
+        <div class="fluent-alert fluent-alert-info">
+          <i class="fas fa-info-circle"></i> 
+          بخش <strong><%= pageTitle %></strong> در دست ساخت است. به زودی امکانات کامل این بخش راه‌اندازی خواهد شد.
+        </div>
+        
+        <p>در این بخش شما می‌توانید به مدیریت <%= pageDescription %> بپردازید.</p>
+        
+        <% if (typeof pageFeatures !== 'undefined' && pageFeatures.length > 0) { %>
+          <div class="fluent-features">
+            <h3>امکانات این بخش:</h3>
+            <ul>
+              <% pageFeatures.forEach(function(feature) { %>
+                <li><i class="fas fa-check-circle"></i> <%= feature %></li>
+              <% }); %>
+            </ul>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="fluent-row">
+  <div class="fluent-col-12">
+    <div class="fluent-card">
+      <div class="fluent-card-header">
+        <div class="fluent-card-title-with-actions">
+          <h2 class="fluent-card-title">
+            <i class="<%= listIcon %>"></i> لیست <%= listTitle %>
+          </h2>
+          <div class="fluent-card-actions">
+            <button class="fluent-btn fluent-btn-primary fluent-btn-sm">
+              <i class="fas fa-plus"></i> افزودن جدید
+            </button>
+            <button class="fluent-btn fluent-btn-outline fluent-btn-sm">
+              <i class="fas fa-sync-alt"></i> به‌روزرسانی
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="fluent-card-body">
+        <div class="fluent-table-responsive">
+          <table class="fluent-table">
+            <thead>
+              <tr>
+                <% tableHeaders.forEach(function(header) { %>
+                  <th><%= header %></th>
+                <% }); %>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (typeof tableRows !== 'undefined' && tableRows.length > 0) { %>
+                <% tableRows.forEach(function(row, index) { %>
+                  <tr>
+                    <% tableColumns.forEach(function(column) { %>
+                      <td><%= row[column] %></td>
+                    <% }); %>
+                    <td class="fluent-actions-cell">
+                      <button class="fluent-btn fluent-btn-sm fluent-btn-outline" title="ویرایش">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button class="fluent-btn fluent-btn-sm fluent-btn-danger" title="حذف">
+                        <i class="fas fa-trash-alt"></i>
+                      </button>
+                    </td>
+                  </tr>
+                <% }); %>
+              <% } else { %>
+                <tr>
+                  <td colspan="<%= tableHeaders.length + 1 %>" class="fluent-empty-state">
+                    <div class="fluent-empty-icon">
+                      <i class="<%= emptyIcon %>"></i>
+                    </div>
+                    <div class="fluent-empty-text">هیچ داده‌ای برای نمایش وجود ندارد</div>
+                  </td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .fluent-card-title-with-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+  
+  .fluent-card-actions {
+    display: flex;
+    gap: var(--fluent-space-xs);
+  }
+  
+  .fluent-table-responsive {
+    overflow-x: auto;
+    margin: 0 -1rem;
+  }
+  
+  .fluent-table-responsive .fluent-table {
+    min-width: 100%;
+    margin: 0 1rem;
+  }
+  
+  .fluent-actions-cell {
+    white-space: nowrap;
+  }
+  
+  .fluent-empty-state {
+    text-align: center;
+    padding: 3rem 1rem !important;
+  }
+  
+  .fluent-empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: var(--fluent-neutral-lighter);
+  }
+  
+  .fluent-empty-text {
+    color: var(--fluent-neutral);
+    font-size: 1rem;
+  }
+  
+  .fluent-features {
+    margin-top: 1rem;
+  }
+  
+  .fluent-features h3 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .fluent-features ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .fluent-features li {
+    padding: 0.25rem 0;
+  }
+  
+  .fluent-features i {
+    color: var(--fluent-success);
+    margin-left: 0.5rem;
+  }
+</style>

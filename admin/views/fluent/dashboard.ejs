@@ -1,306 +1,360 @@
-<h1 class="fluent-page-title">داشبورد</h1>
+<div class="fluent-dashboard">
+  <h1 class="fluent-page-title">داشبورد</h1>
 
-<div class="fluent-row">
-  <!-- کارت آمار سرورها -->
-  <div class="fluent-col-3">
-    <div class="fluent-card">
-      <div class="fluent-card-body fluent-text-center">
-        <i class="fas fa-server fa-3x fluent-mb-3" style="color: var(--fluent-primary);"></i>
-        <h3><%= stats.totalServers || 0 %></h3>
-        <p class="fluent-text-muted">سرورهای فعال</p>
+  <!-- کارت‌های آمار -->
+  <div class="fluent-stats-cards">
+    <!-- کارت سکه‌ها -->
+    <div class="fluent-stat-card fluent-stat-card-primary">
+      <div class="fluent-stat-icon">
+        <i class="fas fa-coins"></i>
+      </div>
+      <div class="fluent-stat-content">
+        <div class="fluent-stat-value">
+          <span class="fluent-stat-number"><%= stats.totalCoins.toLocaleString('fa-IR') || 0 %></span>
+          <span class="fluent-stat-unit">CCoin</span>
+        </div>
+        <div class="fluent-stat-label">کل سکه‌های در گردش</div>
       </div>
     </div>
-  </div>
-  
-  <!-- کارت آمار کاربران -->
-  <div class="fluent-col-3">
-    <div class="fluent-card">
-      <div class="fluent-card-body fluent-text-center">
-        <i class="fas fa-users fa-3x fluent-mb-3" style="color: var(--fluent-success);"></i>
-        <h3><%= stats.totalUsers || 0 %></h3>
-        <p class="fluent-text-muted">کاربران ثبت شده</p>
-      </div>
-    </div>
-  </div>
-  
-  <!-- کارت آمار تراکنش‌ها -->
-  <div class="fluent-col-3">
-    <div class="fluent-card">
-      <div class="fluent-card-body fluent-text-center">
-        <i class="fas fa-exchange-alt fa-3x fluent-mb-3" style="color: var(--fluent-warning);"></i>
-        <h3><%= stats.totalTransactions || 0 %></h3>
-        <p class="fluent-text-muted">تراکنش‌های امروز</p>
-      </div>
-    </div>
-  </div>
-  
-  <!-- کارت آمار سکه‌ها -->
-  <div class="fluent-col-3">
-    <div class="fluent-card">
-      <div class="fluent-card-body fluent-text-center">
-        <i class="fas fa-coins fa-3x fluent-mb-3" style="color: var(--fluent-primary-dark);"></i>
-        <h3><%= stats.totalCoins || 0 %> <small>CCoin</small></h3>
-        <p class="fluent-text-muted">کل سکه‌های در گردش</p>
-      </div>
-    </div>
-  </div>
-</div>
 
-<div class="fluent-row fluent-mt-4">
-  <!-- کارت فعالیت‌های اخیر -->
-  <div class="fluent-col-8">
-    <div class="fluent-card">
-      <div class="fluent-card-header">
-        <h3 class="fluent-card-title">
-          <i class="fas fa-history"></i>
-          فعالیت‌های اخیر
-        </h3>
+    <!-- کارت تراکنش‌ها -->
+    <div class="fluent-stat-card fluent-stat-card-warning">
+      <div class="fluent-stat-icon">
+        <i class="fas fa-exchange-alt"></i>
       </div>
-      <div class="fluent-card-body">
-        <% if (activities && activities.length > 0) { %>
-          <div class="fluent-activity-list">
-            <% activities.forEach(function(activity) { %>
-              <div class="fluent-activity-item">
-                <div class="fluent-activity-icon">
-                  <i class="<%= activity.icon || 'fas fa-circle' %>"></i>
-                </div>
-                <div class="fluent-activity-content">
-                  <div class="fluent-activity-time"><%= activity.time %></div>
-                  <div class="fluent-activity-text"><%= activity.text %></div>
-                </div>
+      <div class="fluent-stat-content">
+        <div class="fluent-stat-value">
+          <span class="fluent-stat-number"><%= stats.totalTransactions.toLocaleString('fa-IR') || 0 %></span>
+        </div>
+        <div class="fluent-stat-label">تراکنش‌های امروز</div>
+      </div>
+    </div>
+
+    <!-- کارت کاربران -->
+    <div class="fluent-stat-card fluent-stat-card-success">
+      <div class="fluent-stat-icon">
+        <i class="fas fa-users"></i>
+      </div>
+      <div class="fluent-stat-content">
+        <div class="fluent-stat-value">
+          <span class="fluent-stat-number"><%= stats.totalUsers.toLocaleString('fa-IR') || 0 %></span>
+        </div>
+        <div class="fluent-stat-label">کاربران ثبت شده</div>
+      </div>
+    </div>
+
+    <!-- کارت سرورها -->
+    <div class="fluent-stat-card fluent-stat-card-info">
+      <div class="fluent-stat-icon">
+        <i class="fas fa-server"></i>
+      </div>
+      <div class="fluent-stat-content">
+        <div class="fluent-stat-value">
+          <span class="fluent-stat-number"><%= stats.totalServers.toLocaleString('fa-IR') || 0 %></span>
+        </div>
+        <div class="fluent-stat-label">سرورهای فعال</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fluent-row fluent-mt-4">
+    <!-- بخش سمت راست -->
+    <div class="fluent-col-8">
+      <!-- وضعیت سیستم -->
+      <div class="fluent-card fluent-mb-4">
+        <div class="fluent-card-header">
+          <h3 class="fluent-card-title">
+            <i class="fas fa-tachometer-alt"></i>
+            وضعیت سیستم
+          </h3>
+        </div>
+        <div class="fluent-card-body">
+          <div class="fluent-system-status-grid">
+            <!-- وضعیت بازار سهام -->
+            <div class="fluent-status-box">
+              <div class="fluent-status-box-title">
+                <i class="fas fa-chart-line"></i>
+                وضعیت بازار سهام
               </div>
-            <% }); %>
-          </div>
-        <% } else { %>
-          <div class="fluent-empty-state">
-            <i class="fas fa-info-circle fa-2x fluent-mb-2"></i>
-            <p>هیچ فعالیتی ثبت نشده است.</p>
-          </div>
-        <% } %>
-      </div>
-      <div class="fluent-card-footer fluent-text-left">
-        <a href="/admin/activities" class="fluent-btn fluent-btn-outline fluent-btn-sm">
-          مشاهده همه
-          <i class="fas fa-arrow-left"></i>
-        </a>
-      </div>
-    </div>
-  </div>
-  
-  <!-- کارت وضعیت سیستم -->
-  <div class="fluent-col-4">
-    <div class="fluent-card">
-      <div class="fluent-card-header">
-        <h3 class="fluent-card-title">
-          <i class="fas fa-tachometer-alt"></i>
-          وضعیت سیستم
-        </h3>
-      </div>
-      <div class="fluent-card-body">
-        <div class="fluent-system-status">
-          <div class="fluent-status-item">
-            <span class="fluent-status-label">وضعیت بازار سهام:</span>
-            <span class="fluent-status-value">
-              <% if (systemStatus.stockMarket === 'bull') { %>
-                <span class="fluent-badge fluent-badge-success">رونق</span>
-              <% } else if (systemStatus.stockMarket === 'bear') { %>
-                <span class="fluent-badge fluent-badge-danger">رکود</span>
-              <% } else { %>
-                <span class="fluent-badge fluent-badge-warning">عادی</span>
-              <% } %>
-            </span>
-          </div>
-          
-          <div class="fluent-status-item">
-            <span class="fluent-status-label">نرخ تورم:</span>
-            <span class="fluent-status-value"><%= systemStatus.inflationRate || '0' %>%</span>
-          </div>
-          
-          <div class="fluent-status-item">
-            <span class="fluent-status-label">وضعیت بانک:</span>
-            <span class="fluent-status-value">
-              <% if (systemStatus.bankStatus === 'healthy') { %>
-                <span class="fluent-badge fluent-badge-success">سالم</span>
-              <% } else if (systemStatus.bankStatus === 'risky') { %>
-                <span class="fluent-badge fluent-badge-warning">ریسکی</span>
-              <% } else { %>
-                <span class="fluent-badge fluent-badge-danger">بحرانی</span>
-              <% } %>
-            </span>
-          </div>
-          
-          <div class="fluent-status-item">
-            <span class="fluent-status-label">وضعیت دیسکورد بات:</span>
-            <span class="fluent-status-value">
-              <% if (systemStatus.botStatus === 'online') { %>
-                <span class="fluent-badge fluent-badge-success">آنلاین</span>
-              <% } else { %>
-                <span class="fluent-badge fluent-badge-danger">آفلاین</span>
-              <% } %>
-            </span>
-          </div>
-          
-          <div class="fluent-status-item">
-            <span class="fluent-status-label">آخرین به‌روزرسانی:</span>
-            <span class="fluent-status-value"><%= systemStatus.lastUpdate || 'نامشخص' %></span>
+              <div class="fluent-status-box-value">
+                <% if (systemStatus.stockMarket === 'bull') { %>
+                  <span class="fluent-status-indicator fluent-status-success">رونق</span>
+                <% } else if (systemStatus.stockMarket === 'bear') { %>
+                  <span class="fluent-status-indicator fluent-status-danger">رکود</span>
+                <% } else if (systemStatus.stockMarket === 'crisis') { %>
+                  <span class="fluent-status-indicator fluent-status-danger">بحران</span>
+                <% } else { %>
+                  <span class="fluent-status-indicator fluent-status-warning">ثبات</span>
+                <% } %>
+              </div>
+              <div class="fluent-status-note">نرخ تورم: <%= systemStatus.inflationRate || '0' %>%</div>
+            </div>
+
+            <!-- وضعیت بانک -->
+            <div class="fluent-status-box">
+              <div class="fluent-status-box-title">
+                <i class="fas fa-university"></i>
+                وضعیت بانک
+              </div>
+              <div class="fluent-status-box-value">
+                <% if (systemStatus.bankStatus === 'healthy') { %>
+                  <span class="fluent-status-indicator fluent-status-success">سالم</span>
+                <% } else if (systemStatus.bankStatus === 'risky') { %>
+                  <span class="fluent-status-indicator fluent-status-warning">ریسکی</span>
+                <% } else { %>
+                  <span class="fluent-status-indicator fluent-status-danger">بحرانی</span>
+                <% } %>
+              </div>
+            </div>
+
+            <!-- وضعیت دیسکورد -->
+            <div class="fluent-status-box">
+              <div class="fluent-status-box-title">
+                <i class="fab fa-discord"></i>
+                وضعیت دیسکورد بات
+              </div>
+              <div class="fluent-status-box-value">
+                <% if (systemStatus.botStatus === 'online') { %>
+                  <span class="fluent-status-indicator fluent-status-success">آنلاین</span>
+                <% } else { %>
+                  <span class="fluent-status-indicator fluent-status-danger">آفلاین</span>
+                <% } %>
+              </div>
+              <div class="fluent-status-note">آخرین به‌روزرسانی: <%= systemStatus.lastUpdate || 'نامشخص' %></div>
+            </div>
           </div>
         </div>
+        <div class="fluent-card-footer">
+          <button class="fluent-btn fluent-btn-primary fluent-btn-sm" id="refresh-status">
+            <i class="fas fa-sync-alt"></i>
+            به‌روزرسانی وضعیت
+          </button>
+        </div>
       </div>
-      <div class="fluent-card-footer">
-        <button class="fluent-btn fluent-btn-primary fluent-btn-sm fluent-btn-block" id="refresh-status">
-          <i class="fas fa-sync-alt"></i>
-          به‌روزرسانی وضعیت
-        </button>
-      </div>
-    </div>
-    
-    <div class="fluent-card fluent-mt-4">
-      <div class="fluent-card-header">
-        <h3 class="fluent-card-title">
-          <i class="fas fa-bullhorn"></i>
-          اطلاعیه‌ها
-        </h3>
-      </div>
-      <div class="fluent-card-body">
-        <% if (announcements && announcements.length > 0) { %>
-          <div class="fluent-announcements">
-            <% announcements.forEach(function(announcement) { %>
-              <div class="fluent-announcement">
-                <div class="fluent-announcement-title"><%= announcement.title %></div>
-                <div class="fluent-announcement-date"><%= announcement.date %></div>
-                <div class="fluent-announcement-content"><%= announcement.content %></div>
-              </div>
-            <% }); %>
-          </div>
-        <% } else { %>
-          <div class="fluent-empty-state">
-            <i class="fas fa-info-circle fa-2x fluent-mb-2"></i>
-            <p>هیچ اطلاعیه‌ای وجود ندارد.</p>
-          </div>
-        <% } %>
-      </div>
-    </div>
-  </div>
-</div>
 
-<div class="fluent-row fluent-mt-4">
-  <!-- کارت تراکنش‌های اخیر -->
-  <div class="fluent-col-6">
-    <div class="fluent-card">
-      <div class="fluent-card-header">
-        <h3 class="fluent-card-title">
-          <i class="fas fa-exchange-alt"></i>
-          تراکنش‌های اخیر
-        </h3>
+      <!-- اطلاعیه‌ها -->
+      <div class="fluent-card fluent-mb-4">
+        <div class="fluent-card-header">
+          <h3 class="fluent-card-title">
+            <i class="fas fa-bullhorn"></i>
+            اطلاعیه‌ها
+          </h3>
+        </div>
+        <div class="fluent-card-body">
+          <% if (announcements && announcements.length > 0) { %>
+            <div class="fluent-announcements">
+              <% announcements.forEach(function(announcement) { %>
+                <div class="fluent-announcement">
+                  <div class="fluent-announcement-header">
+                    <div class="fluent-announcement-title"><%= announcement.title %></div>
+                    <div class="fluent-announcement-date"><%= announcement.date %></div>
+                  </div>
+                  <div class="fluent-announcement-content"><%= announcement.content %></div>
+                </div>
+              <% }); %>
+            </div>
+          <% } else { %>
+            <div class="fluent-empty-state">
+              <i class="fas fa-info-circle fa-2x fluent-mb-2"></i>
+              <p>هیچ اطلاعیه‌ای وجود ندارد.</p>
+            </div>
+          <% } %>
+        </div>
+        <div class="fluent-card-footer">
+          <a href="/admin/announcements" class="fluent-btn fluent-btn-outline fluent-btn-sm">
+            مشاهده همه
+            <i class="fas fa-arrow-left"></i>
+          </a>
+        </div>
       </div>
-      <div class="fluent-card-body">
-        <% if (transactions && transactions.length > 0) { %>
-          <div class="fluent-table-responsive">
-            <table class="fluent-table">
-              <thead>
-                <tr>
-                  <th>نوع</th>
-                  <th>کاربر</th>
-                  <th>مبلغ</th>
-                  <th>تاریخ</th>
-                </tr>
-              </thead>
-              <tbody>
-                <% transactions.forEach(function(transaction) { %>
+
+      <!-- تغییرات قیمت سهام -->
+      <div class="fluent-card">
+        <div class="fluent-card-header">
+          <h3 class="fluent-card-title">
+            <i class="fas fa-chart-line"></i>
+            تغییرات قیمت سهام
+          </h3>
+        </div>
+        <div class="fluent-card-body">
+          <% if (stocks && stocks.length > 0) { %>
+            <div class="fluent-table-responsive">
+              <table class="fluent-table fluent-stock-table">
+                <thead>
                   <tr>
-                    <td>
-                      <% if (transaction.type === 'deposit') { %>
-                        <span class="fluent-badge fluent-badge-success">واریز</span>
-                      <% } else if (transaction.type === 'withdraw') { %>
-                        <span class="fluent-badge fluent-badge-danger">برداشت</span>
-                      <% } else { %>
-                        <span class="fluent-badge"><%= transaction.type %></span>
-                      <% } %>
-                    </td>
-                    <td><%= transaction.user %></td>
-                    <td><%= transaction.amount %> CCoin</td>
-                    <td><%= transaction.date %></td>
+                    <th>کاربر</th>
+                    <th>نماد</th>
+                    <th>شرکت</th>
+                    <th>مبلغ</th>
+                    <th>تاریخ</th>
+                    <th>تغییر</th>
                   </tr>
-                <% }); %>
-              </tbody>
-            </table>
-          </div>
-        <% } else { %>
-          <div class="fluent-empty-state">
-            <i class="fas fa-info-circle fa-2x fluent-mb-2"></i>
-            <p>هیچ تراکنشی ثبت نشده است.</p>
-          </div>
-        <% } %>
-      </div>
-      <div class="fluent-card-footer fluent-text-left">
-        <a href="/admin/transactions" class="fluent-btn fluent-btn-outline fluent-btn-sm">
-          مشاهده همه
-          <i class="fas fa-arrow-left"></i>
-        </a>
+                </thead>
+                <tbody>
+                  <% stocks.forEach(function(stock) { %>
+                    <tr>
+                      <td>
+                        <div class="fluent-stock-user">
+                          <div class="fluent-stock-user-avatar">
+                            <% const initials = stock.user ? stock.user.substring(0, 2) : ''; %>
+                            <div class="fluent-avatar fluent-avatar-sm <%= stock.change > 0 ? 'fluent-avatar-success' : (stock.change < 0 ? 'fluent-avatar-danger' : '') %>">
+                              <%= initials %>
+                            </div>
+                          </div>
+                          <div class="fluent-stock-user-name"><%= stock.user %></div>
+                        </div>
+                      </td>
+                      <td>
+                        <span class="fluent-badge <%= stock.change > 0 ? 'fluent-badge-success' : (stock.change < 0 ? 'fluent-badge-danger' : 'fluent-badge-primary') %>">
+                          <%= stock.symbol %>
+                        </span>
+                      </td>
+                      <td><%= stock.name %></td>
+                      <td><%= stock.price.toLocaleString('fa-IR') %> CCoin</td>
+                      <td><%= stock.date || '1402/01/15' %></td>
+                      <td>
+                        <% if (stock.change > 0) { %>
+                          <span class="fluent-text-success">
+                            <i class="fas fa-arrow-up"></i>
+                            <%= stock.change %>%
+                          </span>
+                        <% } else if (stock.change < 0) { %>
+                          <span class="fluent-text-danger">
+                            <i class="fas fa-arrow-down"></i>
+                            <%= Math.abs(stock.change) %>%
+                          </span>
+                        <% } else { %>
+                          <span class="fluent-text-muted">
+                            <i class="fas fa-minus"></i>
+                            0%
+                          </span>
+                        <% } %>
+                      </td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } else { %>
+            <div class="fluent-empty-state">
+              <i class="fas fa-info-circle fa-2x fluent-mb-2"></i>
+              <p>هیچ سهامی ثبت نشده است.</p>
+            </div>
+          <% } %>
+        </div>
+        <div class="fluent-card-footer">
+          <a href="/admin/stock-market" class="fluent-btn fluent-btn-outline fluent-btn-sm">
+            مشاهده همه
+            <i class="fas fa-arrow-left"></i>
+          </a>
+        </div>
       </div>
     </div>
-  </div>
-  
-  <!-- کارت تغییرات قیمت سهام -->
-  <div class="fluent-col-6">
-    <div class="fluent-card">
-      <div class="fluent-card-header">
-        <h3 class="fluent-card-title">
-          <i class="fas fa-chart-line"></i>
-          تغییرات قیمت سهام
-        </h3>
+
+    <!-- بخش سمت چپ -->
+    <div class="fluent-col-4">
+      <!-- فعالیت‌های اخیر -->
+      <div class="fluent-card fluent-mb-4">
+        <div class="fluent-card-header">
+          <h3 class="fluent-card-title">
+            <i class="fas fa-history"></i>
+            فعالیت‌های اخیر
+          </h3>
+        </div>
+        <div class="fluent-card-body">
+          <% if (activities && activities.length > 0) { %>
+            <div class="fluent-activity-timeline">
+              <% activities.forEach(function(activity) { %>
+                <div class="fluent-activity-item">
+                  <div class="fluent-activity-icon">
+                    <i class="<%= activity.icon || 'fas fa-circle' %>"></i>
+                  </div>
+                  <div class="fluent-activity-content">
+                    <div class="fluent-activity-time"><%= activity.time %></div>
+                    <div class="fluent-activity-text"><%= activity.text %></div>
+                  </div>
+                </div>
+              <% }); %>
+            </div>
+          <% } else { %>
+            <div class="fluent-empty-state">
+              <i class="fas fa-info-circle fa-2x fluent-mb-2"></i>
+              <p>هیچ فعالیتی ثبت نشده است.</p>
+            </div>
+          <% } %>
+        </div>
+        <div class="fluent-card-footer">
+          <a href="/admin/activities" class="fluent-btn fluent-btn-outline fluent-btn-sm">
+            مشاهده همه
+            <i class="fas fa-arrow-left"></i>
+          </a>
+        </div>
       </div>
-      <div class="fluent-card-body">
-        <% if (stocks && stocks.length > 0) { %>
-          <div class="fluent-table-responsive">
-            <table class="fluent-table">
-              <thead>
-                <tr>
-                  <th>نماد</th>
-                  <th>قیمت</th>
-                  <th>تغییر</th>
-                </tr>
-              </thead>
-              <tbody>
-                <% stocks.forEach(function(stock) { %>
-                  <tr>
-                    <td><%= stock.symbol %></td>
-                    <td><%= stock.price %> CCoin</td>
-                    <td>
-                      <% if (stock.change > 0) { %>
-                        <span class="fluent-text-success">
-                          <i class="fas fa-arrow-up"></i>
-                          <%= stock.change %>%
-                        </span>
-                      <% } else if (stock.change < 0) { %>
-                        <span class="fluent-text-danger">
-                          <i class="fas fa-arrow-down"></i>
-                          <%= Math.abs(stock.change) %>%
-                        </span>
-                      <% } else { %>
-                        <span class="fluent-text-muted">
-                          <i class="fas fa-minus"></i>
-                          0%
-                        </span>
-                      <% } %>
-                    </td>
-                  </tr>
-                <% }); %>
-              </tbody>
-            </table>
-          </div>
-        <% } else { %>
-          <div class="fluent-empty-state">
-            <i class="fas fa-info-circle fa-2x fluent-mb-2"></i>
-            <p>هیچ سهامی ثبت نشده است.</p>
-          </div>
-        <% } %>
-      </div>
-      <div class="fluent-card-footer fluent-text-left">
-        <a href="/admin/stock-market" class="fluent-btn fluent-btn-outline fluent-btn-sm">
-          مشاهده همه
-          <i class="fas fa-arrow-left"></i>
-        </a>
+
+      <!-- تراکنش‌های اخیر -->
+      <div class="fluent-card">
+        <div class="fluent-card-header">
+          <h3 class="fluent-card-title">
+            <i class="fas fa-exchange-alt"></i>
+            تراکنش‌های اخیر
+          </h3>
+        </div>
+        <div class="fluent-card-body">
+          <% if (transactions && transactions.length > 0) { %>
+            <div class="fluent-transaction-list">
+              <% transactions.forEach(function(transaction) { %>
+                <div class="fluent-transaction-item">
+                  <div class="fluent-transaction-icon">
+                    <% if (transaction.type === 'deposit') { %>
+                      <i class="fas fa-arrow-down fluent-text-success"></i>
+                    <% } else if (transaction.type === 'withdraw') { %>
+                      <i class="fas fa-arrow-up fluent-text-danger"></i>
+                    <% } else { %>
+                      <i class="fas fa-exchange-alt fluent-text-primary"></i>
+                    <% } %>
+                  </div>
+                  <div class="fluent-transaction-content">
+                    <div class="fluent-transaction-info">
+                      <div class="fluent-transaction-user"><%= transaction.user %></div>
+                      <div class="fluent-transaction-amount">
+                        <% if (transaction.type === 'deposit') { %>
+                          <span class="fluent-text-success">+<%= transaction.amount.toLocaleString('fa-IR') %> CCoin</span>
+                        <% } else if (transaction.type === 'withdraw') { %>
+                          <span class="fluent-text-danger">-<%= transaction.amount.toLocaleString('fa-IR') %> CCoin</span>
+                        <% } else { %>
+                          <span><%= transaction.amount.toLocaleString('fa-IR') %> CCoin</span>
+                        <% } %>
+                      </div>
+                    </div>
+                    <div class="fluent-transaction-meta">
+                      <div class="fluent-transaction-type">
+                        <% if (transaction.type === 'deposit') { %>
+                          <span class="fluent-badge fluent-badge-success">واریز</span>
+                        <% } else if (transaction.type === 'withdraw') { %>
+                          <span class="fluent-badge fluent-badge-danger">برداشت</span>
+                        <% } else { %>
+                          <span class="fluent-badge fluent-badge-primary">انتقال</span>
+                        <% } %>
+                      </div>
+                      <div class="fluent-transaction-date"><%= transaction.date %></div>
+                    </div>
+                  </div>
+                </div>
+              <% }); %>
+            </div>
+          <% } else { %>
+            <div class="fluent-empty-state">
+              <i class="fas fa-info-circle fa-2x fluent-mb-2"></i>
+              <p>هیچ تراکنشی ثبت نشده است.</p>
+            </div>
+          <% } %>
+        </div>
+        <div class="fluent-card-footer">
+          <a href="/admin/transactions" class="fluent-btn fluent-btn-outline fluent-btn-sm">
+            مشاهده همه
+            <i class="fas fa-arrow-left"></i>
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -347,4 +401,33 @@
       });
     }
   });
+
+  // تابع نمایش پیام
+  function showMessage(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `fluent-alert fluent-alert-${type}`;
+    
+    const icon = document.createElement('i');
+    icon.className = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
+    
+    alertDiv.appendChild(icon);
+    alertDiv.appendChild(document.createTextNode(' ' + message));
+    
+    const closeButton = document.createElement('button');
+    closeButton.className = 'fluent-alert-close';
+    closeButton.innerHTML = '&times;';
+    closeButton.addEventListener('click', function() {
+      alertDiv.remove();
+    });
+    
+    alertDiv.appendChild(closeButton);
+    
+    const content = document.querySelector('.fluent-content');
+    content.insertBefore(alertDiv, content.firstChild);
+    
+    // حذف خودکار پیام بعد از 5 ثانیه
+    setTimeout(() => {
+      alertDiv.remove();
+    }, 5000);
+  }
 </script>

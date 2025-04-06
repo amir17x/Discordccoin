@@ -1,0 +1,17 @@
+<%- include('page-template', {
+  pageTitle: 'مدیریت Logs',
+  pageIcon: 'fas fa-list',
+  pageDescription: 'گزارش‌های سیستم',
+  pageFeatures: [
+    'مشاهده لیست Logs',
+    'افزودن Logs جدید',
+    'ویرایش Logs موجود',
+    'حذف Logs'
+  ],
+  listIcon: 'fas fa-clipboard-list',
+  listTitle: 'گزارش‌ها',
+  tableHeaders: ["شناسه", "نوع گزارش", "پیام", "کاربر", "تاریخ"],
+  tableColumns: ["id", "type", "message", "user", "date"],
+  tableRows: [],
+  emptyIcon: 'fas fa-file-alt'
+}) %>

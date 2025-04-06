@@ -1,0 +1,17 @@
+<%- include('page-template', {
+  pageTitle: 'مدیریت Shop',
+  pageIcon: 'fas fa-shopping-cart',
+  pageDescription: 'فروشگاه و محصولات',
+  pageFeatures: [
+    'مشاهده لیست Shop',
+    'افزودن Shop جدید',
+    'ویرایش Shop موجود',
+    'حذف Shop'
+  ],
+  listIcon: 'fas fa-shopping-bag',
+  listTitle: 'محصولات',
+  tableHeaders: ["شناسه", "نام محصول", "قیمت", "دسته‌بندی", "وضعیت"],
+  tableColumns: ["id", "name", "price", "category", "status"],
+  tableRows: [],
+  emptyIcon: 'fas fa-store'
+}) %>

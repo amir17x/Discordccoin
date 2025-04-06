@@ -1,0 +1,17 @@
+<%- include('page-template', {
+  pageTitle: 'مدیریت Lottery',
+  pageIcon: 'fas fa-ticket-alt',
+  pageDescription: 'سیستم قرعه‌کشی',
+  pageFeatures: [
+    'مشاهده لیست Lottery',
+    'افزودن Lottery جدید',
+    'ویرایش Lottery موجود',
+    'حذف Lottery'
+  ],
+  listIcon: 'fas fa-trophy',
+  listTitle: 'قرعه‌کشی‌ها',
+  tableHeaders: ["شناسه", "عنوان", "جایزه", "تعداد برندگان", "وضعیت"],
+  tableColumns: ["id", "title", "prize", "winners_count", "status"],
+  tableRows: [],
+  emptyIcon: 'fas fa-gift'
+}) %>

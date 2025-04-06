@@ -1,0 +1,172 @@
+<div class="fluent-page-header">
+  <h1 class="fluent-page-title">
+    <i class="fas fa-user-circle"></i> پروفایل کاربری
+  </h1>
+</div>
+
+<div class="fluent-row">
+  <div class="fluent-col-4">
+    <div class="fluent-card">
+      <div class="fluent-card-header">
+        <h2 class="fluent-card-title">
+          <i class="fas fa-id-card"></i> اطلاعات پایه
+        </h2>
+      </div>
+      <div class="fluent-card-body">
+        <div class="fluent-profile-info">
+          <div class="fluent-profile-avatar">
+            <img src="https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" alt="<%= user.username %>" />
+          </div>
+          <div class="fluent-profile-details">
+            <div class="fluent-profile-item">
+              <span class="fluent-profile-label">نام کاربری:</span>
+              <strong><%= user.username %></strong>
+            </div>
+            <div class="fluent-profile-item">
+              <span class="fluent-profile-label">نقش:</span>
+              <span class="fluent-badge fluent-badge-primary"><%= user.role %></span>
+            </div>
+            <div class="fluent-profile-item">
+              <span class="fluent-profile-label">وضعیت:</span>
+              <span class="fluent-status-indicator fluent-status-success">فعال</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fluent-col-8">
+    <div class="fluent-card">
+      <div class="fluent-card-header">
+        <h2 class="fluent-card-title">
+          <i class="fas fa-edit"></i> ویرایش اطلاعات
+        </h2>
+      </div>
+      <div class="fluent-card-body">
+        <form class="fluent-form">
+          <div class="fluent-row">
+            <div class="fluent-col-6">
+              <div class="fluent-form-group">
+                <label class="fluent-form-label">نام کاربری</label>
+                <input type="text" class="fluent-form-control" value="<%= user.username %>" disabled>
+              </div>
+            </div>
+            <div class="fluent-col-6">
+              <div class="fluent-form-group">
+                <label class="fluent-form-label">ایمیل</label>
+                <input type="email" class="fluent-form-control" value="admin@ccoin.com">
+              </div>
+            </div>
+          </div>
+          
+          <div class="fluent-form-group">
+            <label class="fluent-form-label">رمز عبور فعلی</label>
+            <input type="password" class="fluent-form-control">
+          </div>
+          
+          <div class="fluent-row">
+            <div class="fluent-col-6">
+              <div class="fluent-form-group">
+                <label class="fluent-form-label">رمز عبور جدید</label>
+                <input type="password" class="fluent-form-control">
+              </div>
+            </div>
+            <div class="fluent-col-6">
+              <div class="fluent-form-group">
+                <label class="fluent-form-label">تکرار رمز عبور جدید</label>
+                <input type="password" class="fluent-form-control">
+              </div>
+            </div>
+          </div>
+          
+          <div class="fluent-form-group">
+            <button type="submit" class="fluent-btn fluent-btn-primary">
+              <i class="fas fa-save"></i> ذخیره تغییرات
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="fluent-row">
+  <div class="fluent-col-12">
+    <div class="fluent-card">
+      <div class="fluent-card-header">
+        <h2 class="fluent-card-title">
+          <i class="fas fa-history"></i> تاریخچه فعالیت‌ها
+        </h2>
+      </div>
+      <div class="fluent-card-body">
+        <div class="fluent-activity-timeline">
+          <div class="fluent-activity-item">
+            <div class="fluent-activity-icon">
+              <i class="fas fa-sign-in-alt"></i>
+            </div>
+            <div class="fluent-activity-content">
+              <div class="fluent-activity-time">امروز، ۱۰:۳۰</div>
+              <div class="fluent-activity-text">ورود به سیستم</div>
+            </div>
+          </div>
+          
+          <div class="fluent-activity-item">
+            <div class="fluent-activity-icon">
+              <i class="fas fa-user-edit"></i>
+            </div>
+            <div class="fluent-activity-content">
+              <div class="fluent-activity-time">دیروز، ۱۵:۲۰</div>
+              <div class="fluent-activity-text">به‌روزرسانی اطلاعات پروفایل</div>
+            </div>
+          </div>
+          
+          <div class="fluent-activity-item">
+            <div class="fluent-activity-icon">
+              <i class="fas fa-cog"></i>
+            </div>
+            <div class="fluent-activity-content">
+              <div class="fluent-activity-time">۱۴۰۲/۰۱/۰۵، ۰۹:۱۰</div>
+              <div class="fluent-activity-text">تغییر تنظیمات سیستم</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .fluent-profile-info {
+    display: flex;
+    align-items: center;
+  }
+  
+  .fluent-profile-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-left: var(--fluent-space-m);
+    border: 3px solid var(--fluent-primary-lighter);
+  }
+  
+  .fluent-profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .fluent-profile-details {
+    flex: 1;
+  }
+  
+  .fluent-profile-item {
+    margin-bottom: var(--fluent-space-xs);
+  }
+  
+  .fluent-profile-label {
+    color: var(--fluent-neutral);
+    margin-left: var(--fluent-space-xs);
+  }
+</style>

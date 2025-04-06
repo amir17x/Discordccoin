@@ -1,0 +1,17 @@
+<%- include('page-template', {
+  pageTitle: 'مدیریت Stock Market',
+  pageIcon: 'fas fa-chart-line',
+  pageDescription: 'بازار سهام',
+  pageFeatures: [
+    'مشاهده لیست Stock Market',
+    'افزودن Stock Market جدید',
+    'ویرایش Stock Market موجود',
+    'حذف Stock Market'
+  ],
+  listIcon: 'fas fa-chart-pie',
+  listTitle: 'سهام',
+  tableHeaders: ["نماد", "نام سهام", "قیمت فعلی", "تغییرات", "آخرین به‌روزرسانی"],
+  tableColumns: ["symbol", "name", "price", "change", "updated_at"],
+  tableRows: [],
+  emptyIcon: 'fas fa-chart-bar'
+}) %>

@@ -1,0 +1,17 @@
+<%- include('page-template', {
+  pageTitle: 'مدیریت Economy',
+  pageIcon: 'fas fa-coins',
+  pageDescription: 'اقتصاد و سکه‌های سیستم',
+  pageFeatures: [
+    'مشاهده لیست Economy',
+    'افزودن Economy جدید',
+    'ویرایش Economy موجود',
+    'حذف Economy'
+  ],
+  listIcon: 'fas fa-exchange-alt',
+  listTitle: 'تراکنش‌ها',
+  tableHeaders: ["شناسه", "نوع تراکنش", "مقدار", "کاربر", "تاریخ"],
+  tableColumns: ["id", "type", "amount", "user", "date"],
+  tableRows: [],
+  emptyIcon: 'fas fa-hand-holding-usd'
+}) %>

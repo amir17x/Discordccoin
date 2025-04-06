@@ -115,10 +115,10 @@ export async function showDashboard(req, res) {
     
     // وضعیت سیستم
     systemStatus: {
-      stockMarket: 'bull',
+      stockMarket: 'bull', // مقادیر ممکن: 'bull' (رونق)، 'bear' (رکود)، 'normal' (عادی)، 'crisis' (بحران)
       inflationRate: 2.5,
-      bankStatus: 'healthy',
-      botStatus: 'online',
+      bankStatus: 'healthy', // مقادیر ممکن: 'healthy' (سالم)، 'risky' (ریسکی)، 'critical' (بحرانی)
+      botStatus: 'online', // مقادیر ممکن: 'online' (آنلاین)، 'offline' (آفلاین)
       lastUpdate: '۱۰ دقیقه پیش'
     },
     
@@ -174,27 +174,42 @@ export async function showDashboard(req, res) {
     stocks: [
       {
         symbol: 'CCOIN',
+        name: 'Ccoin Technologies',
+        user: 'علی محمدی',
         price: 4567,
+        date: '۱۴۰۲/۰۱/۱۵',
         change: 15.2
       },
       {
         symbol: 'PGOLD',
+        name: 'Persian Gold Resources',
+        user: 'مریم حسینی',
         price: 6433,
+        date: '۱۴۰۲/۰۱/۱۵',
         change: 8.7
       },
       {
         symbol: 'OILCO',
+        name: 'Oil Company of Persia',
+        user: 'احمد رضایی',
         price: 15095,
+        date: '۱۴۰۲/۰۱/۱۴',
         change: 4.3
       },
       {
         symbol: 'PBANK',
+        name: 'Persian Banking Group',
+        user: 'سارا کریمی',
         price: 31087,
+        date: '۱۴۰۲/۰۱/۱۴',
         change: -2.1
       },
       {
         symbol: 'TECH',
+        name: 'Persian Tech Solutions',
+        user: 'محمد جعفری',
         price: 8995,
+        date: '۱۴۰۲/۰۱/۱۴',
         change: 1.8
       }
     ]
@@ -246,6 +261,141 @@ export function showProfile(req, res) {
   res.render('fluent/profile', {
     title: 'پروفایل کاربری',
     activePage: 'profile',
+    user: req.session.user,
+    flashMessages: req.flash()
+  });
+}
+
+/**
+ * نمایش صفحه سرورها
+ * 
+ * @param {Request} req درخواست اکسپرس
+ * @param {Response} res پاسخ اکسپرس
+ */
+export function showServers(req, res) {
+  res.render('fluent/servers', {
+    title: 'مدیریت سرورها',
+    activePage: 'servers',
+    user: req.session.user,
+    flashMessages: req.flash()
+  });
+}
+
+/**
+ * نمایش صفحه کاربران
+ * 
+ * @param {Request} req درخواست اکسپرس
+ * @param {Response} res پاسخ اکسپرس
+ */
+export function showUsers(req, res) {
+  res.render('fluent/users', {
+    title: 'مدیریت کاربران',
+    activePage: 'users',
+    user: req.session.user,
+    flashMessages: req.flash()
+  });
+}
+
+/**
+ * نمایش صفحه اقتصاد
+ * 
+ * @param {Request} req درخواست اکسپرس
+ * @param {Response} res پاسخ اکسپرس
+ */
+export function showEconomy(req, res) {
+  res.render('fluent/economy', {
+    title: 'مدیریت اقتصاد',
+    activePage: 'economy',
+    user: req.session.user,
+    flashMessages: req.flash()
+  });
+}
+
+/**
+ * نمایش صفحه فروشگاه
+ * 
+ * @param {Request} req درخواست اکسپرس
+ * @param {Response} res پاسخ اکسپرس
+ */
+export function showShop(req, res) {
+  res.render('fluent/shop', {
+    title: 'مدیریت فروشگاه',
+    activePage: 'shop',
+    user: req.session.user,
+    flashMessages: req.flash()
+  });
+}
+
+/**
+ * نمایش صفحه بازار سهام
+ * 
+ * @param {Request} req درخواست اکسپرس
+ * @param {Response} res پاسخ اکسپرس
+ */
+export function showStockMarket(req, res) {
+  res.render('fluent/stock-market', {
+    title: 'مدیریت بازار سهام',
+    activePage: 'stock-market',
+    user: req.session.user,
+    flashMessages: req.flash()
+  });
+}
+
+/**
+ * نمایش صفحه قرعه‌کشی
+ * 
+ * @param {Request} req درخواست اکسپرس
+ * @param {Response} res پاسخ اکسپرس
+ */
+export function showLottery(req, res) {
+  res.render('fluent/lottery', {
+    title: 'مدیریت قرعه‌کشی',
+    activePage: 'lottery',
+    user: req.session.user,
+    flashMessages: req.flash()
+  });
+}
+
+/**
+ * نمایش صفحه بانک
+ * 
+ * @param {Request} req درخواست اکسپرس
+ * @param {Response} res پاسخ اکسپرس
+ */
+export function showBank(req, res) {
+  res.render('fluent/bank', {
+    title: 'مدیریت بانک',
+    activePage: 'bank',
+    user: req.session.user,
+    flashMessages: req.flash()
+  });
+}
+
+/**
+ * نمایش صفحه گزارش‌ها
+ * 
+ * @param {Request} req درخواست اکسپرس
+ * @param {Response} res پاسخ اکسپرس
+ */
+export function showLogs(req, res) {
+  res.render('fluent/logs', {
+    title: 'گزارش‌های سیستم',
+    activePage: 'logs',
+    user: req.session.user,
+    flashMessages: req.flash()
+  });
+}
+
+/**
+ * نمایش صفحه تنظیمات
+ * 
+ * @param {Request} req درخواست اکسپرس
+ * @param {Response} res پاسخ اکسپرس
+ */
+export function showSettings(req, res) {
+  res.render('fluent/settings', {
+    title: 'تنظیمات سیستم',
+    activePage: 'settings',
     user: req.session.user,
     flashMessages: req.flash()
   });

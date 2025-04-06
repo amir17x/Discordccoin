@@ -17,6 +17,17 @@ router.get('/logout', fluentController.logout);
 router.get('/dashboard', checkAuth, fluentController.showDashboard);
 router.get('/profile', checkAuth, fluentController.showProfile);
 
+// مسیرهای منوی سایدبار
+router.get('/servers', checkAuth, fluentController.showServers);
+router.get('/users', checkAuth, fluentController.showUsers);
+router.get('/economy', checkAuth, fluentController.showEconomy);
+router.get('/shop', checkAuth, fluentController.showShop);
+router.get('/stock-market', checkAuth, fluentController.showStockMarket);
+router.get('/lottery', checkAuth, fluentController.showLottery);
+router.get('/bank', checkAuth, fluentController.showBank);
+router.get('/logs', checkAuth, fluentController.showLogs);
+router.get('/settings', checkAuth, fluentController.showSettings);
+
 // API ها
 router.get('/api/refresh-status', checkAuth, fluentController.refreshStatus);
 

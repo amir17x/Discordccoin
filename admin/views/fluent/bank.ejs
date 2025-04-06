@@ -1,0 +1,17 @@
+<%- include('page-template', {
+  pageTitle: 'مدیریت Bank',
+  pageIcon: 'fas fa-university',
+  pageDescription: 'سیستم بانکی',
+  pageFeatures: [
+    'مشاهده لیست Bank',
+    'افزودن Bank جدید',
+    'ویرایش Bank موجود',
+    'حذف Bank'
+  ],
+  listIcon: 'fas fa-money-bill-wave',
+  listTitle: 'حساب‌ها',
+  tableHeaders: ["شناسه", "نام حساب", "نوع حساب", "نرخ سود", "وضعیت"],
+  tableColumns: ["id", "name", "type", "interest_rate", "status"],
+  tableRows: [],
+  emptyIcon: 'fas fa-piggy-bank'
+}) %>

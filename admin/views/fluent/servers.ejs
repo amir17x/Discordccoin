@@ -1,0 +1,17 @@
+<%- include('page-template', {
+  pageTitle: 'مدیریت Servers',
+  pageIcon: 'fas fa-server',
+  pageDescription: 'سرورهای دیسکورد متصل به ربات',
+  pageFeatures: [
+    'مشاهده لیست Servers',
+    'افزودن Servers جدید',
+    'ویرایش Servers موجود',
+    'حذف Servers'
+  ],
+  listIcon: 'fas fa-server',
+  listTitle: 'سرورها',
+  tableHeaders: ["شناسه", "نام سرور", "شناسه دیسکورد", "تعداد کاربران", "وضعیت"],
+  tableColumns: ["id", "name", "discord_id", "user_count", "status"],
+  tableRows: [],
+  emptyIcon: 'fas fa-server'
+}) %>

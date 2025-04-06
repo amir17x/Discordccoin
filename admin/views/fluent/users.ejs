@@ -1,0 +1,17 @@
+<%- include('page-template', {
+  pageTitle: 'مدیریت Users',
+  pageIcon: 'fas fa-users',
+  pageDescription: 'کاربران سیستم',
+  pageFeatures: [
+    'مشاهده لیست Users',
+    'افزودن Users جدید',
+    'ویرایش Users موجود',
+    'حذف Users'
+  ],
+  listIcon: 'fas fa-user',
+  listTitle: 'کاربران',
+  tableHeaders: ["شناسه", "نام کاربری", "شناسه دیسکورد", "تعداد سکه", "آخرین فعالیت"],
+  tableColumns: ["id", "username", "discord_id", "coins", "last_active"],
+  tableRows: [],
+  emptyIcon: 'fas fa-user'
+}) %>
