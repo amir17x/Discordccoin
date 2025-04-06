@@ -1,0 +1,153 @@
+<!-- صفحه مدیریت سهام -->
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-md-12">
+      <div class="card shadow-sm">
+        <div class="card-header bg-gradient-info py-3 d-flex justify-content-between align-items-center">
+          <h6 class="m-0 font-weight-bold text-white">مدیریت سهام</h6>
+          <div>
+            <button type="button" class="btn btn-light btn-sm" data-toggle="modal" data-target="#addStockModal">
+              <i class="fas fa-plus-circle ml-1"></i>
+              افزودن سهم جدید
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm refresh-stocks">
+              <i class="fas fa-sync-alt ml-1"></i>
+              بروزرسانی
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="market-status-container mb-4">
+            <div class="alert alert-info">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <strong>وضعیت فعلی بازار:</strong> 
+                  <span class="badge badge-<%= marketStatus === 'up' ? 'success' : marketStatus === 'down' ? 'danger' : 'warning' %> ml-2">
+                    <%= marketStatus === 'up' ? 'صعودی' : marketStatus === 'down' ? 'نزولی' : 'متعادل' %>
+                  </span>
+                  <span class="market-trend-info">
+                    <%= marketTrendInfo %>
+                  </span>
+                </div>
+                <div>
+                  <button class="btn btn-sm btn-outline-primary update-market-btn">
+                    <i class="fas fa-magic ml-1"></i>
+                    تغییر وضعیت بازار
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="table-responsive">
+            <table class="table table-bordered table-striped table-hover" id="stocksTable">
+              <thead class="thead-dark">
+                <tr>
+                  <th style="width: 50px">#</th>
+                  <th>نام سهم</th>
+                  <th>نماد</th>
+                  <th>قیمت فعلی</th>
+                  <th>تغییر</th>
+                  <th>وضعیت</th>
+                  <th>عملیات</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (typeof stocks !== 'undefined' && stocks.length > 0) { %>
+                  <% stocks.forEach((stock, index) => { %>
+                    <tr data-stock-id="<%= stock._id %>">
+                      <td><%= index + 1 %></td>
+                      <td><%= stock.name %></td>
+                      <td><%= stock.symbol %></td>
+                      <td><%= stock.currentPrice.toLocaleString() %> <small>CC</small></td>
+                      <td class="<%= stock.change > 0 ? 'text-success' : stock.change < 0 ? 'text-danger' : 'text-muted' %>">
+                        <%= stock.change > 0 ? '+' : '' %><%= stock.change.toFixed(2) %>%
+                      </td>
+                      <td>
+                        <span class="badge badge-<%= stock.status === 'active' ? 'success' : 'secondary' %>">
+                          <%= stock.status === 'active' ? 'فعال' : 'غیرفعال' %>
+                        </span>
+                      </td>
+                      <td>
+                        <div class="btn-group">
+                          <button type="button" class="btn btn-sm btn-info view-stock-btn" data-id="<%= stock._id %>">
+                            <i class="fas fa-eye"></i>
+                          </button>
+                          <button type="button" class="btn btn-sm btn-primary edit-stock-btn" data-id="<%= stock._id %>">
+                            <i class="fas fa-edit"></i>
+                          </button>
+                          <button type="button" class="btn btn-sm btn-danger delete-stock-btn" data-id="<%= stock._id %>">
+                            <i class="fas fa-trash-alt"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  <% }) %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="7" class="text-center py-4">
+                      <div class="empty-state">
+                        <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                        <p>هیچ سهمی یافت نشد.</p>
+                        <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addStockModal">
+                          <i class="fas fa-plus-circle ml-1"></i>
+                          افزودن سهم جدید
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal افزودن سهم جدید -->
+<div class="modal fade" id="addStockModal" tabindex="-1" role="dialog" aria-labelledby="addStockModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-gradient-primary text-white">
+        <h5 class="modal-title" id="addStockModalLabel">افزودن سهم جدید</h5>
+        <button type="button" class="close ml-0 mr-auto text-white" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <form id="addStockForm" action="/admin/economy/stocks/add" method="POST">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="stockName">نام سهم</label>
+            <input type="text" class="form-control" id="stockName" name="name" required>
+          </div>
+          <div class="form-group">
+            <label for="stockSymbol">نماد</label>
+            <input type="text" class="form-control" id="stockSymbol" name="symbol" required>
+            <small class="form-text text-muted">نماد باید یکتا باشد و با حروف لاتین وارد شود.</small>
+          </div>
+          <div class="form-group">
+            <label for="stockDescription">توضیحات</label>
+            <textarea class="form-control" id="stockDescription" name="description" rows="3"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group col-md-6">
+              <label for="initialPrice">قیمت اولیه (CC)</label>
+              <input type="number" class="form-control" id="initialPrice" name="initialPrice" min="1" required>
+            </div>
+            <div class="form-group col-md-6">
+              <label for="volatility">نوسان (درصد)</label>
+              <input type="number" class="form-control" id="volatility" name="volatility" min="0" max="100" value="10">
+              <small class="form-text text-muted">میزان نوسان قیمت در هر تغییر</small>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">انصراف</button>
+          <button type="submit" class="btn btn-primary">ذخیره</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

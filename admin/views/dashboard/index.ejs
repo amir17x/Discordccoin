@@ -73,7 +73,7 @@
                         <% stats.recentEvents.forEach(event => { %>
                             <div class="event-item">
                                 <div class="event-icon <%= event.type %>">
-                                    <i class="fas <%= getEventIcon(event.type) %>"></i>
+                                    <i class="fas fa-bell"></i>
                                 </div>
                                 <div class="event-content">
                                     <div class="event-title"><%= event.title %></div>
@@ -149,3 +149,178 @@
 
 <!-- اسکریپت Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- اسکریپت به‌روزرسانی داده‌ها -->
+<script>
+    // رسم نمودارها
+    document.addEventListener('DOMContentLoaded', function() {
+        // رسم نمودار فعالیت کاربران
+        const userActivityChart = new Chart(
+            document.getElementById('userActivityChart'),
+            {
+                type: 'line',
+                data: {
+                    labels: userActivityData.labels,
+                    datasets: [{
+                        label: 'فعالیت کاربران',
+                        data: userActivityData.values,
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 2,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    locale: 'fa-IR'
+                }
+            }
+        );
+        
+        // رسم نمودار آمار اقتصادی
+        const economyStatsChart = new Chart(
+            document.getElementById('economyStatsChart'),
+            {
+                type: 'bar',
+                data: {
+                    labels: economyData.labels,
+                    datasets: [{
+                        label: 'تراکنش‌ها',
+                        data: economyData.transactions,
+                        backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                        borderColor: 'rgba(255, 159, 64, 1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    locale: 'fa-IR'
+                }
+            }
+        );
+        
+        // به‌روزرسانی خودکار داده‌ها
+        setInterval(fetchRealtimeStats, 30000); // هر 30 ثانیه
+    });
+    
+    // تابع دریافت آمار لحظه‌ای
+    async function fetchRealtimeStats() {
+        try {
+            const response = await fetch('/admin/api/realtime-stats');
+            if (!response.ok) {
+                throw new Error('خطا در دریافت آمار');
+            }
+            
+            const data = await response.json();
+            if (data.success) {
+                updateDashboardStats(data.data);
+            }
+        } catch (error) {
+            console.error('خطا در به‌روزرسانی آمار:', error);
+        }
+    }
+    
+    // به‌روزرسانی آمار داشبورد
+    function updateDashboardStats(data) {
+        // به‌روزرسانی کارت‌های آماری
+        if (data.users) {
+            document.getElementById('onlineUsers').textContent = data.users.online || 0;
+        }
+        
+        if (data.server) {
+            document.getElementById('serverLoad').textContent = `${data.server.cpuUsage || 0}%`;
+        }
+        
+        // به‌روزرسانی دستورات اجرا شده
+        const totalCommands = document.getElementById('totalCommands');
+        if (totalCommands && data.server && data.server.totalCommands) {
+            totalCommands.textContent = data.server.totalCommands;
+        }
+        
+        // به‌روزرسانی سکه در گردش
+        const coinsCirculation = document.getElementById('coinsCirculation');
+        if (coinsCirculation && data.economy && data.economy.totalCoins) {
+            coinsCirculation.textContent = data.economy.totalCoins.toLocaleString('fa-IR');
+        }
+        
+        // به‌روزرسانی رویدادهای اخیر (در صورت وجود)
+        if (data.recentEvents && data.recentEvents.length > 0) {
+            updateRecentEvents(data.recentEvents);
+        }
+        
+        // به‌روزرسانی فعالیت‌های اخیر (در صورت وجود)
+        if (data.recentActivities && data.recentActivities.length > 0) {
+            updateRecentActivities(data.recentActivities);
+        }
+    }
+    
+    // به‌روزرسانی رویدادهای اخیر
+    function updateRecentEvents(events) {
+        const recentEventsContainer = document.getElementById('recentEvents');
+        if (!recentEventsContainer) return;
+        
+        // پاک کردن محتوای فعلی
+        recentEventsContainer.innerHTML = '';
+        
+        // افزودن رویدادهای جدید
+        events.forEach(event => {
+            const eventItem = document.createElement('div');
+            eventItem.className = 'event-item';
+            
+            const eventIcon = document.createElement('div');
+            eventIcon.className = `event-icon ${event.type}`;
+            eventIcon.innerHTML = `<i class="fas ${getEventIcon(event.type)}"></i>`;
+            
+            const eventContent = document.createElement('div');
+            eventContent.className = 'event-content';
+            eventContent.innerHTML = `
+                <div class="event-title">${event.title}</div>
+                <div class="event-time">${event.time || new Date().toLocaleString('fa-IR')}</div>
+            `;
+            
+            eventItem.appendChild(eventIcon);
+            eventItem.appendChild(eventContent);
+            recentEventsContainer.appendChild(eventItem);
+        });
+    }
+    
+    // به‌روزرسانی فعالیت‌های اخیر
+    function updateRecentActivities(activities) {
+        const activitiesContainer = document.querySelector('.activity-list');
+        if (!activitiesContainer) return;
+        
+        // پاک کردن محتوای فعلی
+        activitiesContainer.innerHTML = '';
+        
+        // افزودن فعالیت‌های جدید
+        activities.forEach(activity => {
+            const activityItem = document.createElement('div');
+            activityItem.className = 'activity-item';
+            
+            activityItem.innerHTML = `
+                <div class="activity-user">
+                    <i class="fas fa-user-circle"></i>
+                    ${activity.user && activity.user.name || activity.user || 'کاربر ناشناس'}
+                </div>
+                <div class="activity-content">
+                    ${activity.details || activity.action || ''}
+                </div>
+                <div class="activity-time">
+                    ${activity.timestamp ? new Date(activity.timestamp).toLocaleString('fa-IR') : ''}
+                </div>
+            `;
+            
+            activitiesContainer.appendChild(activityItem);
+        });
+    }
+</script>

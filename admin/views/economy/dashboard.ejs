@@ -1,0 +1,397 @@
+<%- contentFor('body') %>
+
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">داشبورد اقتصادی</h5>
+        <div>
+          <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#economySettingsModal">
+            <span data-feather="settings"></span>
+            تنظیمات اقتصادی
+          </button>
+        </div>
+      </div>
+      <div class="card-body">
+        <!-- Economic Stats Cards -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-3">
+            <div class="card h-100">
+              <div class="card-body d-flex flex-column align-items-center justify-content-center bg-light-success p-4">
+                <span data-feather="dollar-sign" class="mb-2" style="width: 48px; height: 48px; stroke: var(--bs-success);"></span>
+                <h5 class="text-success mb-0"><%= economyStats.totalCoins ? economyStats.totalCoins.toLocaleString() : '0' %></h5>
+                <p class="text-muted small mb-0">کل سکه در گردش</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card h-100">
+              <div class="card-body d-flex flex-column align-items-center justify-content-center bg-light-primary p-4">
+                <span data-feather="refresh-cw" class="mb-2" style="width: 48px; height: 48px; stroke: var(--bs-primary);"></span>
+                <h5 class="text-primary mb-0"><%= economyStats.dailyTransactions ? economyStats.dailyTransactions.toLocaleString() : '0' %></h5>
+                <p class="text-muted small mb-0">تراکنش روزانه</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card h-100">
+              <div class="card-body d-flex flex-column align-items-center justify-content-center bg-light-warning p-4">
+                <span data-feather="trending-up" class="mb-2" style="width: 48px; height: 48px; stroke: var(--bs-warning);"></span>
+                <h5 class="text-warning mb-0"><%= economyStats.inflationRate ? economyStats.inflationRate : '0' %>%</h5>
+                <p class="text-muted small mb-0">نرخ تورم</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card h-100">
+              <div class="card-body d-flex flex-column align-items-center justify-content-center bg-light-info p-4">
+                <span data-feather="users" class="mb-2" style="width: 48px; height: 48px; stroke: var(--bs-info);"></span>
+                <h5 class="text-info mb-0"><%= economyStats.activeUsers ? economyStats.activeUsers.toLocaleString() : '0' %></h5>
+                <p class="text-muted small mb-0">کاربران فعال اقتصادی</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-body">
+                <h6 class="card-title">روند گردش سکه (7 روز اخیر)</h6>
+                <canvas id="coinCirculationChart" height="250"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-body">
+                <h6 class="card-title">تراکنش‌های روزانه (7 روز اخیر)</h6>
+                <canvas id="dailyTransactionsChart" height="250"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Economy Sections -->
+        <div class="row g-3">
+          <!-- Stock Market Section -->
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">بازار سهام</h6>
+                <a href="/admin/economy/stocks" class="btn btn-sm btn-outline-primary">
+                  مشاهده بازار
+                </a>
+              </div>
+              <div class="card-body">
+                <% if (stockMarket && stockMarket.stocks && stockMarket.stocks.length > 0) { %>
+                  <div class="table-responsive">
+                    <table class="table table-sm">
+                      <thead>
+                        <tr>
+                          <th>نام سهم</th>
+                          <th>قیمت</th>
+                          <th>تغییر</th>
+                          <th>وضعیت</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <% stockMarket.stocks.slice(0, 5).forEach(stock => { %>
+                          <tr>
+                            <td><%= stock.name %></td>
+                            <td><%= stock.price.toLocaleString() %></td>
+                            <td class="<%= parseFloat(stock.change) >= 0 ? 'text-success' : 'text-danger' %>">
+                              <%= parseFloat(stock.change) >= 0 ? '+' : '' %><%= stock.change %>%
+                            </td>
+                            <td>
+                              <% if (parseFloat(stock.change) > 2) { %>
+                                <span class="badge bg-success">صعودی</span>
+                              <% } else if (parseFloat(stock.change) < -2) { %>
+                                <span class="badge bg-danger">نزولی</span>
+                              <% } else { %>
+                                <span class="badge bg-secondary">ثابت</span>
+                              <% } %>
+                            </td>
+                          </tr>
+                        <% }); %>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="text-muted small mt-2">
+                    وضعیت کلی بازار: <span class="fw-bold"><%= stockMarket.marketCondition %></span>
+                  </div>
+                <% } else { %>
+                  <div class="text-center py-4">
+                    <p class="text-muted">داده‌ای برای نمایش وجود ندارد</p>
+                  </div>
+                <% } %>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Recent Transactions Section -->
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">تراکنش‌های اخیر</h6>
+                <a href="/admin/economy/transactions" class="btn btn-sm btn-outline-primary">
+                  همه تراکنش‌ها
+                </a>
+              </div>
+              <div class="card-body">
+                <% if (recentTransactions && recentTransactions.length > 0) { %>
+                  <div class="table-responsive">
+                    <table class="table table-sm">
+                      <thead>
+                        <tr>
+                          <th>کاربر</th>
+                          <th>نوع</th>
+                          <th>مبلغ</th>
+                          <th>زمان</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <% recentTransactions.forEach(transaction => { %>
+                          <tr>
+                            <td><%= transaction.username %></td>
+                            <td>
+                              <% 
+                                let badgeClass = 'bg-secondary';
+                                switch(transaction.type) {
+                                  case 'deposit':
+                                    badgeClass = 'bg-success';
+                                    transactionType = 'واریز';
+                                    break;
+                                  case 'withdraw':
+                                    badgeClass = 'bg-danger';
+                                    transactionType = 'برداشت';
+                                    break;
+                                  case 'transfer':
+                                    badgeClass = 'bg-primary';
+                                    transactionType = 'انتقال';
+                                    break;
+                                  case 'game':
+                                    badgeClass = 'bg-info';
+                                    transactionType = 'بازی';
+                                    break;
+                                  case 'shop':
+                                    badgeClass = 'bg-warning';
+                                    transactionType = 'فروشگاه';
+                                    break;
+                                  default:
+                                    transactionType = 'نامشخص';
+                                }
+                              %>
+                              <span class="badge <%= badgeClass %>"><%= transactionType %></span>
+                            </td>
+                            <td class="<%= transaction.amount >= 0 ? 'text-success' : 'text-danger' %>">
+                              <%= transaction.amount >= 0 ? '+' : '' %><%= transaction.amount.toLocaleString() %>
+                            </td>
+                            <td><%= new Date(transaction.timestamp).toLocaleString('fa-IR') %></td>
+                          </tr>
+                        <% }); %>
+                      </tbody>
+                    </table>
+                  </div>
+                <% } else { %>
+                  <div class="text-center py-4">
+                    <p class="text-muted">داده‌ای برای نمایش وجود ندارد</p>
+                  </div>
+                <% } %>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- مدال تنظیمات اقتصادی -->
+<div class="modal fade" id="economySettingsModal" tabindex="-1" aria-labelledby="economySettingsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="economySettingsModalLabel">تنظیمات اقتصادی</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+      </div>
+      <form action="/admin/economy/settings" method="post">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="dailyReward" class="form-label">جایزه روزانه (سکه)</label>
+                <input type="number" class="form-control" id="dailyReward" name="settings[dailyReward]" value="<%= settings.dailyReward || 100 %>" min="0">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="dailyStreak" class="form-label">ضریب استمرار روزانه</label>
+                <input type="number" class="form-control" id="dailyStreak" name="settings[dailyStreak]" value="<%= settings.dailyStreak || 1.1 %>" min="1" step="0.1">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="workMinReward" class="form-label">حداقل درآمد کار (سکه)</label>
+                <input type="number" class="form-control" id="workMinReward" name="settings[workMinReward]" value="<%= settings.workMinReward || 50 %>" min="0">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="workMaxReward" class="form-label">حداکثر درآمد کار (سکه)</label>
+                <input type="number" class="form-control" id="workMaxReward" name="settings[workMaxReward]" value="<%= settings.workMaxReward || 200 %>" min="0">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="workCooldown" class="form-label">زمان انتظار کار (دقیقه)</label>
+                <input type="number" class="form-control" id="workCooldown" name="settings[workCooldown]" value="<%= settings.workCooldown || 60 %>" min="0">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="transferFee" class="form-label">کارمزد انتقال (درصد)</label>
+                <input type="number" class="form-control" id="transferFee" name="settings[transferFee]" value="<%= settings.transferFee || 2 %>" min="0" max="100" step="0.1">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="interestRate" class="form-label">نرخ سود سپرده (درصد روزانه)</label>
+                <input type="number" class="form-control" id="interestRate" name="settings[interestRate]" value="<%= settings.interestRate || 0.5 %>" min="0" max="100" step="0.1">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="minInterestBalance" class="form-label">حداقل موجودی برای سود (سکه)</label>
+                <input type="number" class="form-control" id="minInterestBalance" name="settings[minInterestBalance]" value="<%= settings.minInterestBalance || 1000 %>" min="0">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="loanInterestRate" class="form-label">نرخ سود وام (درصد)</label>
+                <input type="number" class="form-control" id="loanInterestRate" name="settings[loanInterestRate]" value="<%= settings.loanInterestRate || 10 %>" min="0" max="100" step="0.1">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="maxLoanAmount" class="form-label">حداکثر مبلغ وام (سکه)</label>
+                <input type="number" class="form-control" id="maxLoanAmount" name="settings[maxLoanAmount]" value="<%= settings.maxLoanAmount || 5000 %>" min="0">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="loanPaymentDuration" class="form-label">مدت بازپرداخت وام (روز)</label>
+                <input type="number" class="form-control" id="loanPaymentDuration" name="settings[loanPaymentDuration]" value="<%= settings.loanPaymentDuration || 7 %>" min="1">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="robberySuccessRate" class="form-label">احتمال موفقیت دزدی (درصد)</label>
+                <input type="number" class="form-control" id="robberySuccessRate" name="settings[robberySuccessRate]" value="<%= settings.robberySuccessRate || 40 %>" min="0" max="100">
+              </div>
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="economyEnabled" class="form-check-label">وضعیت سیستم اقتصادی</label>
+            <div class="form-check form-switch mt-2">
+              <input class="form-check-input" type="checkbox" role="switch" id="economyEnabled" name="settings[economyEnabled]" <%= settings.economyEnabled ? 'checked' : '' %>>
+              <label class="form-check-label" for="economyEnabled">فعال</label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+          <button type="submit" class="btn btn-primary">ذخیره تنظیمات</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- اسکریپت‌های صفحه -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // فعال‌سازی آیکون‌ها
+    feather.replace();
+    
+    // داده‌های نمودار گردش سکه
+    const coinCirculationCtx = document.getElementById('coinCirculationChart').getContext('2d');
+    const coinCirculationChart = new Chart(coinCirculationCtx, {
+      type: 'line',
+      data: {
+        labels: <%- JSON.stringify(economyCharts.coinCirculation.labels) %>,
+        datasets: [{
+          label: 'گردش سکه',
+          data: <%- JSON.stringify(economyCharts.coinCirculation.data) %>,
+          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 2,
+          tension: 0.4
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'top',
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: false,
+            grid: {
+              display: true,
+              drawBorder: false,
+            }
+          },
+          x: {
+            grid: {
+              display: false
+            }
+          }
+        }
+      }
+    });
+    
+    // داده‌های نمودار تراکنش‌های روزانه
+    const dailyTransactionsCtx = document.getElementById('dailyTransactionsChart').getContext('2d');
+    const dailyTransactionsChart = new Chart(dailyTransactionsCtx, {
+      type: 'bar',
+      data: {
+        labels: <%- JSON.stringify(economyCharts.transactions.labels) %>,
+        datasets: [{
+          label: 'تعداد تراکنش‌ها',
+          data: <%- JSON.stringify(economyCharts.transactions.data) %>,
+          backgroundColor: 'rgba(54, 162, 235, 0.2)',
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'top',
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: {
+              display: true,
+              drawBorder: false,
+            }
+          },
+          x: {
+            grid: {
+              display: false
+            }
+          }
+        }
+      }
+    });
+  });
+</script>

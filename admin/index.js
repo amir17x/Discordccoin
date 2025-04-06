@@ -28,6 +28,10 @@ import logsRoutes from './routes/logs.js';
 import settingsRoutes from './routes/settings.js';
 import rolesRoutes from './routes/roles.js';
 
+// API مسیرها
+import statsApiRoutes from './routes/api/stats.js';
+import testApiRoutes from './routes/test-api.js';
+
 // میدلویر‌ها
 import { authMiddleware, checkPermissions } from './middleware/auth.js';
 
@@ -97,6 +101,10 @@ export function setupAdminPanel(app) {
 
   // مسیرها
   app.use('/admin', authRoutes);
+  app.use('/admin', testApiRoutes);
+  
+  // مسیرهای API
+  app.use('/admin/api', statsApiRoutes);
   
   // مسیرهای نیازمند احراز هویت
   app.use('/admin/dashboard', authMiddleware, dashboardRoutes);

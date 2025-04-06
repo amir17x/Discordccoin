@@ -1,0 +1,245 @@
+<!-- صفحه مدیریت رویدادها -->
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-md-12">
+      <div class="card shadow-sm">
+        <div class="card-header bg-gradient-info py-3 d-flex justify-content-between align-items-center">
+          <h6 class="m-0 font-weight-bold text-white">مدیریت رویدادها</h6>
+          <div>
+            <button type="button" class="btn btn-light btn-sm" data-toggle="modal" data-target="#addEventModal">
+              <i class="fas fa-plus-circle ml-1"></i>
+              افزودن رویداد جدید
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <ul class="nav nav-tabs" id="eventsTab" role="tablist">
+            <li class="nav-item">
+              <a class="nav-link active" id="upcoming-events-tab" data-toggle="tab" href="#upcoming-events" role="tab" aria-controls="upcoming-events" aria-selected="true">رویدادهای آینده</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="active-events-tab" data-toggle="tab" href="#active-events" role="tab" aria-controls="active-events" aria-selected="false">رویدادهای جاری</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="past-events-tab" data-toggle="tab" href="#past-events" role="tab" aria-controls="past-events" aria-selected="false">رویدادهای گذشته</a>
+            </li>
+          </ul>
+          <div class="tab-content" id="eventsTabContent">
+            <div class="tab-pane fade show active" id="upcoming-events" role="tabpanel" aria-labelledby="upcoming-events-tab">
+              <div class="table-responsive mt-4">
+                <table class="table table-bordered table-striped table-hover">
+                  <thead class="thead-dark">
+                    <tr>
+                      <th style="width: 50px">#</th>
+                      <th>عنوان رویداد</th>
+                      <th>نوع</th>
+                      <th>تاریخ شروع</th>
+                      <th>تاریخ پایان</th>
+                      <th>وضعیت</th>
+                      <th>عملیات</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% if (typeof upcomingEvents !== 'undefined' && upcomingEvents.length > 0) { %>
+                      <% upcomingEvents.forEach((event, index) => { %>
+                        <tr>
+                          <td><%= index + 1 %></td>
+                          <td><%= event.title %></td>
+                          <td><%= event.type %></td>
+                          <td><%= new Date(event.startDate).toLocaleDateString('fa-IR') %></td>
+                          <td><%= new Date(event.endDate).toLocaleDateString('fa-IR') %></td>
+                          <td>
+                            <span class="badge badge-warning">آینده</span>
+                          </td>
+                          <td>
+                            <div class="btn-group">
+                              <button type="button" class="btn btn-sm btn-info view-event-btn" data-id="<%= event._id %>">
+                                <i class="fas fa-eye"></i>
+                              </button>
+                              <button type="button" class="btn btn-sm btn-primary edit-event-btn" data-id="<%= event._id %>">
+                                <i class="fas fa-edit"></i>
+                              </button>
+                              <button type="button" class="btn btn-sm btn-danger delete-event-btn" data-id="<%= event._id %>">
+                                <i class="fas fa-trash-alt"></i>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      <% }) %>
+                    <% } else { %>
+                      <tr>
+                        <td colspan="7" class="text-center py-4">
+                          <div class="empty-state">
+                            <i class="fas fa-calendar-alt fa-3x text-muted mb-3"></i>
+                            <p>هیچ رویداد آینده‌ای یافت نشد.</p>
+                            <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addEventModal">
+                              <i class="fas fa-plus-circle ml-1"></i>
+                              افزودن رویداد جدید
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    <% } %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="active-events" role="tabpanel" aria-labelledby="active-events-tab">
+              <div class="table-responsive mt-4">
+                <table class="table table-bordered table-striped table-hover">
+                  <thead class="thead-dark">
+                    <tr>
+                      <th style="width: 50px">#</th>
+                      <th>عنوان رویداد</th>
+                      <th>نوع</th>
+                      <th>تاریخ شروع</th>
+                      <th>تاریخ پایان</th>
+                      <th>مشارکت‌کنندگان</th>
+                      <th>عملیات</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% if (typeof activeEvents !== 'undefined' && activeEvents.length > 0) { %>
+                      <% activeEvents.forEach((event, index) => { %>
+                        <tr>
+                          <td><%= index + 1 %></td>
+                          <td><%= event.title %></td>
+                          <td><%= event.type %></td>
+                          <td><%= new Date(event.startDate).toLocaleDateString('fa-IR') %></td>
+                          <td><%= new Date(event.endDate).toLocaleDateString('fa-IR') %></td>
+                          <td><%= event.participantCount %></td>
+                          <td>
+                            <div class="btn-group">
+                              <button type="button" class="btn btn-sm btn-info view-event-btn" data-id="<%= event._id %>">
+                                <i class="fas fa-eye"></i>
+                              </button>
+                              <button type="button" class="btn btn-sm btn-primary edit-event-btn" data-id="<%= event._id %>">
+                                <i class="fas fa-edit"></i>
+                              </button>
+                              <button type="button" class="btn btn-sm btn-danger end-event-btn" data-id="<%= event._id %>">
+                                <i class="fas fa-stop-circle"></i>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      <% }) %>
+                    <% } else { %>
+                      <tr>
+                        <td colspan="7" class="text-center py-4">
+                          <div class="empty-state">
+                            <i class="fas fa-calendar-check fa-3x text-muted mb-3"></i>
+                            <p>در حال حاضر هیچ رویداد فعالی وجود ندارد.</p>
+                          </div>
+                        </td>
+                      </tr>
+                    <% } %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="past-events" role="tabpanel" aria-labelledby="past-events-tab">
+              <div class="table-responsive mt-4">
+                <table class="table table-bordered table-striped table-hover">
+                  <thead class="thead-dark">
+                    <tr>
+                      <th style="width: 50px">#</th>
+                      <th>عنوان رویداد</th>
+                      <th>نوع</th>
+                      <th>تاریخ شروع</th>
+                      <th>تاریخ پایان</th>
+                      <th>مشارکت‌کنندگان</th>
+                      <th>عملیات</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% if (typeof pastEvents !== 'undefined' && pastEvents.length > 0) { %>
+                      <% pastEvents.forEach((event, index) => { %>
+                        <tr>
+                          <td><%= index + 1 %></td>
+                          <td><%= event.title %></td>
+                          <td><%= event.type %></td>
+                          <td><%= new Date(event.startDate).toLocaleDateString('fa-IR') %></td>
+                          <td><%= new Date(event.endDate).toLocaleDateString('fa-IR') %></td>
+                          <td><%= event.participantCount %></td>
+                          <td>
+                            <div class="btn-group">
+                              <button type="button" class="btn btn-sm btn-info view-event-btn" data-id="<%= event._id %>">
+                                <i class="fas fa-eye"></i>
+                              </button>
+                              <button type="button" class="btn btn-sm btn-secondary archive-event-btn" data-id="<%= event._id %>">
+                                <i class="fas fa-archive"></i>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      <% }) %>
+                    <% } else { %>
+                      <tr>
+                        <td colspan="7" class="text-center py-4">
+                          <div class="empty-state">
+                            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                            <p>هیچ رویداد گذشته‌ای یافت نشد.</p>
+                          </div>
+                        </td>
+                      </tr>
+                    <% } %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal افزودن رویداد جدید -->
+<div class="modal fade" id="addEventModal" tabindex="-1" role="dialog" aria-labelledby="addEventModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-gradient-primary text-white">
+        <h5 class="modal-title" id="addEventModalLabel">افزودن رویداد جدید</h5>
+        <button type="button" class="close ml-0 mr-auto text-white" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <form id="addEventForm" action="/admin/events/add" method="POST">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="eventTitle">عنوان رویداد</label>
+            <input type="text" class="form-control" id="eventTitle" name="title" required>
+          </div>
+          <div class="form-group">
+            <label for="eventType">نوع رویداد</label>
+            <select class="form-control" id="eventType" name="type" required>
+              <option value="">انتخاب کنید...</option>
+              <option value="giveaway">هدیه دهی</option>
+              <option value="competition">مسابقه</option>
+              <option value="special">رویداد ویژه</option>
+              <option value="discount">تخفیف</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="eventDescription">توضیحات</label>
+            <textarea class="form-control" id="eventDescription" name="description" rows="3"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group col-md-6">
+              <label for="startDate">تاریخ شروع</label>
+              <input type="datetime-local" class="form-control" id="startDate" name="startDate" required>
+            </div>
+            <div class="form-group col-md-6">
+              <label for="endDate">تاریخ پایان</label>
+              <input type="datetime-local" class="form-control" id="endDate" name="endDate" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">انصراف</button>
+          <button type="submit" class="btn btn-primary">ذخیره</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

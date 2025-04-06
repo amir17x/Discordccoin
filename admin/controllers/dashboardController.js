@@ -7,6 +7,36 @@ import * as aiService from '../services/aiService.js';
 import * as statsService from '../services/statsService.js';
 
 /**
+ * تابع کمکی برای دریافت آیکون مناسب برای هر نوع رویداد
+ * @param {string} eventType نوع رویداد
+ * @returns {string} کلاس آیکون متناسب با نوع رویداد
+ */
+export function getEventIcon(eventType) {
+  switch (eventType) {
+    case 'login':
+      return 'fa-sign-in-alt';
+    case 'transaction':
+      return 'fa-exchange-alt';
+    case 'game':
+      return 'fa-gamepad';
+    case 'admin':
+      return 'fa-user-shield';
+    case 'system':
+      return 'fa-cogs';
+    case 'error':
+      return 'fa-exclamation-triangle';
+    case 'warning':
+      return 'fa-exclamation-circle';
+    case 'success':
+      return 'fa-check-circle';
+    case 'info':
+      return 'fa-info-circle';
+    default:
+      return 'fa-bell';
+  }
+}
+
+/**
  * نمایش صفحه داشبورد
  * @param {Object} req درخواست
  * @param {Object} res پاسخ

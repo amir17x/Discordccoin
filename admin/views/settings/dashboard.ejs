@@ -1,0 +1,44 @@
+<!-- صفحه تنظیمات داشبورد -->
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-md-12">
+      <div class="card shadow-sm">
+        <div class="card-header bg-gradient-info py-3">
+          <h6 class="m-0 font-weight-bold text-white">تنظیمات داشبورد</h6>
+        </div>
+        <div class="card-body">
+          <% if (typeof settings !== 'undefined') { %>
+            <form action="/admin/settings/dashboard" method="POST" class="needs-validation" novalidate>
+              
+              <div class="row mb-4">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="welcomeMessage">پیام خوش‌آمدگویی</label>
+                    <textarea class="form-control" id="welcomeMessage" name="welcomeMessage" rows="3"><%= settings.dashboard.welcomeMessage %></textarea>
+                    <small class="form-text text-muted">این پیام در صفحه اصلی داشبورد به کاربران نمایش داده می‌شود.</small>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="announcementMessage">پیام اطلاع‌رسانی</label>
+                    <textarea class="form-control" id="announcementMessage" name="announcementMessage" rows="3"><%= settings.dashboard.announcementMessage %></textarea>
+                    <small class="form-text text-muted">پیام مهمی که می‌خواهید به همه کاربران نمایش داده شود.</small>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="form-group text-left mt-4">
+                <button type="submit" class="btn btn-primary px-4">ذخیره تنظیمات</button>
+              </div>
+            </form>
+          <% } else { %>
+            <div class="alert alert-warning">
+              <i class="fas fa-exclamation-triangle ml-2"></i>
+              تنظیمات داشبورد در دسترس نیست.
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

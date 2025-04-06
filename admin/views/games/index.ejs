@@ -1,0 +1,185 @@
+<!-- صفحه مدیریت بازی‌ها -->
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-md-12">
+      <div class="card shadow-sm">
+        <div class="card-header bg-gradient-info py-3 d-flex justify-content-between align-items-center">
+          <h6 class="m-0 font-weight-bold text-white">مدیریت بازی‌ها</h6>
+          <div>
+            <button type="button" class="btn btn-light btn-sm">
+              <i class="fas fa-plus-circle ml-1"></i>
+              افزودن بازی جدید
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <ul class="nav nav-tabs" id="gamesTab" role="tablist">
+            <li class="nav-item">
+              <a class="nav-link active" id="active-games-tab" data-toggle="tab" href="#active-games" role="tab" aria-controls="active-games" aria-selected="true">بازی‌های فعال</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="inactive-games-tab" data-toggle="tab" href="#inactive-games" role="tab" aria-controls="inactive-games" aria-selected="false">بازی‌های غیرفعال</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="settings-tab" data-toggle="tab" href="#settings" role="tab" aria-controls="settings" aria-selected="false">تنظیمات</a>
+            </li>
+          </ul>
+          <div class="tab-content" id="gamesTabContent">
+            <div class="tab-pane fade show active" id="active-games" role="tabpanel" aria-labelledby="active-games-tab">
+              <div class="table-responsive mt-4">
+                <table class="table table-bordered table-striped table-hover">
+                  <thead class="thead-dark">
+                    <tr>
+                      <th style="width: 50px">#</th>
+                      <th>نام بازی</th>
+                      <th>دسته‌بندی</th>
+                      <th>جایزه</th>
+                      <th>وضعیت</th>
+                      <th>دفعات بازی</th>
+                      <th>عملیات</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% if (typeof games !== 'undefined' && games.filter(g => g.isActive).length > 0) { %>
+                      <% games.filter(g => g.isActive).forEach((game, index) => { %>
+                        <tr>
+                          <td><%= index + 1 %></td>
+                          <td><%= game.name %></td>
+                          <td><%= game.category %></td>
+                          <td><%= game.reward.toLocaleString() %> <small>CC</small></td>
+                          <td>
+                            <span class="badge badge-success">فعال</span>
+                          </td>
+                          <td><%= game.playCount.toLocaleString() %></td>
+                          <td>
+                            <div class="btn-group">
+                              <button type="button" class="btn btn-sm btn-info">
+                                <i class="fas fa-eye"></i>
+                              </button>
+                              <button type="button" class="btn btn-sm btn-primary">
+                                <i class="fas fa-edit"></i>
+                              </button>
+                              <button type="button" class="btn btn-sm btn-warning">
+                                <i class="fas fa-power-off"></i>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      <% }) %>
+                    <% } else { %>
+                      <tr>
+                        <td colspan="7" class="text-center py-4">
+                          <div class="empty-state">
+                            <i class="fas fa-gamepad fa-3x text-muted mb-3"></i>
+                            <p>هیچ بازی فعالی یافت نشد.</p>
+                          </div>
+                        </td>
+                      </tr>
+                    <% } %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="inactive-games" role="tabpanel" aria-labelledby="inactive-games-tab">
+              <div class="table-responsive mt-4">
+                <table class="table table-bordered table-striped table-hover">
+                  <thead class="thead-dark">
+                    <tr>
+                      <th style="width: 50px">#</th>
+                      <th>نام بازی</th>
+                      <th>دسته‌بندی</th>
+                      <th>جایزه</th>
+                      <th>وضعیت</th>
+                      <th>دفعات بازی</th>
+                      <th>عملیات</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% if (typeof games !== 'undefined' && games.filter(g => !g.isActive).length > 0) { %>
+                      <% games.filter(g => !g.isActive).forEach((game, index) => { %>
+                        <tr>
+                          <td><%= index + 1 %></td>
+                          <td><%= game.name %></td>
+                          <td><%= game.category %></td>
+                          <td><%= game.reward.toLocaleString() %> <small>CC</small></td>
+                          <td>
+                            <span class="badge badge-secondary">غیرفعال</span>
+                          </td>
+                          <td><%= game.playCount.toLocaleString() %></td>
+                          <td>
+                            <div class="btn-group">
+                              <button type="button" class="btn btn-sm btn-info">
+                                <i class="fas fa-eye"></i>
+                              </button>
+                              <button type="button" class="btn btn-sm btn-primary">
+                                <i class="fas fa-edit"></i>
+                              </button>
+                              <button type="button" class="btn btn-sm btn-success">
+                                <i class="fas fa-power-off"></i>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      <% }) %>
+                    <% } else { %>
+                      <tr>
+                        <td colspan="7" class="text-center py-4">
+                          <div class="empty-state">
+                            <i class="fas fa-gamepad fa-3x text-muted mb-3"></i>
+                            <p>هیچ بازی غیرفعالی یافت نشد.</p>
+                          </div>
+                        </td>
+                      </tr>
+                    <% } %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="settings" role="tabpanel" aria-labelledby="settings-tab">
+              <div class="mt-4">
+                <div class="alert alert-info">
+                  <i class="fas fa-info-circle ml-2"></i>
+                  تنظیمات عمومی بازی‌ها در این بخش قابل تغییر است.
+                </div>
+                
+                <form action="/admin/games/settings" method="POST">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label for="defaultReward">جایزه پیش‌فرض (CC)</label>
+                        <input type="number" class="form-control" id="defaultReward" name="defaultReward" value="<%= settings ? settings.defaultReward : 100 %>">
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label for="cooldownPeriod">زمان انتظار بین بازی‌ها (دقیقه)</label>
+                        <input type="number" class="form-control" id="cooldownPeriod" name="cooldownPeriod" value="<%= settings ? settings.cooldownPeriod : 5 %>">
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-group form-check">
+                        <input type="checkbox" class="form-check-input" id="enableAllGames" name="enableAllGames" <%= settings && settings.enableAllGames ? 'checked' : '' %>>
+                        <label class="form-check-label" for="enableAllGames">فعال‌سازی همه بازی‌ها</label>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-group form-check">
+                        <input type="checkbox" class="form-check-input" id="enableRewards" name="enableRewards" <%= settings && settings.enableRewards ? 'checked' : '' %>>
+                        <label class="form-check-label" for="enableRewards">فعال‌سازی جوایز</label>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <button type="submit" class="btn btn-primary mt-3">ذخیره تنظیمات</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
