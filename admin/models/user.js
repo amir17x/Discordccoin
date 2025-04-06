@@ -175,5 +175,5 @@ userSchema.pre('findOneAndUpdate', function(next) {
   next();
 });
 
-// ایجاد و صادر کردن مدل
-export const User = mongoose.model('User', userSchema);
+// ایجاد و صادر کردن مدل - از تعریف مجدد جلوگیری می‌کنیم
+export const User = mongoose.models.User || mongoose.model('User', userSchema);

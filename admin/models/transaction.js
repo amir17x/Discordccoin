@@ -78,5 +78,5 @@ const transactionSchema = new mongoose.Schema({
   collection: 'transactions'
 });
 
-// ایجاد و صادر کردن مدل
-export const Transaction = mongoose.model('Transaction', transactionSchema);
+// ایجاد و صادر کردن مدل - از تعریف مجدد جلوگیری می‌کنیم
+export const Transaction = mongoose.models.Transaction || mongoose.model('Transaction', transactionSchema);

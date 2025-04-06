@@ -120,5 +120,5 @@ itemSchema.pre('findOneAndUpdate', function(next) {
   next();
 });
 
-// ایجاد و صادر کردن مدل
-export const Item = mongoose.model('Item', itemSchema);
+// ایجاد و صادر کردن مدل - از تعریف مجدد جلوگیری می‌کنیم
+export const Item = mongoose.models.Item || mongoose.model('Item', itemSchema);

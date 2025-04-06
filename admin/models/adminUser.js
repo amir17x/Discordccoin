@@ -162,5 +162,5 @@ adminUserSchema.methods.toJSON = function() {
   return obj;
 };
 
-// ایجاد و صادر کردن مدل
-export const AdminUser = mongoose.model('AdminUser', adminUserSchema);
+// ایجاد و صادر کردن مدل - از تعریف مجدد جلوگیری می‌کنیم
+export const AdminUser = mongoose.models.AdminUser || mongoose.model('AdminUser', adminUserSchema);

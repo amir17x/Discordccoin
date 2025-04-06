@@ -12,7 +12,7 @@ import { AdminUser } from '../models/adminUser.js';
 export async function showLogin(req, res) {
   res.render('auth/login', {
     title: 'ورود به پنل مدیریت',
-    layout: 'auth-layout',
+    layout: 'layouts/auth',
   });
 }
 
@@ -120,7 +120,7 @@ export async function logout(req, res) {
 export async function showForgotPassword(req, res) {
   res.render('auth/forgot-password', {
     title: 'فراموشی رمز عبور',
-    layout: 'auth-layout',
+    layout: 'layouts/auth',
   });
 }
 
@@ -192,7 +192,7 @@ export async function showResetPassword(req, res) {
     
     res.render('auth/reset-password', {
       title: 'بازنشانی رمز عبور',
-      layout: 'auth-layout',
+      layout: 'layouts/auth',
       token,
     });
   } catch (error) {

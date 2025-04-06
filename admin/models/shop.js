@@ -124,5 +124,5 @@ shopSchema.pre('findOneAndUpdate', function(next) {
   next();
 });
 
-// ایجاد و صادر کردن مدل
-export const Shop = mongoose.model('Shop', shopSchema);
+// ایجاد و صادر کردن مدل - از تعریف مجدد جلوگیری می‌کنیم
+export const Shop = mongoose.models.Shop || mongoose.model('Shop', shopSchema);

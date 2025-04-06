@@ -98,5 +98,5 @@ logSchema.statics.critical = function(message, category = 'system', details = {}
   return this.logMessage('critical', message, category, details);
 };
 
-// ایجاد و صادر کردن مدل
-export const Log = mongoose.model('Log', logSchema);
+// ایجاد و صادر کردن مدل - از تعریف مجدد جلوگیری می‌کنیم
+export const Log = mongoose.models.Log || mongoose.model('Log', logSchema);

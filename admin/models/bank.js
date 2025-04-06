@@ -101,5 +101,5 @@ bankSchema.pre('findOneAndUpdate', function(next) {
   next();
 });
 
-// ایجاد و صادر کردن مدل
-export const Bank = mongoose.model('Bank', bankSchema);
+// ایجاد و صادر کردن مدل - از تعریف مجدد جلوگیری می‌کنیم
+export const Bank = mongoose.models.Bank || mongoose.model('Bank', bankSchema);

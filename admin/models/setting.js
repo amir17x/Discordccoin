@@ -2,7 +2,6 @@
  * مدل تنظیمات
  * 
  * این مدل برای مدیریت تنظیمات سیستم استفاده می‌شود.
- * هر تنظیم شامل یک کلید و یک مقدار است.
  */
 
 import mongoose from 'mongoose';
@@ -15,34 +14,25 @@ const settingSchema = new mongoose.Schema({
     trim: true
   },
   value: {
+    type: mongoose.Schema.Types.Mixed,
+    required: true
+  },
+  category: {
     type: String,
-    default: ''
+    enum: ['economy', 'game', 'system', 'social', 'security', 'other'],
+    default: 'system'
   },
   description: {
     type: String,
     trim: true
   },
-  category: {
-    type: String,
-    enum: ['general', 'discord', 'bot', 'database', 'security', 'notification', 'localization', 'maintenance'],
-    default: 'general'
-  },
-  isSystemSetting: {
+  isPublic: {
     type: Boolean,
     default: false
   },
-  isHidden: {
-    type: Boolean,
-    default: false
-  },
-  dataType: {
-    type: String,
-    enum: ['string', 'number', 'boolean', 'date', 'json', 'array'],
-    default: 'string'
-  },
-  options: {
-    type: [String],
-    default: []
+  updatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'AdminUser'
   },
   createdAt: {
     type: Date,
@@ -51,10 +41,6 @@ const settingSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
-  },
-  updatedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'AdminUser'
   }
 }, { 
   timestamps: true,
@@ -67,31 +53,41 @@ settingSchema.pre('findOneAndUpdate', function(next) {
   next();
 });
 
-// روش برای تبدیل مقدار به فرمت صحیح بر اساس نوع داده
-settingSchema.methods.getValueAsType = function() {
-  switch (this.dataType) {
-    case 'number':
-      return Number(this.value);
-    case 'boolean':
-      return this.value === 'true';
-    case 'date':
-      return new Date(this.value);
-    case 'json':
-      try {
-        return JSON.parse(this.value);
-      } catch (e) {
-        return {};
-      }
-    case 'array':
-      try {
-        return this.value.split(',').map(item => item.trim());
-      } catch (e) {
-        return [];
-      }
-    default:
-      return this.value;
-  }
+// متد استاتیک برای دریافت یک تنظیم با کلید مشخص
+settingSchema.statics.getByKey = async function(key, defaultValue = null) {
+  const setting = await this.findOne({ key });
+  return setting ? setting.value : defaultValue;
 };
 
-// ایجاد و صادر کردن مدل
-export const Setting = mongoose.model('Setting', settingSchema);
+// متد استاتیک برای ذخیره یا به‌روزرسانی یک تنظیم
+settingSchema.statics.setByKey = async function(key, value, options = {}) {
+  const { category = 'system', description = '', isPublic = false, updatedBy = null } = options;
+  
+  return await this.findOneAndUpdate(
+    { key },
+    {
+      $set: { 
+        value, 
+        category, 
+        description, 
+        isPublic, 
+        updatedBy,
+        updatedAt: new Date()
+      }
+    },
+    { upsert: true, new: true }
+  );
+};
+
+// متد استاتیک برای دریافت تمام تنظیمات یک دسته خاص
+settingSchema.statics.getByCategory = async function(category, publicOnly = false) {
+  const filter = { category };
+  if (publicOnly) {
+    filter.isPublic = true;
+  }
+  
+  return await this.find(filter).sort({ key: 1 });
+};
+
+// ایجاد و صادر کردن مدل - از تعریف مجدد جلوگیری می‌کنیم
+export const Setting = mongoose.models.Setting || mongoose.model('Setting', settingSchema);

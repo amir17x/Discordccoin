@@ -6,7 +6,7 @@
  */
 
 import { Economy } from '../models/economy.js';
-import { Stock } from '../models/stock.js';
+import { AdminStock } from '../models/stock.js';
 import { Transaction } from '../models/transaction.js';
 import { Bank } from '../models/bank.js';
 import { Shop } from '../models/shop.js';
@@ -771,7 +771,7 @@ export const economyController = {
   // مدیریت سهام
   showStocks: async (req, res) => {
     try {
-      const stocks = await Stock.find().sort({ name: 1 });
+      const stocks = await AdminStock.find().sort({ name: 1 });
       res.render('economy/stocks/index', {
         title: 'مدیریت بازار سهام',
         stocks
@@ -792,7 +792,7 @@ export const economyController = {
     try {
       const { name, symbol, description, initialPrice, volatility } = req.body;
       
-      await Stock.create({
+      await AdminStock.create({
         name,
         symbol,
         description,
@@ -811,7 +811,7 @@ export const economyController = {
 
   showStock: async (req, res) => {
     try {
-      const stock = await Stock.findById(req.params.id);
+      const stock = await AdminStock.findById(req.params.id);
       if (!stock) {
         req.flash('error', 'سهام مورد نظر یافت نشد');
         return res.redirect('/admin/economy/stocks');
@@ -831,7 +831,7 @@ export const economyController = {
     try {
       const { name, symbol, description, volatility, active } = req.body;
       
-      await Stock.findByIdAndUpdate(req.params.id, {
+      await AdminStock.findByIdAndUpdate(req.params.id, {
         name,
         symbol,
         description,
@@ -857,7 +857,7 @@ export const economyController = {
         return res.redirect(`/admin/economy/stocks/${req.params.id}`);
       }
       
-      const stock = await Stock.findById(req.params.id);
+      const stock = await AdminStock.findById(req.params.id);
       if (!stock) {
         req.flash('error', 'سهام مورد نظر یافت نشد');
         return res.redirect('/admin/economy/stocks');
@@ -866,7 +866,7 @@ export const economyController = {
       const oldPrice = stock.currentPrice;
       const percentChange = ((newPrice - oldPrice) / oldPrice) * 100;
       
-      await Stock.findByIdAndUpdate(req.params.id, {
+      await AdminStock.findByIdAndUpdate(req.params.id, {
         currentPrice: newPrice,
         priceHistory: [
           ...stock.priceHistory,

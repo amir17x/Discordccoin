@@ -332,6 +332,198 @@ export async function exportLogsToCsv(params) {
 }
 
 /**
+ * پاک کردن همه لاگ‌ها یا لاگ‌های یک سطح خاص
+ * @param {string} level سطح لاگ (اختیاری، در صورت عدم وجود همه لاگ‌ها پاک می‌شوند)
+ * @returns {Promise<Object>} نتیجه عملیات
+ */
+export async function clearLogs(level = null) {
+  try {
+    let query = {};
+    if (level) {
+      query.level = level;
+    }
+    
+    const result = await Log.deleteMany(query);
+    
+    return {
+      success: true,
+      deletedCount: result.deletedCount,
+      message: level 
+        ? `${result.deletedCount} لاگ با سطح ${level} با موفقیت حذف شد` 
+        : `${result.deletedCount} لاگ با موفقیت حذف شد`
+    };
+  } catch (error) {
+    console.error('خطا در پاک کردن لاگ‌ها:', error);
+    throw error;
+  }
+}
+
+/**
+ * دریافت لاگ‌های مرتبط با هوش مصنوعی
+ * @param {Object} params پارامترهای فیلتر و صفحه‌بندی
+ * @returns {Promise<Object>} لیست لاگ‌های هوش مصنوعی و اطلاعات صفحه‌بندی
+ */
+export async function getAILogs(params = {}) {
+  try {
+    // تنظیم پارامترهای جستجو برای لاگ‌های هوش مصنوعی
+    params.category = ['ai', 'ccoin_ai', 'gemini', 'ai_service'];
+    
+    return await getLogs(params);
+  } catch (error) {
+    console.error('خطا در دریافت لاگ‌های هوش مصنوعی:', error);
+    throw error;
+  }
+}
+
+/**
+ * دریافت لاگ‌های مربوط به پنل ادمین
+ * @param {Object} params پارامترهای فیلتر و صفحه‌بندی
+ * @returns {Promise<Object>} لیست لاگ‌های ادمین و اطلاعات صفحه‌بندی
+ */
+export async function getAdminLogs(params = {}) {
+  try {
+    // تنظیم پارامترهای جستجو برای لاگ‌های پنل ادمین
+    params.category = ['admin', 'admin_panel', 'dashboard', 'security'];
+    
+    return await getLogs(params);
+  } catch (error) {
+    console.error('خطا در دریافت لاگ‌های پنل ادمین:', error);
+    throw error;
+  }
+}
+
+/**
+ * دریافت لاگ‌های خطا و بحرانی
+ * @param {Object} params پارامترهای فیلتر و صفحه‌بندی
+ * @returns {Promise<Object>} لیست لاگ‌های خطا و اطلاعات صفحه‌بندی
+ */
+export async function getErrorLogs(params = {}) {
+  try {
+    // تنظیم پارامترهای جستجو برای لاگ‌های خطا
+    params.level = ['error', 'critical', 'fatal'];
+    
+    return await getLogs(params);
+  } catch (error) {
+    console.error('خطا در دریافت لاگ‌های خطا:', error);
+    throw error;
+  }
+}
+
+/**
+ * دریافت لاگ‌های مربوط به بازی‌ها
+ * @param {Object} params پارامترهای فیلتر و صفحه‌بندی
+ * @returns {Promise<Object>} لیست لاگ‌های بازی‌ها و اطلاعات صفحه‌بندی
+ */
+export async function getGameLogs(params = {}) {
+  try {
+    // تنظیم پارامترهای جستجو برای لاگ‌های بازی‌ها
+    params.category = ['game', 'werewolf', 'mafia', 'spy', 'duel', 'rob', 'robbery', 'bingo', 'lottery', 'slots'];
+    
+    return await getLogs(params);
+  } catch (error) {
+    console.error('خطا در دریافت لاگ‌های بازی‌ها:', error);
+    throw error;
+  }
+}
+
+/**
+ * دریافت تنظیمات لاگ‌ها
+ * @returns {Promise<Object>} تنظیمات لاگ‌ها
+ */
+export async function getLogSettings() {
+  try {
+    // در اینجا می‌توانیم تنظیمات لاگ‌ها را از پایگاه داده یا فایل پیکربندی بخوانیم
+    // در این پیاده‌سازی ساده، یک شیء ثابت برمی‌گردانیم
+    
+    return {
+      enabledLevels: ['info', 'warning', 'error', 'critical', 'debug'],
+      retentionDays: 30,
+      maxLogSize: 10000, // حداکثر تعداد لاگ‌های نگهداری شده
+      autoClearEnabled: true,
+      categories: [
+        { id: 'system', name: 'سیستم', enabled: true },
+        { id: 'user', name: 'کاربر', enabled: true },
+        { id: 'game', name: 'بازی', enabled: true },
+        { id: 'economy', name: 'اقتصاد', enabled: true },
+        { id: 'security', name: 'امنیت', enabled: true },
+        { id: 'admin', name: 'مدیریت', enabled: true },
+        { id: 'api', name: 'API', enabled: true },
+        { id: 'ai', name: 'هوش مصنوعی', enabled: true }
+      ],
+      notificationSettings: {
+        email: false,
+        discord: true,
+        criticalOnly: true
+      }
+    };
+  } catch (error) {
+    console.error('خطا در دریافت تنظیمات لاگ‌ها:', error);
+    throw error;
+  }
+}
+
+/**
+ * دریافت لاگ‌های سیستمی
+ * @param {Object} params پارامترهای فیلتر و صفحه‌بندی
+ * @returns {Promise<Object>} لیست لاگ‌های سیستمی و اطلاعات صفحه‌بندی
+ */
+export async function getSystemLogs(params = {}) {
+  try {
+    // تنظیم پارامترهای جستجو برای لاگ‌های سیستمی
+    params.category = ['system', 'startup', 'shutdown', 'initialization', 'database', 'cache', 'backup', 'sync'];
+    
+    return await getLogs(params);
+  } catch (error) {
+    console.error('خطا در دریافت لاگ‌های سیستمی:', error);
+    throw error;
+  }
+}
+
+/**
+ * دریافت لاگ‌های تراکنش‌های مالی
+ * @param {Object} params پارامترهای فیلتر و صفحه‌بندی
+ * @returns {Promise<Object>} لیست لاگ‌های تراکنش‌ها و اطلاعات صفحه‌بندی
+ */
+export async function getTransactionLogs(params = {}) {
+  try {
+    // تنظیم پارامترهای جستجو برای لاگ‌های تراکنش‌ها
+    params.category = ['transaction', 'economy', 'payment', 'purchase', 'stock', 'transfer', 'bank'];
+    
+    return await getLogs(params);
+  } catch (error) {
+    console.error('خطا در دریافت لاگ‌های تراکنش‌ها:', error);
+    throw error;
+  }
+}
+
+/**
+ * به‌روزرسانی تنظیمات لاگ‌ها
+ * @param {Object} settings تنظیمات جدید
+ * @returns {Promise<Object>} تنظیمات به‌روزرسانی شده
+ */
+export async function updateLogSettings(settings) {
+  try {
+    // در یک سیستم واقعی، اینجا باید تنظیمات را در پایگاه داده ذخیره کنیم
+    // اما برای این پیاده‌سازی ساده، فقط تنظیمات را برمی‌گردانیم
+    
+    console.log('به‌روزرسانی تنظیمات لاگ‌ها:', settings);
+    
+    // می‌توانیم ذخیره‌سازی تنظیمات را در آینده پیاده‌سازی کنیم
+    // مثلا با استفاده از یک مدل Settings در پایگاه داده
+    
+    // برای الان فقط همان تنظیمات را برمی‌گردانیم
+    return {
+      success: true,
+      message: 'تنظیمات لاگ‌ها با موفقیت به‌روزرسانی شد',
+      settings: settings
+    };
+  } catch (error) {
+    console.error('خطا در به‌روزرسانی تنظیمات لاگ‌ها:', error);
+    throw error;
+  }
+}
+
+/**
  * سرویس لاگ
  */
 export const logsService = {
@@ -341,6 +533,15 @@ export const logsService = {
   getUserLogs,
   getLogsOverview,
   clearOldLogs,
+  clearLogs,
   createLog,
-  exportLogsToCsv
+  exportLogsToCsv,
+  getAILogs,
+  getAdminLogs,
+  getErrorLogs,
+  getGameLogs,
+  getLogSettings,
+  getSystemLogs,
+  getTransactionLogs,
+  updateLogSettings
 };

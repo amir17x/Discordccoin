@@ -1,12 +1,13 @@
 /**
- * مدل سهام
+ * مدل سهام برای پنل ادمین
  * 
  * این مدل برای مدیریت سهام‌های قابل خرید و فروش در سیستم استفاده می‌شود.
+ * نام مدل به AdminStock تغییر داده شده تا با مدل Stock در سرور اصلی تداخل نداشته باشد.
  */
 
 import mongoose from 'mongoose';
 
-const stockSchema = new mongoose.Schema({
+const adminStockSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
@@ -100,13 +101,13 @@ const stockSchema = new mongoose.Schema({
 });
 
 // قبل از به‌روزرسانی، فیلد updatedAt را به‌روز می‌کنیم
-stockSchema.pre('findOneAndUpdate', function(next) {
+adminStockSchema.pre('findOneAndUpdate', function(next) {
   this.set({ updatedAt: new Date() });
   next();
 });
 
 // محاسبه تغییر قیمت (درصد)
-stockSchema.virtual('priceChange').get(function() {
+adminStockSchema.virtual('priceChange').get(function() {
   if (this.priceHistory && this.priceHistory.length > 1) {
     const previousPrice = this.priceHistory[this.priceHistory.length - 2].price;
     return ((this.currentPrice - previousPrice) / previousPrice) * 100;
@@ -115,9 +116,9 @@ stockSchema.virtual('priceChange').get(function() {
 });
 
 // محاسبه تغییر قیمت نسبت به قیمت اولیه (درصد)
-stockSchema.virtual('overallChange').get(function() {
+adminStockSchema.virtual('overallChange').get(function() {
   return ((this.currentPrice - this.initialPrice) / this.initialPrice) * 100;
 });
 
-// ایجاد و صادر کردن مدل
-export const Stock = mongoose.model('Stock', stockSchema);
+// ایجاد و صادر کردن مدل - از تعریف مجدد جلوگیری می‌کنیم
+export const AdminStock = mongoose.models.AdminStock || mongoose.model('AdminStock', adminStockSchema);
