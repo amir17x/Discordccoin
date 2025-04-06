@@ -7,10 +7,11 @@
 import mongoose from 'mongoose';
 import { createObjectCsvStringifier } from 'csv-writer';
 import { Log } from '../models/log.js';
+import { Transaction } from '../models/transaction.js';
 
 // مدل کاربر از سرور اصلی
 // در پروژه واقعی، این مدل در سرور اصلی برنامه تعریف شده و اینجا import می‌شود
-const User = mongoose.model('User');
+const User = mongoose.models.User || mongoose.model('User');
 
 /**
  * دریافت لیست کاربران با امکان فیلتر و صفحه‌بندی
@@ -178,13 +179,13 @@ export async function addUserCoins(userId, amount, description) {
     await user.save();
     
     // ثبت تراکنش
-    await mongoose.model('Transaction').create({
+    await Transaction.create({
       userId: user.userId,
       type: 'admin_add',
       amount,
       balance: user.coins,
       description: description || 'افزودن سکه توسط ادمین',
-      metadata: {
+      details: {
         adminAction: true
       }
     });
@@ -240,13 +241,13 @@ export async function removeUserCoins(userId, amount, description) {
     await user.save();
     
     // ثبت تراکنش
-    await mongoose.model('Transaction').create({
+    await Transaction.create({
       userId: user.userId,
       type: 'admin_remove',
       amount: -amount,
       balance: user.coins,
       description: description || 'کم کردن سکه توسط ادمین',
-      metadata: {
+      details: {
         adminAction: true
       }
     });
@@ -290,7 +291,8 @@ export async function addUserItem(userId, itemId, quantity) {
       throw new Error('کاربر مورد نظر یافت نشد');
     }
     
-    const item = await mongoose.model('Item').findById(itemId);
+    const Item = mongoose.models.Item || mongoose.model('Item');
+    const item = await Item.findById(itemId);
     
     if (!item) {
       throw new Error('آیتم مورد نظر یافت نشد');

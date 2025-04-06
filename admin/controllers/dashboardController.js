@@ -257,7 +257,4 @@ async function getRecentActivities(limit = 10) {
   }
 }
 
-export const dashboardController = {
-  showDashboard,
-  getRealtimeStats,
-};
+// حذف export اضافی که باعث تداخل می‌شود

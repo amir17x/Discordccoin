@@ -256,12 +256,4 @@ async function generateResetToken() {
          Math.random().toString(36).substring(2, 15);
 }
 
-export const authController = {
-  showLogin,
-  processLogin,
-  logout,
-  showForgotPassword,
-  processForgotPassword,
-  showResetPassword,
-  processResetPassword,
-};
+// حذف export اضافی که باعث تداخل می‌شود

@@ -16,7 +16,69 @@ import { User } from '../models/user.js';
 /**
  * کنترلر اقتصاد
  */
-export const economyController = {
+// صحیح کردن صادرات کنترلر (مشکل باعث خطای Route.get() requires a callback function but got a [object Undefined] می‌شود)
+export function showEconomyDashboard(req, res) {
+  return economyController.showDashboard(req, res);
+}
+
+export function showTransactions(req, res) {
+  return economyController.showTransactions(req, res);
+}
+
+export function showStocks(req, res) {
+  return economyController.showStocks ? economyController.showStocks(req, res) : res.render('economy/stocks');
+}
+
+export function showBanks(req, res) {
+  return economyController.showBanks(req, res);
+}
+
+export function showShops(req, res) {
+  return economyController.showShops ? economyController.showShops(req, res) : res.render('economy/shops');
+}
+
+export function showItems(req, res) {
+  return economyController.showItems ? economyController.showItems(req, res) : res.render('economy/items');
+}
+
+export function showCoupons(req, res) {
+  return economyController.showCoupons ? economyController.showCoupons(req, res) : res.render('economy/coupons');
+}
+
+export function showEconomySettings(req, res) {
+  return economyController.showEconomySettings ? economyController.showEconomySettings(req, res) : res.render('economy/settings');
+}
+
+export function createStock(req, res) {
+  return economyController.createStock ? economyController.createStock(req, res) : res.redirect('/admin/economy/stocks');
+}
+
+export function editStock(req, res) {
+  return economyController.editStock ? economyController.editStock(req, res) : res.redirect('/admin/economy/stocks');
+}
+
+export function updateStockPrice(req, res) {
+  return economyController.updateStockPrice ? economyController.updateStockPrice(req, res) : res.redirect('/admin/economy/stocks');
+}
+
+export function createItem(req, res) {
+  return economyController.createItem ? economyController.createItem(req, res) : res.redirect('/admin/economy/items');
+}
+
+export function editItem(req, res) {
+  return economyController.editItem ? economyController.editItem(req, res) : res.redirect('/admin/economy/items');
+}
+
+export function deleteItem(req, res) {
+  return economyController.deleteItem ? economyController.deleteItem(req, res) : res.redirect('/admin/economy/items');
+}
+
+export function generateEconomyReport(req, res) {
+  return economyController.generateEconomyReport ? economyController.generateEconomyReport(req, res) : res.redirect('/admin/economy');
+}
+
+// اینجا اشیا اصلی برای مرجع استفاده می‌شود
+const economyController = {
   /**
    * نمایش داشبورد مدیریت اقتصاد
    */

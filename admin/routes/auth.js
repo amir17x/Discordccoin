@@ -1,31 +1,31 @@
 /**
  * مسیرهای احراز هویت پنل ادمین
  */
+
 import express from 'express';
 import * as authController from '../controllers/authController.js';
-import { guestMiddleware, authMiddleware } from '../middleware/auth.js';
+import { redirectIfAuthenticated } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// صفحه ورود
-router.get('/login', guestMiddleware, authController.showLogin);
+// اعمال میدلویر هدایت به داشبورد اگر کاربر قبلاً لاگین کرده باشد
+router.use('/login', redirectIfAuthenticated);
+router.use('/forgot-password', redirectIfAuthenticated);
+router.use('/reset-password', redirectIfAuthenticated);
 
-// پردازش فرم ورود
-router.post('/login', guestMiddleware, authController.processLogin);
+// صفحه ورود
+router.get('/login', authController.showLogin);
+router.post('/login', authController.processLogin);
 
 // خروج از حساب کاربری
-router.get('/logout', authMiddleware, authController.logout);
+router.get('/logout', authController.logout);
 
-// صفحه فراموشی رمز عبور
-router.get('/forgot-password', guestMiddleware, authController.showForgotPassword);
+// فراموشی رمز عبور
+router.get('/forgot-password', authController.showForgotPassword);
+router.post('/forgot-password', authController.processForgotPassword);
 
-// پردازش فرم فراموشی رمز عبور
-router.post('/forgot-password', guestMiddleware, authController.processForgotPassword);
-
-// صفحه بازنشانی رمز عبور
-router.get('/reset-password/:token', guestMiddleware, authController.showResetPassword);
-
-// پردازش فرم بازنشانی رمز عبور
-router.post('/reset-password/:token', guestMiddleware, authController.processResetPassword);
+// بازنشانی رمز عبور
+router.get('/reset-password/:token', authController.showResetPassword);
+router.post('/reset-password/:token', authController.processResetPassword);
 
 export default router;

@@ -13,66 +13,45 @@
     <!-- آیکون‌ها -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- استایل‌های اصلی -->
-    <link rel="stylesheet" href="/admin/public/css/style.css">
-    
-    <!-- استایل‌های اضافی -->
-    <% if (typeof styles !== 'undefined' && styles.length > 0) { %>
-        <% styles.forEach(function(style) { %>
-            <link rel="stylesheet" href="<%= style %>">
-        <% }); %>
-    <% } %>
+    <!-- استایل‌ها -->
+    <link rel="stylesheet" href="/admin/public/css/admin.css">
 </head>
 <body>
-    <div class="auth-page">
-        <div class="auth-container">
+    <div class="auth-container">
+        <div class="auth-wrapper">
             <!-- پیام‌های فلش -->
-            <% if (success_msg && success_msg.length > 0) { %>
-                <div class="alert alert-success">
-                    <i class="fas fa-check-circle"></i>
-                    <%= success_msg %>
-                </div>
+            <% if (typeof messages !== 'undefined') { %>
+                <% if (messages.success && messages.success.length > 0) { %>
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i>
+                        <%= messages.success %>
+                    </div>
+                <% } %>
+                
+                <% if (messages.error && messages.error.length > 0) { %>
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <%= messages.error %>
+                    </div>
+                <% } %>
+                
+                <% if (messages.info && messages.info.length > 0) { %>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <%= messages.info %>
+                    </div>
+                <% } %>
+                
+                <% if (messages.warning && messages.warning.length > 0) { %>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <%= messages.warning %>
+                    </div>
+                <% } %>
             <% } %>
             
-            <% if (error_msg && error_msg.length > 0) { %>
-                <div class="alert alert-danger">
-                    <i class="fas fa-exclamation-circle"></i>
-                    <%= error_msg %>
-                </div>
-            <% } %>
-            
-            <% if (info_msg && info_msg.length > 0) { %>
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i>
-                    <%= info_msg %>
-                </div>
-            <% } %>
-            
-            <% if (warning_msg && warning_msg.length > 0) { %>
-                <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <%= warning_msg %>
-                </div>
-            <% } %>
-            
-            <!-- محتوای اصلی -->
             <%- body %>
-            
-            <!-- فوتر -->
-            <div class="auth-footer">
-                <p>&copy; <%= new Date().getFullYear() %> پنل مدیریت CCOIN - نسخه 1.0.0</p>
-            </div>
         </div>
     </div>
-    
-    <!-- اسکریپت‌های اصلی -->
-    <script src="/admin/public/js/admin.js"></script>
-    
-    <!-- اسکریپت‌های اضافی -->
-    <% if (typeof scripts !== 'undefined' && scripts.length > 0) { %>
-        <% scripts.forEach(function(script) { %>
-            <script src="<%= script %>"></script>
-        <% }); %>
-    <% } %>
 </body>
 </html>

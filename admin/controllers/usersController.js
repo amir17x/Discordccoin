@@ -442,6 +442,8 @@ export async function exportUsers(req, res) {
 }
 
 // تعریف کنترلر برای ارائه به صورت یک آبجکت
+// حذف export اضافی که باعث تداخل می‌شود
+/*
 export const usersController = {
   showDashboard: (req, res) => {
     res.render('users/dashboard', { title: 'مدیریت کاربران' });
@@ -575,3 +577,4 @@ export const usersController = {
     res.redirect('/admin/users/settings');
   }
 };
+*/
