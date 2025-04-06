@@ -15,8 +15,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- استایل‌های فلوئنت UI -->
-    <link rel="stylesheet" href="/admin/public/css/fluent-ui/fluent-variables.css">
-    <link rel="stylesheet" href="/admin/public/css/fluent-ui/fluent-ui.css">
+    <link rel="stylesheet" href="/admin/public/css/fluent.css">
     
     <!-- استایل‌های قبلی برای حفظ سازگاری -->
     <link rel="stylesheet" href="/admin/public/css/admin.css">
@@ -28,295 +27,232 @@
 </head>
 <body>
     <!-- بک‌دراپ منو موبایل -->
-    <div class="fluent-mobile-menu-backdrop"></div>
-    
-    <!-- لایه‌بندی کلی -->
-    <div class="fluent-app">
+    <div class="fluent-backdrop" id="mobileMenuBackdrop"></div>
+
+    <div class="fluent-app-container">
         <!-- نوار کناری -->
-        <aside class="fluent-sidebar fluent-scrollbar">
+        <aside class="fluent-sidebar">
             <div class="fluent-sidebar-header">
-                <img src="/admin/public/images/logo.png" alt="CCOIN Logo" class="fluent-sidebar-header-logo">
-                <h3 class="fluent-sidebar-header-title">پنل مدیریت CCOIN</h3>
+                <div class="fluent-sidebar-logo">
+                    <img src="/admin/public/img/ccoin-logo.png" alt="CCOIN">
+                    <span>CCOIN</span>
+                </div>
+                <button class="fluent-sidebar-close-btn" id="closeSidebarBtn">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
             
-            <div class="fluent-sidebar-menu">
-                <div class="fluent-sidebar-group">
-                    <h4 class="fluent-sidebar-group-title">عمومی</h4>
-                    <a href="/admin/dashboard" class="fluent-sidebar-item <%= (currentPath === '/admin/dashboard') ? 'active' : '' %>">
-                        <span class="fluent-sidebar-item-icon">
-                            <i data-feather="home"></i>
-                        </span>
-                        <span class="fluent-sidebar-item-text">داشبورد</span>
-                    </a>
-                    <a href="/admin/users" class="fluent-sidebar-item <%= (currentPath && currentPath.startsWith('/admin/users')) ? 'active' : '' %>">
-                        <span class="fluent-sidebar-item-icon">
-                            <i data-feather="users"></i>
-                        </span>
-                        <span class="fluent-sidebar-item-text">مدیریت کاربران</span>
-                    </a>
-                </div>
-                
-                <div class="fluent-sidebar-group">
-                    <h4 class="fluent-sidebar-group-title">سیستم اقتصادی</h4>
-                    <a href="/admin/economy" class="fluent-sidebar-item <%= (currentPath && currentPath.startsWith('/admin/economy')) ? 'active' : '' %>">
-                        <span class="fluent-sidebar-item-icon">
-                            <i data-feather="activity"></i>
-                        </span>
-                        <span class="fluent-sidebar-item-text">سیستم اقتصادی</span>
-                    </a>
-                    <a href="/admin/economy/transactions" class="fluent-sidebar-item <%= (currentPath === '/admin/economy/transactions') ? 'active' : '' %>">
-                        <span class="fluent-sidebar-item-icon">
-                            <i data-feather="refresh-cw"></i>
-                        </span>
-                        <span class="fluent-sidebar-item-text">تراکنش‌ها</span>
-                    </a>
-                    <a href="/admin/economy/stocks" class="fluent-sidebar-item <%= (currentPath === '/admin/economy/stocks') ? 'active' : '' %>">
-                        <span class="fluent-sidebar-item-icon">
-                            <i data-feather="trending-up"></i>
-                        </span>
-                        <span class="fluent-sidebar-item-text">بازار سهام</span>
-                    </a>
-                    <a href="/admin/economy/banks" class="fluent-sidebar-item <%= (currentPath === '/admin/economy/banks') ? 'active' : '' %>">
-                        <span class="fluent-sidebar-item-icon">
-                            <i data-feather="briefcase"></i>
-                        </span>
-                        <span class="fluent-sidebar-item-text">بانک‌ها</span>
-                    </a>
-                    <a href="/admin/economy/shops" class="fluent-sidebar-item <%= (currentPath === '/admin/economy/shops') ? 'active' : '' %>">
-                        <span class="fluent-sidebar-item-icon">
-                            <i data-feather="shopping-bag"></i>
-                        </span>
-                        <span class="fluent-sidebar-item-text">فروشگاه‌ها</span>
-                    </a>
-                    <a href="/admin/economy/items" class="fluent-sidebar-item <%= (currentPath === '/admin/economy/items') ? 'active' : '' %>">
-                        <span class="fluent-sidebar-item-icon">
-                            <i data-feather="package"></i>
-                        </span>
-                        <span class="fluent-sidebar-item-text">آیتم‌ها</span>
-                    </a>
-                </div>
-                
-                <div class="fluent-sidebar-group">
-                    <h4 class="fluent-sidebar-group-title">بازی‌ها و رویدادها</h4>
-                    <a href="/admin/games" class="fluent-sidebar-item <%= (currentPath && currentPath.startsWith('/admin/games')) ? 'active' : '' %>">
-                        <span class="fluent-sidebar-item-icon">
-                            <i data-feather="play"></i>
-                        </span>
-                        <span class="fluent-sidebar-item-text">مدیریت بازی‌ها</span>
-                    </a>
-                    <a href="/admin/events" class="fluent-sidebar-item <%= (currentPath && currentPath.startsWith('/admin/events')) ? 'active' : '' %>">
-                        <span class="fluent-sidebar-item-icon">
-                            <i data-feather="calendar"></i>
-                        </span>
-                        <span class="fluent-sidebar-item-text">رویدادها</span>
-                    </a>
-                </div>
-                
-                <div class="fluent-sidebar-group">
-                    <h4 class="fluent-sidebar-group-title">تنظیمات</h4>
-                    <a href="/admin/ai" class="fluent-sidebar-item <%= (currentPath && currentPath.startsWith('/admin/ai')) ? 'active' : '' %>">
-                        <span class="fluent-sidebar-item-icon">
-                            <i data-feather="cpu"></i>
-                        </span>
-                        <span class="fluent-sidebar-item-text">تنظیمات هوش مصنوعی</span>
-                    </a>
-                    <a href="/admin/settings" class="fluent-sidebar-item <%= (currentPath === '/admin/settings') ? 'active' : '' %>">
-                        <span class="fluent-sidebar-item-icon">
-                            <i data-feather="settings"></i>
-                        </span>
-                        <span class="fluent-sidebar-item-text">تنظیمات</span>
-                    </a>
-                </div>
-            </div>
-            
-            <div class="fluent-sidebar-footer">
-                <div class="fluent-sidebar-footer-user">
-                    <div class="fluent-sidebar-footer-avatar">
-                        <% if (user.avatar) { %>
-                            <img src="<%= user.avatar %>" alt="<%= user.username %>">
-                        <% } else { %>
-                            <%= user.username.charAt(0).toUpperCase() %>
-                        <% } %>
-                    </div>
-                    <div class="fluent-sidebar-footer-info">
-                        <p class="fluent-sidebar-footer-name"><%= user.displayName || user.username %></p>
-                        <p class="fluent-sidebar-footer-email"><%= user.email || 'ادمین' %></p>
-                    </div>
-                </div>
-                <div class="fluent-sidebar-footer-actions">
-                    <a href="/admin/logout" class="fluent-sidebar-footer-action" title="خروج">
-                        <i data-feather="log-out"></i>
-                    </a>
-                </div>
+            <div class="fluent-sidebar-content">
+                <nav class="fluent-navigation">
+                    <ul>
+                        <li class="<%= currentRoute === '/admin/dashboard' ? 'active' : '' %>">
+                            <a href="/admin/dashboard">
+                                <i class="fa-solid fa-gauge-high"></i>
+                                <span>داشبورد</span>
+                            </a>
+                        </li>
+                        
+                        <li class="<%= currentRoute.startsWith('/admin/users') ? 'active' : '' %>">
+                            <a href="/admin/users">
+                                <i class="fa-solid fa-users"></i>
+                                <span>کاربران</span>
+                            </a>
+                        </li>
+                        
+                        <li class="<%= currentRoute.startsWith('/admin/economy') ? 'active' : '' %>">
+                            <a href="/admin/economy">
+                                <i class="fa-solid fa-coins"></i>
+                                <span>اقتصاد</span>
+                            </a>
+                        </li>
+                        
+                        <li class="<%= currentRoute.startsWith('/admin/transactions') ? 'active' : '' %>">
+                            <a href="/admin/transactions">
+                                <i class="fa-solid fa-money-bill-transfer"></i>
+                                <span>تراکنش‌ها</span>
+                            </a>
+                        </li>
+                        
+                        <li class="<%= currentRoute.startsWith('/admin/games') ? 'active' : '' %>">
+                            <a href="/admin/games">
+                                <i class="fa-solid fa-gamepad"></i>
+                                <span>بازی‌ها</span>
+                            </a>
+                        </li>
+                        
+                        <li class="<%= currentRoute.startsWith('/admin/events') ? 'active' : '' %>">
+                            <a href="/admin/events">
+                                <i class="fa-solid fa-calendar-days"></i>
+                                <span>رویدادها</span>
+                            </a>
+                        </li>
+                        
+                        <li class="<%= currentRoute.startsWith('/admin/banks') ? 'active' : '' %>">
+                            <a href="/admin/banks">
+                                <i class="fa-solid fa-landmark"></i>
+                                <span>بانک‌ها</span>
+                            </a>
+                        </li>
+                        
+                        <li class="<%= currentRoute.startsWith('/admin/logs') ? 'active' : '' %>">
+                            <a href="/admin/logs">
+                                <i class="fa-solid fa-list"></i>
+                                <span>لاگ‌ها</span>
+                            </a>
+                        </li>
+                        
+                        <li class="<%= currentRoute.startsWith('/admin/settings') ? 'active' : '' %>">
+                            <a href="/admin/settings">
+                                <i class="fa-solid fa-gear"></i>
+                                <span>تنظیمات</span>
+                            </a>
+                        </li>
+                        
+                        <li class="<%= currentRoute.startsWith('/admin/ai') ? 'active' : '' %>">
+                            <a href="/admin/ai">
+                                <i class="fa-solid fa-brain"></i>
+                                <span>هوش مصنوعی</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
             </div>
         </aside>
-        
+
         <!-- محتوای اصلی -->
-        <main class="fluent-main">
+        <main class="fluent-main-content">
             <!-- هدر -->
             <header class="fluent-header">
                 <div class="fluent-header-left">
-                    <button class="fluent-header-toggle" type="button" aria-label="تغییر حالت منو">
-                        <i data-feather="menu"></i>
+                    <button class="fluent-menu-toggle" id="menuToggle">
+                        <i class="fa-solid fa-bars"></i>
                     </button>
-                    <h1 class="fluent-header-title"><%= title %></h1>
-                </div>
-                
-                <div class="fluent-header-center">
-                    <div class="fluent-header-search fluent-search">
-                        <i data-feather="search" class="fluent-search-icon"></i>
-                        <input type="search" class="fluent-input" placeholder="جستجو...">
-                    </div>
+                    <h1 class="fluent-page-title"><%= title %></h1>
                 </div>
                 
                 <div class="fluent-header-right">
-                    <button class="fluent-header-action" title="اعلان‌ها">
-                        <i data-feather="bell"></i>
-                        <span class="fluent-header-action-badge">3</span>
-                    </button>
+                    <div class="fluent-search">
+                        <i class="fa-solid fa-search"></i>
+                        <input type="text" placeholder="جستجو...">
+                    </div>
                     
-                    <div class="fluent-header-user">
-                        <button class="fluent-header-user-button" data-toggle="dropdown" data-target="userDropdown">
-                            <div class="fluent-header-user-avatar">
-                                <% if (user.avatar) { %>
-                                    <img src="<%= user.avatar %>" alt="<%= user.username %>">
-                                <% } else { %>
-                                    <%= user.username.charAt(0).toUpperCase() %>
-                                <% } %>
-                            </div>
-                            <p class="fluent-header-user-name"><%= user.displayName || user.username %></p>
+                    <div class="fluent-notifications">
+                        <button class="fluent-icon-button" aria-label="اعلان‌ها">
+                            <i class="fa-solid fa-bell"></i>
+                            <span class="badge">3</span>
                         </button>
+                    </div>
+                    
+                    <div class="fluent-user-menu">
+                        <div class="fluent-user-info">
+                            <img src="/admin/public/img/user-avatar.png" alt="<%= user.username %>">
+                            <span><%= user.username %></span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </div>
                         
-                        <div class="fluent-dropdown" id="userDropdown">
-                            <div class="fluent-dropdown-header">
-                                <h5 class="fluent-dropdown-title"><%= user.displayName || user.username %></h5>
-                                <p class="fluent-dropdown-subtitle"><%= user.email || 'ادمین' %></p>
-                            </div>
-                            <div class="fluent-dropdown-items">
-                                <a href="/admin/profile" class="fluent-dropdown-item">
-                                    <span class="fluent-dropdown-item-icon">
-                                        <i data-feather="user"></i>
-                                    </span>
-                                    <span class="fluent-dropdown-item-text">پروفایل</span>
-                                </a>
-                                <a href="/admin/settings" class="fluent-dropdown-item">
-                                    <span class="fluent-dropdown-item-icon">
-                                        <i data-feather="settings"></i>
-                                    </span>
-                                    <span class="fluent-dropdown-item-text">تنظیمات</span>
-                                </a>
-                                <div class="fluent-dropdown-divider"></div>
-                                <a href="/admin/logout" class="fluent-dropdown-item">
-                                    <span class="fluent-dropdown-item-icon">
-                                        <i data-feather="log-out"></i>
-                                    </span>
-                                    <span class="fluent-dropdown-item-text">خروج</span>
-                                </a>
-                            </div>
+                        <div class="fluent-dropdown-menu">
+                            <a href="/admin/settings/profile">
+                                <i class="fa-solid fa-user"></i>
+                                <span>پروفایل</span>
+                            </a>
+                            <a href="/admin/settings">
+                                <i class="fa-solid fa-gear"></i>
+                                <span>تنظیمات</span>
+                            </a>
+                            <div class="fluent-dropdown-divider"></div>
+                            <a href="/admin/logout">
+                                <i class="fa-solid fa-sign-out-alt"></i>
+                                <span>خروج</span>
+                            </a>
                         </div>
                     </div>
                 </div>
             </header>
-            
-            <!-- محتوای اصلی -->
+
+            <!-- محتوا -->
             <div class="fluent-content">
-                <!-- مسیر ناوبری (Breadcrumb) -->
-                <div class="fluent-breadcrumb">
-                    <div class="fluent-breadcrumb-item">
-                        <a href="/admin/dashboard" class="fluent-breadcrumb-link">داشبورد</a>
-                        <span class="fluent-breadcrumb-separator">/</span>
+                <% if (messages.error) { %>
+                    <div class="fluent-alert error">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <%= messages.error %>
                     </div>
-                    
-                    <% if (title !== 'داشبورد') { %>
-                        <div class="fluent-breadcrumb-item">
-                            <span class="fluent-breadcrumb-current"><%= title %></span>
-                        </div>
-                    <% } %>
-                </div>
-                
-                <!-- پیام‌های فلش -->
-                <% if (typeof messages !== 'undefined') { %>
-                    <% if (messages.success && messages.success.length > 0) { %>
-                        <div class="fluent-alert fluent-alert-success fluent-animate-fade-in">
-                            <div class="fluent-alert-icon">
-                                <i data-feather="check-circle"></i>
-                            </div>
-                            <div class="fluent-alert-content">
-                                <%= messages.success %>
-                            </div>
-                        </div>
-                    <% } %>
-                    
-                    <% if (messages.error && messages.error.length > 0) { %>
-                        <div class="fluent-alert fluent-alert-error fluent-animate-fade-in">
-                            <div class="fluent-alert-icon">
-                                <i data-feather="alert-circle"></i>
-                            </div>
-                            <div class="fluent-alert-content">
-                                <%= messages.error %>
-                            </div>
-                        </div>
-                    <% } %>
-                    
-                    <% if (messages.info && messages.info.length > 0) { %>
-                        <div class="fluent-alert fluent-alert-info fluent-animate-fade-in">
-                            <div class="fluent-alert-icon">
-                                <i data-feather="info"></i>
-                            </div>
-                            <div class="fluent-alert-content">
-                                <%= messages.info %>
-                            </div>
-                        </div>
-                    <% } %>
-                    
-                    <% if (messages.warning && messages.warning.length > 0) { %>
-                        <div class="fluent-alert fluent-alert-warning fluent-animate-fade-in">
-                            <div class="fluent-alert-icon">
-                                <i data-feather="alert-triangle"></i>
-                            </div>
-                            <div class="fluent-alert-content">
-                                <%= messages.warning %>
-                            </div>
-                        </div>
-                    <% } %>
                 <% } %>
                 
-                <!-- محتوای صفحه -->
+                <% if (messages.success) { %>
+                    <div class="fluent-alert success">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <%= messages.success %>
+                    </div>
+                <% } %>
+                
+                <% if (messages.info) { %>
+                    <div class="fluent-alert info">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <%= messages.info %>
+                    </div>
+                <% } %>
+                
                 <%- body %>
             </div>
-            
-            <!-- فوتر -->
-            <footer class="fluent-footer">
-                <div>
-                    &copy; <%= new Date().getFullYear() %> CCOIN. تمامی حقوق محفوظ است.
-                </div>
-                <div>
-                    نسخه ۳.۵.۲
-                </div>
-            </footer>
         </main>
     </div>
-    
-    <!-- اسکریپت‌های پایه -->
-    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
+    <!-- اسکریپت‌های فلوئنت -->
     <script src="/admin/public/js/fluent-ui.js"></script>
     
-    <!-- اسکریپت آیکون‌ها -->
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        // فعال‌سازی آیکون‌ها
-        if (typeof feather !== 'undefined') {
-          feather.replace();
-        }
-      });
-    </script>
-    
-    <!-- اسکریپت‌های اضافی -->
+    <!-- اسکریپت‌های قبلی -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.6.0/chart.min.js"></script>
     <script src="/admin/public/js/admin.js"></script>
     
+    <!-- اسکریپت‌های اضافی -->
     <% if (typeof extraScripts !== 'undefined') { %>
         <%- extraScripts %>
     <% } %>
+    
+    <script>
+        // فعال‌سازی عملکرد منوی موبایل
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menuToggle');
+            const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+            const backdrop = document.getElementById('mobileMenuBackdrop');
+            const sidebar = document.querySelector('.fluent-sidebar');
+            
+            if (menuToggle && closeSidebarBtn && backdrop && sidebar) {
+                menuToggle.addEventListener('click', function() {
+                    sidebar.classList.add('active');
+                    backdrop.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                });
+                
+                closeSidebarBtn.addEventListener('click', function() {
+                    sidebar.classList.remove('active');
+                    backdrop.classList.remove('active');
+                    document.body.style.overflow = '';
+                });
+                
+                backdrop.addEventListener('click', function() {
+                    sidebar.classList.remove('active');
+                    backdrop.classList.remove('active');
+                    document.body.style.overflow = '';
+                });
+            }
+            
+            // فعال‌سازی منوی کاربر
+            const userMenu = document.querySelector('.fluent-user-info');
+            const dropdownMenu = document.querySelector('.fluent-dropdown-menu');
+            
+            if (userMenu && dropdownMenu) {
+                userMenu.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    dropdownMenu.classList.toggle('active');
+                });
+                
+                document.addEventListener('click', function() {
+                    dropdownMenu.classList.remove('active');
+                });
+            }
+        });
+    </script>
 </body>
 </html>

@@ -87,6 +87,7 @@ export async function showDashboard(req, res) {
     // آماده‌سازی داده‌ها برای نمایش
     const viewData = {
       title: 'داشبورد',
+      currentRoute: req.path, // افزودن مسیر فعلی برای استفاده در منوی ناوبری
       usersStats,
       recentTransactions,
       recentEvents,
@@ -110,11 +111,19 @@ export async function showDashboard(req, res) {
       }
     };
     
-    res.render('dashboard/index', viewData);
+    // استفاده از قالب Fluent UI برای صفحه داشبورد
+    if (process.env.USE_FLUENT_UI === 'true') {
+      // اضافه کردن پارامترهای مورد نیاز برای قالب Fluent UI
+      viewData.layout = 'layouts/fluent-main';
+      res.render('fluent-dashboard', viewData);
+    } else {
+      res.render('dashboard/index', viewData);
+    }
   } catch (error) {
     console.error('❌ خطا در نمایش داشبورد:', error);
-    res.render('dashboard/index', {
+    const errorData = {
       title: 'داشبورد',
+      currentRoute: req.path, // افزودن مسیر فعلی برای استفاده در منوی ناوبری
       usersStats: { total: 0, active: 0, new: 0 },
       recentTransactions: [],
       recentEvents: [],
@@ -122,7 +131,14 @@ export async function showDashboard(req, res) {
       botActivities: [],
       getEventIcon: () => 'activity',
       error: 'خطا در بارگیری داده‌های داشبورد'
-    });
+    };
+    
+    if (process.env.USE_FLUENT_UI === 'true') {
+      errorData.layout = 'layouts/fluent-main';
+      res.render('fluent-dashboard', errorData);
+    } else {
+      res.render('dashboard/index', errorData);
+    }
   }
 }
 

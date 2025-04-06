@@ -10,22 +10,12 @@ import { AdminUser } from '../models/adminUser.js';
  * @param {Object} res پاسخ
  */
 export async function showLogin(req, res) {
-  // بررسی نوع UI (fluent یا معمولی)
-  const useFluentUI = process.env.USE_FLUENT_UI === 'true' || false;
-  
-  if (useFluentUI) {
-    console.log('🎨 استفاده از رابط کاربری Fluent برای صفحه ورود');
-    res.render('fluent-login', {
-      title: 'ورود به پنل مدیریت',
-      layout: 'layouts/fluent-auth', // استفاده از قالب fluent-auth که برای صفحه لاگین طراحی شده
-    });
-  } else {
-    console.log('🎨 استفاده از رابط کاربری معمولی برای صفحه ورود');
-    res.render('auth/login', {
-      title: 'ورود به پنل مدیریت',
-      layout: 'layouts/auth',
-    });
-  }
+  console.log('🎨 استفاده از رابط کاربری Fluent برای صفحه ورود');
+  // استفاده از تمپلیت کامل بدون استفاده از layout
+  res.render('auth/fluent-login', {
+    title: 'ورود به پنل مدیریت',
+    layout: false, // عدم استفاده از layout
+  });
 }
 
 /**
@@ -152,9 +142,11 @@ export async function logout(req, res) {
  * @param {Object} res پاسخ
  */
 export async function showForgotPassword(req, res) {
-  res.render('auth/forgot-password', {
+  console.log('🎨 استفاده از رابط کاربری Fluent برای صفحه فراموشی رمز عبور');
+  // استفاده از تمپلیت کامل بدون استفاده از layout
+  res.render('auth/fluent-forgot-password', {
     title: 'فراموشی رمز عبور',
-    layout: 'layouts/auth',
+    layout: false, // عدم استفاده از layout
   });
 }
 
@@ -224,9 +216,11 @@ export async function showResetPassword(req, res) {
       return res.redirect('/admin/forgot-password');
     }
     
-    res.render('auth/reset-password', {
+    console.log('🎨 استفاده از رابط کاربری Fluent برای صفحه بازنشانی رمز عبور');
+    // استفاده از تمپلیت کامل بدون استفاده از layout
+    res.render('auth/fluent-reset-password', {
       title: 'بازنشانی رمز عبور',
-      layout: 'layouts/auth',
+      layout: false, // عدم استفاده از layout
       token,
     });
   } catch (error) {
