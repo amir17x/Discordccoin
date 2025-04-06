@@ -55,11 +55,11 @@ const adminUserSchema = new mongoose.Schema({
       'giftcodes:view', 'giftcodes:create', 'giftcodes:delete'
     ]
   }],
-  isActive: {
+  active: {
     type: Boolean,
     default: true
   },
-  isLocked: {
+  locked: {
     type: Boolean,
     default: false
   },
@@ -79,10 +79,10 @@ const adminUserSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-  passwordResetToken: {
+  resetPasswordToken: {
     type: String
   },
-  passwordResetExpires: {
+  resetPasswordExpires: {
     type: Date
   },
   createdBy: {
@@ -146,7 +146,7 @@ adminUserSchema.methods.logFailedLogin = function() {
   
   // قفل کردن اکانت بعد از 5 بار تلاش ناموفق
   if (this.failedLoginAttempts >= 5) {
-    this.isLocked = true;
+    this.locked = true;
     this.lockReason = 'تلاش‌های ناموفق متعدد برای ورود';
   }
   
@@ -157,8 +157,8 @@ adminUserSchema.methods.logFailedLogin = function() {
 adminUserSchema.methods.toJSON = function() {
   const obj = this.toObject();
   delete obj.password;
-  delete obj.passwordResetToken;
-  delete obj.passwordResetExpires;
+  delete obj.resetPasswordToken;
+  delete obj.resetPasswordExpires;
   return obj;
 };
 

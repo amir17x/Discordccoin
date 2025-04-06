@@ -1,0 +1,47 @@
+<% if (messages && Object.keys(messages).some(key => messages[key].length > 0)) { %>
+  <div class="flash-messages">
+    <% if (messages.success && messages.success.length > 0) { %>
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <% messages.success.forEach(function(message) { %>
+          <p><i class="fas fa-check-circle ml-1"></i> <%= message %></p>
+        <% }); %>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    <% } %>
+    
+    <% if (messages.error && messages.error.length > 0) { %>
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <% messages.error.forEach(function(message) { %>
+          <p><i class="fas fa-times-circle ml-1"></i> <%= message %></p>
+        <% }); %>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    <% } %>
+    
+    <% if (messages.warning && messages.warning.length > 0) { %>
+      <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <% messages.warning.forEach(function(message) { %>
+          <p><i class="fas fa-exclamation-circle ml-1"></i> <%= message %></p>
+        <% }); %>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    <% } %>
+    
+    <% if (messages.info && messages.info.length > 0) { %>
+      <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <% messages.info.forEach(function(message) { %>
+          <p><i class="fas fa-info-circle ml-1"></i> <%= message %></p>
+        <% }); %>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    <% } %>
+  </div>
+<% } %>

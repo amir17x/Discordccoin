@@ -1,151 +1,142 @@
 /**
- * میدل‌ور احراز هویت
- * 
- * این ماژول برای بررسی وضعیت احراز هویت کاربران در پنل ادمین استفاده می‌شود.
+ * میدلویر‌های احراز هویت پنل ادمین
  */
 
 /**
  * بررسی احراز هویت کاربر
- * اگر کاربر لاگین نکرده باشد، به صفحه لاگین هدایت می‌شود.
- * 
- * @param {Request} req درخواست اکسپرس
- * @param {Response} res پاسخ اکسپرس
- * @param {Function} next تابع next
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ * @param {Function} next میدلویر بعدی
  */
-export function authMiddleware(req, res, next) {
-  if (req.session && req.session.isAuthenticated && req.session.user) {
-    // کاربر احراز هویت شده است
-    res.locals.currentUser = req.session.user;
+export function isAuthenticated(req, res, next) {
+  if (req.session && req.session.user) {
     return next();
   }
   
-  // ذخیره URL اصلی برای بازگشت بعد از لاگین
-  if (req.method === 'GET' && !req.path.startsWith('/auth')) {
-    req.session.returnTo = req.originalUrl;
-  }
+  // ذخیره URL درخواست شده برای بازگشت بعد از لاگین
+  req.session.returnTo = req.originalUrl;
   
-  // کاربر احراز هویت نشده است، به صفحه لاگین هدایت می‌شود
-  return res.redirect('/admin/auth/login');
+  req.flash('error', 'لطفاً ابتدا وارد حساب کاربری خود شوید');
+  res.redirect('/admin/login');
 }
 
 /**
- * بررسی میهمان بودن کاربر
- * اگر کاربر لاگین کرده باشد، به داشبورد هدایت می‌شود.
- * 
- * @param {Request} req درخواست اکسپرس
- * @param {Response} res پاسخ اکسپرس
- * @param {Function} next تابع next
+ * ریدایرکت کاربر احراز هویت شده به داشبورد
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ * @param {Function} next میدلویر بعدی
  */
-export function guestMiddleware(req, res, next) {
-  if (req.session && req.session.isAuthenticated && req.session.user) {
-    // کاربر لاگین کرده است، به داشبورد هدایت می‌شود
+export function redirectIfAuthenticated(req, res, next) {
+  if (req.session && req.session.user) {
     return res.redirect('/admin/dashboard');
   }
-  
-  // کاربر میهمان است، ادامه
-  return next();
+  next();
 }
 
 /**
- * بررسی دسترسی کاربر
- * 
- * @param {string|string[]} permissions مجوزهای مورد نیاز
- * @returns {Function} میدل‌ور بررسی دسترسی
+ * بررسی دسترسی‌های کاربر
+ * @param {String} resource منبع مورد نیاز دسترسی
+ * @param {String} action عملیات مورد نیاز (view, create, edit, delete)
+ * @returns {Function} میدلویر بررسی دسترسی
  */
-export function hasPermission(permissions) {
+export function hasPermission(resource, action = 'view') {
   return (req, res, next) => {
-    if (!req.session || !req.session.user) {
-      return res.redirect('/admin/auth/login');
+    const user = req.session.user;
+    
+    if (!user) {
+      req.flash('error', 'لطفاً ابتدا وارد حساب کاربری خود شوید');
+      return res.redirect('/admin/login');
     }
     
-    const userPermissions = req.session.user.permissions || [];
+    const requiredPermission = `${resource}:${action}`;
     
-    // اگر کاربر مدیر ارشد است، دسترسی کامل دارد
-    if (req.session.user.isSuperAdmin) {
+    // بررسی دسترسی کاربر
+    if (user.permissions && user.permissions.includes(requiredPermission)) {
       return next();
     }
     
-    // تبدیل مجوزهای تکی به آرایه
-    const requiredPermissions = Array.isArray(permissions) ? permissions : [permissions];
-    
-    // بررسی وجود حداقل یکی از مجوزهای مورد نیاز
-    const hasRequired = requiredPermissions.some(permission => userPermissions.includes(permission));
-    
-    if (hasRequired) {
-      return next();
-    }
-    
-    // عدم دسترسی
     req.flash('error', 'شما دسترسی لازم برای این عملیات را ندارید');
     return res.redirect('/admin/dashboard');
   };
 }
 
 /**
- * بررسی دسترسی کاربر به بخش خاص
- * این تابع به عنوان alias برای hasPermission استفاده می‌شود
- * 
- * @param {string} section بخش مورد نظر (users, economy, etc.)
- * @returns {Function} میدل‌ور بررسی دسترسی
+ * بررسی دسترسی‌های کاربر برای یک بخش
+ * @param {String} resource منبع مورد نیاز دسترسی
+ * @returns {Function} میدلویر بررسی دسترسی
  */
-export function checkPermissions(section) {
-  const permissionKey = `${section}:view`;
-  return hasPermission(permissionKey);
+export function checkPermissions(resource) {
+  return (req, res, next) => {
+    const user = req.session.user;
+    
+    if (!user) {
+      req.flash('error', 'لطفاً ابتدا وارد حساب کاربری خود شوید');
+      return res.redirect('/admin/login');
+    }
+    
+    // بررسی حداقل یک دسترسی برای این بخش
+    const hasAnyPermission = user.permissions && user.permissions.some(p => p.startsWith(`${resource}:`));
+    
+    if (hasAnyPermission) {
+      // اضافه کردن توابع کمکی بررسی دسترسی به res.locals
+      res.locals.can = (action) => {
+        const permission = `${resource}:${action}`;
+        return user.permissions.includes(permission);
+      };
+      
+      res.locals.hasPermission = (permission) => {
+        return user.permissions && user.permissions.includes(permission);
+      };
+      
+      res.locals.hasAnyPermission = (permissions) => {
+        if (!user.permissions) return false;
+        return permissions.some(permission => user.permissions.includes(permission));
+      };
+      
+      res.locals.hasAllPermissions = (permissions) => {
+        if (!user.permissions) return false;
+        return permissions.every(permission => user.permissions.includes(permission));
+      };
+      
+      return next();
+    }
+    
+    req.flash('error', 'شما دسترسی لازم برای این بخش را ندارید');
+    return res.redirect('/admin/dashboard');
+  };
 }
 
 /**
- * ثبت اطلاعات درخواست
- * 
- * @param {Request} req درخواست اکسپرس
- * @param {Response} res پاسخ اکسپرس
- * @param {Function} next تابع next
+ * بررسی اینکه کاربر مدیر ارشد است یا خیر
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ * @param {Function} next میدلویر بعدی
  */
-export function logRequestMiddleware(req, res, next) {
-  if (req.session && req.session.user) {
-    const { method, originalUrl, ip } = req;
-    const userId = req.session.user._id;
-    
-    // ثبت درخواست در لاگ سیستم
-    // در حالت واقعی باید در دیتابیس ذخیره شود
-    console.log(`[${new Date().toISOString()}] ${method} ${originalUrl} - User: ${userId} - IP: ${ip}`);
+export function isSuperAdmin(req, res, next) {
+  const user = req.session.user;
+  
+  if (!user) {
+    req.flash('error', 'لطفاً ابتدا وارد حساب کاربری خود شوید');
+    return res.redirect('/admin/login');
   }
   
-  next();
-}
-
-/**
- * بررسی وضعیت کاربر (فعال بودن و قفل نبودن)
- * 
- * @param {Request} req درخواست اکسپرس
- * @param {Response} res پاسخ اکسپرس
- * @param {Function} next تابع next
- */
-export function checkUserStatusMiddleware(req, res, next) {
-  if (req.session && req.session.user) {
-    const { isActive, isLocked } = req.session.user;
-    
-    if (!isActive) {
-      // حساب کاربری غیرفعال شده است
-      req.session.destroy();
-      return res.redirect('/admin/auth/login?error=account_inactive');
-    }
-    
-    if (isLocked) {
-      // حساب کاربری قفل شده است
-      req.session.destroy();
-      return res.redirect('/admin/auth/login?error=account_locked');
-    }
+  // بررسی دسترسی مدیر ارشد (مثلاً با برخی دسترسی‌های خاص)
+  const superAdminPermissions = [
+    'admins:view', 'admins:create', 'admins:edit', 'admins:delete',
+    'settings:view', 'settings:edit'
+  ];
+  
+  const isSuperAdmin = superAdminPermissions.every(permission => 
+    user.permissions.includes(permission)
+  );
+  
+  if (isSuperAdmin) {
+    return next();
   }
   
-  next();
+  req.flash('error', 'این عملیات فقط توسط مدیر ارشد قابل انجام است');
+  return res.redirect('/admin/dashboard');
 }
 
-// صادر کردن میدل‌ورها
-export default {
-  authMiddleware,
-  guestMiddleware,
-  hasPermission,
-  checkPermissions,
-  logRequestMiddleware,
-  checkUserStatusMiddleware
-};
+// اکسپورت میدلویر اصلی برای استفاده به عنوان محافظ کلی مسیرها
+export const authMiddleware = isAuthenticated;

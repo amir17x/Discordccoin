@@ -26,6 +26,7 @@ import eventsRoutes from './routes/events.js';
 import serversRoutes from './routes/servers.js';
 import logsRoutes from './routes/logs.js';
 import settingsRoutes from './routes/settings.js';
+import rolesRoutes from './routes/roles.js';
 
 // میدلویر‌ها
 import { authMiddleware, checkPermissions } from './middleware/auth.js';
@@ -82,13 +83,10 @@ export function setupAdminPanel(app) {
   app.set('views', path.join(__dirname, 'views'));
   app.set('view engine', 'ejs');
   app.use(ejsLayouts);
-  app.set('layout', 'layout');
+  app.set('layout', 'layouts/main');
 
   // فایل‌های استاتیک
-  app.use('/admin/css', express.static(path.join(__dirname, 'public/css')));
-  app.use('/admin/js', express.static(path.join(__dirname, 'public/js')));
-  app.use('/admin/images', express.static(path.join(__dirname, 'public/images')));
-  app.use('/admin/fonts', express.static(path.join(__dirname, 'public/fonts')));
+  app.use('/admin/public', express.static(path.join(__dirname, 'public')));
 
   // مسیرها
   app.use('/admin', authRoutes);
@@ -103,6 +101,7 @@ export function setupAdminPanel(app) {
   app.use('/admin/servers', authMiddleware, checkPermissions('servers'), serversRoutes);
   app.use('/admin/logs', authMiddleware, checkPermissions('logs'), logsRoutes);
   app.use('/admin/settings', authMiddleware, checkPermissions('settings'), settingsRoutes);
+  app.use('/admin/roles', authMiddleware, checkPermissions('settings'), rolesRoutes);
 
   // مسیر صفحه اصلی (ریدایرکت به داشبورد)
   app.get('/admin', (req, res) => {
@@ -131,7 +130,7 @@ export function setupAdminPanel(app) {
 }
 
 /**
- * اتصال به پایگاه داده
+ * اتصال به پایگاه داده و تنظیم اولیه
  * @returns {Promise<Object>} اتصال به پایگاه داده
  */
 export async function connectToDatabase() {
@@ -141,6 +140,9 @@ export async function connectToDatabase() {
     // استفاده از ماژول اتصال به دیتابیس
     const dbConnection = await import('./lib/database.js');
     const connection = await dbConnection.connectToDatabase();
+    
+    // تنظیم کاربر ادمین پیش‌فرض
+    await dbConnection.setupInitialAdmin();
     
     console.log('✅ اتصال به پایگاه داده با موفقیت انجام شد');
     return connection;

@@ -1,0 +1,118 @@
+<%- include('../layouts/header') %>
+
+<div class="content-wrapper">
+  <div class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <h1 class="m-0">ویرایش نقش: <%= role.name %></h1>
+        </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-left">
+            <li class="breadcrumb-item"><a href="/admin/dashboard">داشبورد</a></li>
+            <li class="breadcrumb-item"><a href="/admin/roles">مدیریت نقش‌ها</a></li>
+            <li class="breadcrumb-item active">ویرایش نقش</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="content">
+    <div class="container-fluid">
+      
+      <%- include('../partials/flash-messages') %>
+      
+      <div class="row">
+        <div class="col-12">
+          <div class="card card-warning">
+            <div class="card-header">
+              <h3 class="card-title">ویرایش اطلاعات نقش</h3>
+            </div>
+            
+            <form action="/admin/roles/edit/<%= role._id %>" method="POST">
+              <div class="card-body">
+                <% if (role.isDefault) { %>
+                  <div class="alert alert-info">
+                    <i class="fas fa-info-circle ml-1"></i>
+                    این یک نقش پیش‌فرض سیستمی است. نام آن قابل تغییر نیست، اما می‌توانید دسترسی‌های آن را تغییر دهید.
+                  </div>
+                <% } %>
+                
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label for="name">نام نقش</label>
+                      <input type="text" class="form-control" id="name" name="name" 
+                             value="<%= role.name %>" 
+                             <%= role.isDefault ? 'readonly' : 'required' %>>
+                      <% if (!role.isDefault) { %>
+                        <small class="form-text text-muted">نام نقش باید منحصر به فرد باشد.</small>
+                      <% } %>
+                    </div>
+                  </div>
+                  
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label for="description">توضیحات</label>
+                      <input type="text" class="form-control" id="description" name="description" 
+                             value="<%= role.description || '' %>" 
+                             placeholder="توضیحات مختصر نقش">
+                    </div>
+                  </div>
+                </div>
+                
+                <hr>
+                
+                <% if (userCount > 0) { %>
+                  <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle ml-1"></i>
+                    توجه: این نقش به <strong><%= userCount %> کاربر</strong> اختصاص داده شده است. تغییر دسترسی‌ها برای تمام این کاربران اعمال خواهد شد.
+                  </div>
+                <% } %>
+                
+                <h5 class="mb-3">دسترسی‌های نقش</h5>
+                
+                <% Object.keys(permissionCategories).forEach(category => { %>
+                  <div class="card card-outline card-info mb-3">
+                    <div class="card-header">
+                      <h3 class="card-title"><%= category %></h3>
+                    </div>
+                    <div class="card-body pb-1">
+                      <div class="row">
+                        <% permissionCategories[category].forEach(permission => { %>
+                          <div class="col-md-3 col-sm-6">
+                            <div class="form-group">
+                              <div class="custom-control custom-checkbox">
+                                <input class="custom-control-input" type="checkbox" 
+                                       id="permission-<%= permission.id %>" 
+                                       name="permissions" 
+                                       value="<%= permission.id %>"
+                                       <%= permission.selected ? 'checked' : '' %>>
+                                <label for="permission-<%= permission.id %>" class="custom-control-label">
+                                  <%= permission.name %>
+                                </label>
+                              </div>
+                            </div>
+                          </div>
+                        <% }); %>
+                      </div>
+                    </div>
+                  </div>
+                <% }); %>
+              </div>
+              
+              <div class="card-footer">
+                <button type="submit" class="btn btn-warning">ذخیره تغییرات</button>
+                <a href="/admin/roles" class="btn btn-secondary mr-2">انصراف</a>
+                <a href="/admin/roles/view/<%= role._id %>" class="btn btn-info mr-2">مشاهده جزئیات</a>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<%- include('../layouts/footer') %>

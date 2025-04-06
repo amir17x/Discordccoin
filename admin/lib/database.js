@@ -5,71 +5,115 @@
  */
 
 import mongoose from 'mongoose';
-import { Log } from '../models/log.js';
 
 // تنظیمات اتصال به دیتابیس
 const DATABASE_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ccoin';
 
-// گزینه‌های اتصال به دیتابیس
-const DB_OPTIONS = {
-  useNewUrlParser: true, 
-  useUnifiedTopology: true
-};
-
 /**
- * اتصال به پایگاه داده
+ * اتصال به پایگاه داده MongoDB
  * @returns {Promise<Object>} اتصال به پایگاه داده
  */
 export async function connectToDatabase() {
   try {
-    // غیرفعال کردن استفاده از مدل پیش از تعریف آن
-    mongoose.set('strictQuery', true);
-    
-    // ایجاد اتصال به پایگاه داده
-    const connection = await mongoose.connect(DATABASE_URI, DB_OPTIONS);
-    
-    console.log('Connected to MongoDB database');
-    
-    // ثبت لاگ اتصال موفق به دیتابیس
-    try {
-      await Log.info('اتصال به دیتابیس با موفقیت برقرار شد', 'db');
-    } catch (logError) {
-      // اگر مدل هنوز ایجاد نشده، خطا را نادیده می‌گیریم
-      console.warn('Could not log database connection (models may not be ready):', logError.message);
+    // بررسی اینکه آیا قبلاً به دیتابیس متصل شده‌ایم
+    if (mongoose.connection.readyState === 1) {
+      console.log('💾 قبلاً به دیتابیس متصل شده‌ایم');
+      return mongoose.connection;
     }
+
+    // اتصال به دیتابیس مونگو
+    await mongoose.connect(DATABASE_URI, {
+      serverSelectionTimeoutMS: 5000, // زمان انتظار برای انتخاب سرور
+      socketTimeoutMS: 45000, // زمان انتظار برای عملیات socket
+    });
+
+    console.log('💾 اتصال به دیتابیس با موفقیت انجام شد');
     
-    return connection;
+    // ثبت رویدادهای مختلف مونگوس برای مدیریت خطاها
+    mongoose.connection.on('error', (err) => {
+      console.error('❌ خطا در اتصال به مونگو:', err);
+    });
+
+    mongoose.connection.on('disconnected', () => {
+      console.warn('⚠️ اتصال به مونگو قطع شد');
+    });
+
+    // مدیریت بستن اتصال هنگام خروج از برنامه
+    process.on('SIGINT', async () => {
+      await mongoose.connection.close();
+      console.log('💾 اتصال به مونگو بسته شد');
+      process.exit(0);
+    });
+
+    return mongoose.connection;
   } catch (error) {
-    console.error('Database connection error:', error);
+    console.error('❌ خطا در اتصال به دیتابیس:', error);
     throw error;
   }
 }
 
 /**
- * بستن اتصال به پایگاه داده
- * @returns {Promise<void>}
+ * ایجاد یک کاربر ادمین اولیه در صورت عدم وجود
  */
-export async function disconnectFromDatabase() {
+export async function setupInitialAdmin() {
   try {
-    await mongoose.disconnect();
-    console.log('Disconnected from MongoDB database');
+    const { AdminUser } = await import('../models/adminUser.js');
+    const { AdminRole } = await import('../models/adminRole.js');
+    
+    // ایجاد نقش پیش‌فرض مدیر ارشد اگر وجود نداشته باشد
+    let superAdminRole = await AdminRole.findOne({ name: 'مدیر ارشد' });
+    
+    if (!superAdminRole) {
+      console.log('👑 در حال ایجاد نقش مدیر ارشد...');
+      
+      superAdminRole = new AdminRole({
+        name: 'مدیر ارشد',
+        description: 'دسترسی کامل به تمام بخش‌های سیستم',
+        permissions: [
+          'dashboard:view',
+          'users:view', 'users:create', 'users:edit', 'users:delete',
+          'economy:view', 'economy:edit',
+          'servers:view', 'servers:edit',
+          'settings:view', 'settings:edit',
+          'logs:view', 'logs:delete',
+          'admins:view', 'admins:create', 'admins:edit', 'admins:delete',
+          'shop:view', 'shop:edit',
+          'games:view', 'games:edit',
+          'events:view', 'events:edit',
+          'giftcodes:view', 'giftcodes:create', 'giftcodes:delete'
+        ],
+        isDefault: true
+      });
+      
+      await superAdminRole.save();
+      console.log('✅ نقش مدیر ارشد با موفقیت ایجاد شد');
+    }
+    
+    // بررسی وجود کاربر ادمین
+    const adminExists = await AdminUser.findOne({ username: 'admin' });
+    
+    if (!adminExists) {
+      console.log('👤 در حال ایجاد کاربر ادمین پیش‌فرض...');
+      
+      // ایجاد یک کاربر ادمین با دسترسی‌های کامل
+      const admin = new AdminUser({
+        username: 'admin',
+        password: 'ccoin123456', // این پسورد به صورت خودکار هش می‌شود
+        name: 'مدیر سیستم',
+        email: 'admin@ccoin.local',
+        role: superAdminRole._id,
+        permissions: superAdminRole.permissions,
+        active: true
+      });
+      
+      await admin.save();
+      console.log('✅ کاربر ادمین پیش‌فرض با موفقیت ایجاد شد');
+      console.log('👤 نام کاربری: admin');
+      console.log('🔑 رمز عبور: ccoin123456');
+    } else {
+      console.log('👤 کاربر ادمین پیش‌فرض از قبل وجود دارد');
+    }
   } catch (error) {
-    console.error('Database disconnection error:', error);
-    throw error;
+    console.error('❌ خطا در ایجاد کاربر ادمین پیش‌فرض:', error);
   }
 }
-
-// خروج با بستن اتصال دیتابیس
-process.on('SIGINT', async () => {
-  try {
-    await disconnectFromDatabase();
-    process.exit(0);
-  } catch (error) {
-    process.exit(1);
-  }
-});
-
-export default {
-  connectToDatabase,
-  disconnectFromDatabase
-};
