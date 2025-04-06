@@ -13,10 +13,10 @@ import {
   createPromptTemplate,
   updatePromptTemplate,
   deletePromptTemplate,
-  getTuningJobs,
+  getTuningJobs as getTuningJobsService,
   createTuningJob,
-  getTuningJobStatus,
-  getTunedModels,
+  getTuningJobStatus as getTuningJobStatusService,
+  getTunedModels as getTunedModelsService,
   testModel
 } from '../services/aiService.js';
 
@@ -35,7 +35,7 @@ const showDashboard = async (req, res) => {
     const usageStats = await getAIUsageStats();
     
     // دریافت مدل‌های آموزش‌دیده
-    const tunedModels = await getTunedModels();
+    const tunedModels = await getTunedModelsService();
     
     // دریافت الگوهای پرامپت
     const promptTemplates = await getPromptTemplates();
@@ -211,10 +211,10 @@ const getUsageCharts = async (req, res) => {
 const showTuning = async (req, res) => {
   try {
     // دریافت مدل‌های آموزش‌دیده
-    const tunedModels = await getTunedModels();
+    const tunedModels = await getTunedModelsService();
     
     // دریافت وظایف آموزش
-    const tuningJobs = await getTuningJobs();
+    const tuningJobs = await getTuningJobsService();
     
     res.render('ai/tuning', {
       title: 'آموزش مدل‌ها',
@@ -241,7 +241,7 @@ const showTuning = async (req, res) => {
 const getTunedModels = async (req, res) => {
   try {
     // دریافت مدل‌های آموزش‌دیده
-    const tunedModels = await getTunedModels();
+    const tunedModels = await getTunedModelsService();
     
     res.json({
       success: true,
@@ -265,7 +265,7 @@ const getTunedModels = async (req, res) => {
 const getTuningJobs = async (req, res) => {
   try {
     // دریافت وظایف آموزش
-    const tuningJobs = await getTuningJobs();
+    const tuningJobs = await getTuningJobsService();
     
     res.json({
       success: true,
@@ -317,7 +317,7 @@ const getTuningJobStatus = async (req, res) => {
     const { jobId } = req.params;
     
     // دریافت وضعیت وظیفه
-    const status = await getTuningJobStatus(jobId);
+    const status = await getTuningJobStatusService(jobId);
     
     res.json({
       success: true,
@@ -509,7 +509,7 @@ const deletePrompt = async (req, res) => {
 const showTestPage = async (req, res) => {
   try {
     // دریافت مدل‌های آموزش‌دیده
-    const tunedModels = await getTunedModels();
+    const tunedModels = await getTunedModelsService();
     
     res.render('ai/test', {
       title: 'تست مدل',

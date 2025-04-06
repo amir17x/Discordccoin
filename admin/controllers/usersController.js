@@ -6,8 +6,8 @@ import {
   getAllUsers,
   getUserById,
   updateUser,
-  banUser,
-  unbanUser,
+  banUser as banUserService,
+  unbanUser as unbanUserService,
   addUserCoins,
   removeUserCoins,
   addUserItem,
@@ -240,7 +240,7 @@ export async function banUser(req, res) {
     const userId = req.params.id;
     const { reason } = req.body;
     
-    const result = await banUser(userId, reason);
+    const result = await banUserService(userId, reason);
     
     req.flash('success_msg', 'کاربر با موفقیت مسدود شد');
     res.redirect(`/admin/users/details/${userId}`);
@@ -260,7 +260,7 @@ export async function unbanUser(req, res) {
   try {
     const userId = req.params.id;
     
-    const result = await unbanUser(userId);
+    const result = await unbanUserService(userId);
     
     req.flash('success_msg', 'مسدودیت کاربر با موفقیت رفع شد');
     res.redirect(`/admin/users/details/${userId}`);
