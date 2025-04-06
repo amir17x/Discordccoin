@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> | پنل مدیریت CCOIN</title>
+    
+    <!-- فونت‌ها -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- استایل‌ها -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/admin/public/css/fluent.css">
+    <link rel="stylesheet" href="/admin/public/css/admin.css">
+    
+    <!-- اسکریپت‌های اضافی -->
+    <% if (typeof extraStyles !== 'undefined') { %>
+        <%- extraStyles %>
+    <% } %>
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- منوی کناری -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="/admin/public/images/logo.png" alt="CCOIN Logo" class="sidebar-logo">
+                <h3 class="sidebar-title">پنل مدیریت CCOIN</h3>
+            </div>
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="/admin/dashboard" class="<%= (currentPath === '/admin/dashboard') ? 'active' : '' %>">
+                        <span class="icons8-icon icons8-dashboard"></span>
+                        داشبورد
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/users" class="<%= (currentPath && currentPath.startsWith('/admin/users')) ? 'active' : '' %>">
+                        <span class="icons8-icon icons8-users"></span>
+                        مدیریت کاربران
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/economy" class="<%= (currentPath && currentPath.startsWith('/admin/economy')) ? 'active' : '' %>">
+                        <span class="icons8-icon icons8-coins"></span>
+                        سیستم اقتصادی
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/economy/transactions" class="<%= (currentPath === '/admin/economy/transactions') ? 'active' : '' %>">
+                        <span class="icons8-icon icons8-transaction"></span>
+                        تراکنش‌ها
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/economy/stocks" class="<%= (currentPath === '/admin/economy/stocks') ? 'active' : '' %>">
+                        <span class="icons8-icon icons8-stocks"></span>
+                        بازار سهام
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/economy/banks" class="<%= (currentPath === '/admin/economy/banks') ? 'active' : '' %>">
+                        <span class="icons8-icon icons8-bank"></span>
+                        بانک‌ها
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/economy/shops" class="<%= (currentPath === '/admin/economy/shops') ? 'active' : '' %>">
+                        <span class="icons8-icon icons8-shop"></span>
+                        فروشگاه‌ها
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/economy/items" class="<%= (currentPath === '/admin/economy/items') ? 'active' : '' %>">
+                        <span class="icons8-icon icons8-items"></span>
+                        آیتم‌ها
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/games" class="<%= (currentPath && currentPath.startsWith('/admin/games')) ? 'active' : '' %>">
+                        <span class="icons8-icon icons8-games"></span>
+                        مدیریت بازی‌ها
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/events" class="<%= (currentPath && currentPath.startsWith('/admin/events')) ? 'active' : '' %>">
+                        <span class="icons8-icon icons8-events"></span>
+                        رویدادها
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/ai" class="<%= (currentPath && currentPath.startsWith('/admin/ai')) ? 'active' : '' %>">
+                        <span class="icons8-icon icons8-ai"></span>
+                        تنظیمات هوش مصنوعی
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/settings" class="<%= (currentPath === '/admin/settings') ? 'active' : '' %>">
+                        <span class="icons8-icon icons8-settings"></span>
+                        تنظیمات
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/logout">
+                        <span class="icons8-icon icons8-logout"></span>
+                        خروج
+                    </a>
+                </li>
+            </ul>
+        </aside>
+        
+        <!-- هدر -->
+        <header class="header">
+            <div class="header-left">
+                <button class="toggle-sidebar">
+                    <span class="icons8-icon icons8-menu"></span>
+                </button>
+                <h2 class="page-title"><%= title %></h2>
+            </div>
+            <div class="header-right">
+                <div class="user-dropdown">
+                    <span><span class="icons8-icon icons8-profile"></span> <%= user.username %></span>
+                    <div class="dropdown-menu">
+                        <a href="/admin/profile" class="dropdown-item">
+                            <span class="icons8-icon icons8-user"></span> پروفایل
+                        </a>
+                        <a href="/admin/settings" class="dropdown-item">
+                            <span class="icons8-icon icons8-settings"></span> تنظیمات
+                        </a>
+                        <a href="/admin/logout" class="dropdown-item">
+                            <span class="icons8-icon icons8-logout"></span> خروج
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <!-- محتوای اصلی -->
+        <main class="content-wrapper">
+            <!-- پیام‌های فلش -->
+            <% if (typeof messages !== 'undefined') { %>
+                <% if (messages.success && messages.success.length > 0) { %>
+                    <div class="alert alert-success">
+                        <span class="icons8-icon icons8-success"></span>
+                        <%= messages.success %>
+                    </div>
+                <% } %>
+                
+                <% if (messages.error && messages.error.length > 0) { %>
+                    <div class="alert alert-danger">
+                        <span class="icons8-icon icons8-error"></span>
+                        <%= messages.error %>
+                    </div>
+                <% } %>
+                
+                <% if (messages.info && messages.info.length > 0) { %>
+                    <div class="alert alert-info">
+                        <span class="icons8-icon icons8-info"></span>
+                        <%= messages.info %>
+                    </div>
+                <% } %>
+                
+                <% if (messages.warning && messages.warning.length > 0) { %>
+                    <div class="alert alert-warning">
+                        <span class="icons8-icon icons8-warning"></span>
+                        <%= messages.warning %>
+                    </div>
+                <% } %>
+            <% } %>
+            
+            <%- body %>
+        </main>
+    </div>
+    
+    <!-- اسکریپت‌ها -->
+    <script src="/admin/public/js/admin.js"></script>
+    
+    <% if (typeof extraScripts !== 'undefined') { %>
+        <%- extraScripts %>
+    <% } %>
+</body>
+</html>
+
+<!-- کتابخانه Feather Icons -->
+<script src="https://unpkg.com/feather-icons"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // فعال‌سازی آیکون‌ها
+    if (typeof feather !== 'undefined') {
+      feather.replace();
+    }
+  });
+</script>

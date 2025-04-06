@@ -1,47 +1,44 @@
 /**
  * مایکروسافت فلوئنت UI - استایل‌های اصلی
- * 
- * این فایل شامل استایل‌های اصلی و کلاس‌های مورد نیاز برای فلوئنت UI است
- * از متغیرهای فایل fluent-variables.css استفاده می‌کند
+ * بر اساس مستندات و طراحی فلوئنت UI مایکروسافت
  */
 
-@import './fluent-variables.css';
-@import './components/buttons.css';
-@import './components/cards.css';
-@import './components/dialogs.css';
-@import './components/forms.css';
-@import './components/navigation.css';
-@import './components/tables.css';
+/* ----------------------------------------------------------------
+   بخش 1: تنظیمات پایه و ریست
+   ---------------------------------------------------------------- */
 
-/**
- * استایل‌های کلی
- */
+/* استایل‌های پایه */
 *, *::before, *::after {
   box-sizing: border-box;
-}
-
-html, body {
   margin: 0;
   padding: 0;
-  font-family: var(--fluent-font-family);
-  font-size: var(--fluent-font-size-base);
-  line-height: var(--fluent-line-height-base);
-  background-color: var(--fluent-bg-body);
-  color: var(--fluent-text-primary);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  direction: rtl;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
 }
 
 body {
+  font-family: var(--fluent-font-family);
+  font-size: var(--fluent-font-size-base);
+  line-height: var(--fluent-line-height-normal);
+  color: var(--fluent-text-primary);
+  background-color: var(--fluent-bg-subtle);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  direction: rtl;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  margin-top: 0;
-  margin-bottom: var(--fluent-spacing);
   font-weight: var(--fluent-font-weight-semibold);
   line-height: var(--fluent-line-height-tight);
+  color: var(--fluent-text-primary);
+  margin-top: 0;
+  margin-bottom: 0.5rem;
 }
 
 h1 {
@@ -49,7 +46,7 @@ h1 {
 }
 
 h2 {
-  font-size: var(--fluent-font-size-xxl);
+  font-size: var(--fluent-font-size-2xl);
 }
 
 h3 {
@@ -70,13 +67,14 @@ h6 {
 
 p {
   margin-top: 0;
-  margin-bottom: var(--fluent-spacing);
+  margin-bottom: 1rem;
 }
 
 a {
   color: var(--fluent-primary);
   text-decoration: none;
-  transition: color var(--fluent-duration-normal) var(--fluent-ease-out);
+  background-color: transparent;
+  -webkit-text-decoration-skip: objects;
 }
 
 a:hover {
@@ -84,447 +82,624 @@ a:hover {
   text-decoration: underline;
 }
 
-/**
- * لایه بندی فلوئنت
- */
+img {
+  vertical-align: middle;
+  border-style: none;
+  max-width: 100%;
+  height: auto;
+}
+
+button, input, optgroup, select, textarea {
+  font-family: inherit;
+  font-size: 100%;
+  line-height: 1.15;
+  margin: 0;
+}
+
+button, input {
+  overflow: visible;
+}
+
+button, select {
+  text-transform: none;
+}
+
+button, [type="button"], [type="reset"], [type="submit"] {
+  -webkit-appearance: button;
+}
+
+button::-moz-focus-inner, [type="button"]::-moz-focus-inner, [type="reset"]::-moz-focus-inner, [type="submit"]::-moz-focus-inner {
+  border-style: none;
+  padding: 0;
+}
+
+button:-moz-focusring, [type="button"]:-moz-focusring, [type="reset"]:-moz-focusring, [type="submit"]:-moz-focusring {
+  outline: 1px dotted ButtonText;
+}
+
+/* ----------------------------------------------------------------
+   بخش 2: لایه‌بندی اصلی
+   ---------------------------------------------------------------- */
+
+/* لایه‌بندی اپلیکیشن */
 .fluent-app {
   display: flex;
   min-height: 100vh;
-  max-width: 100vw;
 }
 
-.fluent-sidebar {
-  width: 280px;
-  background-color: var(--fluent-bg-surface);
-  border-left: 1px solid var(--fluent-gray-30);
-  box-shadow: var(--fluent-shadow);
-  z-index: 100;
-  overflow-y: auto;
-  transition: transform var(--fluent-duration-normal) var(--fluent-ease-out);
-  display: flex;
-  flex-direction: column;
-}
-
-.fluent-sidebar-collapsed {
-  width: 48px;
-}
-
+/* محتوای اصلی */
 .fluent-main {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-width: 0; /* برای جلوگیری از سرریز محتوا */
+  min-width: 0;
+  margin-right: var(--fluent-sidebar-width);
+  transition: margin-right var(--fluent-duration-normal) var(--fluent-ease-out);
 }
 
-.fluent-header {
-  height: 48px;
-  display: flex;
-  align-items: center;
-  padding: 0 var(--fluent-spacing);
-  background-color: var(--fluent-bg-surface);
-  border-bottom: 1px solid var(--fluent-gray-30);
-  box-shadow: var(--fluent-shadow-sm);
-  z-index: 10;
+.fluent-main.sidebar-collapsed {
+  margin-right: var(--fluent-sidebar-collapsed-width);
 }
 
+/* محتوای صفحه */
 .fluent-content {
   flex: 1;
-  padding: var(--fluent-spacing);
-  overflow-y: auto;
-  background-color: var(--fluent-bg-canvas);
+  padding: 24px;
+  background-color: var(--fluent-bg-subtle);
 }
 
+/* فوتر */
 .fluent-footer {
-  padding: var(--fluent-spacing);
+  padding: 16px 24px;
   background-color: var(--fluent-bg-surface);
   border-top: 1px solid var(--fluent-gray-30);
+  font-size: var(--fluent-font-size-sm);
+  color: var(--fluent-text-secondary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-/**
- * سیستم گرید فلوئنت
- */
-.fluent-grid {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: var(--fluent-spacing);
+/* اسکرول‌بار سفارشی */
+.fluent-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--fluent-gray-50) transparent;
 }
 
-.fluent-col-1 { grid-column: span 1; }
-.fluent-col-2 { grid-column: span 2; }
-.fluent-col-3 { grid-column: span 3; }
-.fluent-col-4 { grid-column: span 4; }
-.fluent-col-5 { grid-column: span 5; }
-.fluent-col-6 { grid-column: span 6; }
-.fluent-col-7 { grid-column: span 7; }
-.fluent-col-8 { grid-column: span 8; }
-.fluent-col-9 { grid-column: span 9; }
-.fluent-col-10 { grid-column: span 10; }
-.fluent-col-11 { grid-column: span 11; }
-.fluent-col-12 { grid-column: span 12; }
+.fluent-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
 
-@media (max-width: 1024px) {
-  .fluent-grid {
-    grid-template-columns: repeat(6, 1fr);
+.fluent-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.fluent-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--fluent-gray-50);
+  border-radius: 3px;
+}
+
+.fluent-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: var(--fluent-gray-70);
+}
+
+/* کانتینر */
+.fluent-container {
+  width: 100%;
+  padding-right: 16px;
+  padding-left: 16px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+@media (min-width: 576px) {
+  .fluent-container {
+    max-width: 540px;
   }
-  .fluent-col-md-1 { grid-column: span 1; }
-  .fluent-col-md-2 { grid-column: span 2; }
-  .fluent-col-md-3 { grid-column: span 3; }
-  .fluent-col-md-4 { grid-column: span 4; }
-  .fluent-col-md-5 { grid-column: span 5; }
-  .fluent-col-md-6 { grid-column: span 6; }
 }
 
-@media (max-width: 768px) {
-  .fluent-grid {
-    grid-template-columns: repeat(4, 1fr);
+@media (min-width: 768px) {
+  .fluent-container {
+    max-width: 720px;
   }
-  .fluent-col-sm-1 { grid-column: span 1; }
-  .fluent-col-sm-2 { grid-column: span 2; }
-  .fluent-col-sm-3 { grid-column: span 3; }
-  .fluent-col-sm-4 { grid-column: span 4; }
 }
 
-/**
- * کلاس‌های کمکی
- */
-.fluent-text-center { text-align: center; }
-.fluent-text-right { text-align: right; }
-.fluent-text-left { text-align: left; }
-
-.fluent-flex { display: flex; }
-.fluent-flex-row { flex-direction: row; }
-.fluent-flex-column { flex-direction: column; }
-.fluent-flex-wrap { flex-wrap: wrap; }
-.fluent-flex-nowrap { flex-wrap: nowrap; }
-.fluent-flex-grow { flex-grow: 1; }
-.fluent-flex-shrink { flex-shrink: 1; }
-
-.fluent-align-start { align-items: flex-start; }
-.fluent-align-center { align-items: center; }
-.fluent-align-end { align-items: flex-end; }
-.fluent-align-stretch { align-items: stretch; }
-
-.fluent-justify-start { justify-content: flex-start; }
-.fluent-justify-center { justify-content: center; }
-.fluent-justify-end { justify-content: flex-end; }
-.fluent-justify-between { justify-content: space-between; }
-.fluent-justify-around { justify-content: space-around; }
-.fluent-justify-evenly { justify-content: space-evenly; }
-
-.fluent-m-0 { margin: 0; }
-.fluent-mt-0 { margin-top: 0; }
-.fluent-mr-0 { margin-right: 0; }
-.fluent-mb-0 { margin-bottom: 0; }
-.fluent-ml-0 { margin-left: 0; }
-
-.fluent-m-1 { margin: var(--fluent-spacing-xs); }
-.fluent-mt-1 { margin-top: var(--fluent-spacing-xs); }
-.fluent-mr-1 { margin-right: var(--fluent-spacing-xs); }
-.fluent-mb-1 { margin-bottom: var(--fluent-spacing-xs); }
-.fluent-ml-1 { margin-left: var(--fluent-spacing-xs); }
-
-.fluent-m-2 { margin: var(--fluent-spacing-s); }
-.fluent-mt-2 { margin-top: var(--fluent-spacing-s); }
-.fluent-mr-2 { margin-right: var(--fluent-spacing-s); }
-.fluent-mb-2 { margin-bottom: var(--fluent-spacing-s); }
-.fluent-ml-2 { margin-left: var(--fluent-spacing-s); }
-
-.fluent-m-3 { margin: var(--fluent-spacing); }
-.fluent-mt-3 { margin-top: var(--fluent-spacing); }
-.fluent-mr-3 { margin-right: var(--fluent-spacing); }
-.fluent-mb-3 { margin-bottom: var(--fluent-spacing); }
-.fluent-ml-3 { margin-left: var(--fluent-spacing); }
-
-.fluent-m-4 { margin: var(--fluent-spacing-l); }
-.fluent-mt-4 { margin-top: var(--fluent-spacing-l); }
-.fluent-mr-4 { margin-right: var(--fluent-spacing-l); }
-.fluent-mb-4 { margin-bottom: var(--fluent-spacing-l); }
-.fluent-ml-4 { margin-left: var(--fluent-spacing-l); }
-
-.fluent-m-5 { margin: var(--fluent-spacing-xl); }
-.fluent-mt-5 { margin-top: var(--fluent-spacing-xl); }
-.fluent-mr-5 { margin-right: var(--fluent-spacing-xl); }
-.fluent-mb-5 { margin-bottom: var(--fluent-spacing-xl); }
-.fluent-ml-5 { margin-left: var(--fluent-spacing-xl); }
-
-.fluent-p-0 { padding: 0; }
-.fluent-pt-0 { padding-top: 0; }
-.fluent-pr-0 { padding-right: 0; }
-.fluent-pb-0 { padding-bottom: 0; }
-.fluent-pl-0 { padding-left: 0; }
-
-.fluent-p-1 { padding: var(--fluent-spacing-xs); }
-.fluent-pt-1 { padding-top: var(--fluent-spacing-xs); }
-.fluent-pr-1 { padding-right: var(--fluent-spacing-xs); }
-.fluent-pb-1 { padding-bottom: var(--fluent-spacing-xs); }
-.fluent-pl-1 { padding-left: var(--fluent-spacing-xs); }
-
-.fluent-p-2 { padding: var(--fluent-spacing-s); }
-.fluent-pt-2 { padding-top: var(--fluent-spacing-s); }
-.fluent-pr-2 { padding-right: var(--fluent-spacing-s); }
-.fluent-pb-2 { padding-bottom: var(--fluent-spacing-s); }
-.fluent-pl-2 { padding-left: var(--fluent-spacing-s); }
-
-.fluent-p-3 { padding: var(--fluent-spacing); }
-.fluent-pt-3 { padding-top: var(--fluent-spacing); }
-.fluent-pr-3 { padding-right: var(--fluent-spacing); }
-.fluent-pb-3 { padding-bottom: var(--fluent-spacing); }
-.fluent-pl-3 { padding-left: var(--fluent-spacing); }
-
-.fluent-p-4 { padding: var(--fluent-spacing-l); }
-.fluent-pt-4 { padding-top: var(--fluent-spacing-l); }
-.fluent-pr-4 { padding-right: var(--fluent-spacing-l); }
-.fluent-pb-4 { padding-bottom: var(--fluent-spacing-l); }
-.fluent-pl-4 { padding-left: var(--fluent-spacing-l); }
-
-.fluent-p-5 { padding: var(--fluent-spacing-xl); }
-.fluent-pt-5 { padding-top: var(--fluent-spacing-xl); }
-.fluent-pr-5 { padding-right: var(--fluent-spacing-xl); }
-.fluent-pb-5 { padding-bottom: var(--fluent-spacing-xl); }
-.fluent-pl-5 { padding-left: var(--fluent-spacing-xl); }
-
-.fluent-rounded-none { border-radius: 0; }
-.fluent-rounded-sm { border-radius: var(--fluent-radius-sm); }
-.fluent-rounded { border-radius: var(--fluent-radius); }
-.fluent-rounded-md { border-radius: var(--fluent-radius-md); }
-.fluent-rounded-lg { border-radius: var(--fluent-radius-lg); }
-.fluent-rounded-xl { border-radius: var(--fluent-radius-xl); }
-.fluent-rounded-full { border-radius: 50%; }
-.fluent-rounded-pill { border-radius: var(--fluent-radius-pill); }
-
-.fluent-shadow-none { box-shadow: none; }
-.fluent-shadow-sm { box-shadow: var(--fluent-shadow-sm); }
-.fluent-shadow { box-shadow: var(--fluent-shadow); }
-.fluent-shadow-md { box-shadow: var(--fluent-shadow-md); }
-.fluent-shadow-lg { box-shadow: var(--fluent-shadow-lg); }
-
-.fluent-text-xs { font-size: var(--fluent-font-size-xs); }
-.fluent-text-sm { font-size: var(--fluent-font-size-sm); }
-.fluent-text-base { font-size: var(--fluent-font-size-base); }
-.fluent-text-md { font-size: var(--fluent-font-size-md); }
-.fluent-text-lg { font-size: var(--fluent-font-size-lg); }
-.fluent-text-xl { font-size: var(--fluent-font-size-xl); }
-.fluent-text-xxl { font-size: var(--fluent-font-size-xxl); }
-.fluent-text-3xl { font-size: var(--fluent-font-size-3xl); }
-
-.fluent-font-normal { font-weight: var(--fluent-font-weight-regular); }
-.fluent-font-medium { font-weight: var(--fluent-font-weight-medium); }
-.fluent-font-semibold { font-weight: var(--fluent-font-weight-semibold); }
-.fluent-font-bold { font-weight: var(--fluent-font-weight-bold); }
-
-.fluent-text-primary { color: var(--fluent-text-primary); }
-.fluent-text-secondary { color: var(--fluent-text-secondary); }
-.fluent-text-disabled { color: var(--fluent-text-disabled); }
-.fluent-text-white { color: var(--fluent-text-white); }
-
-.fluent-bg-none { background: none; }
-.fluent-bg-body { background-color: var(--fluent-bg-body); }
-.fluent-bg-surface { background-color: var(--fluent-bg-surface); }
-.fluent-bg-canvas { background-color: var(--fluent-bg-canvas); }
-.fluent-bg-subtle { background-color: var(--fluent-bg-subtle); }
-.fluent-bg-disabled { background-color: var(--fluent-bg-disabled); }
-.fluent-bg-primary { background-color: var(--fluent-primary); }
-.fluent-bg-primary-light { background-color: var(--fluent-primary-light); }
-.fluent-bg-primary-dark { background-color: var(--fluent-primary-dark); }
-.fluent-bg-secondary { background-color: var(--fluent-secondary); }
-.fluent-bg-success { background-color: var(--fluent-success); }
-.fluent-bg-warning { background-color: var(--fluent-warning); }
-.fluent-bg-error { background-color: var(--fluent-error); }
-.fluent-bg-info { background-color: var(--fluent-info); }
-
-.fluent-w-auto { width: auto; }
-.fluent-w-full { width: 100%; }
-.fluent-w-screen { width: 100vw; }
-.fluent-w-min { width: min-content; }
-.fluent-w-max { width: max-content; }
-.fluent-w-fit { width: fit-content; }
-
-.fluent-h-auto { height: auto; }
-.fluent-h-full { height: 100%; }
-.fluent-h-screen { height: 100vh; }
-.fluent-h-min { height: min-content; }
-.fluent-h-max { height: max-content; }
-.fluent-h-fit { height: fit-content; }
-
-.fluent-overflow-auto { overflow: auto; }
-.fluent-overflow-hidden { overflow: hidden; }
-.fluent-overflow-visible { overflow: visible; }
-.fluent-overflow-scroll { overflow: scroll; }
-.fluent-overflow-x-auto { overflow-x: auto; }
-.fluent-overflow-y-auto { overflow-y: auto; }
-.fluent-overflow-x-hidden { overflow-x: hidden; }
-.fluent-overflow-y-hidden { overflow-y: hidden; }
-
-.fluent-hidden { display: none; }
-.fluent-visible { visibility: visible; }
-.fluent-invisible { visibility: hidden; }
-
-.fluent-opacity-0 { opacity: 0; }
-.fluent-opacity-25 { opacity: 0.25; }
-.fluent-opacity-50 { opacity: 0.5; }
-.fluent-opacity-75 { opacity: 0.75; }
-.fluent-opacity-100 { opacity: 1; }
-
-/* انیمیشن‌های پایه */
-@keyframes fluent-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+@media (min-width: 992px) {
+  .fluent-container {
+    max-width: 960px;
+  }
 }
 
-@keyframes fluent-fade-out {
-  from { opacity: 1; }
-  to { opacity: 0; }
+@media (min-width: 1200px) {
+  .fluent-container {
+    max-width: var(--fluent-container-max-width);
+  }
 }
 
-@keyframes fluent-slide-up {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+/* ----------------------------------------------------------------
+   بخش 3: تایپوگرافی و ساختارهای متنی
+   ---------------------------------------------------------------- */
+
+/* عناوین */
+.fluent-title-1 {
+  font-size: var(--fluent-font-size-3xl);
+  font-weight: var(--fluent-font-weight-bold);
+  line-height: 1.2;
 }
 
-@keyframes fluent-slide-down {
-  from { transform: translateY(-20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+.fluent-title-2 {
+  font-size: var(--fluent-font-size-2xl);
+  font-weight: var(--fluent-font-weight-semibold);
+  line-height: 1.2;
 }
 
-@keyframes fluent-slide-left {
-  from { transform: translateX(20px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+.fluent-title-3 {
+  font-size: var(--fluent-font-size-xl);
+  font-weight: var(--fluent-font-weight-semibold);
+  line-height: 1.3;
 }
 
-@keyframes fluent-slide-right {
-  from { transform: translateX(-20px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+.fluent-title-4 {
+  font-size: var(--fluent-font-size-lg);
+  font-weight: var(--fluent-font-weight-semibold);
+  line-height: 1.4;
 }
 
-.fluent-animate-fade-in {
-  animation: fluent-fade-in var(--fluent-duration-normal) var(--fluent-ease-out) forwards;
+.fluent-title-5 {
+  font-size: var(--fluent-font-size-md);
+  font-weight: var(--fluent-font-weight-semibold);
+  line-height: 1.4;
 }
 
-.fluent-animate-fade-out {
-  animation: fluent-fade-out var(--fluent-duration-normal) var(--fluent-ease-out) forwards;
+.fluent-title-6 {
+  font-size: var(--fluent-font-size-base);
+  font-weight: var(--fluent-font-weight-semibold);
+  line-height: 1.4;
 }
 
-.fluent-animate-slide-up {
-  animation: fluent-slide-up var(--fluent-duration-normal) var(--fluent-ease-out) forwards;
+/* متن بدنه */
+.fluent-text-xl {
+  font-size: var(--fluent-font-size-xl);
+  line-height: 1.5;
 }
 
-.fluent-animate-slide-down {
-  animation: fluent-slide-down var(--fluent-duration-normal) var(--fluent-ease-out) forwards;
+.fluent-text-lg {
+  font-size: var(--fluent-font-size-lg);
+  line-height: 1.5;
 }
 
-.fluent-animate-slide-left {
-  animation: fluent-slide-left var(--fluent-duration-normal) var(--fluent-ease-out) forwards;
+.fluent-text-md {
+  font-size: var(--fluent-font-size-md);
+  line-height: 1.5;
 }
 
-.fluent-animate-slide-right {
-  animation: fluent-slide-right var(--fluent-duration-normal) var(--fluent-ease-out) forwards;
+.fluent-text-base {
+  font-size: var(--fluent-font-size-base);
+  line-height: 1.5;
 }
 
-/**
- * کامپوننت‌های فلوئنت UI پایه
- */
+.fluent-text-sm {
+  font-size: var(--fluent-font-size-sm);
+  line-height: 1.5;
+}
+
+.fluent-text-xs {
+  font-size: var(--fluent-font-size-xs);
+  line-height: 1.5;
+}
+
+/* وزن فونت */
+.fluent-font-light {
+  font-weight: var(--fluent-font-weight-light);
+}
+
+.fluent-font-normal {
+  font-weight: var(--fluent-font-weight-normal);
+}
+
+.fluent-font-medium {
+  font-weight: var(--fluent-font-weight-medium);
+}
+
+.fluent-font-semibold {
+  font-weight: var(--fluent-font-weight-semibold);
+}
+
+.fluent-font-bold {
+  font-weight: var(--fluent-font-weight-bold);
+}
+
+/* رنگ متن */
+.fluent-text-primary {
+  color: var(--fluent-primary);
+}
+
+.fluent-text-success {
+  color: var(--fluent-success);
+}
+
+.fluent-text-warning {
+  color: var(--fluent-warning);
+}
+
+.fluent-text-error {
+  color: var(--fluent-error);
+}
+
+.fluent-text-info {
+  color: var(--fluent-info);
+}
+
+.fluent-text-muted {
+  color: var(--fluent-text-secondary);
+}
+
+.fluent-text-white {
+  color: white;
+}
+
+/* ----------------------------------------------------------------
+   بخش 4: کامپوننت‌های اصلی مشترک
+   ---------------------------------------------------------------- */
+
+/* کارت‌ها */
+.fluent-card {
+  background-color: var(--fluent-bg-surface);
+  border-radius: var(--fluent-radius);
+  box-shadow: var(--fluent-shadow-sm);
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+
+.fluent-card-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--fluent-gray-30);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fluent-card-title {
+  font-size: var(--fluent-font-size-md);
+  font-weight: var(--fluent-font-weight-semibold);
+  margin: 0;
+}
+
+.fluent-card-subtitle {
+  font-size: var(--fluent-font-size-sm);
+  color: var(--fluent-text-secondary);
+  margin: 4px 0 0 0;
+}
+
+.fluent-card-body {
+  padding: 16px;
+}
+
+.fluent-card-footer {
+  padding: 16px;
+  border-top: 1px solid var(--fluent-gray-30);
+  background-color: var(--fluent-gray-10);
+}
+
+.fluent-card-actions {
+  display: flex;
+  align-items: center;
+}
+
+/* دکمه‌ها */
+.fluent-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: var(--fluent-radius);
+  font-size: var(--fluent-font-size-base);
+  font-weight: var(--fluent-font-weight-medium);
+  line-height: 1;
+  text-align: center;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color var(--fluent-duration-faster) var(--fluent-ease-out),
+              border-color var(--fluent-duration-faster) var(--fluent-ease-out),
+              color var(--fluent-duration-faster) var(--fluent-ease-out),
+              box-shadow var(--fluent-duration-faster) var(--fluent-ease-out);
+  background-color: var(--fluent-gray-30);
+  color: var(--fluent-text-primary);
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.fluent-btn:hover {
+  background-color: var(--fluent-gray-40);
+  text-decoration: none;
+}
+
+.fluent-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--fluent-bg-surface), 0 0 0 4px var(--fluent-primary-lighter);
+}
+
+.fluent-btn-primary {
+  background-color: var(--fluent-primary);
+  color: white;
+}
+
+.fluent-btn-primary:hover {
+  background-color: var(--fluent-primary-dark);
+}
+
+.fluent-btn-success {
+  background-color: var(--fluent-success);
+  color: white;
+}
+
+.fluent-btn-success:hover {
+  background-color: var(--fluent-success-dark);
+}
+
+.fluent-btn-error {
+  background-color: var(--fluent-error);
+  color: white;
+}
+
+.fluent-btn-error:hover {
+  background-color: var(--fluent-error-dark);
+}
+
+.fluent-btn-warning {
+  background-color: var(--fluent-warning);
+  color: var(--fluent-gray-140);
+}
+
+.fluent-btn-warning:hover {
+  background-color: var(--fluent-warning-dark);
+}
+
+.fluent-btn-outline {
+  background-color: transparent;
+  border-color: var(--fluent-gray-60);
+  color: var(--fluent-text-primary);
+}
+
+.fluent-btn-outline:hover {
+  background-color: var(--fluent-gray-20);
+}
+
+.fluent-btn-outline-primary {
+  background-color: transparent;
+  border-color: var(--fluent-primary);
+  color: var(--fluent-primary);
+}
+
+.fluent-btn-outline-primary:hover {
+  background-color: var(--fluent-primary-lighter);
+}
+
+.fluent-btn-sm {
+  padding: 6px 12px;
+  font-size: var(--fluent-font-size-sm);
+}
+
+.fluent-btn-lg {
+  padding: 10px 20px;
+  font-size: var(--fluent-font-size-md);
+}
+
+.fluent-btn-icon {
+  padding: 8px;
+  width: 36px;
+  height: 36px;
+}
+
+.fluent-btn-icon-sm {
+  padding: 6px;
+  width: 30px;
+  height: 30px;
+}
+
+.fluent-btn-icon-lg {
+  padding: 10px;
+  width: 42px;
+  height: 42px;
+}
+
+.fluent-btn[disabled], .fluent-btn.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.fluent-btn-loading {
+  position: relative;
+  color: transparent !important;
+}
+
+.fluent-btn-loading::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 50%;
+  left: 50%;
+  margin-top: -8px;
+  margin-left: -8px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: white;
+  animation: fluent-spin 0.8s linear infinite;
+}
+
+/* لینک‌ها */
+.fluent-link {
+  color: var(--fluent-primary);
+  font-weight: var(--fluent-font-weight-medium);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  transition: color var(--fluent-duration-faster) var(--fluent-ease-out);
+  gap: 4px;
+}
+
+.fluent-link:hover {
+  color: var(--fluent-primary-dark);
+  text-decoration: underline;
+}
+
+.fluent-link-subtle {
+  color: var(--fluent-text-secondary);
+}
+
+.fluent-link-subtle:hover {
+  color: var(--fluent-text-primary);
+}
 
 /* بج‌ها */
 .fluent-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: var(--fluent-spacing-xxs) var(--fluent-spacing-xs);
-  border-radius: var(--fluent-radius-pill);
+  padding: 2px 8px;
+  border-radius: 100px;
   font-size: var(--fluent-font-size-xs);
   font-weight: var(--fluent-font-weight-medium);
-  line-height: 1;
-  white-space: nowrap;
+  line-height: 1.2;
+  background-color: var(--fluent-gray-30);
+  color: var(--fluent-text-secondary);
 }
 
 .fluent-badge-primary {
-  background-color: var(--fluent-primary);
-  color: var(--fluent-text-white);
+  background-color: var(--fluent-primary-lighter);
+  color: var(--fluent-primary-dark);
 }
 
 .fluent-badge-success {
-  background-color: var(--fluent-success);
-  color: var(--fluent-text-white);
+  background-color: var(--fluent-success-light);
+  color: var(--fluent-success-dark);
 }
 
 .fluent-badge-warning {
-  background-color: var(--fluent-warning);
-  color: var(--fluent-text-white);
+  background-color: var(--fluent-warning-light);
+  color: var(--fluent-gray-140);
 }
 
 .fluent-badge-error {
-  background-color: var(--fluent-error);
-  color: var(--fluent-text-white);
+  background-color: var(--fluent-error-light);
+  color: var(--fluent-error-dark);
 }
 
 .fluent-badge-info {
-  background-color: var(--fluent-info);
-  color: var(--fluent-text-white);
+  background-color: var(--fluent-info-light);
+  color: var(--fluent-info-dark);
 }
 
-.fluent-badge-subtle-primary {
-  background-color: rgba(0, 120, 212, 0.1);
-  color: var(--fluent-primary);
+.fluent-badge-outline {
+  background-color: transparent;
+  border: 1px solid var(--fluent-gray-50);
 }
 
-.fluent-badge-subtle-success {
-  background-color: rgba(16, 124, 16, 0.1);
+/* آلرت‌ها */
+.fluent-alert {
+  display: flex;
+  padding: 12px 16px;
+  border-radius: var(--fluent-radius);
+  margin-bottom: 16px;
+  background-color: var(--fluent-gray-20);
+  border: 1px solid var(--fluent-gray-40);
+  color: var(--fluent-text-primary);
+}
+
+.fluent-alert-icon {
+  display: flex;
+  align-items: flex-start;
+  margin-left: 12px;
+  color: var(--fluent-gray-110);
+}
+
+.fluent-alert-content {
+  flex: 1;
+}
+
+.fluent-alert-title {
+  font-weight: var(--fluent-font-weight-semibold);
+  margin-bottom: 4px;
+}
+
+.fluent-alert-success {
+  background-color: var(--fluent-success-light);
+  border-color: var(--fluent-success);
+}
+
+.fluent-alert-success .fluent-alert-icon {
   color: var(--fluent-success);
 }
 
-.fluent-badge-subtle-warning {
-  background-color: rgba(216, 59, 1, 0.1);
+.fluent-alert-success .fluent-alert-title {
+  color: var(--fluent-success-dark);
+}
+
+.fluent-alert-warning {
+  background-color: var(--fluent-warning-light);
+  border-color: var(--fluent-warning);
+}
+
+.fluent-alert-warning .fluent-alert-icon {
   color: var(--fluent-warning);
 }
 
-.fluent-badge-subtle-error {
-  background-color: rgba(168, 0, 0, 0.1);
+.fluent-alert-warning .fluent-alert-title {
+  color: var(--fluent-gray-140);
+}
+
+.fluent-alert-error {
+  background-color: var(--fluent-error-light);
+  border-color: var(--fluent-error);
+}
+
+.fluent-alert-error .fluent-alert-icon {
   color: var(--fluent-error);
 }
 
-.fluent-badge-subtle-info {
-  background-color: rgba(0, 120, 212, 0.1);
+.fluent-alert-error .fluent-alert-title {
+  color: var(--fluent-error-dark);
+}
+
+.fluent-alert-info {
+  background-color: var(--fluent-info-light);
+  border-color: var(--fluent-info);
+}
+
+.fluent-alert-info .fluent-alert-icon {
   color: var(--fluent-info);
 }
 
-/* دیوایدر (خط جداکننده) */
-.fluent-divider {
-  border: 0;
-  border-top: 1px solid var(--fluent-gray-30);
-  margin: var(--fluent-spacing) 0;
+.fluent-alert-info .fluent-alert-title {
+  color: var(--fluent-info-dark);
 }
 
-.fluent-divider-vertical {
-  border: 0;
-  border-left: 1px solid var(--fluent-gray-30);
-  margin: 0 var(--fluent-spacing);
-  align-self: stretch;
-  height: auto;
-  display: inline-block;
+.fluent-alert-close {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: currentColor;
+  opacity: 0.7;
 }
 
-/* آیکون */
-.fluent-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1em;
-  height: 1em;
+.fluent-alert-close:hover {
+  opacity: 1;
 }
 
-/* لودینگ (اسپینر) */
+/* اسپینرها */
 .fluent-spinner {
   display: inline-block;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   border: 2px solid rgba(0, 120, 212, 0.2);
   border-radius: 50%;
   border-top-color: var(--fluent-primary);
   animation: fluent-spin 0.8s linear infinite;
-}
-
-@keyframes fluent-spin {
-  to { transform: rotate(360deg); }
 }
 
 .fluent-spinner-sm {
@@ -534,271 +709,1470 @@ a:hover {
 }
 
 .fluent-spinner-lg {
-  width: 24px;
-  height: 24px;
-  border-width: 2.5px;
+  width: 32px;
+  height: 32px;
+  border-width: 3px;
 }
 
-/* تولتیپ */
-.fluent-tooltip {
-  position: relative;
-  display: inline-block;
+.fluent-spinner-xl {
+  width: 48px;
+  height: 48px;
+  border-width: 4px;
 }
 
-.fluent-tooltip-content {
-  position: absolute;
-  z-index: 1000;
-  visibility: hidden;
-  opacity: 0;
-  padding: var(--fluent-spacing-xs) var(--fluent-spacing-s);
-  background-color: var(--fluent-gray-160);
-  color: var(--fluent-text-white);
+@keyframes fluent-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* کامپوننت آکاردیون */
+.fluent-accordion {
+  border: 1px solid var(--fluent-gray-30);
   border-radius: var(--fluent-radius);
-  font-size: var(--fluent-font-size-sm);
-  line-height: 1.4;
-  max-width: 250px;
-  box-shadow: var(--fluent-shadow);
-  white-space: normal;
-  word-wrap: break-word;
-  transition: opacity var(--fluent-duration-normal) var(--fluent-ease-out),
-              visibility var(--fluent-duration-normal) var(--fluent-ease-out),
-              transform var(--fluent-duration-normal) var(--fluent-ease-out);
+  overflow: hidden;
 }
 
-.fluent-tooltip:hover .fluent-tooltip-content {
-  visibility: visible;
-  opacity: 1;
+.fluent-accordion-item {
+  border-bottom: 1px solid var(--fluent-gray-30);
 }
 
-.fluent-tooltip-top .fluent-tooltip-content {
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%) translateY(-4px);
-  margin-bottom: 8px;
+.fluent-accordion-item:last-child {
+  border-bottom: none;
 }
 
-.fluent-tooltip-top .fluent-tooltip-content::after {
-  content: '';
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  margin-left: -4px;
-  border-width: 4px;
-  border-style: solid;
-  border-color: var(--fluent-gray-160) transparent transparent transparent;
+.fluent-accordion-header {
+  background-color: var(--fluent-bg-surface);
+  padding: 12px 16px;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background-color var(--fluent-duration-faster) var(--fluent-ease-out);
 }
 
-.fluent-tooltip-bottom .fluent-tooltip-content {
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%) translateY(4px);
-  margin-top: 8px;
+.fluent-accordion-header:hover {
+  background-color: var(--fluent-gray-10);
 }
 
-.fluent-tooltip-bottom .fluent-tooltip-content::after {
-  content: '';
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  margin-left: -4px;
-  border-width: 4px;
-  border-style: solid;
-  border-color: transparent transparent var(--fluent-gray-160) transparent;
+.fluent-accordion-title {
+  font-weight: var(--fluent-font-weight-medium);
+  font-size: var(--fluent-font-size-base);
+  margin: 0;
 }
 
-.fluent-tooltip-left .fluent-tooltip-content {
-  top: 50%;
-  right: 100%;
-  transform: translateY(-50%) translateX(-4px);
-  margin-right: 8px;
+.fluent-accordion-icon {
+  transition: transform var(--fluent-duration-faster) var(--fluent-ease-out);
 }
 
-.fluent-tooltip-left .fluent-tooltip-content::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 100%;
-  margin-top: -4px;
-  border-width: 4px;
-  border-style: solid;
-  border-color: transparent transparent transparent var(--fluent-gray-160);
+.fluent-accordion-item.expanded .fluent-accordion-icon {
+  transform: rotate(180deg);
 }
 
-.fluent-tooltip-right .fluent-tooltip-content {
-  top: 50%;
-  left: 100%;
-  transform: translateY(-50%) translateX(4px);
-  margin-left: 8px;
+.fluent-accordion-content {
+  padding: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height var(--fluent-duration-normal) var(--fluent-ease-out),
+              padding var(--fluent-duration-normal) var(--fluent-ease-out);
 }
 
-.fluent-tooltip-right .fluent-tooltip-content::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  right: 100%;
-  margin-top: -4px;
-  border-width: 4px;
-  border-style: solid;
-  border-color: transparent var(--fluent-gray-160) transparent transparent;
+.fluent-accordion-item.expanded .fluent-accordion-content {
+  padding: 16px;
+  max-height: 1000px; /* تقریبی برای نمایش محتوا */
 }
 
-/* وضعیت لودینگ صفحه */
-.fluent-loading-overlay {
+/* دیالوگ‌ها (Modal) */
+.fluent-dialog-backdrop {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(255, 255, 255, 0.7);
+  background-color: rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
+  z-index: var(--fluent-z-modal);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--fluent-duration-normal) var(--fluent-ease-out),
+              visibility var(--fluent-duration-normal) var(--fluent-ease-out);
   backdrop-filter: blur(4px);
 }
 
-.fluent-loading-container {
+.fluent-dialog-backdrop.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.fluent-dialog {
+  background-color: var(--fluent-bg-surface);
+  border-radius: var(--fluent-radius);
+  box-shadow: var(--fluent-shadow-lg);
+  width: 100%;
+  max-width: 500px;
+  max-height: calc(100vh - 64px);
   display: flex;
   flex-direction: column;
+  transform: scale(0.95);
+  opacity: 0;
+  transition: transform var(--fluent-duration-normal) var(--fluent-ease-out),
+              opacity var(--fluent-duration-normal) var(--fluent-ease-out);
+  overflow: hidden;
+}
+
+.fluent-dialog-backdrop.show .fluent-dialog {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.fluent-dialog-sm {
+  max-width: 360px;
+}
+
+.fluent-dialog-lg {
+  max-width: 680px;
+}
+
+.fluent-dialog-xl {
+  max-width: 960px;
+}
+
+.fluent-dialog-fullscreen {
+  max-width: none;
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  border-radius: 0;
+}
+
+.fluent-dialog-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--fluent-gray-30);
+  display: flex;
   align-items: center;
-  text-align: center;
+  justify-content: space-between;
 }
 
-.fluent-loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(0, 120, 212, 0.2);
-  border-radius: 50%;
-  border-top-color: var(--fluent-primary);
-  animation: fluent-spin 1s linear infinite;
-  margin-bottom: var(--fluent-spacing);
+.fluent-dialog-title {
+  font-size: var(--fluent-font-size-lg);
+  font-weight: var(--fluent-font-weight-semibold);
+  margin: 0;
 }
 
-.fluent-loading-text {
-  font-size: var(--fluent-font-size-base);
+.fluent-dialog-close {
+  background: none;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--fluent-radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fluent-text-secondary);
+  cursor: pointer;
+  transition: background-color var(--fluent-duration-faster) var(--fluent-ease-out),
+              color var(--fluent-duration-faster) var(--fluent-ease-out);
+}
+
+.fluent-dialog-close:hover {
+  background-color: var(--fluent-gray-20);
   color: var(--fluent-text-primary);
-  margin-top: var(--fluent-spacing-s);
 }
 
-/* افکت‌های تعاملی (Interaction effects) */
-.fluent-interactive {
-  transition: transform var(--fluent-duration-faster) var(--fluent-ease-out),
+.fluent-dialog-body {
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.fluent-dialog-footer {
+  padding: 16px;
+  border-top: 1px solid var(--fluent-gray-30);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* توست‌ها */
+.fluent-toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: var(--fluent-z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 380px;
+}
+
+.fluent-toast {
+  display: flex;
+  align-items: flex-start;
+  background-color: var(--fluent-bg-surface);
+  border-radius: var(--fluent-radius);
+  box-shadow: var(--fluent-shadow-md);
+  padding: 12px 16px;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity var(--fluent-duration-normal) var(--fluent-ease-out),
+              transform var(--fluent-duration-normal) var(--fluent-ease-out);
+  border-right: 3px solid var(--fluent-gray-50);
+}
+
+.fluent-toast-success {
+  border-right-color: var(--fluent-success);
+}
+
+.fluent-toast-error {
+  border-right-color: var(--fluent-error);
+}
+
+.fluent-toast-warning {
+  border-right-color: var(--fluent-warning);
+}
+
+.fluent-toast-info {
+  border-right-color: var(--fluent-info);
+}
+
+.fluent-toast-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 12px;
+  width: 20px;
+  height: 20px;
+}
+
+.fluent-toast-success .fluent-toast-icon {
+  color: var(--fluent-success);
+}
+
+.fluent-toast-error .fluent-toast-icon {
+  color: var(--fluent-error);
+}
+
+.fluent-toast-warning .fluent-toast-icon {
+  color: var(--fluent-warning);
+}
+
+.fluent-toast-info .fluent-toast-icon {
+  color: var(--fluent-info);
+}
+
+.fluent-toast-content {
+  flex: 1;
+}
+
+.fluent-toast-title {
+  font-weight: var(--fluent-font-weight-semibold);
+  font-size: var(--fluent-font-size-sm);
+  margin: 0 0 4px 0;
+}
+
+.fluent-toast-message {
+  font-size: var(--fluent-font-size-sm);
+  color: var(--fluent-text-secondary);
+  margin: 0;
+}
+
+.fluent-toast-close {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--fluent-text-secondary);
+  margin-right: 8px;
+  opacity: 0.7;
+  transition: opacity var(--fluent-duration-faster) var(--fluent-ease-out);
+}
+
+.fluent-toast-close:hover {
+  opacity: 1;
+}
+
+/* تولتیپ */
+.fluent-tooltip {
+  position: relative;
+  display: inline-flex;
+}
+
+.fluent-tooltip-content {
+  position: absolute;
+  z-index: var(--fluent-z-tooltip);
+  background-color: var(--fluent-gray-140);
+  color: white;
+  padding: 4px 8px;
+  border-radius: var(--fluent-radius);
+  font-size: var(--fluent-font-size-xs);
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--fluent-duration-faster) var(--fluent-ease-out),
+              visibility var(--fluent-duration-faster) var(--fluent-ease-out),
+              transform var(--fluent-duration-faster) var(--fluent-ease-out);
+  box-shadow: var(--fluent-shadow-sm);
+}
+
+.fluent-tooltip:hover .fluent-tooltip-content {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ----------------------------------------------------------------
+   بخش 5: فرم‌ها و ورودی‌ها
+   ---------------------------------------------------------------- */
+
+/* گروه فرم */
+.fluent-form-group {
+  margin-bottom: 16px;
+}
+
+/* لیبل */
+.fluent-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: var(--fluent-font-size-sm);
+  font-weight: var(--fluent-font-weight-medium);
+  color: var(--fluent-text-primary);
+}
+
+.fluent-label-with-link {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+/* فیلد ورودی */
+.fluent-input {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: var(--fluent-font-size-base);
+  line-height: 1.5;
+  color: var(--fluent-text-primary);
+  background-color: var(--fluent-bg-surface);
+  background-clip: padding-box;
+  border: 1px solid var(--fluent-gray-60);
+  border-radius: var(--fluent-radius);
+  transition: border-color var(--fluent-duration-faster) var(--fluent-ease-out),
               box-shadow var(--fluent-duration-faster) var(--fluent-ease-out);
 }
 
-.fluent-interactive:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--fluent-shadow-md);
+.fluent-input:focus {
+  border-color: var(--fluent-primary);
+  outline: 0;
+  box-shadow: 0 0 0 2px var(--fluent-primary-lighter);
 }
 
-.fluent-interactive:active {
-  transform: translateY(0);
-  box-shadow: var(--fluent-shadow);
+.fluent-input::placeholder {
+  color: var(--fluent-text-disabled);
+  opacity: 1;
 }
 
-/* افکت ریپل */
-.fluent-ripple {
+.fluent-input[disabled], .fluent-input:disabled {
+  background-color: var(--fluent-bg-disabled);
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.fluent-input.error {
+  border-color: var(--fluent-error);
+}
+
+.fluent-input.error:focus {
+  box-shadow: 0 0 0 2px var(--fluent-error-light);
+}
+
+.fluent-input-with-icon {
+  position: relative;
+}
+
+.fluent-input-icon {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  color: var(--fluent-text-secondary);
+  pointer-events: none;
+}
+
+.fluent-input-with-icon .fluent-input {
+  padding-right: 36px;
+}
+
+/* سلکت */
+.fluent-select {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.fluent-select select {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  padding-left: 32px;
+  font-size: var(--fluent-font-size-base);
+  line-height: 1.5;
+  color: var(--fluent-text-primary);
+  background-color: var(--fluent-bg-surface);
+  background-clip: padding-box;
+  border: 1px solid var(--fluent-gray-60);
+  border-radius: var(--fluent-radius);
+  transition: border-color var(--fluent-duration-faster) var(--fluent-ease-out),
+              box-shadow var(--fluent-duration-faster) var(--fluent-ease-out);
+  appearance: none;
+}
+
+.fluent-select::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23605e5c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+
+.fluent-select select:focus {
+  border-color: var(--fluent-primary);
+  outline: 0;
+  box-shadow: 0 0 0 2px var(--fluent-primary-lighter);
+}
+
+.fluent-select select[disabled], .fluent-select select:disabled {
+  background-color: var(--fluent-bg-disabled);
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.fluent-select select.error {
+  border-color: var(--fluent-error);
+}
+
+.fluent-select select.error:focus {
+  box-shadow: 0 0 0 2px var(--fluent-error-light);
+}
+
+.fluent-select-sm select {
+  padding: 6px 10px;
+  padding-left: 28px;
+  font-size: var(--fluent-font-size-sm);
+}
+
+.fluent-select-sm::after {
+  left: 10px;
+  width: 10px;
+  height: 10px;
+}
+
+/* چک‌باکس */
+.fluent-checkbox {
+  display: flex;
+  align-items: center;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+}
+
+.fluent-checkbox input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.fluent-checkbox-checkmark {
+  position: relative;
+  height: 18px;
+  width: 18px;
+  background-color: var(--fluent-bg-surface);
+  border: 1px solid var(--fluent-gray-60);
+  border-radius: 3px;
+  margin-left: 8px;
+  transition: background-color var(--fluent-duration-faster) var(--fluent-ease-out),
+              border-color var(--fluent-duration-faster) var(--fluent-ease-out);
+}
+
+.fluent-checkbox:hover input ~ .fluent-checkbox-checkmark {
+  border-color: var(--fluent-primary);
+}
+
+.fluent-checkbox input:checked ~ .fluent-checkbox-checkmark {
+  background-color: var(--fluent-primary);
+  border-color: var(--fluent-primary);
+}
+
+.fluent-checkbox-checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+  left: 6px;
+  top: 2px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.fluent-checkbox input:checked ~ .fluent-checkbox-checkmark:after {
+  display: block;
+}
+
+.fluent-checkbox input:focus ~ .fluent-checkbox-checkmark {
+  box-shadow: 0 0 0 2px var(--fluent-primary-lighter);
+}
+
+.fluent-checkbox-label {
+  font-size: var(--fluent-font-size-sm);
+}
+
+/* رادیو باتن */
+.fluent-radio {
+  display: flex;
+  align-items: center;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+}
+
+.fluent-radio input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.fluent-radio-mark {
+  position: relative;
+  height: 18px;
+  width: 18px;
+  background-color: var(--fluent-bg-surface);
+  border: 1px solid var(--fluent-gray-60);
+  border-radius: 50%;
+  margin-left: 8px;
+  transition: background-color var(--fluent-duration-faster) var(--fluent-ease-out),
+              border-color var(--fluent-duration-faster) var(--fluent-ease-out);
+}
+
+.fluent-radio:hover input ~ .fluent-radio-mark {
+  border-color: var(--fluent-primary);
+}
+
+.fluent-radio input:checked ~ .fluent-radio-mark {
+  border-color: var(--fluent-primary);
+}
+
+.fluent-radio-mark:after {
+  content: "";
+  position: absolute;
+  display: none;
+  top: 3px;
+  left: 3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--fluent-primary);
+}
+
+.fluent-radio input:checked ~ .fluent-radio-mark:after {
+  display: block;
+}
+
+.fluent-radio input:focus ~ .fluent-radio-mark {
+  box-shadow: 0 0 0 2px var(--fluent-primary-lighter);
+}
+
+.fluent-radio-label {
+  font-size: var(--fluent-font-size-sm);
+}
+
+/* سوئیچ */
+.fluent-switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+}
+
+.fluent-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.fluent-switch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--fluent-gray-60);
+  transition: .3s;
+  border-radius: 34px;
+}
+
+.fluent-switch-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  right: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: .3s;
+  border-radius: 50%;
+}
+
+.fluent-switch input:checked + .fluent-switch-slider {
+  background-color: var(--fluent-primary);
+}
+
+.fluent-switch input:focus + .fluent-switch-slider {
+  box-shadow: 0 0 0 2px var(--fluent-primary-lighter);
+}
+
+.fluent-switch input:checked + .fluent-switch-slider:before {
+  transform: translateX(-16px);
+}
+
+/* تکست اریا */
+.fluent-textarea {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: var(--fluent-font-size-base);
+  line-height: 1.5;
+  color: var(--fluent-text-primary);
+  background-color: var(--fluent-bg-surface);
+  background-clip: padding-box;
+  border: 1px solid var(--fluent-gray-60);
+  border-radius: var(--fluent-radius);
+  transition: border-color var(--fluent-duration-faster) var(--fluent-ease-out),
+              box-shadow var(--fluent-duration-faster) var(--fluent-ease-out);
+  min-height: 80px;
+  resize: vertical;
+}
+
+.fluent-textarea:focus {
+  border-color: var(--fluent-primary);
+  outline: 0;
+  box-shadow: 0 0 0 2px var(--fluent-primary-lighter);
+}
+
+.fluent-textarea::placeholder {
+  color: var(--fluent-text-disabled);
+  opacity: 1;
+}
+
+.fluent-textarea[disabled], .fluent-textarea:disabled {
+  background-color: var(--fluent-bg-disabled);
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.fluent-textarea.error {
+  border-color: var(--fluent-error);
+}
+
+.fluent-textarea.error:focus {
+  box-shadow: 0 0 0 2px var(--fluent-error-light);
+}
+
+/* خطای فرم */
+.fluent-form-error {
+  color: var(--fluent-error);
+  font-size: var(--fluent-font-size-xs);
+  margin-top: 4px;
+}
+
+/* ----------------------------------------------------------------
+   بخش 6: انیمیشن‌ها و افکت‌ها
+   ---------------------------------------------------------------- */
+
+@keyframes fluent-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fluent-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes fluent-scale-in {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes fluent-slide-down {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fluent-slide-up {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.fluent-animate-fade-in {
+  animation: fluent-fade-in 0.3s var(--fluent-ease-out) forwards;
+}
+
+.fluent-animate-fade-out {
+  animation: fluent-fade-out 0.3s var(--fluent-ease-out) forwards;
+}
+
+.fluent-animate-scale-in {
+  animation: fluent-scale-in 0.3s var(--fluent-ease-out) forwards;
+}
+
+.fluent-animate-slide-down {
+  animation: fluent-slide-down 0.3s var(--fluent-ease-out) forwards;
+}
+
+.fluent-animate-slide-up {
+  animation: fluent-slide-up 0.3s var(--fluent-ease-out) forwards;
+}
+
+/* ----------------------------------------------------------------
+   بخش 7: کامپوننت‌های داشبورد
+   ---------------------------------------------------------------- */
+
+/* قالب‌بندی داشبورد */
+.fluent-dashboard-page {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+/* کارت‌های خلاصه وضعیت */
+.fluent-dashboard-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.fluent-stat-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.fluent-stat-card-content {
+  display: flex;
+  padding: 20px;
+}
+
+.fluent-stat-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--fluent-radius);
+  margin-left: 16px;
+  flex-shrink: 0;
+}
+
+.fluent-stat-card-icon svg {
+  width: 24px;
+  height: 24px;
+  color: var(--fluent-primary);
+}
+
+.fluent-stat-card-info {
+  flex: 1;
+}
+
+.fluent-stat-card-title {
+  font-size: var(--fluent-font-size-sm);
+  color: var(--fluent-text-secondary);
+  margin: 0 0 4px 0;
+}
+
+.fluent-stat-card-value {
+  font-size: var(--fluent-font-size-xl);
+  font-weight: var(--fluent-font-weight-semibold);
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.fluent-stat-card-change {
+  font-size: var(--fluent-font-size-xs);
+  font-weight: var(--fluent-font-weight-normal);
+  padding: 2px 6px;
+  border-radius: var(--fluent-radius);
+  margin-right: 8px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.fluent-stat-card-change svg {
+  width: 12px;
+  height: 12px;
+  margin-left: 2px;
+}
+
+.fluent-stat-card-change-up {
+  color: var(--fluent-success);
+  background-color: var(--fluent-success-light);
+}
+
+.fluent-stat-card-change-down {
+  color: var(--fluent-error);
+  background-color: var(--fluent-error-light);
+}
+
+.fluent-stat-card-subtitle {
+  font-size: var(--fluent-font-size-xs);
+  color: var(--fluent-text-secondary);
+  margin: 4px 0 0 0;
+}
+
+/* کارت نمودار */
+.fluent-dashboard-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 24px;
+}
+
+.fluent-chart-card {
+  height: 100%;
+}
+
+/* تایم‌لاین */
+.fluent-timeline {
+  padding: 8px 0;
+}
+
+.fluent-timeline-item {
+  display: flex;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.fluent-timeline-item:last-child {
+  margin-bottom: 0;
+}
+
+.fluent-timeline-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--fluent-primary-lighter);
+  color: var(--fluent-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 16px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.fluent-timeline-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.fluent-timeline-content {
+  flex: 1;
+}
+
+.fluent-timeline-title {
+  font-weight: var(--fluent-font-weight-medium);
+  margin: 0 0 2px 0;
+}
+
+.fluent-timeline-text {
+  color: var(--fluent-text-secondary);
+  font-size: var(--fluent-font-size-sm);
+  margin: 0 0 4px 0;
+}
+
+.fluent-timeline-time {
+  color: var(--fluent-text-secondary);
+  font-size: var(--fluent-font-size-xs);
+  margin: 0;
+}
+
+.fluent-timeline-item::after {
+  content: '';
+  position: absolute;
+  top: 40px;
+  right: 16px;
+  bottom: -16px;
+  width: 1px;
+  background-color: var(--fluent-gray-30);
+}
+
+.fluent-timeline-item:last-child::after {
+  display: none;
+}
+
+/* کارت نمایش وضعیت */
+.fluent-status-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--fluent-gray-30);
+}
+
+.fluent-status-item:last-child {
+  border-bottom: none;
+}
+
+.fluent-status-item-label {
+  display: flex;
+  align-items: center;
+}
+
+.fluent-status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-left: 8px;
+}
+
+.fluent-status-indicator.success {
+  background-color: var(--fluent-success);
+}
+
+.fluent-status-indicator.warning {
+  background-color: var(--fluent-warning);
+}
+
+.fluent-status-indicator.error {
+  background-color: var(--fluent-error);
+}
+
+.fluent-status-indicator.info {
+  background-color: var(--fluent-info);
+}
+
+.fluent-status-item-value {
+  font-weight: var(--fluent-font-weight-medium);
+}
+
+/* پروگرس بار */
+.fluent-progress-container {
+  margin-top: 16px;
+}
+
+.fluent-progress-label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: var(--fluent-font-size-sm);
+}
+
+.fluent-progress {
+  height: 6px;
+  background-color: var(--fluent-gray-30);
+  border-radius: var(--fluent-radius-full);
+  overflow: hidden;
+}
+
+.fluent-progress-bar {
+  height: 100%;
+  background-color: var(--fluent-primary);
+  border-radius: var(--fluent-radius-full);
+}
+
+.fluent-progress-bar-success {
+  background-color: var(--fluent-success);
+}
+
+.fluent-progress-bar-warning {
+  background-color: var(--fluent-warning);
+}
+
+.fluent-progress-bar-error {
+  background-color: var(--fluent-error);
+}
+
+.fluent-progress-bar-info {
+  background-color: var(--fluent-info);
+}
+
+/* گرید داشبورد */
+.fluent-dashboard-tables {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 1200px) {
+  .fluent-dashboard-tables {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ----------------------------------------------------------------
+   بخش 8: ابزارهای کمکی
+   ---------------------------------------------------------------- */
+
+/* تراز متنی */
+.fluent-text-right {
+  text-align: right;
+}
+
+.fluent-text-left {
+  text-align: left;
+}
+
+.fluent-text-center {
+  text-align: center;
+}
+
+.fluent-text-justify {
+  text-align: justify;
+}
+
+/* حاشیه - margin */
+.fluent-m-0 { margin: 0; }
+.fluent-m-1 { margin: var(--fluent-space-1); }
+.fluent-m-2 { margin: var(--fluent-space-2); }
+.fluent-m-3 { margin: var(--fluent-space-3); }
+.fluent-m-4 { margin: var(--fluent-space-4); }
+.fluent-m-5 { margin: var(--fluent-space-5); }
+.fluent-m-6 { margin: var(--fluent-space-6); }
+.fluent-m-8 { margin: var(--fluent-space-8); }
+
+.fluent-mt-0 { margin-top: 0; }
+.fluent-mt-1 { margin-top: var(--fluent-space-1); }
+.fluent-mt-2 { margin-top: var(--fluent-space-2); }
+.fluent-mt-3 { margin-top: var(--fluent-space-3); }
+.fluent-mt-4 { margin-top: var(--fluent-space-4); }
+.fluent-mt-5 { margin-top: var(--fluent-space-5); }
+.fluent-mt-6 { margin-top: var(--fluent-space-6); }
+.fluent-mt-8 { margin-top: var(--fluent-space-8); }
+
+.fluent-mb-0 { margin-bottom: 0; }
+.fluent-mb-1 { margin-bottom: var(--fluent-space-1); }
+.fluent-mb-2 { margin-bottom: var(--fluent-space-2); }
+.fluent-mb-3 { margin-bottom: var(--fluent-space-3); }
+.fluent-mb-4 { margin-bottom: var(--fluent-space-4); }
+.fluent-mb-5 { margin-bottom: var(--fluent-space-5); }
+.fluent-mb-6 { margin-bottom: var(--fluent-space-6); }
+.fluent-mb-8 { margin-bottom: var(--fluent-space-8); }
+
+.fluent-mr-0 { margin-right: 0; }
+.fluent-mr-1 { margin-right: var(--fluent-space-1); }
+.fluent-mr-2 { margin-right: var(--fluent-space-2); }
+.fluent-mr-3 { margin-right: var(--fluent-space-3); }
+.fluent-mr-4 { margin-right: var(--fluent-space-4); }
+.fluent-mr-5 { margin-right: var(--fluent-space-5); }
+.fluent-mr-6 { margin-right: var(--fluent-space-6); }
+.fluent-mr-8 { margin-right: var(--fluent-space-8); }
+
+.fluent-ml-0 { margin-left: 0; }
+.fluent-ml-1 { margin-left: var(--fluent-space-1); }
+.fluent-ml-2 { margin-left: var(--fluent-space-2); }
+.fluent-ml-3 { margin-left: var(--fluent-space-3); }
+.fluent-ml-4 { margin-left: var(--fluent-space-4); }
+.fluent-ml-5 { margin-left: var(--fluent-space-5); }
+.fluent-ml-6 { margin-left: var(--fluent-space-6); }
+.fluent-ml-8 { margin-left: var(--fluent-space-8); }
+
+/* حاشیه داخلی - padding */
+.fluent-p-0 { padding: 0; }
+.fluent-p-1 { padding: var(--fluent-space-1); }
+.fluent-p-2 { padding: var(--fluent-space-2); }
+.fluent-p-3 { padding: var(--fluent-space-3); }
+.fluent-p-4 { padding: var(--fluent-space-4); }
+.fluent-p-5 { padding: var(--fluent-space-5); }
+.fluent-p-6 { padding: var(--fluent-space-6); }
+.fluent-p-8 { padding: var(--fluent-space-8); }
+
+.fluent-pt-0 { padding-top: 0; }
+.fluent-pt-1 { padding-top: var(--fluent-space-1); }
+.fluent-pt-2 { padding-top: var(--fluent-space-2); }
+.fluent-pt-3 { padding-top: var(--fluent-space-3); }
+.fluent-pt-4 { padding-top: var(--fluent-space-4); }
+.fluent-pt-5 { padding-top: var(--fluent-space-5); }
+.fluent-pt-6 { padding-top: var(--fluent-space-6); }
+.fluent-pt-8 { padding-top: var(--fluent-space-8); }
+
+.fluent-pb-0 { padding-bottom: 0; }
+.fluent-pb-1 { padding-bottom: var(--fluent-space-1); }
+.fluent-pb-2 { padding-bottom: var(--fluent-space-2); }
+.fluent-pb-3 { padding-bottom: var(--fluent-space-3); }
+.fluent-pb-4 { padding-bottom: var(--fluent-space-4); }
+.fluent-pb-5 { padding-bottom: var(--fluent-space-5); }
+.fluent-pb-6 { padding-bottom: var(--fluent-space-6); }
+.fluent-pb-8 { padding-bottom: var(--fluent-space-8); }
+
+.fluent-pr-0 { padding-right: 0; }
+.fluent-pr-1 { padding-right: var(--fluent-space-1); }
+.fluent-pr-2 { padding-right: var(--fluent-space-2); }
+.fluent-pr-3 { padding-right: var(--fluent-space-3); }
+.fluent-pr-4 { padding-right: var(--fluent-space-4); }
+.fluent-pr-5 { padding-right: var(--fluent-space-5); }
+.fluent-pr-6 { padding-right: var(--fluent-space-6); }
+.fluent-pr-8 { padding-right: var(--fluent-space-8); }
+
+.fluent-pl-0 { padding-left: 0; }
+.fluent-pl-1 { padding-left: var(--fluent-space-1); }
+.fluent-pl-2 { padding-left: var(--fluent-space-2); }
+.fluent-pl-3 { padding-left: var(--fluent-space-3); }
+.fluent-pl-4 { padding-left: var(--fluent-space-4); }
+.fluent-pl-5 { padding-left: var(--fluent-space-5); }
+.fluent-pl-6 { padding-left: var(--fluent-space-6); }
+.fluent-pl-8 { padding-left: var(--fluent-space-8); }
+
+/* فلکس ابزارها */
+.fluent-flex {
+  display: flex;
+}
+
+.fluent-flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.fluent-justify-start {
+  justify-content: flex-start;
+}
+
+.fluent-justify-end {
+  justify-content: flex-end;
+}
+
+.fluent-justify-center {
+  justify-content: center;
+}
+
+.fluent-justify-between {
+  justify-content: space-between;
+}
+
+.fluent-justify-around {
+  justify-content: space-around;
+}
+
+.fluent-items-start {
+  align-items: flex-start;
+}
+
+.fluent-items-end {
+  align-items: flex-end;
+}
+
+.fluent-items-center {
+  align-items: center;
+}
+
+.fluent-items-stretch {
+  align-items: stretch;
+}
+
+.fluent-gap-1 { gap: var(--fluent-space-1); }
+.fluent-gap-2 { gap: var(--fluent-space-2); }
+.fluent-gap-3 { gap: var(--fluent-space-3); }
+.fluent-gap-4 { gap: var(--fluent-space-4); }
+.fluent-gap-5 { gap: var(--fluent-space-5); }
+
+/* رنگ پس‌زمینه */
+.fluent-bg-primary-lighter {
+  background-color: var(--fluent-primary-lighter);
+}
+
+.fluent-bg-success-lighter {
+  background-color: var(--fluent-success-light);
+}
+
+.fluent-bg-warning-lighter {
+  background-color: var(--fluent-warning-light);
+}
+
+.fluent-bg-error-lighter {
+  background-color: var(--fluent-error-light);
+}
+
+.fluent-bg-info-lighter {
+  background-color: var(--fluent-info-light);
+}
+
+/* گرید سیستم */
+.fluent-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.fluent-grid-cols-1 { grid-template-columns: repeat(1, 1fr); }
+.fluent-grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+.fluent-grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+.fluent-grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+.fluent-grid-cols-5 { grid-template-columns: repeat(5, 1fr); }
+.fluent-grid-cols-6 { grid-template-columns: repeat(6, 1fr); }
+
+@media (min-width: 576px) {
+  .fluent-grid-cols-sm-1 { grid-template-columns: repeat(1, 1fr); }
+  .fluent-grid-cols-sm-2 { grid-template-columns: repeat(2, 1fr); }
+  .fluent-grid-cols-sm-3 { grid-template-columns: repeat(3, 1fr); }
+  .fluent-grid-cols-sm-4 { grid-template-columns: repeat(4, 1fr); }
+  .fluent-grid-cols-sm-5 { grid-template-columns: repeat(5, 1fr); }
+  .fluent-grid-cols-sm-6 { grid-template-columns: repeat(6, 1fr); }
+}
+
+@media (min-width: 768px) {
+  .fluent-grid-cols-md-1 { grid-template-columns: repeat(1, 1fr); }
+  .fluent-grid-cols-md-2 { grid-template-columns: repeat(2, 1fr); }
+  .fluent-grid-cols-md-3 { grid-template-columns: repeat(3, 1fr); }
+  .fluent-grid-cols-md-4 { grid-template-columns: repeat(4, 1fr); }
+  .fluent-grid-cols-md-5 { grid-template-columns: repeat(5, 1fr); }
+  .fluent-grid-cols-md-6 { grid-template-columns: repeat(6, 1fr); }
+}
+
+@media (min-width: 992px) {
+  .fluent-grid-cols-lg-1 { grid-template-columns: repeat(1, 1fr); }
+  .fluent-grid-cols-lg-2 { grid-template-columns: repeat(2, 1fr); }
+  .fluent-grid-cols-lg-3 { grid-template-columns: repeat(3, 1fr); }
+  .fluent-grid-cols-lg-4 { grid-template-columns: repeat(4, 1fr); }
+  .fluent-grid-cols-lg-5 { grid-template-columns: repeat(5, 1fr); }
+  .fluent-grid-cols-lg-6 { grid-template-columns: repeat(6, 1fr); }
+}
+
+/* ----------------------------------------------------------------
+   بخش 9: واکنش‌گرایی و Media Queries
+   ---------------------------------------------------------------- */
+
+@media (max-width: 576px) {
+  .fluent-content {
+    padding: 16px;
+  }
+  
+  .fluent-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .fluent-card-actions {
+    margin-top: 8px;
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .fluent-dashboard-summary {
+    grid-template-columns: 1fr;
+  }
+  
+  .fluent-dashboard-charts {
+    grid-template-columns: 1fr;
+  }
+  
+  .fluent-dialog {
+    width: calc(100% - 32px);
+    max-height: calc(100vh - 32px);
+  }
+}
+
+/* ----------------------------------------------------------------
+   بخش 10: رنگ‌های متنوع برای رابط کاربری
+   ---------------------------------------------------------------- */
+
+/* کلاس رنگ پس‌زمینه */
+.fluent-bg-gray-10 { background-color: var(--fluent-gray-10); }
+.fluent-bg-gray-20 { background-color: var(--fluent-gray-20); }
+.fluent-bg-gray-30 { background-color: var(--fluent-gray-30); }
+.fluent-bg-gray-40 { background-color: var(--fluent-gray-40); }
+.fluent-bg-gray-50 { background-color: var(--fluent-gray-50); }
+
+.fluent-bg-primary { background-color: var(--fluent-primary); }
+.fluent-bg-success { background-color: var(--fluent-success); }
+.fluent-bg-warning { background-color: var(--fluent-warning); }
+.fluent-bg-error { background-color: var(--fluent-error); }
+.fluent-bg-info { background-color: var(--fluent-info); }
+
+/* مخفی کردن عناصر */
+.fluent-hidden {
+  display: none !important;
+}
+
+@media (max-width: 576px) {
+  .fluent-hidden-xs {
+    display: none !important;
+  }
+}
+
+@media (min-width: 576px) and (max-width: 767px) {
+  .fluent-hidden-sm {
+    display: none !important;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  .fluent-hidden-md {
+    display: none !important;
+  }
+}
+
+@media (min-width: 992px) {
+  .fluent-hidden-lg {
+    display: none !important;
+  }
+}
+
+/* ----------------------------------------------------------------
+   بخش 11: افکت‌های تعاملی
+   ---------------------------------------------------------------- */
+
+/* افکت ripple */
+.fluent-btn.with-ripple {
   position: relative;
   overflow: hidden;
 }
 
-.fluent-ripple::after {
-  content: "";
-  display: block;
+.fluent-ripple {
   position: absolute;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-  background-image: radial-gradient(circle, #fff 10%, transparent 10.01%);
-  background-repeat: no-repeat;
-  background-position: 50%;
-  transform: scale(10, 10);
-  opacity: 0;
-  transition: transform 0.5s, opacity 1s;
-}
-
-.fluent-ripple:active::after {
-  transform: scale(0, 0);
-  opacity: 0.3;
-  transition: 0s;
-}
-
-/* اسکلتون (حالت لودینگ اجزاء) */
-.fluent-skeleton {
-  display: block;
-  width: 100%;
-  min-height: 1rem;
-  background: linear-gradient(90deg, 
-    var(--fluent-gray-30) 0%, 
-    var(--fluent-gray-20) 50%, 
-    var(--fluent-gray-30) 100%);
-  background-size: 200% 100%;
-  animation: fluent-skeleton-loading 1.5s ease-in-out infinite;
-  border-radius: var(--fluent-radius);
-}
-
-@keyframes fluent-skeleton-loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-.fluent-skeleton-text {
-  margin-bottom: 0.5rem;
-  height: 1rem;
-}
-
-.fluent-skeleton-circle {
   border-radius: 50%;
-  height: 48px;
-  width: 48px;
+  transform: scale(0);
+  animation: fluent-ripple-animation 0.6s linear;
+  background-color: rgba(255, 255, 255, 0.3);
 }
 
-.fluent-skeleton-rectangle {
-  width: 100%;
-  height: 120px;
-  border-radius: var(--fluent-radius);
-}
-
-/* اسکرول‌بار سفارشی */
-.fluent-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: var(--fluent-gray-70) transparent;
-}
-
-.fluent-scrollbar::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.fluent-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.fluent-scrollbar::-webkit-scrollbar-thumb {
-  background-color: var(--fluent-gray-70);
-  border-radius: 4px;
-  border: 2px solid transparent;
-}
-
-.fluent-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: var(--fluent-gray-90);
-}
-
-/* برای پشتیبانی از شیوه‌های دارک مود */
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* رنگ‌های متن */
-    --fluent-text-primary: #ffffff;
-    --fluent-text-secondary: #d2d0ce;
-    --fluent-text-disabled: #605e5c;
-    
-    /* رنگ‌های پس‌زمینه */
-    --fluent-bg-body: #201f1e;
-    --fluent-bg-surface: #323130;
-    --fluent-bg-canvas: #3b3a39;
-    --fluent-bg-subtle: #484644;
-    --fluent-bg-disabled: #3b3a39;
+@keyframes fluent-ripple-animation {
+  to {
+    transform: scale(2.5);
+    opacity: 0;
   }
+}
+
+/* ----------------------------------------------------------------
+   بخش 12: سازگاری با مرورگرهای قدیمی
+   ---------------------------------------------------------------- */
+
+@media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+  /* استایل‌های خاص IE */
+  .fluent-grid {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  
+  .fluent-grid > * {
+    flex: 0 0 calc(100% / var(--grid-columns));
+    max-width: calc(100% / var(--grid-columns));
+  }
+  
+  .fluent-grid[data-columns="1"] { --grid-columns: 1; }
+  .fluent-grid[data-columns="2"] { --grid-columns: 2; }
+  .fluent-grid[data-columns="3"] { --grid-columns: 3; }
+  .fluent-grid[data-columns="4"] { --grid-columns: 4; }
+  .fluent-grid[data-columns="5"] { --grid-columns: 5; }
+  .fluent-grid[data-columns="6"] { --grid-columns: 6; }
+}
+
+/* ----------------------------------------------------------------
+   بخش 13: کلاس‌های کمکی چاپ
+   ---------------------------------------------------------------- */
+
+@media print {
+  .fluent-print-hidden {
+    display: none !important;
+  }
+  
+  body {
+    background-color: white !important;
+    color: black !important;
+  }
+  
+  .fluent-card {
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+  }
+  
+  .fluent-sidebar,
+  .fluent-header,
+  .fluent-footer {
+    display: none !important;
+  }
+  
+  .fluent-main {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  .fluent-content {
+    padding: 0 !important;
+  }
+}
+
+/* ----------------------------------------------------------------
+   بخش 14: کامپوننت های جستجو
+   ---------------------------------------------------------------- */
+
+.fluent-search {
+  position: relative;
+}
+
+.fluent-search-icon {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  color: var(--fluent-text-secondary);
+  pointer-events: none;
+}
+
+.fluent-search input {
+  padding-right: 36px;
+  width: 100%;
+  padding-left: 12px;
+  height: 36px;
+  border-radius: var(--fluent-radius-full);
+  border: 1px solid var(--fluent-gray-60);
+  background-color: var(--fluent-bg-surface);
+  transition: all var(--fluent-duration-faster) var(--fluent-ease-out);
+}
+
+.fluent-search input:focus {
+  border-color: var(--fluent-primary);
+  box-shadow: 0 0 0 2px var(--fluent-primary-lighter);
+  outline: none;
+}
+
+.fluent-search input::placeholder {
+  color: var(--fluent-text-disabled);
 }

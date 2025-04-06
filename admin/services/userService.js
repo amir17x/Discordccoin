@@ -433,6 +433,32 @@ export async function getUsersStats() {
 }
 
 /**
+ * دریافت تعداد کاربران آنلاین
+ * @returns {Promise<number>} تعداد کاربران آنلاین
+ */
+export async function getOnlineUsersCount() {
+  try {
+    await connectToDatabase();
+    
+    // زمان آنلاین بودن (در 15 دقیقه گذشته)
+    const onlineThreshold = new Date();
+    onlineThreshold.setMinutes(onlineThreshold.getMinutes() - 15);
+    
+    // شمارش کاربران آنلاین
+    const onlineUsers = await db.collection('users').countDocuments({
+      lastActive: { $gte: onlineThreshold },
+      banned: { $ne: true },
+      inactive: { $ne: true }
+    });
+    
+    return onlineUsers;
+  } catch (error) {
+    console.error('❌ خطا در دریافت تعداد کاربران آنلاین:', error);
+    return 0;
+  }
+}
+
+/**
  * دریافت آمار فعالیت کاربر
  * @param {string} userId شناسه کاربر
  * @returns {Promise<Object>} آمار فعالیت کاربر

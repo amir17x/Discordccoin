@@ -161,3 +161,61 @@ export async function getDashboardStats(req, res) {
     res.status(500).json({ error: 'خطای سرور داخلی' });
   }
 }
+
+/**
+ * API آمار لحظه‌ای داشبورد
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ */
+export async function getRealtimeStats(req, res) {
+  try {
+    console.log('⏱️ API آمار لحظه‌ای داشبورد');
+    
+    // آمار آنلاین کاربران
+    let onlineUsers = 0;
+    try {
+      onlineUsers = await userService.getOnlineUsersCount();
+    } catch (error) {
+      console.error('خطا در دریافت تعداد کاربران آنلاین:', error);
+    }
+    
+    // تراکنش‌های امروز
+    let todayTransactions = {
+      count: 0,
+      volume: 0
+    };
+    try {
+      todayTransactions = await economyService.getTodayTransactionStats();
+    } catch (error) {
+      console.error('خطا در دریافت آمار تراکنش‌های امروز:', error);
+    }
+    
+    // وضعیت لحظه‌ای بازار
+    let marketStatus = {
+      status: 'neutral',
+      volatility: 'low'
+    };
+    try {
+      const stocksOverview = await economyService.getStockMarketOverview();
+      if (stocksOverview) {
+        marketStatus = {
+          status: stocksOverview.marketCondition || 'neutral',
+          volatility: stocksOverview.volatility || 'low'
+        };
+      }
+    } catch (error) {
+      console.error('خطا در دریافت وضعیت لحظه‌ای بازار:', error);
+    }
+    
+    // ارسال نتیجه
+    res.json({
+      timestamp: new Date(),
+      onlineUsers,
+      todayTransactions,
+      marketStatus
+    });
+  } catch (error) {
+    console.error('❌ خطا در API آمار لحظه‌ای داشبورد:', error);
+    res.status(500).json({ error: 'خطای سرور داخلی' });
+  }
+}

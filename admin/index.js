@@ -49,22 +49,6 @@ export function setupAdminPanel(app) {
   app.use(methodOverride('_method'));
   app.use(morgan('dev'));
   
-  // راه‌اندازی session
-  app.use(session({
-    secret: process.env.SESSION_SECRET || 'ccoin-admin-secret',
-    resave: false,
-    saveUninitialized: false,
-    store: MongoStore.create({
-      mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/ccoin',
-      ttl: 60 * 60 * 24 // 1 روز
-    }),
-    cookie: {
-      maxAge: 24 * 60 * 60 * 1000, // 1 روز
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production'
-    }
-  }));
-  
   // راه‌اندازی flash messages
   app.use(flash());
   
@@ -109,17 +93,29 @@ export function setupAdminPanel(app) {
     next();
   });
   
-  // middleware برای بررسی احراز هویت کاربر
+  // middleware برای بررسی احراز هویت کاربر و دسترسی به اطلاعات کاربر در قالب‌ها
   app.use('/admin', setUser);
   
   // مسیرهایی که نیاز به احراز هویت ندارند
-  const publicPaths = ['/admin/login', '/admin/logout'];
+  const publicPaths = ['/admin/login', '/admin/logout', '/admin/forgot-password', '/admin/reset-password'];
   
   // اعمال middleware احراز هویت برای مسیرهای خصوصی
   app.use('/admin', (req, res, next) => {
-    if (publicPaths.includes(req.path)) {
-      return next();
+    // بررسی مسیر اصلی یا مسیر با پارامتر
+    const fullUrl = req.originalUrl;
+    
+    // log برای کمک به اشکال‌زدایی
+    console.log(`🔍 بررسی مسیر ${fullUrl}`);
+    
+    // بررسی مسیرهای عمومی
+    for (const publicPath of publicPaths) {
+      if (fullUrl === publicPath || fullUrl.startsWith(publicPath + '/')) {
+        console.log(`✅ مسیر ${fullUrl} به احراز هویت نیاز ندارد (مطابقت با ${publicPath})`);
+        return next();
+      }
     }
+    
+    console.log(`🔒 مسیر ${fullUrl} به احراز هویت نیاز دارد`);
     isAuthenticated(req, res, next);
   });
   

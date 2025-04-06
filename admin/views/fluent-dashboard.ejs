@@ -1,0 +1,418 @@
+<!-- داشبورد با طراحی Fluent UI -->
+
+<div class="fluent-dashboard-page">
+    <!-- بخش خلاصه وضعیت -->
+    <div class="fluent-dashboard-summary">
+        <div class="fluent-card fluent-stat-card">
+            <div class="fluent-stat-card-content">
+                <div class="fluent-stat-card-icon fluent-bg-primary-lighter">
+                    <i data-feather="users"></i>
+                </div>
+                <div class="fluent-stat-card-info">
+                    <p class="fluent-stat-card-title">تعداد کاربران</p>
+                    <h3 class="fluent-stat-card-value">
+                        <%= stats.totalUsers || 0 %>
+                        <span class="fluent-stat-card-change fluent-stat-card-change-up">
+                            <i data-feather="arrow-up"></i> 
+                            5.2%
+                        </span>
+                    </h3>
+                    <p class="fluent-stat-card-subtitle">نسبت به ماه گذشته</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="fluent-card fluent-stat-card">
+            <div class="fluent-stat-card-content">
+                <div class="fluent-stat-card-icon fluent-bg-success-lighter">
+                    <i data-feather="activity"></i>
+                </div>
+                <div class="fluent-stat-card-info">
+                    <p class="fluent-stat-card-title">تراکنش‌های روزانه</p>
+                    <h3 class="fluent-stat-card-value">
+                        <%= stats.dailyTransactions || 0 %>
+                        <span class="fluent-stat-card-change fluent-stat-card-change-up">
+                            <i data-feather="arrow-up"></i> 
+                            12.8%
+                        </span>
+                    </h3>
+                    <p class="fluent-stat-card-subtitle">نسبت به روز قبل</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="fluent-card fluent-stat-card">
+            <div class="fluent-stat-card-content">
+                <div class="fluent-stat-card-icon fluent-bg-warning-lighter">
+                    <i data-feather="dollar-sign"></i>
+                </div>
+                <div class="fluent-stat-card-info">
+                    <p class="fluent-stat-card-title">مجموع سکه‌های در گردش</p>
+                    <h3 class="fluent-stat-card-value">
+                        <%= stats.totalCoinsCirculating || 0 %>
+                        <span class="fluent-stat-card-change fluent-stat-card-change-down">
+                            <i data-feather="arrow-down"></i> 
+                            2.5%
+                        </span>
+                    </h3>
+                    <p class="fluent-stat-card-subtitle">نسبت به هفته گذشته</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="fluent-card fluent-stat-card">
+            <div class="fluent-stat-card-content">
+                <div class="fluent-stat-card-icon fluent-bg-info-lighter">
+                    <i data-feather="calendar"></i>
+                </div>
+                <div class="fluent-stat-card-info">
+                    <p class="fluent-stat-card-title">رویدادهای فعال</p>
+                    <h3 class="fluent-stat-card-value">
+                        <%= stats.activeEvents || 0 %>
+                        <span class="fluent-stat-card-change fluent-stat-card-change-up">
+                            <i data-feather="arrow-up"></i> 
+                            1
+                        </span>
+                    </h3>
+                    <p class="fluent-stat-card-subtitle">نسبت به ماه گذشته</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- بخش نمودارها -->
+    <div class="fluent-dashboard-charts">
+        <div class="fluent-card fluent-chart-card">
+            <div class="fluent-card-header">
+                <h3 class="fluent-card-title">فعالیت کاربران</h3>
+                <div class="fluent-card-actions">
+                    <div class="fluent-select fluent-select-sm">
+                        <select id="userActivityPeriod">
+                            <option value="daily">روزانه</option>
+                            <option value="weekly" selected>هفتگی</option>
+                            <option value="monthly">ماهانه</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="fluent-card-body">
+                <canvas id="userActivityChart" height="250"></canvas>
+            </div>
+        </div>
+        
+        <div class="fluent-card fluent-chart-card">
+            <div class="fluent-card-header">
+                <h3 class="fluent-card-title">توزیع سکه‌ها</h3>
+                <div class="fluent-card-actions">
+                    <button class="fluent-btn fluent-btn-outline fluent-btn-sm">
+                        <i data-feather="download"></i>
+                        دانلود گزارش
+                    </button>
+                </div>
+            </div>
+            <div class="fluent-card-body">
+                <canvas id="coinDistributionChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- بخش جداول -->
+    <div class="fluent-dashboard-tables">
+        <div class="fluent-card">
+            <div class="fluent-card-header">
+                <h3 class="fluent-card-title">آخرین تراکنش‌ها</h3>
+                <div class="fluent-card-actions">
+                    <a href="/admin/economy/transactions" class="fluent-link">
+                        مشاهده همه
+                        <i data-feather="chevron-left"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="fluent-card-body">
+                <div class="fluent-table-container">
+                    <table class="fluent-table">
+                        <thead class="fluent-table-header">
+                            <tr>
+                                <th>شناسه</th>
+                                <th>کاربر</th>
+                                <th>نوع</th>
+                                <th>مقدار</th>
+                                <th>تاریخ</th>
+                                <th>وضعیت</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (recentTransactions && recentTransactions.length > 0) { %>
+                                <% recentTransactions.forEach(transaction => { %>
+                                    <tr class="fluent-table-row">
+                                        <td class="fluent-table-cell">
+                                            <div class="fluent-table-copy">
+                                                <button class="fluent-table-copy-button" title="کپی شناسه">
+                                                    <i data-feather="copy"></i>
+                                                </button>
+                                                <span class="fluent-table-copy-text"><%= transaction.id %></span>
+                                            </div>
+                                        </td>
+                                        <td class="fluent-table-cell">
+                                            <div class="fluent-table-user-cell">
+                                                <div class="fluent-table-user-avatar">
+                                                    <% if (transaction.user.avatar) { %>
+                                                        <img src="<%= transaction.user.avatar %>" alt="<%= transaction.user.username %>">
+                                                    <% } else { %>
+                                                        <%= transaction.user.username.charAt(0).toUpperCase() %>
+                                                    <% } %>
+                                                </div>
+                                                <div class="fluent-table-user-info">
+                                                    <div class="fluent-table-user-name"><%= transaction.user.username %></div>
+                                                    <div class="fluent-table-user-email"><%= transaction.user.discordId || 'Unknown' %></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="fluent-table-cell">
+                                            <%= transaction.type || 'انتقال' %>
+                                        </td>
+                                        <td class="fluent-table-cell">
+                                            <span class="<%= transaction.amount > 0 ? 'fluent-text-success' : 'fluent-text-error' %>">
+                                                <%= transaction.amount > 0 ? '+' : '' %><%= transaction.amount %> سکه
+                                            </span>
+                                        </td>
+                                        <td class="fluent-table-cell">
+                                            <%= new Date(transaction.createdAt).toLocaleString('fa-IR') %>
+                                        </td>
+                                        <td class="fluent-table-cell">
+                                            <div class="fluent-table-status">
+                                                <span class="fluent-table-status-indicator <%= transaction.status === 'completed' ? 'success' : (transaction.status === 'pending' ? 'warning' : 'error') %>"></span>
+                                                <%= transaction.status === 'completed' ? 'تکمیل شده' : (transaction.status === 'pending' ? 'در انتظار' : 'ناموفق') %>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } else { %>
+                                <tr class="fluent-table-row">
+                                    <td colspan="6" class="fluent-table-cell">
+                                        <div class="fluent-table-empty">
+                                            <div class="fluent-table-empty-icon">
+                                                <i data-feather="inbox"></i>
+                                            </div>
+                                            <p class="fluent-table-empty-message">هیچ تراکنشی یافت نشد.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="fluent-dashboard-side">
+            <!-- کارت وضعیت سیستم -->
+            <div class="fluent-card">
+                <div class="fluent-card-header">
+                    <h3 class="fluent-card-title">وضعیت سیستم</h3>
+                </div>
+                <div class="fluent-card-body">
+                    <div class="fluent-status-item">
+                        <div class="fluent-status-item-label">
+                            <span class="fluent-status-indicator success"></span>
+                            Discord Bot
+                        </div>
+                        <div class="fluent-status-item-value">آنلاین</div>
+                    </div>
+                    
+                    <div class="fluent-status-item">
+                        <div class="fluent-status-item-label">
+                            <span class="fluent-status-indicator success"></span>
+                            پایگاه داده
+                        </div>
+                        <div class="fluent-status-item-value">متصل</div>
+                    </div>
+                    
+                    <div class="fluent-status-item">
+                        <div class="fluent-status-item-label">
+                            <span class="fluent-status-indicator <%= stats.aiStatus === 'online' ? 'success' : 'error' %>"></span>
+                            هوش مصنوعی
+                        </div>
+                        <div class="fluent-status-item-value"><%= stats.aiStatus === 'online' ? 'آنلاین' : 'آفلاین' %></div>
+                    </div>
+                    
+                    <div class="fluent-status-item">
+                        <div class="fluent-status-item-label">
+                            <span class="fluent-status-indicator success"></span>
+                            وب سرویس
+                        </div>
+                        <div class="fluent-status-item-value">فعال</div>
+                    </div>
+                    
+                    <div class="fluent-progress-container">
+                        <div class="fluent-progress-label">
+                            <span>استفاده از منابع</span>
+                            <span>64%</span>
+                        </div>
+                        <div class="fluent-progress">
+                            <div class="fluent-progress-bar" style="width: 64%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- کارت فعالیت‌های اخیر -->
+            <div class="fluent-card">
+                <div class="fluent-card-header">
+                    <h3 class="fluent-card-title">فعالیت‌های اخیر</h3>
+                </div>
+                <div class="fluent-card-body">
+                    <div class="fluent-timeline">
+                        <div class="fluent-timeline-item">
+                            <div class="fluent-timeline-icon fluent-bg-info-lighter">
+                                <i data-feather="user-plus"></i>
+                            </div>
+                            <div class="fluent-timeline-content">
+                                <p class="fluent-timeline-title">کاربر جدید</p>
+                                <p class="fluent-timeline-text">کاربر AmirHasan به سرور پیوست</p>
+                                <p class="fluent-timeline-time">10 دقیقه پیش</p>
+                            </div>
+                        </div>
+                        
+                        <div class="fluent-timeline-item">
+                            <div class="fluent-timeline-icon fluent-bg-success-lighter">
+                                <i data-feather="dollar-sign"></i>
+                            </div>
+                            <div class="fluent-timeline-content">
+                                <p class="fluent-timeline-title">جایزه سیستم</p>
+                                <p class="fluent-timeline-text">به 5 کاربر فعال جایزه اهدا شد</p>
+                                <p class="fluent-timeline-time">30 دقیقه پیش</p>
+                            </div>
+                        </div>
+                        
+                        <div class="fluent-timeline-item">
+                            <div class="fluent-timeline-icon fluent-bg-warning-lighter">
+                                <i data-feather="alert-triangle"></i>
+                            </div>
+                            <div class="fluent-timeline-content">
+                                <p class="fluent-timeline-title">هشدار سیستم</p>
+                                <p class="fluent-timeline-text">استفاده از CPU بیش از 80% شد</p>
+                                <p class="fluent-timeline-time">1 ساعت پیش</p>
+                            </div>
+                        </div>
+                        
+                        <div class="fluent-timeline-item">
+                            <div class="fluent-timeline-icon fluent-bg-primary-lighter">
+                                <i data-feather="calendar"></i>
+                            </div>
+                            <div class="fluent-timeline-content">
+                                <p class="fluent-timeline-title">رویداد جدید</p>
+                                <p class="fluent-timeline-text">رویداد "قرعه‌کشی بهاری" شروع شد</p>
+                                <p class="fluent-timeline-time">3 ساعت پیش</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- اسکریپت‌های مخصوص داشبورد -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // نمودار فعالیت کاربران
+    const userActivityCtx = document.getElementById('userActivityChart').getContext('2d');
+    const userActivityChart = new Chart(userActivityCtx, {
+        type: 'line',
+        data: {
+            labels: ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه'],
+            datasets: [{
+                label: 'کاربران فعال',
+                data: [65, 59, 80, 81, 56, 55, 72],
+                borderColor: 'rgb(0, 120, 212)',
+                backgroundColor: 'rgba(0, 120, 212, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    rtl: true,
+                    bodyAlign: 'right',
+                    titleAlign: 'right'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grace: '5%'
+                }
+            }
+        }
+    });
+    
+    // نمودار توزیع سکه‌ها
+    const coinDistributionCtx = document.getElementById('coinDistributionChart').getContext('2d');
+    const coinDistributionChart = new Chart(coinDistributionCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['گردش آزاد', 'خزانه', 'بانک‌ها', 'قفل‌شده در قراردادها'],
+            datasets: [{
+                data: [42, 25, 18, 15],
+                backgroundColor: [
+                    'rgb(0, 120, 212)',
+                    'rgb(107, 41, 203)',
+                    'rgb(23, 169, 100)',
+                    'rgb(255, 185, 0)'
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    rtl: true,
+                    labels: {
+                        padding: 20
+                    }
+                }
+            },
+            cutout: '70%'
+        }
+    });
+    
+    // حالت انتخاب دوره زمانی
+    document.getElementById('userActivityPeriod').addEventListener('change', function(e) {
+        const period = e.target.value;
+        
+        // داده‌های متفاوت بر اساس دوره انتخاب شده
+        let labels, data;
+        
+        switch(period) {
+            case 'daily':
+                labels = ['صبح', 'ظهر', 'عصر', 'شب'];
+                data = [45, 72, 95, 78];
+                break;
+            case 'monthly':
+                labels = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
+                data = [45, 52, 49, 60, 55, 59, 62, 65, 59, 70, 75, 80];
+                break;
+            case 'weekly':
+            default:
+                labels = ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه'];
+                data = [65, 59, 80, 81, 56, 55, 72];
+                break;
+        }
+        
+        // بروزرسانی نمودار
+        userActivityChart.data.labels = labels;
+        userActivityChart.data.datasets[0].data = data;
+        userActivityChart.update();
+    });
+});
+</script>

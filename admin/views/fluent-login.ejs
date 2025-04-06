@@ -1,0 +1,39 @@
+<div class="fluent-login-card">
+    <div class="fluent-login-header">
+        <img src="/admin/public/images/ccoin-logo.png" alt="CCOIN Logo">
+        <h1 class="fluent-login-title">ورود به پنل مدیریت</h1>
+        <p class="fluent-login-subtitle">لطفاً برای ادامه وارد حساب خود شوید</p>
+    </div>
+    
+    <form action="/admin/login" method="POST">
+        <div class="fluent-form-group">
+            <label class="fluent-label" for="username">نام کاربری</label>
+            <input type="text" id="username" name="username" class="fluent-input" placeholder="نام کاربری خود را وارد کنید" required autofocus>
+        </div>
+        
+        <div class="fluent-form-group">
+            <label class="fluent-label" for="password">رمز عبور</label>
+            <input type="password" id="password" name="password" class="fluent-input" placeholder="رمز عبور خود را وارد کنید" required>
+        </div>
+        
+        <label class="fluent-checkbox">
+            <input type="checkbox" name="remember" id="remember">
+            <span class="fluent-checkbox-indicator"></span>
+            مرا به خاطر بسپار
+        </label>
+        
+        <button type="submit" class="fluent-button fluent-button-primary fluent-button-block">
+            <i class="fas fa-sign-in-alt ml-2"></i>
+            ورود به سیستم
+        </button>
+    </form>
+    
+    <div class="fluent-login-links">
+        <a href="/admin/forgot-password">رمز عبور خود را فراموش کرده‌اید؟</a>
+    </div>
+</div>
+
+<div class="fluent-login-footer">
+    <p>پنل مدیریت CCOIN &copy; <%= new Date().getFullYear() %></p>
+    <p>طراحی شده با <i class="fas fa-heart" style="color: #d13438;"></i> و Microsoft Fluent UI</p>
+</div>

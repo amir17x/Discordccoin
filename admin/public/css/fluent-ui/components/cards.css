@@ -3,360 +3,550 @@
  * بر اساس مستندات و طراحی فلوئنت UI مایکروسافت
  */
 
-/* استایل‌های پایه کارت */
+/* کارت پایه */
 .fluent-card {
-  display: flex;
-  flex-direction: column;
   background-color: var(--fluent-bg-surface);
-  border-radius: var(--fluent-radius-lg);
-  box-shadow: var(--fluent-shadow);
-  transition: box-shadow var(--fluent-duration-normal) var(--fluent-ease-out);
+  border-radius: var(--fluent-radius);
+  box-shadow: var(--fluent-shadow-sm);
+  margin-bottom: 24px;
   overflow: hidden;
   position: relative;
-  width: 100%;
+  transition: box-shadow var(--fluent-duration-faster) var(--fluent-ease-out),
+              transform var(--fluent-duration-faster) var(--fluent-ease-out);
 }
 
 .fluent-card:hover {
-  box-shadow: var(--fluent-shadow-md);
+  box-shadow: var(--fluent-shadow);
 }
 
-/* اجزای کارت */
+/* کارت با امکان کلیک */
+.fluent-card-clickable {
+  cursor: pointer;
+}
+
+.fluent-card-clickable:hover {
+  transform: translateY(-2px);
+}
+
+.fluent-card-clickable:active {
+  transform: translateY(0);
+}
+
+/* هدر کارت */
 .fluent-card-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--fluent-gray-30);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
-  border-bottom: 1px solid var(--fluent-gray-30);
 }
 
 .fluent-card-title {
-  margin: 0;
   font-size: var(--fluent-font-size-md);
   font-weight: var(--fluent-font-weight-semibold);
+  margin: 0;
   color: var(--fluent-text-primary);
 }
 
 .fluent-card-subtitle {
-  margin: 4px 0 0 0;
   font-size: var(--fluent-font-size-sm);
   color: var(--fluent-text-secondary);
+  margin: 4px 0 0 0;
 }
 
-.fluent-card-header-actions {
+.fluent-card-actions {
   display: flex;
+  align-items: center;
   gap: 8px;
 }
 
+/* محتوای کارت */
 .fluent-card-body {
   padding: 16px;
-  flex: 1 1 auto;
 }
 
+.fluent-card-body > :first-child {
+  margin-top: 0;
+}
+
+.fluent-card-body > :last-child {
+  margin-bottom: 0;
+}
+
+/* فوتر کارت */
 .fluent-card-footer {
+  padding: 16px;
+  border-top: 1px solid var(--fluent-gray-30);
+  background-color: var(--fluent-gray-10);
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
-  padding: 12px 16px;
-  border-top: 1px solid var(--fluent-gray-30);
-  background-color: var(--fluent-gray-10);
 }
 
-/* تصویر کارت */
+/* کارت بدون پدینگ */
+.fluent-card-no-padding {
+  padding: 0;
+}
+
+.fluent-card-no-padding .fluent-card-body {
+  padding: 0;
+}
+
+/* کارت با پدینگ کمتر */
+.fluent-card-compact .fluent-card-header {
+  padding: 12px;
+}
+
+.fluent-card-compact .fluent-card-body {
+  padding: 12px;
+}
+
+.fluent-card-compact .fluent-card-footer {
+  padding: 12px;
+}
+
+/* کارت با پدینگ بیشتر */
+.fluent-card-relaxed .fluent-card-header {
+  padding: 24px;
+}
+
+.fluent-card-relaxed .fluent-card-body {
+  padding: 24px;
+}
+
+.fluent-card-relaxed .fluent-card-footer {
+  padding: 24px;
+}
+
+/* کارت با تصویر */
 .fluent-card-image {
   position: relative;
-  width: 100%;
-  height: 0;
-  padding-bottom: 56.25%; /* نسبت 16:9 */
   overflow: hidden;
 }
 
-.fluent-card-image img,
-.fluent-card-image picture {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-}
-
-.fluent-card-image-top {
-  order: -1;
-}
-
-.fluent-card-image-bottom {
-  order: 999;
-}
-
-/* سایزهای کارت */
-.fluent-card-sm {
-  max-width: 300px;
-}
-
-.fluent-card-md {
-  max-width: 400px;
-}
-
-.fluent-card-lg {
-  max-width: 500px;
-}
-
-/* وریانت‌های کارت */
-.fluent-card-outlined {
-  box-shadow: none;
-  border: 1px solid var(--fluent-gray-30);
-}
-
-.fluent-card-outlined:hover {
-  box-shadow: var(--fluent-shadow-sm);
-}
-
-.fluent-card-filled {
-  background-color: var(--fluent-gray-10);
-}
-
-.fluent-card-filled:hover {
-  background-color: var(--fluent-bg-surface);
-}
-
-.fluent-card-elevated {
-  box-shadow: var(--fluent-shadow-md);
-}
-
-.fluent-card-elevated:hover {
-  box-shadow: var(--fluent-shadow-lg);
-}
-
-/* کارت قابل کلیک */
-.fluent-card-clickable {
-  cursor: pointer;
-  transition: transform var(--fluent-duration-normal) var(--fluent-ease-out),
-              box-shadow var(--fluent-duration-normal) var(--fluent-ease-out);
-}
-
-.fluent-card-clickable:hover {
-  transform: translateY(-4px);
-}
-
-.fluent-card-clickable:active {
-  transform: translateY(-2px);
-}
-
-/* کارت‌های تعاملی */
-.fluent-card-interactive {
-  position: relative;
-  overflow: hidden;
-}
-
-.fluent-card-interactive::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: transparent;
-  pointer-events: none;
-  transition: background-color var(--fluent-duration-faster) var(--fluent-ease-out);
-}
-
-.fluent-card-interactive:hover::after {
-  background-color: rgba(0, 0, 0, 0.05);
-}
-
-.fluent-card-interactive:active::after {
-  background-color: rgba(0, 0, 0, 0.1);
-}
-
-/* کارت با آیکون */
-.fluent-card-icon {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.fluent-card-icon-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--fluent-radius);
-  background-color: var(--fluent-primary-lighter);
-  color: var(--fluent-primary);
-  flex-shrink: 0;
-}
-
-.fluent-card-icon-container i,
-.fluent-card-icon-container svg {
-  font-size: 20px;
-  width: 20px;
-  height: 20px;
-}
-
-/* کارت آمار (Stat Card) */
-.fluent-stat-card {
-  padding: 16px;
-}
-
-.fluent-stat-value {
-  font-size: var(--fluent-font-size-xxl);
-  font-weight: var(--fluent-font-weight-semibold);
-  color: var(--fluent-text-primary);
-  margin: 8px 0 4px;
-}
-
-.fluent-stat-label {
-  font-size: var(--fluent-font-size-base);
-  color: var(--fluent-text-secondary);
-  margin: 0;
-}
-
-.fluent-stat-change {
-  display: flex;
-  align-items: center;
-  font-size: var(--fluent-font-size-sm);
-  margin-top: 8px;
-}
-
-.fluent-stat-change.increase {
-  color: var(--fluent-success);
-}
-
-.fluent-stat-change.decrease {
-  color: var(--fluent-error);
-}
-
-.fluent-stat-change i,
-.fluent-stat-change svg {
-  margin-left: 4px;
-}
-
-/* کارت با حاشیه رنگی */
-.fluent-card-border-top {
-  border-top: 3px solid var(--fluent-primary);
-}
-
-.fluent-card-border-primary {
-  border-top-color: var(--fluent-primary);
-}
-
-.fluent-card-border-success {
-  border-top-color: var(--fluent-success);
-}
-
-.fluent-card-border-warning {
-  border-top-color: var(--fluent-warning);
-}
-
-.fluent-card-border-error {
-  border-top-color: var(--fluent-error);
-}
-
-.fluent-card-border-info {
-  border-top-color: var(--fluent-info);
-}
-
-/* کارت‌های اطلاعات سریع (Info Cards) */
-.fluent-info-card {
-  padding: 0;
-}
-
-.fluent-info-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--fluent-gray-30);
-}
-
-.fluent-info-card-title {
-  margin: 0;
-  font-size: var(--fluent-font-size-base);
-  font-weight: var(--fluent-font-weight-semibold);
-}
-
-.fluent-info-card-body {
-  padding: 0;
-}
-
-.fluent-info-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.fluent-info-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--fluent-gray-20);
-}
-
-.fluent-info-item:last-child {
-  border-bottom: none;
-}
-
-.fluent-info-label {
-  color: var(--fluent-text-secondary);
-  font-size: var(--fluent-font-size-sm);
-}
-
-.fluent-info-value {
-  font-weight: var(--fluent-font-weight-medium);
-}
-
-/* کارت‌های رسانه‌ای */
-.fluent-media-card {
-  display: flex;
-  flex-direction: column;
-}
-
-.fluent-media-card.horizontal {
-  flex-direction: row;
-}
-
-.fluent-media-card.horizontal .fluent-card-media {
-  width: 120px;
-  height: 100%;
-}
-
-.fluent-media-card.horizontal .fluent-card-content {
-  flex: 1;
-}
-
-.fluent-card-media {
-  position: relative;
-  overflow: hidden;
-}
-
-.fluent-card-media img,
-.fluent-card-media video {
+.fluent-card-image img {
   width: 100%;
   height: auto;
   display: block;
 }
 
-.fluent-card-content {
+.fluent-card-image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0));
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
   padding: 16px;
+  color: white;
 }
 
-/* کارت‌ها با سایه */
-.fluent-card-shadow-none {
+.fluent-card-image-title {
+  font-size: var(--fluent-font-size-lg);
+  font-weight: var(--fluent-font-weight-semibold);
+  margin: 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.fluent-card-image-subtitle {
+  font-size: var(--fluent-font-size-sm);
+  margin: 4px 0 0 0;
+  opacity: 0.9;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* کارت افقی */
+.fluent-card-horizontal {
+  display: flex;
+}
+
+.fluent-card-horizontal .fluent-card-image {
+  flex: 0 0 40%;
+  max-width: 40%;
+}
+
+.fluent-card-horizontal .fluent-card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 576px) {
+  .fluent-card-horizontal {
+    flex-direction: column;
+  }
+  
+  .fluent-card-horizontal .fluent-card-image {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+}
+
+/* کارت مقاله */
+.fluent-card-article {
+  display: flex;
+  flex-direction: column;
+}
+
+.fluent-card-article .fluent-card-body {
+  flex: 1;
+}
+
+.fluent-card-article .fluent-card-image {
+  height: 200px;
+}
+
+.fluent-card-article .fluent-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fluent-card-article .fluent-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: var(--fluent-text-secondary);
+  font-size: var(--fluent-font-size-xs);
+  margin-top: 12px;
+}
+
+.fluent-card-article .fluent-card-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* کارت پروفایل */
+.fluent-card-profile {
+  text-align: center;
+  padding: 24px;
+}
+
+.fluent-card-profile-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  margin: 0 auto 16px;
+  overflow: hidden;
+  position: relative;
+}
+
+.fluent-card-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fluent-card-profile-name {
+  font-size: var(--fluent-font-size-lg);
+  font-weight: var(--fluent-font-weight-semibold);
+  margin: 0 0 4px 0;
+}
+
+.fluent-card-profile-title {
+  font-size: var(--fluent-font-size-sm);
+  color: var(--fluent-text-secondary);
+  margin: 0 0 16px 0;
+}
+
+.fluent-card-profile-bio {
+  color: var(--fluent-text-primary);
+  margin-bottom: 16px;
+}
+
+.fluent-card-profile-stats {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.fluent-card-profile-stat {
+  text-align: center;
+}
+
+.fluent-card-profile-stat-value {
+  font-size: var(--fluent-font-size-md);
+  font-weight: var(--fluent-font-weight-semibold);
+}
+
+.fluent-card-profile-stat-label {
+  font-size: var(--fluent-font-size-xs);
+  color: var(--fluent-text-secondary);
+}
+
+/* کارت آمار */
+.fluent-card-stat {
+  padding: 0;
+  overflow: hidden;
+}
+
+.fluent-card-stat-content {
+  display: flex;
+  padding: 20px;
+}
+
+.fluent-card-stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--fluent-radius);
+  margin-left: 16px;
+  flex-shrink: 0;
+}
+
+.fluent-card-stat-icon svg {
+  width: 24px;
+  height: 24px;
+  color: var(--fluent-primary);
+}
+
+.fluent-card-stat-info {
+  flex: 1;
+}
+
+.fluent-card-stat-title {
+  font-size: var(--fluent-font-size-sm);
+  color: var(--fluent-text-secondary);
+  margin: 0 0 4px 0;
+}
+
+.fluent-card-stat-value {
+  font-size: var(--fluent-font-size-xl);
+  font-weight: var(--fluent-font-weight-semibold);
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.fluent-card-stat-change {
+  font-size: var(--fluent-font-size-xs);
+  font-weight: var(--fluent-font-weight-normal);
+  padding: 2px 6px;
+  border-radius: var(--fluent-radius);
+  margin-right: 8px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.fluent-card-stat-change svg {
+  width: 12px;
+  height: 12px;
+  margin-left: 2px;
+}
+
+.fluent-card-stat-change-up {
+  color: var(--fluent-success);
+  background-color: var(--fluent-success-light);
+}
+
+.fluent-card-stat-change-down {
+  color: var(--fluent-error);
+  background-color: var(--fluent-error-light);
+}
+
+.fluent-card-stat-subtitle {
+  font-size: var(--fluent-font-size-xs);
+  color: var(--fluent-text-secondary);
+  margin: 4px 0 0 0;
+}
+
+.fluent-card-stat-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--fluent-gray-30);
+  font-size: var(--fluent-font-size-sm);
+}
+
+/* کارت با نمودار */
+.fluent-card-chart {
+  height: 100%;
+}
+
+.fluent-card-chart .fluent-card-body {
+  height: 250px;
+  position: relative;
+}
+
+.fluent-card-chart-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--fluent-gray-10);
+  color: var(--fluent-text-secondary);
+}
+
+.fluent-card-chart-placeholder-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+  opacity: 0.7;
+}
+
+.fluent-card-chart-placeholder-text {
+  font-size: var(--fluent-font-size-sm);
+}
+
+/* کارت با جدول */
+.fluent-card-table {
+  padding: 0;
+  overflow: hidden;
+}
+
+.fluent-card-table .fluent-table {
+  margin-bottom: 0;
+}
+
+/* مجموعه کارت ها در یک گرید */
+.fluent-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+/* کارت با وضعیت */
+.fluent-card-status {
+  position: relative;
+}
+
+.fluent-card-status::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 4px;
+}
+
+.fluent-card-status.success::before {
+  background-color: var(--fluent-success);
+}
+
+.fluent-card-status.warning::before {
+  background-color: var(--fluent-warning);
+}
+
+.fluent-card-status.error::before {
+  background-color: var(--fluent-error);
+}
+
+.fluent-card-status.info::before {
+  background-color: var(--fluent-info);
+}
+
+/* کارت با رنگ پس‌زمینه */
+.fluent-card-primary {
+  background-color: var(--fluent-primary);
+  color: white;
+}
+
+.fluent-card-primary .fluent-card-header {
+  border-bottom-color: rgba(255, 255, 255, 0.2);
+}
+
+.fluent-card-primary .fluent-card-footer {
+  border-top-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.fluent-card-primary .fluent-card-title,
+.fluent-card-primary .fluent-card-subtitle {
+  color: white;
+}
+
+.fluent-card-success {
+  background-color: var(--fluent-success);
+  color: white;
+}
+
+.fluent-card-success .fluent-card-header {
+  border-bottom-color: rgba(255, 255, 255, 0.2);
+}
+
+.fluent-card-success .fluent-card-footer {
+  border-top-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.fluent-card-success .fluent-card-title,
+.fluent-card-success .fluent-card-subtitle {
+  color: white;
+}
+
+.fluent-card-warning {
+  background-color: var(--fluent-warning);
+  color: var(--fluent-gray-140);
+}
+
+.fluent-card-warning .fluent-card-header {
+  border-bottom-color: rgba(0, 0, 0, 0.1);
+}
+
+.fluent-card-warning .fluent-card-footer {
+  border-top-color: rgba(0, 0, 0, 0.1);
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.fluent-card-error {
+  background-color: var(--fluent-error);
+  color: white;
+}
+
+.fluent-card-error .fluent-card-header {
+  border-bottom-color: rgba(255, 255, 255, 0.2);
+}
+
+.fluent-card-error .fluent-card-footer {
+  border-top-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.fluent-card-error .fluent-card-title,
+.fluent-card-error .fluent-card-subtitle {
+  color: white;
+}
+
+.fluent-card-info {
+  background-color: var(--fluent-info);
+  color: white;
+}
+
+.fluent-card-info .fluent-card-header {
+  border-bottom-color: rgba(255, 255, 255, 0.2);
+}
+
+.fluent-card-info .fluent-card-footer {
+  border-top-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.fluent-card-info .fluent-card-title,
+.fluent-card-info .fluent-card-subtitle {
+  color: white;
+}
+
+/* کارت با حاشیه */
+.fluent-card-bordered {
   box-shadow: none;
+  border: 1px solid var(--fluent-gray-30);
 }
 
-.fluent-card-shadow-sm {
+.fluent-card-bordered:hover {
   box-shadow: var(--fluent-shadow-sm);
 }
 
-.fluent-card-shadow {
-  box-shadow: var(--fluent-shadow);
-}
-
+/* کارت با سایه بیشتر */
 .fluent-card-shadow-md {
   box-shadow: var(--fluent-shadow-md);
 }
@@ -365,88 +555,12 @@
   box-shadow: var(--fluent-shadow-lg);
 }
 
-/* کارت‌های با پوشش تصویر */
-.fluent-card-image-overlay {
-  position: relative;
-  color: white;
-  min-height: 200px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
+/* کارت تایم‌لاین */
+.fluent-card-timeline .fluent-timeline {
+  padding: 8px 0;
 }
 
-.fluent-card-image-overlay::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.8) 100%);
-  z-index: 1;
-}
-
-.fluent-card-image-overlay .fluent-card-title,
-.fluent-card-image-overlay .fluent-card-subtitle,
-.fluent-card-image-overlay .fluent-card-body {
-  position: relative;
-  z-index: 2;
-  color: white;
-}
-
-.fluent-card-image-overlay .fluent-card-body {
-  padding-top: 0;
-}
-
-.fluent-card-image-bg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  object-fit: cover;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-}
-
-/* کارت‌های تقسیم‌شده (Split Cards) */
-.fluent-card-split {
-  display: flex;
-  flex-direction: row;
-}
-
-.fluent-card-split-side {
-  width: 30%;
-  background-color: var(--fluent-primary-lighter);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-}
-
-.fluent-card-split-main {
-  flex: 1;
-}
-
-/* وضعیت غیرفعال */
-.fluent-card-disabled {
-  opacity: 0.6;
-  pointer-events: none;
-}
-
-/* انیمیشن برای کارت‌ها */
-.fluent-card-animate {
-  animation: fluent-card-fade-in 0.3s ease-out;
-}
-
-@keyframes fluent-card-fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.fluent-card-accordion .fluent-accordion {
+  border: none;
+  box-shadow: none;
 }

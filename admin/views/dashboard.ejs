@@ -1,281 +1,366 @@
-<div class="dashboard">
-  <div class="page-header">
-    <h1>داشبورد</h1>
-    <p>خوش آمدید <strong><%= user.displayName %></strong>! آخرین آمار و وضعیت سیستم را مشاهده کنید.</p>
+<div class="fluent-content-container">
+  <div class="fluent-mb-4">
+    <h2 class="fluent-m-0 fluent-mb-1">داشبورد</h2>
+    <p class="fluent-text-secondary fluent-m-0">خوش آمدید <strong><%= user.displayName %></strong>! آخرین آمار و وضعیت سیستم را مشاهده کنید.</p>
   </div>
   
   <!-- کارت‌های آمار -->
-  <div class="stats-cards">
-    <div class="stat-card">
-      <div class="stat-icon bg-primary">
-        <i class="fas fa-users"></i>
+  <div class="fluent-grid fluent-grid-cols-4 fluent-grid-cols-sm-2 fluent-mb-5">
+    <div class="fluent-stat-card fluent-card fluent-shadow-sm">
+      <h4 class="fluent-stat-card-title">کاربران</h4>
+      <div class="fluent-stat-card-value"><%= userStats.totalUsers.toLocaleString() %></div>
+      <div class="fluent-stat-card-change fluent-stat-card-change-up">
+        <span class="fluent-stat-card-change-icon"><i class="fas fa-arrow-up"></i></span>
+        <%= userStats.newUsersToday %> امروز
       </div>
-      <div class="stat-content">
-        <h3><%= userStats.totalUsers.toLocaleString() %></h3>
-        <p>کاربران</p>
-      </div>
-      <div class="stat-footer">
-        <span class="stat-change increase">
-          <i class="fas fa-arrow-up"></i>
-          <%= userStats.newUsersToday %> امروز
-        </span>
-      </div>
+      <i class="fas fa-users fluent-opacity-25 fluent-text-primary" style="position: absolute; top: 10px; left: 10px; font-size: 24px;"></i>
     </div>
     
-    <div class="stat-card">
-      <div class="stat-icon bg-success">
-        <i class="fas fa-terminal"></i>
+    <div class="fluent-stat-card fluent-card fluent-shadow-sm">
+      <h4 class="fluent-stat-card-title">دستورات اجرا شده</h4>
+      <div class="fluent-stat-card-value"><%= systemStats.commands.toLocaleString() %></div>
+      <div class="fluent-stat-card-change fluent-stat-card-change-up">
+        <span class="fluent-stat-card-change-icon"><i class="fas fa-arrow-up"></i></span>
+        <%= systemStats.today.commandsUsed %> امروز
       </div>
-      <div class="stat-content">
-        <h3><%= systemStats.commands.toLocaleString() %></h3>
-        <p>دستورات اجرا شده</p>
-      </div>
-      <div class="stat-footer">
-        <span class="stat-change increase">
-          <i class="fas fa-arrow-up"></i>
-          <%= systemStats.today.commandsUsed %> امروز
-        </span>
-      </div>
+      <i class="fas fa-terminal fluent-opacity-25 fluent-text-success" style="position: absolute; top: 10px; left: 10px; font-size: 24px;"></i>
     </div>
     
-    <div class="stat-card">
-      <div class="stat-icon bg-info">
-        <i class="fas fa-robot"></i>
+    <div class="fluent-stat-card fluent-card fluent-shadow-sm">
+      <h4 class="fluent-stat-card-title">درخواست‌های هوش مصنوعی</h4>
+      <div class="fluent-stat-card-value"><%= systemStats.aiRequests.toLocaleString() %></div>
+      <div class="fluent-stat-card-change fluent-stat-card-change-up">
+        <span class="fluent-stat-card-change-icon"><i class="fas fa-arrow-up"></i></span>
+        <%= systemStats.today.aiRequests %> امروز
       </div>
-      <div class="stat-content">
-        <h3><%= systemStats.aiRequests.toLocaleString() %></h3>
-        <p>درخواست‌های هوش مصنوعی</p>
-      </div>
-      <div class="stat-footer">
-        <span class="stat-change increase">
-          <i class="fas fa-arrow-up"></i>
-          <%= systemStats.today.aiRequests %> امروز
-        </span>
-      </div>
+      <i class="fas fa-robot fluent-opacity-25 fluent-text-primary" style="position: absolute; top: 10px; left: 10px; font-size: 24px;"></i>
     </div>
     
-    <div class="stat-card">
-      <div class="stat-icon bg-warning">
-        <i class="fas fa-gamepad"></i>
+    <div class="fluent-stat-card fluent-card fluent-shadow-sm">
+      <h4 class="fluent-stat-card-title">بازی‌های انجام شده</h4>
+      <div class="fluent-stat-card-value"><%= systemStats.gamesPlayed.toLocaleString() %></div>
+      <div class="fluent-stat-card-change fluent-stat-card-change-up">
+        <span class="fluent-stat-card-change-icon"><i class="fas fa-arrow-up"></i></span>
+        <%= systemStats.today.gamesPlayed %> امروز
       </div>
-      <div class="stat-content">
-        <h3><%= systemStats.gamesPlayed.toLocaleString() %></h3>
-        <p>بازی‌های انجام شده</p>
-      </div>
-      <div class="stat-footer">
-        <span class="stat-change increase">
-          <i class="fas fa-arrow-up"></i>
-          <%= systemStats.today.gamesPlayed %> امروز
-        </span>
-      </div>
+      <i class="fas fa-gamepad fluent-opacity-25 fluent-text-warning" style="position: absolute; top: 10px; left: 10px; font-size: 24px;"></i>
     </div>
   </div>
   
   <!-- نمودارها -->
-  <div class="dashboard-charts">
-    <div class="chart-card">
-      <div class="chart-header">
-        <h3>فعالیت هفته اخیر</h3>
-        <div class="chart-actions">
-          <button class="btn btn-sm" onclick="toggleChartData('activityChart', 'commands')">دستورات</button>
-          <button class="btn btn-sm" onclick="toggleChartData('activityChart', 'ai')">هوش مصنوعی</button>
-          <button class="btn btn-sm" onclick="toggleChartData('activityChart', 'games')">بازی‌ها</button>
+  <div class="fluent-grid fluent-grid-cols-2 fluent-grid-cols-sm-1 fluent-mb-5">
+    <div class="fluent-card fluent-p-0">
+      <div class="fluent-card-header">
+        <div class="fluent-card-header-start">
+          <div class="fluent-card-icon">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <h3 class="fluent-card-title">فعالیت هفته اخیر</h3>
+        </div>
+        <div class="fluent-card-actions">
+          <div class="fluent-btn-group">
+            <button class="fluent-btn fluent-btn-sm fluent-btn-toggle active" onclick="toggleChartData('activityChart', 'commands')">دستورات</button>
+            <button class="fluent-btn fluent-btn-sm fluent-btn-toggle" onclick="toggleChartData('activityChart', 'ai')">هوش مصنوعی</button>
+            <button class="fluent-btn fluent-btn-sm fluent-btn-toggle" onclick="toggleChartData('activityChart', 'games')">بازی‌ها</button>
+          </div>
         </div>
       </div>
-      <div class="chart-body">
+      <div class="fluent-card-body">
         <canvas id="activityChart"></canvas>
       </div>
     </div>
     
-    <div class="chart-card">
-      <div class="chart-header">
-        <h3>کاربران جدید</h3>
+    <div class="fluent-card fluent-p-0">
+      <div class="fluent-card-header">
+        <div class="fluent-card-header-start">
+          <div class="fluent-card-icon">
+            <i class="fas fa-user-plus"></i>
+          </div>
+          <h3 class="fluent-card-title">کاربران جدید</h3>
+        </div>
       </div>
-      <div class="chart-body">
+      <div class="fluent-card-body">
         <canvas id="newUsersChart"></canvas>
       </div>
     </div>
   </div>
   
   <!-- کارت‌های اطلاعات -->
-  <div class="info-cards">
-    <div class="info-card">
-      <div class="info-card-header">
-        <h3>اطلاعات سیستم</h3>
-        <a href="/admin/stats" class="btn btn-sm">
-          <i class="fas fa-arrow-right"></i>
-          نمایش بیشتر
-        </a>
+  <div class="fluent-grid fluent-grid-cols-2 fluent-grid-cols-sm-1 fluent-mb-5">
+    <div class="fluent-card fluent-p-0">
+      <div class="fluent-card-header">
+        <div class="fluent-card-header-start">
+          <div class="fluent-card-icon">
+            <i class="fas fa-server"></i>
+          </div>
+          <h3 class="fluent-card-title">اطلاعات سیستم</h3>
+        </div>
+        <div class="fluent-card-actions">
+          <a href="/admin/stats" class="fluent-btn fluent-btn-sm fluent-btn-outline">
+            نمایش بیشتر
+            <i class="fas fa-arrow-left fluent-mr-1"></i>
+          </a>
+        </div>
       </div>
-      <div class="info-card-body">
-        <div class="info-item">
-          <span class="info-label">آنلاین از:</span>
-          <span class="info-value">
-            <%= new Date(Date.now() - systemStats.uptime * 1000).toLocaleString('fa-IR') %>
-            (<%= Math.floor(systemStats.uptime / 86400) %> روز)
-          </span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">تراکنش‌ها:</span>
-          <span class="info-value"><%= systemStats.transactions.toLocaleString() %></span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">سرقت‌های موفق:</span>
-          <span class="info-value">
-            <%= systemStats.robberies.successful.toLocaleString() %>
-            (<%= systemStats.robberies.successRate %>%)
-          </span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">وام‌های فعال:</span>
-          <span class="info-value">
-            <%= systemStats.loans.outstandingCount.toLocaleString() %>
-          </span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">آخرین پشتیبان‌گیری:</span>
-          <span class="info-value">
-            <%= systemStats.lastBackup.toLocaleString('fa-IR') %>
-          </span>
+      <div class="fluent-card-body">
+        <div class="fluent-form-grid fluent-form-col-2">
+          <div class="fluent-mb-2">
+            <div class="fluent-text-sm fluent-text-secondary">آنلاین از:</div>
+            <div>
+              <%= new Date(Date.now() - systemStats.uptime * 1000).toLocaleString('fa-IR') %>
+              (<%= Math.floor(systemStats.uptime / 86400) %> روز)
+            </div>
+          </div>
+          <div class="fluent-mb-2">
+            <div class="fluent-text-sm fluent-text-secondary">تراکنش‌ها:</div>
+            <div><%= systemStats.transactions.toLocaleString() %></div>
+          </div>
+          <div class="fluent-mb-2">
+            <div class="fluent-text-sm fluent-text-secondary">سرقت‌های موفق:</div>
+            <div>
+              <%= systemStats.robberies.successful.toLocaleString() %>
+              (<%= systemStats.robberies.successRate %>%)
+            </div>
+          </div>
+          <div class="fluent-mb-2">
+            <div class="fluent-text-sm fluent-text-secondary">وام‌های فعال:</div>
+            <div>
+              <%= systemStats.loans.outstandingCount.toLocaleString() %>
+            </div>
+          </div>
+          <div class="fluent-mb-2">
+            <div class="fluent-text-sm fluent-text-secondary">آخرین پشتیبان‌گیری:</div>
+            <div>
+              <%= systemStats.lastBackup.toLocaleString('fa-IR') %>
+            </div>
+          </div>
         </div>
       </div>
     </div>
     
-    <div class="info-card">
-      <div class="info-card-header">
-        <h3>کاربران برتر</h3>
-        <a href="/admin/users" class="btn btn-sm">
-          <i class="fas fa-arrow-right"></i>
-          نمایش همه
-        </a>
+    <div class="fluent-card fluent-p-0">
+      <div class="fluent-card-header">
+        <div class="fluent-card-header-start">
+          <div class="fluent-card-icon">
+            <i class="fas fa-crown"></i>
+          </div>
+          <h3 class="fluent-card-title">کاربران برتر</h3>
+        </div>
+        <div class="fluent-card-actions">
+          <a href="/admin/users" class="fluent-btn fluent-btn-sm fluent-btn-outline">
+            نمایش همه
+            <i class="fas fa-arrow-left fluent-mr-1"></i>
+          </a>
+        </div>
       </div>
-      <div class="info-card-body">
-        <ul class="top-users-list">
-          <% for (let i = 0; i < userStats.topUsers.length; i++) { %>
-            <li class="top-user-item">
-              <span class="top-user-rank"><%= i + 1 %></span>
-              <span class="top-user-name"><%= userStats.topUsers[i].username %></span>
-              <span class="top-user-value"><%= userStats.topUsers[i].totalWealth.toLocaleString() %> 💰</span>
-            </li>
-          <% } %>
-        </ul>
+      <div class="fluent-card-body fluent-p-0">
+        <div class="fluent-table-container">
+          <table class="fluent-table fluent-table-compact">
+            <thead>
+              <tr>
+                <th class="fluent-table-col-min">#</th>
+                <th>نام کاربر</th>
+                <th class="fluent-text-left">ثروت</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% for (let i = 0; i < userStats.topUsers.length; i++) { %>
+                <tr>
+                  <td><%= i + 1 %></td>
+                  <td><%= userStats.topUsers[i].username %></td>
+                  <td class="fluent-text-left"><%= userStats.topUsers[i].totalWealth.toLocaleString() %> 💰</td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
   
   <!-- هشدارها و رویدادها -->
-  <div class="notifications-and-events">
-    <div class="card">
-      <div class="card-header">
-        <h3>هشدارهای سیستم</h3>
-        <a href="/admin/logs" class="btn btn-sm">
-          <i class="fas fa-arrow-right"></i>
-          نمایش همه
-        </a>
+  <div class="fluent-grid fluent-grid-cols-2 fluent-grid-cols-sm-1 fluent-mb-5">
+    <div class="fluent-card fluent-p-0">
+      <div class="fluent-card-header">
+        <div class="fluent-card-header-start">
+          <div class="fluent-card-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+          </div>
+          <h3 class="fluent-card-title">هشدارهای سیستم</h3>
+        </div>
+        <div class="fluent-card-actions">
+          <a href="/admin/logs" class="fluent-btn fluent-btn-sm fluent-btn-outline">
+            نمایش همه
+            <i class="fas fa-arrow-left fluent-mr-1"></i>
+          </a>
+        </div>
       </div>
-      <div class="card-body">
-        <ul class="alerts-list">
-          <% alerts.forEach(alert => { %>
-            <li class="alert-item alert-<%= alert.type %>">
-              <div class="alert-icon">
-                <% if (alert.type === 'error') { %>
-                  <i class="fas fa-exclamation-circle"></i>
-                <% } else if (alert.type === 'warning') { %>
-                  <i class="fas fa-exclamation-triangle"></i>
-                <% } else { %>
-                  <i class="fas fa-info-circle"></i>
-                <% } %>
-              </div>
-              <div class="alert-content">
-                <p><%= alert.message %></p>
-                <small><%= new Date(alert.time).toLocaleString('fa-IR') %></small>
-              </div>
-            </li>
-          <% }) %>
-        </ul>
+      <div class="fluent-card-body fluent-p-0">
+        <div class="fluent-scrollbar" style="max-height: 300px; overflow-y: auto;">
+          <% if (alerts.length === 0) { %>
+            <div class="fluent-text-center fluent-p-4 fluent-text-secondary">
+              <i class="fas fa-check-circle fluent-mb-2" style="font-size: 24px;"></i>
+              <div>هیچ هشداری وجود ندارد!</div>
+            </div>
+          <% } else { %>
+            <div class="fluent-p-2">
+              <% alerts.forEach(alert => { %>
+                <div class="fluent-card fluent-p-3 fluent-mb-2 fluent-border-r
+                  <%= alert.type === 'error' ? 'fluent-card-border-error' : 
+                    alert.type === 'warning' ? 'fluent-card-border-warning' : 
+                    'fluent-card-border-info' %>">
+                  <div class="fluent-flex fluent-align-center fluent-mb-2">
+                    <i class="fas 
+                      <%= alert.type === 'error' ? 'fa-exclamation-circle fluent-text-error' : 
+                        alert.type === 'warning' ? 'fa-exclamation-triangle fluent-text-warning' : 
+                        'fa-info-circle fluent-text-primary' %>
+                      fluent-mr-2"></i>
+                    <div><%= alert.message %></div>
+                  </div>
+                  <div class="fluent-text-xs fluent-text-secondary">
+                    <%= new Date(alert.time).toLocaleString('fa-IR') %>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+          <% } %>
+        </div>
       </div>
     </div>
     
-    <div class="card">
-      <div class="card-header">
-        <h3>فعالیت‌های اخیر</h3>
-        <a href="/admin/logs" class="btn btn-sm">
-          <i class="fas fa-arrow-right"></i>
-          نمایش همه
-        </a>
+    <div class="fluent-card fluent-p-0">
+      <div class="fluent-card-header">
+        <div class="fluent-card-header-start">
+          <div class="fluent-card-icon">
+            <i class="fas fa-history"></i>
+          </div>
+          <h3 class="fluent-card-title">فعالیت‌های اخیر</h3>
+        </div>
+        <div class="fluent-card-actions">
+          <a href="/admin/logs" class="fluent-btn fluent-btn-sm fluent-btn-outline">
+            نمایش همه
+            <i class="fas fa-arrow-left fluent-mr-1"></i>
+          </a>
+        </div>
       </div>
-      <div class="card-body">
-        <ul class="activities-list">
-          <% recentActivities.forEach(activity => { %>
-            <li class="activity-item">
-              <div class="activity-icon bg-<%= activity.type === 'user' ? 'primary' : activity.type === 'transaction' ? 'success' : activity.type === 'game' ? 'warning' : activity.type === 'system' ? 'info' : 'secondary' %>">
-                <% if (activity.type === 'user') { %>
-                  <i class="fas fa-user"></i>
-                <% } else if (activity.type === 'transaction') { %>
-                  <i class="fas fa-money-bill-wave"></i>
-                <% } else if (activity.type === 'game') { %>
-                  <i class="fas fa-gamepad"></i>
-                <% } else if (activity.type === 'system') { %>
-                  <i class="fas fa-cog"></i>
-                <% } else { %>
-                  <i class="fas fa-shield-alt"></i>
-                <% } %>
-              </div>
-              <div class="activity-content">
-                <p><strong><%= activity.username %></strong> - <%= activity.action %></p>
-                <p><%= activity.details %></p>
-                <small><%= new Date(activity.time).toLocaleString('fa-IR') %></small>
-              </div>
-            </li>
-          <% }) %>
-        </ul>
+      <div class="fluent-card-body fluent-p-0">
+        <div class="fluent-scrollbar" style="max-height: 300px; overflow-y: auto;">
+          <% if (recentActivities.length === 0) { %>
+            <div class="fluent-text-center fluent-p-4 fluent-text-secondary">
+              <i class="fas fa-history fluent-mb-2" style="font-size: 24px;"></i>
+              <div>هیچ فعالیتی ثبت نشده است!</div>
+            </div>
+          <% } else { %>
+            <div class="fluent-p-2">
+              <% recentActivities.forEach(activity => { %>
+                <div class="fluent-card fluent-p-3 fluent-mb-2">
+                  <div class="fluent-flex fluent-align-center fluent-mb-2">
+                    <div style="width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-left: 12px;" 
+                      class="<%= activity.type === 'user' ? 'fluent-bg-primary' : 
+                        activity.type === 'transaction' ? 'fluent-bg-success' : 
+                        activity.type === 'game' ? 'fluent-bg-warning' : 
+                        activity.type === 'system' ? 'fluent-bg-primary' : 'fluent-bg-subtle' %>">
+                      <i class="fas 
+                        <%= activity.type === 'user' ? 'fa-user' : 
+                          activity.type === 'transaction' ? 'fa-money-bill-wave' :
+                          activity.type === 'game' ? 'fa-gamepad' :
+                          activity.type === 'system' ? 'fa-cog' : 'fa-shield-alt' %>
+                        fluent-text-white"></i>
+                    </div>
+                    <div>
+                      <div class="fluent-font-semibold"><%= activity.username %> - <%= activity.action %></div>
+                      <div class="fluent-text-sm"><%= activity.details %></div>
+                    </div>
+                  </div>
+                  <div class="fluent-text-xs fluent-text-secondary">
+                    <%= new Date(activity.time).toLocaleString('fa-IR') %>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+          <% } %>
+        </div>
       </div>
     </div>
   </div>
   
   <!-- وظایف برنامه‌ریزی شده -->
-  <div class="card">
-    <div class="card-header">
-      <h3>وظایف برنامه‌ریزی شده</h3>
+  <div class="fluent-card fluent-p-0 fluent-mb-5">
+    <div class="fluent-card-header">
+      <div class="fluent-card-header-start">
+        <div class="fluent-card-icon">
+          <i class="fas fa-tasks"></i>
+        </div>
+        <h3 class="fluent-card-title">وظایف برنامه‌ریزی شده</h3>
+      </div>
     </div>
-    <div class="card-body">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>نام وظیفه</th>
-            <th>زمان اجرای بعدی</th>
-            <th>وضعیت</th>
-            <th>عملیات</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% scheduledTasks.forEach(task => { %>
+    <div class="fluent-card-body fluent-p-0">
+      <div class="fluent-table-container">
+        <table class="fluent-table">
+          <thead>
             <tr>
-              <td><%= task.name %></td>
-              <td><%= new Date(task.nextRun).toLocaleString('fa-IR') %></td>
-              <td>
-                <span class="badge badge-<%= task.status === 'active' ? 'success' : 'danger' %>">
-                  <%= task.status === 'active' ? 'فعال' : 'غیرفعال' %>
-                </span>
-              </td>
-              <td>
-                <button class="btn btn-sm" title="اجرای دستی">
-                  <i class="fas fa-play"></i>
-                </button>
-                <button class="btn btn-sm" title="<%= task.status === 'active' ? 'غیرفعال کردن' : 'فعال کردن' %>">
-                  <i class="fas fa-<%= task.status === 'active' ? 'pause' : 'play' %>"></i>
-                </button>
-              </td>
+              <th>نام وظیفه</th>
+              <th>زمان اجرای بعدی</th>
+              <th>وضعیت</th>
+              <th class="fluent-table-col-action">عملیات</th>
             </tr>
-          <% }) %>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            <% if (scheduledTasks.length === 0) { %>
+              <tr>
+                <td colspan="4" class="fluent-text-center fluent-p-4 fluent-text-secondary">
+                  هیچ وظیفه‌ای برنامه‌ریزی نشده است!
+                </td>
+              </tr>
+            <% } else { %>
+              <% scheduledTasks.forEach(task => { %>
+                <tr>
+                  <td><%= task.name %></td>
+                  <td><%= new Date(task.nextRun).toLocaleString('fa-IR') %></td>
+                  <td>
+                    <span class="fluent-table-status 
+                      <%= task.status === 'active' ? 'fluent-table-status-success' : 'fluent-table-status-error' %>">
+                      <%= task.status === 'active' ? 'فعال' : 'غیرفعال' %>
+                    </span>
+                  </td>
+                  <td>
+                    <div class="fluent-table-row-actions">
+                      <button class="fluent-btn-icon fluent-btn-sm fluent-btn-subtle fluent-table-row-action" title="اجرای دستی">
+                        <i class="fas fa-play"></i>
+                      </button>
+                      <button class="fluent-btn-icon fluent-btn-sm fluent-btn-subtle fluent-table-row-action" title="<%= task.status === 'active' ? 'غیرفعال کردن' : 'فعال کردن' %>">
+                        <i class="fas fa-<%= task.status === 'active' ? 'pause' : 'play' %>"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
+    // رنگ‌های فلوئنت
+    const fluentPrimary = '#0078d4';
+    const fluentSuccess = '#107c10';
+    const fluentWarning = '#ffaa44';
+    const fluentGray20 = '#f3f2f1';
+    const fluentGray30 = '#edebe9';
+    
+    // تنظیمات مشترک نمودار
+    Chart.defaults.font.family = 'Vazirmatn, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif';
+    Chart.defaults.color = '#605e5c';
+    Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(50, 49, 48, 0.95)';
+    Chart.defaults.plugins.tooltip.titleFont = { weight: '600' };
+    Chart.defaults.plugins.tooltip.bodyFont = { weight: '400' };
+    Chart.defaults.plugins.tooltip.padding = 12;
+    Chart.defaults.plugins.tooltip.cornerRadius = 4;
+    
     // نمودار فعالیت هفته اخیر
     const activityCtx = document.getElementById('activityChart').getContext('2d');
     const activityChart = new Chart(activityCtx, {
@@ -285,30 +370,38 @@
         datasets: [{
           label: 'دستورات',
           data: <%= JSON.stringify(systemStats.weeklyStats.commandsUsed) %>,
-          borderColor: '#00FF9D',
-          backgroundColor: 'rgba(0, 255, 157, 0.1)',
-          tension: 0.4,
-          fill: true
+          borderColor: fluentPrimary,
+          backgroundColor: 'rgba(0, 120, 212, 0.1)',
+          tension: 0.3,
+          fill: true,
+          borderWidth: 2
         }, {
           label: 'هوش مصنوعی',
           data: <%= JSON.stringify(systemStats.weeklyStats.aiRequests) %>,
-          borderColor: '#00BFFF',
-          backgroundColor: 'rgba(0, 191, 255, 0.1)',
-          tension: 0.4,
+          borderColor: fluentSuccess,
+          backgroundColor: 'rgba(16, 124, 16, 0.1)',
+          tension: 0.3,
           fill: true,
+          borderWidth: 2,
           hidden: true
         }, {
           label: 'بازی‌ها',
           data: <%= JSON.stringify(systemStats.weeklyStats.gamesPlayed) %>,
-          borderColor: '#FFA500',
-          backgroundColor: 'rgba(255, 165, 0, 0.1)',
-          tension: 0.4,
+          borderColor: fluentWarning,
+          backgroundColor: 'rgba(255, 170, 68, 0.1)',
+          tension: 0.3,
           fill: true,
+          borderWidth: 2,
           hidden: true
         }]
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
         plugins: {
           legend: {
             display: false
@@ -318,16 +411,32 @@
             intersect: false
           }
         },
+        layout: {
+          padding: {
+            top: 20,
+            bottom: 16,
+            left: 20,
+            right: 20
+          }
+        },
         scales: {
           y: {
             beginAtZero: true,
             grid: {
-              color: 'rgba(255, 255, 255, 0.1)'
+              color: fluentGray30,
+              drawBorder: false
+            },
+            ticks: {
+              padding: 10
             }
           },
           x: {
             grid: {
-              color: 'rgba(255, 255, 255, 0.1)'
+              display: false,
+              drawBorder: false
+            },
+            ticks: {
+              padding: 10
             }
           }
         }
@@ -343,27 +452,45 @@
         datasets: [{
           label: 'کاربران جدید',
           data: <%= JSON.stringify(systemStats.weeklyStats.newUsers) %>,
-          backgroundColor: '#00FF9D',
-          borderRadius: 5
+          backgroundColor: fluentPrimary,
+          borderRadius: 4,
+          maxBarThickness: 40
         }]
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
           legend: {
             display: false
+          }
+        },
+        layout: {
+          padding: {
+            top: 20,
+            bottom: 16,
+            left: 20,
+            right: 20
           }
         },
         scales: {
           y: {
             beginAtZero: true,
             grid: {
-              color: 'rgba(255, 255, 255, 0.1)'
+              color: fluentGray30,
+              drawBorder: false
+            },
+            ticks: {
+              padding: 10
             }
           },
           x: {
             grid: {
-              display: false
+              display: false,
+              drawBorder: false
+            },
+            ticks: {
+              padding: 10
             }
           }
         }
@@ -373,7 +500,18 @@
     // تابع تغییر نمایش داده‌های نمودار
     window.toggleChartData = function(chartId, datasetLabel) {
       const chart = Chart.getChart(chartId);
+      const buttons = document.querySelectorAll('.fluent-btn-toggle');
       
+      // تغییر وضعیت دکمه‌ها
+      buttons.forEach(btn => {
+        if (btn.textContent.trim().toLowerCase() === datasetLabel.toLowerCase()) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+      
+      // تغییر نمایش داده‌ها
       chart.data.datasets.forEach(dataset => {
         if (dataset.label.toLowerCase() === datasetLabel.toLowerCase()) {
           dataset.hidden = false;

@@ -1,0 +1,388 @@
+<div class="dashboard">
+  <div class="page-header">
+    <h1>داشبورد</h1>
+    <p>خوش آمدید <strong><%= user.displayName %></strong>! آخرین آمار و وضعیت سیستم را مشاهده کنید.</p>
+  </div>
+  
+  <!-- کارت‌های آمار -->
+  <div class="stats-cards">
+    <div class="stat-card">
+      <div class="stat-icon bg-primary">
+        <i class="fas fa-users"></i>
+      </div>
+      <div class="stat-content">
+        <h3><%= userStats.totalUsers.toLocaleString() %></h3>
+        <p>کاربران</p>
+      </div>
+      <div class="stat-footer">
+        <span class="stat-change increase">
+          <i class="fas fa-arrow-up"></i>
+          <%= userStats.newUsersToday %> امروز
+        </span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon bg-success">
+        <i class="fas fa-terminal"></i>
+      </div>
+      <div class="stat-content">
+        <h3><%= systemStats.commands.toLocaleString() %></h3>
+        <p>دستورات اجرا شده</p>
+      </div>
+      <div class="stat-footer">
+        <span class="stat-change increase">
+          <i class="fas fa-arrow-up"></i>
+          <%= systemStats.today.commandsUsed %> امروز
+        </span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon bg-info">
+        <i class="fas fa-robot"></i>
+      </div>
+      <div class="stat-content">
+        <h3><%= systemStats.aiRequests.toLocaleString() %></h3>
+        <p>درخواست‌های هوش مصنوعی</p>
+      </div>
+      <div class="stat-footer">
+        <span class="stat-change increase">
+          <i class="fas fa-arrow-up"></i>
+          <%= systemStats.today.aiRequests %> امروز
+        </span>
+      </div>
+    </div>
+    
+    <div class="stat-card">
+      <div class="stat-icon bg-warning">
+        <i class="fas fa-gamepad"></i>
+      </div>
+      <div class="stat-content">
+        <h3><%= systemStats.gamesPlayed.toLocaleString() %></h3>
+        <p>بازی‌های انجام شده</p>
+      </div>
+      <div class="stat-footer">
+        <span class="stat-change increase">
+          <i class="fas fa-arrow-up"></i>
+          <%= systemStats.today.gamesPlayed %> امروز
+        </span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- نمودارها -->
+  <div class="dashboard-charts">
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3>فعالیت هفته اخیر</h3>
+        <div class="chart-actions">
+          <button class="btn btn-sm" onclick="toggleChartData('activityChart', 'commands')">دستورات</button>
+          <button class="btn btn-sm" onclick="toggleChartData('activityChart', 'ai')">هوش مصنوعی</button>
+          <button class="btn btn-sm" onclick="toggleChartData('activityChart', 'games')">بازی‌ها</button>
+        </div>
+      </div>
+      <div class="chart-body">
+        <canvas id="activityChart"></canvas>
+      </div>
+    </div>
+    
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3>کاربران جدید</h3>
+      </div>
+      <div class="chart-body">
+        <canvas id="newUsersChart"></canvas>
+      </div>
+    </div>
+  </div>
+  
+  <!-- کارت‌های اطلاعات -->
+  <div class="info-cards">
+    <div class="info-card">
+      <div class="info-card-header">
+        <h3>اطلاعات سیستم</h3>
+        <a href="/admin/stats" class="btn btn-sm">
+          <i class="fas fa-arrow-right"></i>
+          نمایش بیشتر
+        </a>
+      </div>
+      <div class="info-card-body">
+        <div class="info-item">
+          <span class="info-label">آنلاین از:</span>
+          <span class="info-value">
+            <%= new Date(Date.now() - systemStats.uptime * 1000).toLocaleString('fa-IR') %>
+            (<%= Math.floor(systemStats.uptime / 86400) %> روز)
+          </span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">تراکنش‌ها:</span>
+          <span class="info-value"><%= systemStats.transactions.toLocaleString() %></span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">سرقت‌های موفق:</span>
+          <span class="info-value">
+            <%= systemStats.robberies.successful.toLocaleString() %>
+            (<%= systemStats.robberies.successRate %>%)
+          </span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">وام‌های فعال:</span>
+          <span class="info-value">
+            <%= systemStats.loans.outstandingCount.toLocaleString() %>
+          </span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">آخرین پشتیبان‌گیری:</span>
+          <span class="info-value">
+            <%= systemStats.lastBackup.toLocaleString('fa-IR') %>
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="info-card">
+      <div class="info-card-header">
+        <h3>کاربران برتر</h3>
+        <a href="/admin/users" class="btn btn-sm">
+          <i class="fas fa-arrow-right"></i>
+          نمایش همه
+        </a>
+      </div>
+      <div class="info-card-body">
+        <ul class="top-users-list">
+          <% for (let i = 0; i < userStats.topUsers.length; i++) { %>
+            <li class="top-user-item">
+              <span class="top-user-rank"><%= i + 1 %></span>
+              <span class="top-user-name"><%= userStats.topUsers[i].username %></span>
+              <span class="top-user-value"><%= userStats.topUsers[i].totalWealth.toLocaleString() %> 💰</span>
+            </li>
+          <% } %>
+        </ul>
+      </div>
+    </div>
+  </div>
+  
+  <!-- هشدارها و رویدادها -->
+  <div class="notifications-and-events">
+    <div class="card">
+      <div class="card-header">
+        <h3>هشدارهای سیستم</h3>
+        <a href="/admin/logs" class="btn btn-sm">
+          <i class="fas fa-arrow-right"></i>
+          نمایش همه
+        </a>
+      </div>
+      <div class="card-body">
+        <ul class="alerts-list">
+          <% alerts.forEach(alert => { %>
+            <li class="alert-item alert-<%= alert.type %>">
+              <div class="alert-icon">
+                <% if (alert.type === 'error') { %>
+                  <i class="fas fa-exclamation-circle"></i>
+                <% } else if (alert.type === 'warning') { %>
+                  <i class="fas fa-exclamation-triangle"></i>
+                <% } else { %>
+                  <i class="fas fa-info-circle"></i>
+                <% } %>
+              </div>
+              <div class="alert-content">
+                <p><%= alert.message %></p>
+                <small><%= new Date(alert.time).toLocaleString('fa-IR') %></small>
+              </div>
+            </li>
+          <% }) %>
+        </ul>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header">
+        <h3>فعالیت‌های اخیر</h3>
+        <a href="/admin/logs" class="btn btn-sm">
+          <i class="fas fa-arrow-right"></i>
+          نمایش همه
+        </a>
+      </div>
+      <div class="card-body">
+        <ul class="activities-list">
+          <% recentActivities.forEach(activity => { %>
+            <li class="activity-item">
+              <div class="activity-icon bg-<%= activity.type === 'user' ? 'primary' : activity.type === 'transaction' ? 'success' : activity.type === 'game' ? 'warning' : activity.type === 'system' ? 'info' : 'secondary' %>">
+                <% if (activity.type === 'user') { %>
+                  <i class="fas fa-user"></i>
+                <% } else if (activity.type === 'transaction') { %>
+                  <i class="fas fa-money-bill-wave"></i>
+                <% } else if (activity.type === 'game') { %>
+                  <i class="fas fa-gamepad"></i>
+                <% } else if (activity.type === 'system') { %>
+                  <i class="fas fa-cog"></i>
+                <% } else { %>
+                  <i class="fas fa-shield-alt"></i>
+                <% } %>
+              </div>
+              <div class="activity-content">
+                <p><strong><%= activity.username %></strong> - <%= activity.action %></p>
+                <p><%= activity.details %></p>
+                <small><%= new Date(activity.time).toLocaleString('fa-IR') %></small>
+              </div>
+            </li>
+          <% }) %>
+        </ul>
+      </div>
+    </div>
+  </div>
+  
+  <!-- وظایف برنامه‌ریزی شده -->
+  <div class="card">
+    <div class="card-header">
+      <h3>وظایف برنامه‌ریزی شده</h3>
+    </div>
+    <div class="card-body">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>نام وظیفه</th>
+            <th>زمان اجرای بعدی</th>
+            <th>وضعیت</th>
+            <th>عملیات</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% scheduledTasks.forEach(task => { %>
+            <tr>
+              <td><%= task.name %></td>
+              <td><%= new Date(task.nextRun).toLocaleString('fa-IR') %></td>
+              <td>
+                <span class="badge badge-<%= task.status === 'active' ? 'success' : 'danger' %>">
+                  <%= task.status === 'active' ? 'فعال' : 'غیرفعال' %>
+                </span>
+              </td>
+              <td>
+                <button class="btn btn-sm" title="اجرای دستی">
+                  <i class="fas fa-play"></i>
+                </button>
+                <button class="btn btn-sm" title="<%= task.status === 'active' ? 'غیرفعال کردن' : 'فعال کردن' %>">
+                  <i class="fas fa-<%= task.status === 'active' ? 'pause' : 'play' %>"></i>
+                </button>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // نمودار فعالیت هفته اخیر
+    const activityCtx = document.getElementById('activityChart').getContext('2d');
+    const activityChart = new Chart(activityCtx, {
+      type: 'line',
+      data: {
+        labels: ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه'],
+        datasets: [{
+          label: 'دستورات',
+          data: <%= JSON.stringify(systemStats.weeklyStats.commandsUsed) %>,
+          borderColor: '#00FF9D',
+          backgroundColor: 'rgba(0, 255, 157, 0.1)',
+          tension: 0.4,
+          fill: true
+        }, {
+          label: 'هوش مصنوعی',
+          data: <%= JSON.stringify(systemStats.weeklyStats.aiRequests) %>,
+          borderColor: '#00BFFF',
+          backgroundColor: 'rgba(0, 191, 255, 0.1)',
+          tension: 0.4,
+          fill: true,
+          hidden: true
+        }, {
+          label: 'بازی‌ها',
+          data: <%= JSON.stringify(systemStats.weeklyStats.gamesPlayed) %>,
+          borderColor: '#FFA500',
+          backgroundColor: 'rgba(255, 165, 0, 0.1)',
+          tension: 0.4,
+          fill: true,
+          hidden: true
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)'
+            }
+          },
+          x: {
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)'
+            }
+          }
+        }
+      }
+    });
+    
+    // نمودار کاربران جدید
+    const newUsersCtx = document.getElementById('newUsersChart').getContext('2d');
+    const newUsersChart = new Chart(newUsersCtx, {
+      type: 'bar',
+      data: {
+        labels: ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه'],
+        datasets: [{
+          label: 'کاربران جدید',
+          data: <%= JSON.stringify(systemStats.weeklyStats.newUsers) %>,
+          backgroundColor: '#00FF9D',
+          borderRadius: 5
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)'
+            }
+          },
+          x: {
+            grid: {
+              display: false
+            }
+          }
+        }
+      }
+    });
+    
+    // تابع تغییر نمایش داده‌های نمودار
+    window.toggleChartData = function(chartId, datasetLabel) {
+      const chart = Chart.getChart(chartId);
+      
+      chart.data.datasets.forEach(dataset => {
+        if (dataset.label.toLowerCase() === datasetLabel.toLowerCase()) {
+          dataset.hidden = false;
+        } else {
+          dataset.hidden = true;
+        }
+      });
+      
+      chart.update();
+    };
+  });
+</script>

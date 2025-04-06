@@ -6,6 +6,25 @@ import { ObjectId } from 'mongodb';
 import { connectToDatabase } from '../index.js';
 
 /**
+ * هدایت کاربر به داشبورد اگر قبلاً وارد شده باشد
+ * این میدلور برای صفحاتی مانند ورود استفاده می‌شود
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ * @param {Function} next تابع بعدی
+ */
+export function redirectIfAuthenticated(req, res, next) {
+  console.log('🔄 بررسی وضعیت ورود کاربر برای هدایت مجدد...');
+  
+  if (req.session && req.session.user) {
+    console.log(`✅ کاربر قبلاً وارد شده است: ${req.session.user.username}. هدایت به داشبورد...`);
+    return res.redirect('/admin/dashboard');
+  }
+  
+  console.log('👉 کاربر وارد نشده، نمایش صفحه درخواست شده...');
+  next();
+}
+
+/**
  * بررسی احراز هویت کاربر
  * @param {Object} req درخواست
  * @param {Object} res پاسخ
@@ -13,9 +32,10 @@ import { connectToDatabase } from '../index.js';
  */
 export function isAuthenticated(req, res, next) {
   console.log('🔒 بررسی احراز هویت کاربر...');
+  console.log('📝 مسیر درخواست شده:', req.originalUrl);
   
   if (req.session && req.session.user) {
-    console.log('📝 اطلاعات نشست:', req.session);
+    console.log('📝 اطلاعات نشست:', req.session.user.username);
     console.log(`✅ کاربر احراز هویت شده است: ${req.session.user.username}`);
     return next();
   }
@@ -23,11 +43,17 @@ export function isAuthenticated(req, res, next) {
   console.log('❌ کاربر احراز هویت نشده است.');
   
   // اگر درخواست API است، کد 401 برگردان
-  if (req.path.startsWith('/admin/api/')) {
+  if (req.originalUrl.includes('/api/')) {
     return res.status(401).json({ error: 'دسترسی غیرمجاز' });
   }
   
   // در غیر این صورت، به صفحه ورود هدایت کن
+  // اگر مسیر فعلی صفحه ورود است، از ریدایرکت جلوگیری کن
+  if (req.originalUrl === '/admin/login') {
+    console.log('⚠️ از ریدایرکت به /admin/login خودداری شد (دور باطل)');
+    return next();
+  }
+  
   req.flash('info', 'لطفا ابتدا وارد شوید');
   res.redirect('/admin/login');
 }

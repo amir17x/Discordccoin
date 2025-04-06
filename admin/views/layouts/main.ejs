@@ -10,8 +10,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- استایل‌ها -->
+    <!-- استایل‌های اصلی Fluent UI -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/admin/public/css/fluent-ui/fluent-ui.css">
     <link rel="stylesheet" href="/admin/public/css/fluent.css">
     <link rel="stylesheet" href="/admin/public/css/admin.css">
     
@@ -20,175 +21,313 @@
         <%- extraStyles %>
     <% } %>
 </head>
-<body>
-    <div class="admin-layout">
+<body class="fluent-scrollbar">
+    <div class="fluent-app">
         <!-- منوی کناری -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <img src="/admin/public/images/logo.png" alt="CCOIN Logo" class="sidebar-logo">
-                <h3 class="sidebar-title">پنل مدیریت CCOIN</h3>
+        <aside class="fluent-nav" id="mainSidebar">
+            <div class="fluent-nav-header">
+                <a href="/admin/dashboard" class="fluent-nav-brand">
+                    <img src="/admin/public/images/logo.png" alt="CCOIN Logo" class="fluent-nav-logo">
+                    <h3 class="fluent-nav-title">پنل مدیریت CCOIN</h3>
+                </a>
+                <button type="button" class="fluent-nav-toggle" id="toggleSidebar">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
             </div>
-            <ul class="sidebar-menu">
-                <li>
-                    <a href="/admin/dashboard" class="<%= (currentPath === '/admin/dashboard') ? 'active' : '' %>">
-                        <span class="icons8-icon icons8-dashboard"></span>
-                        داشبورد
+            
+            <ul class="fluent-nav-list">
+                <li class="fluent-nav-item">
+                    <a href="/admin/dashboard" class="fluent-nav-link <%= (currentPath === '/admin/dashboard') ? 'active' : '' %>">
+                        <span class="fluent-nav-icon"><i class="fas fa-chart-line"></i></span>
+                        <span class="fluent-nav-text">داشبورد</span>
                     </a>
                 </li>
-                <li>
-                    <a href="/admin/users" class="<%= (currentPath && currentPath.startsWith('/admin/users')) ? 'active' : '' %>">
-                        <span class="icons8-icon icons8-users"></span>
-                        مدیریت کاربران
+                
+                <li class="fluent-nav-item">
+                    <a href="/admin/users" class="fluent-nav-link <%= (currentPath && currentPath.startsWith('/admin/users')) ? 'active' : '' %>">
+                        <span class="fluent-nav-icon"><i class="fas fa-users"></i></span>
+                        <span class="fluent-nav-text">مدیریت کاربران</span>
                     </a>
                 </li>
-                <li>
-                    <a href="/admin/economy" class="<%= (currentPath && currentPath.startsWith('/admin/economy')) ? 'active' : '' %>">
-                        <span class="icons8-icon icons8-coins"></span>
-                        سیستم اقتصادی
+                
+                <li class="fluent-nav-item">
+                    <a href="/admin/economy" class="fluent-nav-link <%= (currentPath && currentPath.startsWith('/admin/economy') && currentPath === '/admin/economy') ? 'active' : '' %>">
+                        <span class="fluent-nav-icon"><i class="fas fa-coins"></i></span>
+                        <span class="fluent-nav-text">سیستم اقتصادی</span>
                     </a>
                 </li>
-                <li>
-                    <a href="/admin/economy/transactions" class="<%= (currentPath === '/admin/economy/transactions') ? 'active' : '' %>">
-                        <span class="icons8-icon icons8-transaction"></span>
-                        تراکنش‌ها
+                
+                <li class="fluent-nav-item">
+                    <a href="/admin/economy/transactions" class="fluent-nav-link <%= (currentPath === '/admin/economy/transactions') ? 'active' : '' %>">
+                        <span class="fluent-nav-icon"><i class="fas fa-exchange-alt"></i></span>
+                        <span class="fluent-nav-text">تراکنش‌ها</span>
                     </a>
                 </li>
-                <li>
-                    <a href="/admin/economy/stocks" class="<%= (currentPath === '/admin/economy/stocks') ? 'active' : '' %>">
-                        <span class="icons8-icon icons8-stocks"></span>
-                        بازار سهام
+                
+                <li class="fluent-nav-item">
+                    <a href="/admin/economy/stocks" class="fluent-nav-link <%= (currentPath === '/admin/economy/stocks') ? 'active' : '' %>">
+                        <span class="fluent-nav-icon"><i class="fas fa-chart-bar"></i></span>
+                        <span class="fluent-nav-text">بازار سهام</span>
                     </a>
                 </li>
-                <li>
-                    <a href="/admin/economy/banks" class="<%= (currentPath === '/admin/economy/banks') ? 'active' : '' %>">
-                        <span class="icons8-icon icons8-bank"></span>
-                        بانک‌ها
+                
+                <li class="fluent-nav-item">
+                    <a href="/admin/economy/banks" class="fluent-nav-link <%= (currentPath === '/admin/economy/banks') ? 'active' : '' %>">
+                        <span class="fluent-nav-icon"><i class="fas fa-university"></i></span>
+                        <span class="fluent-nav-text">بانک‌ها</span>
                     </a>
                 </li>
-                <li>
-                    <a href="/admin/economy/shops" class="<%= (currentPath === '/admin/economy/shops') ? 'active' : '' %>">
-                        <span class="icons8-icon icons8-shop"></span>
-                        فروشگاه‌ها
+                
+                <li class="fluent-nav-item">
+                    <a href="/admin/economy/shops" class="fluent-nav-link <%= (currentPath === '/admin/economy/shops') ? 'active' : '' %>">
+                        <span class="fluent-nav-icon"><i class="fas fa-store"></i></span>
+                        <span class="fluent-nav-text">فروشگاه‌ها</span>
                     </a>
                 </li>
-                <li>
-                    <a href="/admin/economy/items" class="<%= (currentPath === '/admin/economy/items') ? 'active' : '' %>">
-                        <span class="icons8-icon icons8-items"></span>
-                        آیتم‌ها
+                
+                <li class="fluent-nav-item">
+                    <a href="/admin/economy/items" class="fluent-nav-link <%= (currentPath === '/admin/economy/items') ? 'active' : '' %>">
+                        <span class="fluent-nav-icon"><i class="fas fa-box"></i></span>
+                        <span class="fluent-nav-text">آیتم‌ها</span>
                     </a>
                 </li>
-                <li>
-                    <a href="/admin/games" class="<%= (currentPath && currentPath.startsWith('/admin/games')) ? 'active' : '' %>">
-                        <span class="icons8-icon icons8-games"></span>
-                        مدیریت بازی‌ها
+                
+                <li class="fluent-nav-item">
+                    <a href="/admin/games" class="fluent-nav-link <%= (currentPath && currentPath.startsWith('/admin/games')) ? 'active' : '' %>">
+                        <span class="fluent-nav-icon"><i class="fas fa-gamepad"></i></span>
+                        <span class="fluent-nav-text">مدیریت بازی‌ها</span>
                     </a>
                 </li>
-                <li>
-                    <a href="/admin/events" class="<%= (currentPath && currentPath.startsWith('/admin/events')) ? 'active' : '' %>">
-                        <span class="icons8-icon icons8-events"></span>
-                        رویدادها
+                
+                <li class="fluent-nav-item">
+                    <a href="/admin/events" class="fluent-nav-link <%= (currentPath && currentPath.startsWith('/admin/events')) ? 'active' : '' %>">
+                        <span class="fluent-nav-icon"><i class="fas fa-calendar-alt"></i></span>
+                        <span class="fluent-nav-text">رویدادها</span>
                     </a>
                 </li>
-                <li>
-                    <a href="/admin/ai" class="<%= (currentPath && currentPath.startsWith('/admin/ai')) ? 'active' : '' %>">
-                        <span class="icons8-icon icons8-ai"></span>
-                        تنظیمات هوش مصنوعی
+                
+                <li class="fluent-nav-item">
+                    <a href="/admin/ai" class="fluent-nav-link <%= (currentPath && currentPath.startsWith('/admin/ai')) ? 'active' : '' %>">
+                        <span class="fluent-nav-icon"><i class="fas fa-robot"></i></span>
+                        <span class="fluent-nav-text">تنظیمات هوش مصنوعی</span>
                     </a>
                 </li>
-                <li>
-                    <a href="/admin/settings" class="<%= (currentPath === '/admin/settings') ? 'active' : '' %>">
-                        <span class="icons8-icon icons8-settings"></span>
-                        تنظیمات
+                
+                <li class="fluent-nav-item">
+                    <a href="/admin/settings" class="fluent-nav-link <%= (currentPath === '/admin/settings') ? 'active' : '' %>">
+                        <span class="fluent-nav-icon"><i class="fas fa-cog"></i></span>
+                        <span class="fluent-nav-text">تنظیمات</span>
                     </a>
                 </li>
-                <li>
-                    <a href="/admin/logout">
-                        <span class="icons8-icon icons8-logout"></span>
-                        خروج
+                
+                <div class="fluent-nav-divider"></div>
+                
+                <li class="fluent-nav-item">
+                    <a href="/admin/logout" class="fluent-nav-link">
+                        <span class="fluent-nav-icon"><i class="fas fa-sign-out-alt"></i></span>
+                        <span class="fluent-nav-text">خروج</span>
                     </a>
                 </li>
             </ul>
         </aside>
         
-        <!-- هدر -->
-        <header class="header">
-            <div class="header-left">
-                <button class="toggle-sidebar">
-                    <span class="icons8-icon icons8-menu"></span>
-                </button>
-                <h2 class="page-title"><%= title %></h2>
-            </div>
-            <div class="header-right">
-                <div class="user-dropdown">
-                    <span><span class="icons8-icon icons8-profile"></span> <%= user.username %></span>
-                    <div class="dropdown-menu">
-                        <a href="/admin/profile" class="dropdown-item">
-                            <span class="icons8-icon icons8-user"></span> پروفایل
+        <div class="fluent-main">
+            <!-- هدر -->
+            <header class="fluent-header">
+                <div class="fluent-flex fluent-align-center">
+                    <button type="button" class="fluent-btn fluent-btn-icon fluent-btn-subtle fluent-mr-2" id="mobileSidebarToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h2 class="fluent-m-0 fluent-font-semibold fluent-text-lg"><%= title %></h2>
+                </div>
+                
+                <div class="fluent-dropdown">
+                    <div class="fluent-dropdown-toggle" id="userDropdown">
+                        <div class="fluent-flex fluent-align-center">
+                            <i class="fas fa-user-circle fluent-mr-2"></i>
+                            <span><%= user.username %></span>
+                        </div>
+                    </div>
+                    <div class="fluent-dropdown-menu" id="userDropdownMenu">
+                        <a href="/admin/profile" class="fluent-dropdown-item">
+                            <i class="fas fa-user"></i>
+                            پروفایل
                         </a>
-                        <a href="/admin/settings" class="dropdown-item">
-                            <span class="icons8-icon icons8-settings"></span> تنظیمات
+                        <a href="/admin/settings" class="fluent-dropdown-item">
+                            <i class="fas fa-cog"></i>
+                            تنظیمات
                         </a>
-                        <a href="/admin/logout" class="dropdown-item">
-                            <span class="icons8-icon icons8-logout"></span> خروج
+                        <div class="fluent-dropdown-divider"></div>
+                        <a href="/admin/logout" class="fluent-dropdown-item">
+                            <i class="fas fa-sign-out-alt"></i>
+                            خروج
                         </a>
                     </div>
                 </div>
-            </div>
-        </header>
-        
-        <!-- محتوای اصلی -->
-        <main class="content-wrapper">
-            <!-- پیام‌های فلش -->
-            <% if (typeof messages !== 'undefined') { %>
-                <% if (messages.success && messages.success.length > 0) { %>
-                    <div class="alert alert-success">
-                        <span class="icons8-icon icons8-success"></span>
-                        <%= messages.success %>
-                    </div>
-                <% } %>
-                
-                <% if (messages.error && messages.error.length > 0) { %>
-                    <div class="alert alert-danger">
-                        <span class="icons8-icon icons8-error"></span>
-                        <%= messages.error %>
-                    </div>
-                <% } %>
-                
-                <% if (messages.info && messages.info.length > 0) { %>
-                    <div class="alert alert-info">
-                        <span class="icons8-icon icons8-info"></span>
-                        <%= messages.info %>
-                    </div>
-                <% } %>
-                
-                <% if (messages.warning && messages.warning.length > 0) { %>
-                    <div class="alert alert-warning">
-                        <span class="icons8-icon icons8-warning"></span>
-                        <%= messages.warning %>
-                    </div>
-                <% } %>
-            <% } %>
+            </header>
             
-            <%- body %>
-        </main>
+            <!-- محتوای اصلی -->
+            <main class="fluent-content">
+                <!-- پیام‌های فلش -->
+                <% if (typeof messages !== 'undefined') { %>
+                    <% if (messages.success && messages.success.length > 0) { %>
+                        <div class="fluent-toast fluent-toast-success fluent-animate-slide-up fluent-mb-3">
+                            <div class="fluent-toast-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="fluent-toast-content">
+                                <p class="fluent-toast-message"><%= messages.success %></p>
+                            </div>
+                        </div>
+                    <% } %>
+                    
+                    <% if (messages.error && messages.error.length > 0) { %>
+                        <div class="fluent-toast fluent-toast-error fluent-animate-slide-up fluent-mb-3">
+                            <div class="fluent-toast-icon">
+                                <i class="fas fa-exclamation-circle"></i>
+                            </div>
+                            <div class="fluent-toast-content">
+                                <p class="fluent-toast-message"><%= messages.error %></p>
+                            </div>
+                        </div>
+                    <% } %>
+                    
+                    <% if (messages.info && messages.info.length > 0) { %>
+                        <div class="fluent-toast fluent-toast-info fluent-animate-slide-up fluent-mb-3">
+                            <div class="fluent-toast-icon">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <div class="fluent-toast-content">
+                                <p class="fluent-toast-message"><%= messages.info %></p>
+                            </div>
+                        </div>
+                    <% } %>
+                    
+                    <% if (messages.warning && messages.warning.length > 0) { %>
+                        <div class="fluent-toast fluent-toast-warning fluent-animate-slide-up fluent-mb-3">
+                            <div class="fluent-toast-icon">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="fluent-toast-content">
+                                <p class="fluent-toast-message"><%= messages.warning %></p>
+                            </div>
+                        </div>
+                    <% } %>
+                <% } %>
+                
+                <!-- محتوای صفحه -->
+                <%- body %>
+            </main>
+        </div>
     </div>
     
     <!-- اسکریپت‌ها -->
+    <script>
+        // تغییر حالت منوی کناری
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.getElementById('mainSidebar');
+            const toggleBtn = document.getElementById('toggleSidebar');
+            const mobileToggleBtn = document.getElementById('mobileSidebarToggle');
+            const userDropdown = document.getElementById('userDropdown');
+            const userDropdownMenu = document.getElementById('userDropdownMenu');
+            
+            // ذخیره وضعیت منو در localStorage
+            const sidebarState = localStorage.getItem('sidebarCollapsed');
+            if (sidebarState === 'true') {
+                sidebar.classList.add('fluent-nav-collapsed');
+            }
+            
+            // دکمه تغییر وضعیت منو
+            toggleBtn.addEventListener('click', function() {
+                sidebar.classList.toggle('fluent-nav-collapsed');
+                localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('fluent-nav-collapsed'));
+            });
+            
+            // دکمه موبایل برای نمایش/پنهان کردن منو
+            mobileToggleBtn.addEventListener('click', function() {
+                sidebar.classList.toggle('show-mobile');
+            });
+            
+            // کلیک بیرون از منو در موبایل
+            document.addEventListener('click', function(e) {
+                if (window.innerWidth < 768 && 
+                    !sidebar.contains(e.target) && 
+                    !mobileToggleBtn.contains(e.target) && 
+                    sidebar.classList.contains('show-mobile')) {
+                    sidebar.classList.remove('show-mobile');
+                }
+            });
+            
+            // منوی کاربر
+            userDropdown.addEventListener('click', function(e) {
+                e.preventDefault();
+                userDropdownMenu.parentElement.classList.toggle('show');
+            });
+            
+            // بستن منوی کاربر با کلیک بیرون از آن
+            document.addEventListener('click', function(e) {
+                if (!userDropdown.contains(e.target) && !userDropdownMenu.contains(e.target)) {
+                    userDropdownMenu.parentElement.classList.remove('show');
+                }
+            });
+            
+            // فعال‌سازی آیکون‌ها
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+            
+            // بستن پیام‌های Toast بعد از 5 ثانیه
+            const toasts = document.querySelectorAll('.fluent-toast');
+            toasts.forEach(toast => {
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    setTimeout(() => {
+                        toast.remove();
+                    }, 300);
+                }, 5000);
+            });
+        });
+    </script>
+    
     <script src="/admin/public/js/admin.js"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
     
     <% if (typeof extraScripts !== 'undefined') { %>
         <%- extraScripts %>
     <% } %>
+    
+    <!-- CSS اضافی -->
+    <style>
+        /* استایل‌های ریسپانسیو */
+        @media (max-width: 768px) {
+            .fluent-nav {
+                position: fixed;
+                top: 0;
+                right: 0;
+                bottom: 0;
+                z-index: 1000;
+                width: 280px;
+                transform: translateX(100%);
+                transition: transform 0.3s ease;
+            }
+            
+            .fluent-nav.show-mobile {
+                transform: translateX(0);
+                box-shadow: var(--fluent-shadow-lg);
+            }
+            
+            .fluent-main {
+                width: 100%;
+            }
+        }
+        
+        /* استایل‌های Toast اصلاح شده */
+        .fluent-toast {
+            position: relative;
+            border-radius: var(--fluent-radius);
+            box-shadow: var(--fluent-shadow);
+            transition: opacity 0.3s ease;
+        }
+    </style>
 </body>
 </html>
-
-<!-- کتابخانه Feather Icons -->
-<script src="https://unpkg.com/feather-icons"></script>
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // فعال‌سازی آیکون‌ها
-    if (typeof feather !== 'undefined') {
-      feather.replace();
-    }
-  });
-</script>

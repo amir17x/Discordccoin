@@ -1,322 +1,303 @@
 /**
- * مایکروسافت فلوئنت UI - فرم‌ها و ورودی‌ها
+ * مایکروسافت فلوئنت UI - فرم‌ها
  * بر اساس مستندات و طراحی فلوئنت UI مایکروسافت
  */
 
-/* استایل پایه فیلد فرم */
-.fluent-field {
-  margin-bottom: 20px;
+/* گروه فرم */
+.fluent-form-group {
+  margin-bottom: 16px;
 }
 
-.fluent-field-label {
+/* لیبل */
+.fluent-label {
   display: block;
-  margin-bottom: 4px;
-  font-size: var(--fluent-font-size-base);
-  font-weight: var(--fluent-font-weight-semibold);
+  margin-bottom: 6px;
+  font-size: var(--fluent-font-size-sm);
+  font-weight: var(--fluent-font-weight-medium);
   color: var(--fluent-text-primary);
 }
 
-.fluent-field-description {
-  margin-top: 4px;
-  font-size: var(--fluent-font-size-sm);
-  color: var(--fluent-text-secondary);
+.fluent-label-required::after {
+  content: '*';
+  color: var(--fluent-error);
+  margin-right: 4px;
 }
 
-.fluent-field-error {
-  margin-top: 4px;
-  font-size: var(--fluent-font-size-sm);
-  color: var(--fluent-error);
+.fluent-label-with-link {
   display: flex;
+  justify-content: space-between;
   align-items: center;
+  margin-bottom: 6px;
 }
 
-.fluent-field-error i,
-.fluent-field-error svg {
-  margin-left: 4px;
-  font-size: 12px;
-  width: 12px;
-  height: 12px;
-}
-
-.fluent-field-required .fluent-field-label::after {
-  content: ' *';
-  color: var(--fluent-error);
-}
-
-/* ورودی‌ها */
+/* فیلد ورودی */
 .fluent-input {
   display: block;
   width: 100%;
-  height: 32px;
-  padding: 0 12px;
-  font-family: var(--fluent-font-family);
+  padding: 8px 12px;
   font-size: var(--fluent-font-size-base);
-  font-weight: var(--fluent-font-weight-regular);
+  line-height: 1.5;
   color: var(--fluent-text-primary);
   background-color: var(--fluent-bg-surface);
-  border: 1px solid var(--fluent-gray-70);
+  background-clip: padding-box;
+  border: 1px solid var(--fluent-gray-60);
   border-radius: var(--fluent-radius);
-  transition: border-color var(--fluent-duration-normal) var(--fluent-ease-out),
-              box-shadow var(--fluent-duration-normal) var(--fluent-ease-out);
-}
-
-.fluent-input:hover {
-  border-color: var(--fluent-gray-100);
+  transition: border-color var(--fluent-duration-faster) var(--fluent-ease-out),
+              box-shadow var(--fluent-duration-faster) var(--fluent-ease-out);
 }
 
 .fluent-input:focus {
-  outline: none;
   border-color: var(--fluent-primary);
-  box-shadow: 0 0 0 1px var(--fluent-primary);
+  outline: 0;
+  box-shadow: 0 0 0 2px var(--fluent-primary-lighter);
 }
 
 .fluent-input::placeholder {
   color: var(--fluent-text-disabled);
+  opacity: 1;
 }
 
-.fluent-input-success {
-  border-color: var(--fluent-success);
-}
-
-.fluent-input-success:focus {
-  border-color: var(--fluent-success);
-  box-shadow: 0 0 0 1px var(--fluent-success);
-}
-
-.fluent-input-error {
-  border-color: var(--fluent-error);
-}
-
-.fluent-input-error:focus {
-  border-color: var(--fluent-error);
-  box-shadow: 0 0 0 1px var(--fluent-error);
-}
-
-.fluent-input-warning {
-  border-color: var(--fluent-warning);
-}
-
-.fluent-input-warning:focus {
-  border-color: var(--fluent-warning);
-  box-shadow: 0 0 0 1px var(--fluent-warning);
-}
-
-.fluent-input[disabled],
-.fluent-input.disabled {
-  background-color: var(--fluent-gray-20);
-  border-color: var(--fluent-gray-50);
-  color: var(--fluent-text-disabled);
+.fluent-input[disabled], .fluent-input:disabled {
+  background-color: var(--fluent-bg-disabled);
+  opacity: 1;
   cursor: not-allowed;
-  opacity: 0.7;
 }
 
-/* سایزهای ورودی */
-.fluent-input-sm {
-  height: 24px;
-  padding: 0 8px;
+.fluent-input.error {
+  border-color: var(--fluent-error);
+}
+
+.fluent-input.error:focus {
+  box-shadow: 0 0 0 2px var(--fluent-error-light);
+}
+
+.fluent-input-with-icon {
+  position: relative;
+}
+
+.fluent-input-icon {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  color: var(--fluent-text-secondary);
+  pointer-events: none;
+}
+
+.fluent-input-with-icon .fluent-input {
+  padding-right: 36px;
+}
+
+.fluent-input-with-action {
+  position: relative;
+}
+
+.fluent-input-action {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+}
+
+.fluent-input-with-action .fluent-input {
+  padding-left: 40px;
+}
+
+/* سلکت */
+.fluent-select {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.fluent-select select {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  padding-left: 32px;
+  font-size: var(--fluent-font-size-base);
+  line-height: 1.5;
+  color: var(--fluent-text-primary);
+  background-color: var(--fluent-bg-surface);
+  background-clip: padding-box;
+  border: 1px solid var(--fluent-gray-60);
+  border-radius: var(--fluent-radius);
+  transition: border-color var(--fluent-duration-faster) var(--fluent-ease-out),
+              box-shadow var(--fluent-duration-faster) var(--fluent-ease-out);
+  appearance: none;
+}
+
+.fluent-select::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23605e5c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+
+.fluent-select select:focus {
+  border-color: var(--fluent-primary);
+  outline: 0;
+  box-shadow: 0 0 0 2px var(--fluent-primary-lighter);
+}
+
+.fluent-select select[disabled], .fluent-select select:disabled {
+  background-color: var(--fluent-bg-disabled);
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.fluent-select select.error {
+  border-color: var(--fluent-error);
+}
+
+.fluent-select select.error:focus {
+  box-shadow: 0 0 0 2px var(--fluent-error-light);
+}
+
+.fluent-select-sm select {
+  padding: 6px 10px;
+  padding-left: 28px;
   font-size: var(--fluent-font-size-sm);
 }
 
-.fluent-input-lg {
-  height: 40px;
-  padding: 0 16px;
-  font-size: var(--fluent-font-size-md);
-}
-
-/* ناحیه متن */
-.fluent-textarea {
-  display: block;
-  width: 100%;
-  min-height: 80px;
-  padding: 8px 12px;
-  font-family: var(--fluent-font-family);
-  font-size: var(--fluent-font-size-base);
-  font-weight: var(--fluent-font-weight-regular);
-  color: var(--fluent-text-primary);
-  background-color: var(--fluent-bg-surface);
-  border: 1px solid var(--fluent-gray-70);
-  border-radius: var(--fluent-radius);
-  resize: vertical;
-  transition: border-color var(--fluent-duration-normal) var(--fluent-ease-out),
-              box-shadow var(--fluent-duration-normal) var(--fluent-ease-out);
-}
-
-.fluent-textarea:hover {
-  border-color: var(--fluent-gray-100);
-}
-
-.fluent-textarea:focus {
-  outline: none;
-  border-color: var(--fluent-primary);
-  box-shadow: 0 0 0 1px var(--fluent-primary);
-}
-
-.fluent-textarea::placeholder {
-  color: var(--fluent-text-disabled);
-}
-
-.fluent-textarea[disabled],
-.fluent-textarea.disabled {
-  background-color: var(--fluent-gray-20);
-  border-color: var(--fluent-gray-50);
-  color: var(--fluent-text-disabled);
-  cursor: not-allowed;
-  opacity: 0.7;
+.fluent-select-sm::after {
+  left: 10px;
+  width: 10px;
+  height: 10px;
 }
 
 /* چک‌باکس */
 .fluent-checkbox {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   position: relative;
   cursor: pointer;
   user-select: none;
-  margin-bottom: 8px;
 }
 
-.fluent-checkbox-input {
+.fluent-checkbox input {
   position: absolute;
   opacity: 0;
-  width: 0;
+  cursor: pointer;
   height: 0;
+  width: 0;
 }
 
-.fluent-checkbox-box {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
+.fluent-checkbox-checkmark {
+  position: relative;
+  height: 18px;
+  width: 18px;
   background-color: var(--fluent-bg-surface);
-  border: 1px solid var(--fluent-gray-90);
-  border-radius: 2px;
+  border: 1px solid var(--fluent-gray-60);
+  border-radius: 3px;
   margin-left: 8px;
-  flex-shrink: 0;
-  transition: background-color var(--fluent-duration-normal) var(--fluent-ease-out),
-              border-color var(--fluent-duration-normal) var(--fluent-ease-out);
+  transition: background-color var(--fluent-duration-faster) var(--fluent-ease-out),
+              border-color var(--fluent-duration-faster) var(--fluent-ease-out);
 }
 
-.fluent-checkbox-input:checked + .fluent-checkbox-box {
+.fluent-checkbox:hover input ~ .fluent-checkbox-checkmark {
+  border-color: var(--fluent-primary);
+}
+
+.fluent-checkbox input:checked ~ .fluent-checkbox-checkmark {
   background-color: var(--fluent-primary);
   border-color: var(--fluent-primary);
 }
 
-.fluent-checkbox-box::after {
-  content: '';
+.fluent-checkbox-checkmark:after {
+  content: "";
+  position: absolute;
   display: none;
-  width: 6px;
-  height: 10px;
+  left: 6px;
+  top: 2px;
+  width: 4px;
+  height: 8px;
   border: solid white;
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
-  margin-bottom: 2px;
 }
 
-.fluent-checkbox-input:checked + .fluent-checkbox-box::after {
+.fluent-checkbox input:checked ~ .fluent-checkbox-checkmark:after {
   display: block;
 }
 
-.fluent-checkbox-input:focus + .fluent-checkbox-box {
-  border-color: var(--fluent-primary);
-  box-shadow: 0 0 0 1px var(--fluent-primary);
+.fluent-checkbox input:focus ~ .fluent-checkbox-checkmark {
+  box-shadow: 0 0 0 2px var(--fluent-primary-lighter);
 }
 
 .fluent-checkbox-label {
-  font-size: var(--fluent-font-size-base);
-  margin-top: 1px;
+  font-size: var(--fluent-font-size-sm);
 }
 
-.fluent-checkbox[disabled],
-.fluent-checkbox.disabled {
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-.fluent-checkbox[disabled] .fluent-checkbox-box,
-.fluent-checkbox.disabled .fluent-checkbox-box {
-  background-color: var(--fluent-gray-20);
-  border-color: var(--fluent-gray-50);
-}
-
-.fluent-checkbox[disabled] .fluent-checkbox-label,
-.fluent-checkbox.disabled .fluent-checkbox-label {
-  color: var(--fluent-text-disabled);
-}
-
-/* رادیو */
+/* رادیو باتن */
 .fluent-radio {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   position: relative;
   cursor: pointer;
   user-select: none;
-  margin-bottom: 8px;
 }
 
-.fluent-radio-input {
+.fluent-radio input {
   position: absolute;
   opacity: 0;
-  width: 0;
+  cursor: pointer;
   height: 0;
+  width: 0;
 }
 
-.fluent-radio-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
+.fluent-radio-mark {
+  position: relative;
+  height: 18px;
+  width: 18px;
   background-color: var(--fluent-bg-surface);
-  border: 1px solid var(--fluent-gray-90);
+  border: 1px solid var(--fluent-gray-60);
   border-radius: 50%;
   margin-left: 8px;
-  flex-shrink: 0;
-  transition: background-color var(--fluent-duration-normal) var(--fluent-ease-out),
-              border-color var(--fluent-duration-normal) var(--fluent-ease-out);
+  transition: background-color var(--fluent-duration-faster) var(--fluent-ease-out),
+              border-color var(--fluent-duration-faster) var(--fluent-ease-out);
 }
 
-.fluent-radio-input:checked + .fluent-radio-button {
+.fluent-radio:hover input ~ .fluent-radio-mark {
   border-color: var(--fluent-primary);
 }
 
-.fluent-radio-button::after {
-  content: '';
+.fluent-radio input:checked ~ .fluent-radio-mark {
+  border-color: var(--fluent-primary);
+}
+
+.fluent-radio-mark:after {
+  content: "";
+  position: absolute;
   display: none;
+  top: 3px;
+  left: 3px;
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background-color: var(--fluent-primary);
+  background: var(--fluent-primary);
 }
 
-.fluent-radio-input:checked + .fluent-radio-button::after {
+.fluent-radio input:checked ~ .fluent-radio-mark:after {
   display: block;
 }
 
-.fluent-radio-input:focus + .fluent-radio-button {
-  border-color: var(--fluent-primary);
-  box-shadow: 0 0 0 1px var(--fluent-primary);
+.fluent-radio input:focus ~ .fluent-radio-mark {
+  box-shadow: 0 0 0 2px var(--fluent-primary-lighter);
 }
 
 .fluent-radio-label {
-  font-size: var(--fluent-font-size-base);
-  margin-top: 1px;
-}
-
-.fluent-radio[disabled],
-.fluent-radio.disabled {
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-.fluent-radio[disabled] .fluent-radio-button,
-.fluent-radio.disabled .fluent-radio-button {
-  background-color: var(--fluent-gray-20);
-  border-color: var(--fluent-gray-50);
-}
-
-.fluent-radio[disabled] .fluent-radio-label,
-.fluent-radio.disabled .fluent-radio-label {
-  color: var(--fluent-text-disabled);
+  font-size: var(--fluent-font-size-sm);
 }
 
 /* گروه رادیو */
@@ -326,531 +307,454 @@
   gap: 8px;
 }
 
-.fluent-radio-group.horizontal {
+.fluent-radio-group-inline {
   flex-direction: row;
   gap: 16px;
 }
 
-/* سوئیچ (Toggle) */
+/* سوئیچ */
 .fluent-switch {
-  display: flex;
-  align-items: center;
   position: relative;
-  cursor: pointer;
-  user-select: none;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
 }
 
-.fluent-switch-input {
-  position: absolute;
+.fluent-switch input {
   opacity: 0;
   width: 0;
   height: 0;
 }
 
-.fluent-switch-track {
-  position: relative;
-  display: inline-block;
-  width: 40px;
-  height: 20px;
-  background-color: var(--fluent-gray-70);
-  border-radius: 10px;
-  margin-left: 8px;
-  transition: background-color var(--fluent-duration-normal) var(--fluent-ease-out);
+.fluent-switch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--fluent-gray-60);
+  transition: .3s;
+  border-radius: 34px;
 }
 
-.fluent-switch-input:checked + .fluent-switch-track {
+.fluent-switch-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  right: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: .3s;
+  border-radius: 50%;
+}
+
+.fluent-switch input:checked + .fluent-switch-slider {
   background-color: var(--fluent-primary);
 }
 
-.fluent-switch-thumb {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 16px;
-  height: 16px;
-  background-color: white;
-  border-radius: 50%;
-  transition: transform var(--fluent-duration-normal) var(--fluent-ease-out);
+.fluent-switch input:focus + .fluent-switch-slider {
+  box-shadow: 0 0 0 2px var(--fluent-primary-lighter);
 }
 
-.fluent-switch-input:checked + .fluent-switch-track .fluent-switch-thumb {
-  transform: translateX(-20px);
+.fluent-switch input:checked + .fluent-switch-slider:before {
+  transform: translateX(-16px);
 }
 
-.fluent-switch-input:focus + .fluent-switch-track {
-  box-shadow: 0 0 0 1px var(--fluent-primary);
+.fluent-switch-with-label {
+  display: flex;
+  align-items: center;
 }
 
 .fluent-switch-label {
-  font-size: var(--fluent-font-size-base);
+  margin-right: 8px;
+  font-size: var(--fluent-font-size-sm);
 }
 
-.fluent-switch[disabled],
-.fluent-switch.disabled {
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-.fluent-switch[disabled] .fluent-switch-track,
-.fluent-switch.disabled .fluent-switch-track {
-  background-color: var(--fluent-gray-50);
-}
-
-.fluent-switch[disabled] .fluent-switch-label,
-.fluent-switch.disabled .fluent-switch-label {
-  color: var(--fluent-text-disabled);
-}
-
-/* منوی انتخاب (Select) */
-.fluent-select {
+/* فیلد درصد */
+.fluent-number-field {
   position: relative;
+}
+
+.fluent-number-field .fluent-input {
+  padding-left: 45px;
+}
+
+.fluent-number-label {
+  position: absolute;
+  left: 10px;
+  top: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  font-size: var(--fluent-font-size-sm);
+  color: var(--fluent-text-secondary);
+}
+
+/* تکست اریا */
+.fluent-textarea {
   display: block;
   width: 100%;
-}
-
-.fluent-select-control {
-  width: 100%;
-  height: 32px;
-  padding: 0 36px 0 12px;
-  font-family: var(--fluent-font-family);
+  padding: 8px 12px;
   font-size: var(--fluent-font-size-base);
-  font-weight: var(--fluent-font-weight-regular);
+  line-height: 1.5;
   color: var(--fluent-text-primary);
   background-color: var(--fluent-bg-surface);
-  border: 1px solid var(--fluent-gray-70);
+  background-clip: padding-box;
+  border: 1px solid var(--fluent-gray-60);
   border-radius: var(--fluent-radius);
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  cursor: pointer;
-  transition: border-color var(--fluent-duration-normal) var(--fluent-ease-out),
-              box-shadow var(--fluent-duration-normal) var(--fluent-ease-out);
+  transition: border-color var(--fluent-duration-faster) var(--fluent-ease-out),
+              box-shadow var(--fluent-duration-faster) var(--fluent-ease-out);
+  min-height: 80px;
+  resize: vertical;
 }
 
-.fluent-select::after {
-  content: '';
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  width: 8px;
-  height: 8px;
-  border-right: 2px solid var(--fluent-gray-100);
-  border-bottom: 2px solid var(--fluent-gray-100);
-  transform: rotate(45deg);
-  pointer-events: none;
-}
-
-.fluent-select-control:hover {
-  border-color: var(--fluent-gray-100);
-}
-
-.fluent-select-control:focus {
-  outline: none;
+.fluent-textarea:focus {
   border-color: var(--fluent-primary);
-  box-shadow: 0 0 0 1px var(--fluent-primary);
+  outline: 0;
+  box-shadow: 0 0 0 2px var(--fluent-primary-lighter);
 }
 
-.fluent-select-control:focus + .fluent-select::after {
-  border-color: var(--fluent-primary);
-}
-
-.fluent-select-control[disabled],
-.fluent-select-control.disabled {
-  background-color: var(--fluent-gray-20);
-  border-color: var(--fluent-gray-50);
+.fluent-textarea::placeholder {
   color: var(--fluent-text-disabled);
-  cursor: not-allowed;
-  opacity: 0.7;
+  opacity: 1;
 }
 
-/* سایزهای Select */
-.fluent-select-sm .fluent-select-control {
-  height: 24px;
-  padding: 0 30px 0 8px;
+.fluent-textarea[disabled], .fluent-textarea:disabled {
+  background-color: var(--fluent-bg-disabled);
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.fluent-textarea.error {
+  border-color: var(--fluent-error);
+}
+
+.fluent-textarea.error:focus {
+  box-shadow: 0 0 0 2px var(--fluent-error-light);
+}
+
+/* خطای فرم */
+.fluent-form-error {
+  color: var(--fluent-error);
+  font-size: var(--fluent-font-size-xs);
+  margin-top: 4px;
+}
+
+/* متن راهنما */
+.fluent-form-helper {
+  color: var(--fluent-text-secondary);
+  font-size: var(--fluent-font-size-xs);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* ردیف فرم */
+.fluent-form-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.fluent-form-col {
+  flex: 1;
+}
+
+@media (max-width: 768px) {
+  .fluent-form-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+/* فیلدست */
+.fluent-fieldset {
+  border: 1px solid var(--fluent-gray-40);
+  border-radius: var(--fluent-radius);
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.fluent-fieldset-legend {
+  padding: 0 8px;
+  font-weight: var(--fluent-font-weight-medium);
+  font-size: var(--fluent-font-size-base);
+}
+
+/* فیلدها با پیشوند و پسوند */
+.fluent-input-group {
+  display: flex;
+  align-items: stretch;
+}
+
+.fluent-input-prefix,
+.fluent-input-suffix {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  background-color: var(--fluent-gray-20);
+  border: 1px solid var(--fluent-gray-60);
+  color: var(--fluent-text-secondary);
   font-size: var(--fluent-font-size-sm);
 }
 
-.fluent-select-sm::after {
-  top: 8px;
-  left: 10px;
-  width: 6px;
-  height: 6px;
-}
-
-.fluent-select-lg .fluent-select-control {
-  height: 40px;
-  padding: 0 40px 0 16px;
-  font-size: var(--fluent-font-size-md);
-}
-
-.fluent-select-lg::after {
-  top: 16px;
-  left: 16px;
-  width: 10px;
-  height: 10px;
-}
-
-/* Spinner Buttons (برای اعداد) */
-.fluent-number-input {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-}
-
-.fluent-number-field {
-  width: 100%;
-  height: 32px;
-  padding: 0 12px;
-  font-family: var(--fluent-font-family);
-  font-size: var(--fluent-font-size-base);
-  font-weight: var(--fluent-font-weight-regular);
-  color: var(--fluent-text-primary);
-  background-color: var(--fluent-bg-surface);
-  border: 1px solid var(--fluent-gray-70);
-  border-radius: var(--fluent-radius);
-  text-align: center;
-  transition: border-color var(--fluent-duration-normal) var(--fluent-ease-out),
-              box-shadow var(--fluent-duration-normal) var(--fluent-ease-out);
-  -moz-appearance: textfield;
-}
-
-.fluent-number-field::-webkit-inner-spin-button,
-.fluent-number-field::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-.fluent-number-field:hover {
-  border-color: var(--fluent-gray-100);
-}
-
-.fluent-number-field:focus {
-  outline: none;
-  border-color: var(--fluent-primary);
-  box-shadow: 0 0 0 1px var(--fluent-primary);
-}
-
-.fluent-number-decrement,
-.fluent-number-increment {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background-color: var(--fluent-gray-30);
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  transition: background-color var(--fluent-duration-normal) var(--fluent-ease-out);
-}
-
-.fluent-number-decrement {
+.fluent-input-prefix {
   border-radius: var(--fluent-radius) 0 0 var(--fluent-radius);
+  border-left: none;
 }
 
-.fluent-number-increment {
+.fluent-input-suffix {
   border-radius: 0 var(--fluent-radius) var(--fluent-radius) 0;
+  border-right: none;
 }
 
-.fluent-number-decrement:hover,
-.fluent-number-increment:hover {
-  background-color: var(--fluent-gray-40);
+.fluent-input-group .fluent-input {
+  flex: 1;
+  border-radius: 0;
 }
 
-.fluent-number-decrement:active,
-.fluent-number-increment:active {
-  background-color: var(--fluent-gray-50);
+.fluent-input-group.with-prefix .fluent-input {
+  border-top-right-radius: var(--fluent-radius);
+  border-bottom-right-radius: var(--fluent-radius);
 }
 
-/* Slider */
-.fluent-slider {
+.fluent-input-group.with-suffix .fluent-input {
+  border-top-left-radius: var(--fluent-radius);
+  border-bottom-left-radius: var(--fluent-radius);
+}
+
+/* محدوده عددی - اسلایدر */
+.fluent-range {
   width: 100%;
-  position: relative;
-  height: 32px;
-  display: flex;
-  align-items: center;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  -webkit-appearance: none;
 }
 
-.fluent-slider-track {
-  position: absolute;
+.fluent-range:focus {
+  outline: none;
+}
+
+.fluent-range::-webkit-slider-runnable-track {
   width: 100%;
   height: 4px;
-  background-color: var(--fluent-gray-40);
-  border-radius: 2px;
-}
-
-.fluent-slider-fill {
-  position: absolute;
-  height: 4px;
-  background-color: var(--fluent-primary);
-  border-radius: 2px;
-}
-
-.fluent-slider-thumb {
-  position: absolute;
-  width: 16px;
-  height: 16px;
-  background-color: var(--fluent-primary);
-  border-radius: 50%;
+  background: var(--fluent-gray-40);
+  border-radius: var(--fluent-radius-full);
   cursor: pointer;
-  transform: translateX(-50%);
-  transition: background-color var(--fluent-duration-faster) var(--fluent-ease-out),
-              transform var(--fluent-duration-faster) var(--fluent-ease-out),
-              box-shadow var(--fluent-duration-faster) var(--fluent-ease-out);
 }
 
-.fluent-slider-thumb:hover {
-  transform: translateX(-50%) scale(1.125);
-  box-shadow: 0 0 0 4px rgba(0, 120, 212, 0.2);
+.fluent-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: var(--fluent-primary);
+  cursor: pointer;
+  margin-top: -6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: background-color var(--fluent-duration-faster) var(--fluent-ease-out);
 }
 
-.fluent-slider-thumb:active {
-  transform: translateX(-50%) scale(1.25);
-  box-shadow: 0 0 0 6px rgba(0, 120, 212, 0.3);
+.fluent-range::-webkit-slider-thumb:hover {
+  background: var(--fluent-primary-dark);
 }
 
-.fluent-slider-labels {
+.fluent-range::-moz-range-track {
+  width: 100%;
+  height: 4px;
+  background: var(--fluent-gray-40);
+  border-radius: var(--fluent-radius-full);
+  cursor: pointer;
+}
+
+.fluent-range::-moz-range-thumb {
+  height: 16px;
+  width: 16px;
+  border: none;
+  border-radius: 50%;
+  background: var(--fluent-primary);
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: background-color var(--fluent-duration-faster) var(--fluent-ease-out);
+}
+
+.fluent-range::-moz-range-thumb:hover {
+  background: var(--fluent-primary-dark);
+}
+
+.fluent-range-labels {
   display: flex;
   justify-content: space-between;
-  width: 100%;
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
-.fluent-slider-label {
-  font-size: var(--fluent-font-size-sm);
+.fluent-range-min,
+.fluent-range-max {
+  font-size: var(--fluent-font-size-xs);
   color: var(--fluent-text-secondary);
 }
 
-/* جستجو با آیکون */
-.fluent-search {
+.fluent-range-value {
+  font-size: var(--fluent-font-size-xs);
+  color: var(--fluent-text-primary);
+  font-weight: var(--fluent-font-weight-medium);
+}
+
+/* آپلود فایل */
+.fluent-file-upload {
   position: relative;
+}
+
+.fluent-file-input {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
-}
-
-.fluent-search-icon {
-  position: absolute;
-  top: 50%;
-  right: 12px;
-  transform: translateY(-50%);
-  color: var(--fluent-text-secondary);
-  pointer-events: none;
-}
-
-.fluent-search-clear {
-  position: absolute;
-  top: 50%;
-  left: 12px;
-  transform: translateY(-50%);
-  color: var(--fluent-text-secondary);
-  background: none;
-  border: none;
-  padding: 0;
+  height: 100%;
+  opacity: 0;
   cursor: pointer;
+  z-index: 2;
+}
+
+.fluent-file-drop-area {
+  padding: 24px;
+  border: 2px dashed var(--fluent-gray-50);
+  border-radius: var(--fluent-radius);
+  background-color: var(--fluent-gray-10);
+  transition: border-color var(--fluent-duration-faster) var(--fluent-ease-out),
+              background-color var(--fluent-duration-faster) var(--fluent-ease-out);
+  text-align: center;
+}
+
+.fluent-file-drop-area:hover,
+.fluent-file-drop-area.dragging {
+  border-color: var(--fluent-primary);
+  background-color: var(--fluent-primary-lighter);
+}
+
+.fluent-file-drop-icon {
+  color: var(--fluent-gray-90);
+  margin-bottom: 12px;
+}
+
+.fluent-file-drop-title {
+  font-weight: var(--fluent-font-weight-medium);
+  margin-bottom: 4px;
+}
+
+.fluent-file-drop-text {
+  color: var(--fluent-text-secondary);
+  font-size: var(--fluent-font-size-sm);
+  max-width: 80%;
+  margin: 0 auto;
+}
+
+.fluent-file-list {
+  margin-top: 16px;
+}
+
+.fluent-file-item {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-}
-
-.fluent-search-input {
-  width: 100%;
-  height: 32px;
-  padding: 0 38px 0 38px;
-  font-family: var(--fluent-font-family);
-  font-size: var(--fluent-font-size-base);
-  color: var(--fluent-text-primary);
+  padding: 8px 12px;
   background-color: var(--fluent-bg-surface);
-  border: 1px solid var(--fluent-gray-70);
+  border: 1px solid var(--fluent-gray-30);
   border-radius: var(--fluent-radius);
-  transition: border-color var(--fluent-duration-normal) var(--fluent-ease-out),
-              box-shadow var(--fluent-duration-normal) var(--fluent-ease-out);
+  margin-bottom: 8px;
 }
 
-.fluent-search-input:hover {
-  border-color: var(--fluent-gray-100);
+.fluent-file-item-icon {
+  margin-left: 12px;
+  color: var(--fluent-text-secondary);
+  flex-shrink: 0;
 }
 
-.fluent-search-input:focus {
-  outline: none;
-  border-color: var(--fluent-primary);
-  box-shadow: 0 0 0 1px var(--fluent-primary);
-}
-
-/* انتخابگر فایل */
-.fluent-file-input {
-  display: none;
-}
-
-.fluent-file-label {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 32px;
-  padding: 0 16px;
-  font-family: var(--fluent-font-family);
-  font-size: var(--fluent-font-size-base);
-  font-weight: var(--fluent-font-weight-medium);
-  color: var(--fluent-text-primary);
-  background-color: var(--fluent-bg-subtle);
-  border: 1px solid var(--fluent-gray-70);
-  border-radius: var(--fluent-radius);
-  cursor: pointer;
-  transition: background-color var(--fluent-duration-normal) var(--fluent-ease-out),
-              border-color var(--fluent-duration-normal) var(--fluent-ease-out);
-}
-
-.fluent-file-label:hover {
-  background-color: var(--fluent-gray-30);
-  border-color: var(--fluent-gray-90);
-}
-
-.fluent-file-label:active {
-  background-color: var(--fluent-gray-40);
-}
-
-.fluent-file-name {
-  margin-right: 8px;
+.fluent-file-item-info {
   flex: 1;
+  overflow: hidden;
+}
+
+.fluent-file-item-name {
+  font-size: var(--fluent-font-size-sm);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.fluent-file-browse {
-  display: inline-flex;
+.fluent-file-item-size {
+  font-size: var(--fluent-font-size-xs);
+  color: var(--fluent-text-secondary);
+}
+
+.fluent-file-item-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.fluent-file-item-remove {
+  background: none;
+  border: none;
+  color: var(--fluent-text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  transition: color var(--fluent-duration-faster) var(--fluent-ease-out);
+}
+
+.fluent-file-item-remove:hover {
+  color: var(--fluent-error);
+}
+
+/* فرم‌های جستجو */
+.fluent-search-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fluent-search-form .fluent-input {
+  padding-right: 40px;
+}
+
+.fluent-search-form .fluent-input-with-icon {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ورودی دوتایی زمانی */
+.fluent-date-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fluent-date-range-separator {
+  color: var(--fluent-text-secondary);
+  flex-shrink: 0;
+}
+
+/* ورودی رنگ */
+.fluent-color-input {
+  display: flex;
   align-items: center;
 }
 
-.fluent-file-browse i,
-.fluent-file-browse svg {
+.fluent-color-preview {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--fluent-radius);
+  border: 1px solid var(--fluent-gray-40);
   margin-left: 8px;
 }
 
-/* گروه‌های ورودی */
-.fluent-input-group {
-  display: flex;
+.fluent-color-picker {
   position: relative;
 }
 
-.fluent-input-group .fluent-input:not(:first-child) {
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-}
-
-.fluent-input-group .fluent-input:not(:last-child) {
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-}
-
-.fluent-input-group-text {
-  display: flex;
-  align-items: center;
-  padding: 0 12px;
-  background-color: var(--fluent-gray-20);
-  border: 1px solid var(--fluent-gray-70);
-  font-size: var(--fluent-font-size-base);
-  color: var(--fluent-text-secondary);
-  white-space: nowrap;
-}
-
-.fluent-input-group-text:first-child {
-  border-left: none;
-  border-top-right-radius: var(--fluent-radius);
-  border-bottom-right-radius: var(--fluent-radius);
-}
-
-.fluent-input-group-text:last-child {
-  border-right: none;
-  border-top-left-radius: var(--fluent-radius);
-  border-bottom-left-radius: var(--fluent-radius);
-}
-
-/* باکس کد و پره‌فرمت */
-.fluent-code {
-  font-family: 'Consolas', 'Courier New', monospace;
-  padding: 16px;
-  background-color: var(--fluent-gray-20);
-  border: 1px solid var(--fluent-gray-40);
-  border-radius: var(--fluent-radius);
-  color: var(--fluent-text-primary);
-  font-size: var(--fluent-font-size-sm);
-  line-height: 1.5;
-  overflow-x: auto;
-  tab-size: 4;
-  white-space: pre;
-}
-
-/* لایه‌بندی فرم */
-.fluent-form-grid {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 16px;
-}
-
-.fluent-form-col-1 { grid-column: span 1; }
-.fluent-form-col-2 { grid-column: span 2; }
-.fluent-form-col-3 { grid-column: span 3; }
-.fluent-form-col-4 { grid-column: span 4; }
-.fluent-form-col-5 { grid-column: span 5; }
-.fluent-form-col-6 { grid-column: span 6; }
-.fluent-form-col-7 { grid-column: span 7; }
-.fluent-form-col-8 { grid-column: span 8; }
-.fluent-form-col-9 { grid-column: span 9; }
-.fluent-form-col-10 { grid-column: span 10; }
-.fluent-form-col-11 { grid-column: span 11; }
-.fluent-form-col-12 { grid-column: span 12; }
-
-.fluent-form-row {
-  display: flex;
-  flex-wrap: wrap;
-  margin-left: -8px;
-  margin-right: -8px;
-}
-
-.fluent-form-col {
-  padding-left: 8px;
-  padding-right: 8px;
-  flex: 1;
-}
-
-/* اکشن‌های فرم */
-.fluent-form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid var(--fluent-gray-30);
-}
-
-/* لیست خطاها */
-.fluent-error-list {
-  margin: 8px 0;
-  padding: 8px 12px;
-  background-color: rgba(168, 0, 0, 0.05);
-  border-right: 3px solid var(--fluent-error);
-  border-radius: var(--fluent-radius);
-}
-
-.fluent-error-list-title {
-  color: var(--fluent-error);
-  font-weight: var(--fluent-font-weight-semibold);
-  margin: 0 0 4px;
-  font-size: var(--fluent-font-size-sm);
-}
-
-.fluent-error-list-items {
-  margin: 0;
-  padding: 0 16px;
-  font-size: var(--fluent-font-size-sm);
-  color: var(--fluent-error);
-}
-
-.fluent-error-list-item {
-  margin-bottom: 2px;
-}
-
-.fluent-error-list-item:last-child {
-  margin-bottom: 0;
+.fluent-color-picker input[type="color"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
 }

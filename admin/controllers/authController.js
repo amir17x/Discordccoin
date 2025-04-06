@@ -10,10 +10,22 @@ import { AdminUser } from '../models/adminUser.js';
  * @param {Object} res پاسخ
  */
 export async function showLogin(req, res) {
-  res.render('auth/login', {
-    title: 'ورود به پنل مدیریت',
-    layout: 'layouts/auth',
-  });
+  // بررسی نوع UI (fluent یا معمولی)
+  const useFluentUI = process.env.USE_FLUENT_UI === 'true' || false;
+  
+  if (useFluentUI) {
+    console.log('🎨 استفاده از رابط کاربری Fluent برای صفحه ورود');
+    res.render('fluent-login', {
+      title: 'ورود به پنل مدیریت',
+      layout: 'layouts/fluent-auth', // استفاده از قالب fluent-auth که برای صفحه لاگین طراحی شده
+    });
+  } else {
+    console.log('🎨 استفاده از رابط کاربری معمولی برای صفحه ورود');
+    res.render('auth/login', {
+      title: 'ورود به پنل مدیریت',
+      layout: 'layouts/auth',
+    });
+  }
 }
 
 /**

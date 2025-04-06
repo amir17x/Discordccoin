@@ -363,6 +363,75 @@ export async function getEconomyStats() {
 }
 
 /**
+ * دریافت آمار تراکنش‌های امروز
+ * @returns {Promise<Object>} آمار تراکنش‌های امروز
+ */
+export async function getTodayTransactionStats() {
+  try {
+    await connectToDatabase();
+    
+    // تنظیم محدوده زمانی (امروز)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // شمارش تعداد تراکنش‌های امروز
+    const count = await db.collection('transactions').countDocuments({
+      createdAt: { $gte: today }
+    });
+    
+    // محاسبه حجم تراکنش‌ها (مجموع مقادیر مثبت)
+    const volumeResult = await db.collection('transactions').aggregate([
+      {
+        $match: {
+          createdAt: { $gte: today },
+          amount: { $gt: 0 } // فقط مقادیر مثبت
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalVolume: { $sum: '$amount' }
+        }
+      }
+    ]).toArray();
+    
+    const volume = volumeResult.length > 0 ? volumeResult[0].totalVolume : 0;
+    
+    // آمار انواع تراکنش‌ها
+    const typeStats = await db.collection('transactions').aggregate([
+      {
+        $match: {
+          createdAt: { $gte: today }
+        }
+      },
+      {
+        $group: {
+          _id: '$type',
+          count: { $sum: 1 }
+        }
+      }
+    ]).toArray();
+    
+    // ساختن نتیجه نهایی
+    return {
+      count,
+      volume,
+      typeStats: typeStats.reduce((acc, stat) => {
+        acc[stat._id] = stat.count;
+        return acc;
+      }, {})
+    };
+  } catch (error) {
+    console.error('❌ خطا در دریافت آمار تراکنش‌های امروز:', error);
+    return {
+      count: 0,
+      volume: 0,
+      typeStats: {}
+    };
+  }
+}
+
+/**
  * دریافت آمار بازار سهام
  * @returns {Promise<Object>} آمار بازار سهام
  */
@@ -378,6 +447,7 @@ export async function getStockMarketOverview() {
     
     // وضعیت کلی بازار
     let marketCondition;
+    let volatility = 'low';
     
     if (stocks.length === 0) {
       marketCondition = 'neutral';
@@ -385,12 +455,29 @@ export async function getStockMarketOverview() {
       // محاسبه میانگین تغییرات قیمت
       const avgChange = stocks.reduce((sum, stock) => sum + (stock.change || 0), 0) / stocks.length;
       
+      // محاسبه نوسان بازار (انحراف استاندارد تغییرات)
+      const changeValues = stocks.map(stock => stock.change || 0);
+      const mean = changeValues.reduce((sum, value) => sum + value, 0) / changeValues.length;
+      const squaredDifferences = changeValues.map(value => Math.pow(value - mean, 2));
+      const variance = squaredDifferences.reduce((sum, value) => sum + value, 0) / squaredDifferences.length;
+      const stdDev = Math.sqrt(variance);
+      
+      // تعیین وضعیت بازار بر اساس میانگین تغییرات
       if (avgChange > 1) {
         marketCondition = 'up';
       } else if (avgChange < -1) {
         marketCondition = 'down';
       } else {
         marketCondition = 'neutral';
+      }
+      
+      // تعیین نوسان بازار بر اساس انحراف استاندارد
+      if (stdDev > 3) {
+        volatility = 'high';
+      } else if (stdDev > 1.5) {
+        volatility = 'medium';
+      } else {
+        volatility = 'low';
       }
     }
     
@@ -404,6 +491,7 @@ export async function getStockMarketOverview() {
     return {
       stocks,
       marketCondition,
+      volatility,
       recentTradesCount
     };
   } catch (error) {
@@ -411,6 +499,7 @@ export async function getStockMarketOverview() {
     return {
       stocks: [],
       marketCondition: 'neutral',
+      volatility: 'low',
       recentTradesCount: 0
     };
   }
