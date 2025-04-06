@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title + ' | پنل مدیریت CCOIN' : 'پنل مدیریت CCOIN' %></title>
+  <link rel="stylesheet" href="/admin/css/bootstrap.rtl.min.css">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+  <script src="/admin/js/bootstrap.bundle.min.js" defer></script>
+  <script src="/admin/js/admin.js" defer></script>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <!-- Sidebar -->
+      <% if (typeof user !== 'undefined' && user) { %>
+        <div class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+          <div class="position-sticky pt-3">
+            <div class="text-center mb-4">
+              <img src="/admin/images/logo.png" alt="CCOIN" class="img-fluid" style="max-width: 100px;">
+              <h5 class="mt-2">پنل مدیریت CCOIN</h5>
+            </div>
+            <ul class="nav flex-column">
+              <li class="nav-item">
+                <a class="nav-link" href="/admin/dashboard">
+                  <span data-feather="home"></span>
+                  داشبورد
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/admin/users">
+                  <span data-feather="users"></span>
+                  مدیریت کاربران
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/admin/economy">
+                  <span data-feather="dollar-sign"></span>
+                  مدیریت اقتصاد
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/admin/games">
+                  <span data-feather="play"></span>
+                  مدیریت بازی‌ها
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/admin/ai">
+                  <span data-feather="cpu"></span>
+                  مدیریت هوش مصنوعی
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/admin/events">
+                  <span data-feather="calendar"></span>
+                  مدیریت رویدادها
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/admin/servers">
+                  <span data-feather="server"></span>
+                  مدیریت سرورها
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/admin/logs">
+                  <span data-feather="list"></span>
+                  مدیریت لاگ‌ها
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/admin/settings">
+                  <span data-feather="settings"></span>
+                  تنظیمات
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      <% } %>
+      
+      <!-- Main content -->
+      <div class="<%= typeof user !== 'undefined' && user ? 'col-md-9 col-lg-10 ms-sm-auto' : 'col-12' %> px-md-4">
+        <!-- Header -->
+        <% if (typeof user !== 'undefined' && user) { %>
+          <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h1 class="h2"><%= typeof title !== 'undefined' ? title : 'پنل مدیریت' %></h1>
+            <div class="btn-toolbar mb-2 mb-md-0">
+              <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                  <span data-feather="user"></span>
+                  <%= user.name %>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                  <li><a class="dropdown-item" href="/admin/profile">پروفایل</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item" href="/admin/auth/logout">خروج</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        <% } %>
+        
+        <!-- Flash messages -->
+        <% if (typeof messages !== 'undefined') { %>
+          <% if (messages.success && messages.success.length > 0) { %>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+              <%= messages.success %>
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          <% } %>
+          
+          <% if (messages.error && messages.error.length > 0) { %>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+              <%= messages.error %>
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          <% } %>
+          
+          <% if (messages.warning && messages.warning.length > 0) { %>
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+              <%= messages.warning %>
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          <% } %>
+          
+          <% if (messages.info && messages.info.length > 0) { %>
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+              <%= messages.info %>
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          <% } %>
+        <% } %>
+        
+        <!-- Page content -->
+        <%- body %>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Footer -->
+  <footer class="footer mt-auto py-3 bg-light">
+    <div class="container text-center">
+      <span class="text-muted">حقوق مالکیت معنوی © ۱۴۰۴ CCOIN. تمامی حقوق محفوظ است.</span>
+    </div>
+  </footer>
+</body>
+</html>

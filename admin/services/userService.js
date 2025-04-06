@@ -1,345 +1,575 @@
 /**
  * سرویس مدیریت کاربران
  * 
- * این سرویس مسئول مدیریت کاربران دیسکورد و عملیات مرتبط با آن‌ها است.
+ * این ماژول شامل توابع مورد نیاز برای مدیریت کاربران است.
  */
 
-import { getDiscordClient } from '../utils/discord.js';
+import mongoose from 'mongoose';
+import { createObjectCsvStringifier } from 'csv-writer';
+import { Log } from '../models/log.js';
 
-// فرض می‌کنیم کاربران ما اینجا ذخیره می‌شوند (در محیط واقعی این داده‌ها از دیتابیس می‌آیند)
-let users = [];
+// مدل کاربر از سرور اصلی
+// در پروژه واقعی، این مدل در سرور اصلی برنامه تعریف شده و اینجا import می‌شود
+const User = mongoose.model('User');
 
 /**
- * دریافت کاربر با شناسه مشخص
- * 
+ * دریافت لیست کاربران با امکان فیلتر و صفحه‌بندی
+ * @param {Object} params پارامترهای جستجو
+ * @returns {Promise<Object>} لیست کاربران و اطلاعات صفحه‌بندی
+ */
+export async function getAllUsers(params) {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      search = '',
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+      filter = {}
+    } = params;
+    
+    // ساخت شرایط جستجو
+    const query = {};
+    
+    // جستجو در نام کاربری یا اسم نمایشی
+    if (search) {
+      query.$or = [
+        { username: { $regex: search, $options: 'i' } },
+        { displayName: { $regex: search, $options: 'i' } },
+        { discordTag: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    // اعمال فیلترها
+    if (filter.isActive !== undefined) {
+      query.isActive = filter.isActive;
+    }
+    
+    if (filter.isBanned !== undefined) {
+      query.isBanned = filter.isBanned;
+    }
+    
+    if (filter.minCoins !== undefined) {
+      query.coins = { ...query.coins, $gte: filter.minCoins };
+    }
+    
+    if (filter.maxCoins !== undefined) {
+      query.coins = { ...query.coins, $lte: filter.maxCoins };
+    }
+    
+    if (filter.minLevel !== undefined) {
+      query.level = { ...query.level, $gte: filter.minLevel };
+    }
+    
+    if (filter.maxLevel !== undefined) {
+      query.level = { ...query.level, $lte: filter.maxLevel };
+    }
+    
+    // محاسبه تعداد کل رکوردها برای صفحه‌بندی
+    const totalUsers = await User.countDocuments(query);
+    
+    // محاسبه تعداد صفحات
+    const totalPages = Math.ceil(totalUsers / limit);
+    
+    // ترتیب بندی
+    const sort = {};
+    sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+    
+    // دریافت کاربران
+    const users = await User.find(query)
+      .sort(sort)
+      .skip((page - 1) * limit)
+      .limit(limit);
+    
+    return {
+      users,
+      pagination: {
+        page,
+        limit,
+        totalPages,
+        totalUsers
+      }
+    };
+  } catch (error) {
+    console.error('خطا در دریافت لیست کاربران:', error);
+    throw error;
+  }
+}
+
+/**
+ * دریافت اطلاعات یک کاربر با شناسه
  * @param {string} userId شناسه کاربر
- * @returns {Promise<Object|null>} اطلاعات کاربر یا null در صورت عدم وجود
+ * @returns {Promise<Object>} اطلاعات کاربر
  */
 export async function getUserById(userId) {
   try {
-    // ابتدا در کش محلی جستجو می‌کنیم
-    let user = users.find(u => u.id === userId);
+    return await User.findById(userId);
+  } catch (error) {
+    console.error(`خطا در دریافت اطلاعات کاربر با شناسه ${userId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * به‌روزرسانی اطلاعات کاربر
+ * @param {string} userId شناسه کاربر
+ * @param {Object} userData اطلاعات جدید کاربر
+ * @returns {Promise<Object>} کاربر به‌روزرسانی شده
+ */
+export async function updateUser(userId, userData) {
+  try {
+    const user = await User.findById(userId);
     
-    if (user) {
-      return user;
+    if (!user) {
+      throw new Error('کاربر مورد نظر یافت نشد');
     }
     
-    // اگر در کش نبود، از دیسکورد می‌گیریم
-    const discordClient = getDiscordClient();
-    
-    if (!discordClient) {
-      throw new Error('Discord client not available');
+    // به‌روزرسانی فیلدهای مجاز
+    if (userData.displayName !== undefined) {
+      user.displayName = userData.displayName;
     }
     
-    const discordUser = await discordClient.users.fetch(userId).catch(() => null);
-    
-    if (!discordUser) {
-      return null;
+    if (userData.isActive !== undefined) {
+      user.isActive = userData.isActive;
     }
     
-    // ساخت اطلاعات کاربر
-    user = {
-      id: discordUser.id,
-      username: discordUser.username,
-      avatar: discordUser.displayAvatarURL({ dynamic: true }),
-      bot: discordUser.bot,
-      createdAt: discordUser.createdAt.toISOString(),
-      discriminator: discordUser.discriminator || '0',
-      wallet: 0, // مقدار پیش‌فرض
-      crystals: 0, // مقدار پیش‌فرض
-      lastActivity: new Date().toISOString()
-    };
+    // ذخیره تغییرات
+    await user.save();
     
-    // افزودن به کش
-    users.push(user);
+    // ثبت لاگ
+    await Log.create({
+      level: 'info',
+      category: 'user',
+      message: `ویرایش اطلاعات کاربر ${user.username}`,
+      userId: user.userId,
+      details: { updatedFields: Object.keys(userData) }
+    });
     
     return user;
   } catch (error) {
-    console.error('Error getting user by ID:', error);
-    return null;
+    console.error(`خطا در به‌روزرسانی اطلاعات کاربر با شناسه ${userId}:`, error);
+    throw error;
   }
 }
 
 /**
- * دریافت کاربر با نام کاربری
- * 
- * @param {string} username نام کاربری
- * @returns {Promise<Object|null>} اطلاعات کاربر یا null در صورت عدم وجود
- */
-export async function getUserByUsername(username) {
-  try {
-    // ابتدا در کش محلی جستجو می‌کنیم
-    const user = users.find(u => u.username === username);
-    
-    if (user) {
-      return user;
-    }
-    
-    // در محیط واقعی باید از دیتابیس جستجو کنیم
-    // اما فعلاً null برمی‌گردانیم
-    return null;
-  } catch (error) {
-    console.error('Error getting user by username:', error);
-    return null;
-  }
-}
-
-/**
- * دریافت همه کاربران با اعمال فیلترها
- * 
- * @param {Object} options گزینه‌های جستجو
- * @param {number} options.limit تعداد نتایج
- * @param {number} options.offset ایندکس شروع
- * @param {Object} options.filter فیلترهای جستجو
- * @param {Object} options.sort ترتیب نتایج
- * @returns {Promise<Array>} لیست کاربران
- */
-export async function getAllUsers(options = {}) {
-  try {
-    const {
-      limit = 20,
-      offset = 0,
-      filter = {},
-      sort = { username: 1 }
-    } = options;
-    
-    // در محیط واقعی از دیتابیس با فیلترها و سورت می‌گیریم
-    // اما فعلاً یک فیلتر ساده پیاده می‌کنیم
-    let filteredUsers = [...users];
-    
-    // اعمال فیلترها
-    if (filter.username) {
-      filteredUsers = filteredUsers.filter(u => 
-        u.username.toLowerCase().includes(filter.username.toLowerCase())
-      );
-    }
-    
-    if (filter.bot !== undefined) {
-      filteredUsers = filteredUsers.filter(u => u.bot === filter.bot);
-    }
-    
-    // اعمال سورت
-    filteredUsers.sort((a, b) => {
-      const sortField = Object.keys(sort)[0];
-      const sortDirection = sort[sortField];
-      
-      if (a[sortField] < b[sortField]) return -1 * sortDirection;
-      if (a[sortField] > b[sortField]) return 1 * sortDirection;
-      return 0;
-    });
-    
-    // اعمال limit و offset
-    return filteredUsers.slice(offset, offset + limit);
-  } catch (error) {
-    console.error('Error getting all users:', error);
-    return [];
-  }
-}
-
-/**
- * تعداد کل کاربران
- * 
- * @returns {Promise<number>} تعداد کاربران
- */
-export async function getUsersCount() {
-  try {
-    // در محیط واقعی از دیتابیس می‌گیریم
-    return users.length;
-  } catch (error) {
-    console.error('Error getting users count:', error);
-    return 0;
-  }
-}
-
-/**
- * تعداد کاربران فعال
- * 
- * @param {number} days تعداد روزهای اخیر
- * @returns {Promise<number>} تعداد کاربران فعال
- */
-export async function getActiveUsersCount(days = 7) {
-  try {
-    const now = new Date();
-    const timeThreshold = new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
-    
-    // شمارش کاربرانی که در x روز اخیر فعال بوده‌اند
-    return users.filter(user => user.lastActivity > timeThreshold).length;
-  } catch (error) {
-    console.error('Error getting active users count:', error);
-    return 0;
-  }
-}
-
-/**
- * بروزرسانی اطلاعات کاربر
- * 
- * @param {string} userId شناسه کاربر
- * @param {Object} updateData اطلاعات جدید
- * @returns {Promise<Object|null>} اطلاعات بروزرسانی شده یا null در صورت عدم وجود
- */
-export async function updateUser(userId, updateData) {
-  try {
-    const userIndex = users.findIndex(u => u.id === userId);
-    
-    if (userIndex === -1) {
-      return null;
-    }
-    
-    // بروزرسانی اطلاعات
-    users[userIndex] = {
-      ...users[userIndex],
-      ...updateData,
-      // اطمینان از عدم تغییر شناسه
-      id: users[userIndex].id
-    };
-    
-    return users[userIndex];
-  } catch (error) {
-    console.error('Error updating user:', error);
-    return null;
-  }
-}
-
-/**
- * افزودن سکه به کیف پول کاربر
- * 
+ * افزودن سکه به کاربر
  * @param {string} userId شناسه کاربر
  * @param {number} amount مقدار سکه
- * @returns {Promise<boolean>} آیا عملیات موفق بود؟
+ * @param {string} description توضیحات تراکنش
+ * @returns {Promise<Object>} نتیجه عملیات
  */
-export async function addCoinsToUser(userId, amount) {
+export async function addUserCoins(userId, amount, description) {
   try {
-    const user = await getUserById(userId);
+    if (!amount || amount <= 0) {
+      throw new Error('مقدار سکه باید عددی بزرگتر از صفر باشد');
+    }
+    
+    const user = await User.findById(userId);
     
     if (!user) {
-      return false;
+      throw new Error('کاربر مورد نظر یافت نشد');
     }
     
-    // بروزرسانی کیف پول
-    await updateUser(userId, {
-      wallet: (user.wallet || 0) + amount
-    });
+    // افزودن سکه به کاربر
+    user.coins += amount;
     
-    return true;
-  } catch (error) {
-    console.error('Error adding coins to user:', error);
-    return false;
-  }
-}
-
-/**
- * افزودن کریستال به کاربر
- * 
- * @param {string} userId شناسه کاربر
- * @param {number} amount مقدار کریستال
- * @returns {Promise<boolean>} آیا عملیات موفق بود؟
- */
-export async function addCrystalsToUser(userId, amount) {
-  try {
-    const user = await getUserById(userId);
+    // ذخیره تغییرات
+    await user.save();
     
-    if (!user) {
-      return false;
-    }
-    
-    // بروزرسانی کریستال‌ها
-    await updateUser(userId, {
-      crystals: (user.crystals || 0) + amount
-    });
-    
-    return true;
-  } catch (error) {
-    console.error('Error adding crystals to user:', error);
-    return false;
-  }
-}
-
-/**
- * دریافت لیست سرورهای کاربر
- * 
- * @param {string} userId شناسه کاربر
- * @returns {Promise<Array>} لیست سرورها
- */
-export async function getUserGuilds(userId) {
-  try {
-    const discordClient = getDiscordClient();
-    
-    if (!discordClient) {
-      throw new Error('Discord client not available');
-    }
-    
-    // دریافت تمام سرورها
-    const guilds = [...discordClient.guilds.cache.values()];
-    
-    // فیلتر سرورهایی که کاربر در آن‌ها عضو است
-    const userGuilds = [];
-    
-    for (const guild of guilds) {
-      try {
-        const member = await guild.members.fetch(userId).catch(() => null);
-        
-        if (member) {
-          userGuilds.push({
-            id: guild.id,
-            name: guild.name,
-            icon: guild.iconURL({ dynamic: true }),
-            memberCount: guild.memberCount,
-            joinedAt: member.joinedAt.toISOString()
-          });
-        }
-      } catch (error) {
-        console.error(`Error fetching member from guild ${guild.id}:`, error);
+    // ثبت تراکنش
+    await mongoose.model('Transaction').create({
+      userId: user.userId,
+      type: 'admin_add',
+      amount,
+      balance: user.coins,
+      description: description || 'افزودن سکه توسط ادمین',
+      metadata: {
+        adminAction: true
       }
+    });
+    
+    // ثبت لاگ
+    await Log.create({
+      level: 'info',
+      category: 'economy',
+      message: `افزودن ${amount} سکه به کاربر ${user.username}`,
+      userId: user.userId,
+      details: { amount, newBalance: user.coins, description }
+    });
+    
+    return {
+      success: true,
+      message: `${amount} سکه با موفقیت به کاربر ${user.username} اضافه شد`,
+      newBalance: user.coins
+    };
+  } catch (error) {
+    console.error(`خطا در افزودن سکه به کاربر با شناسه ${userId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * کم کردن سکه از کاربر
+ * @param {string} userId شناسه کاربر
+ * @param {number} amount مقدار سکه
+ * @param {string} description توضیحات تراکنش
+ * @returns {Promise<Object>} نتیجه عملیات
+ */
+export async function removeUserCoins(userId, amount, description) {
+  try {
+    if (!amount || amount <= 0) {
+      throw new Error('مقدار سکه باید عددی بزرگتر از صفر باشد');
     }
     
-    return userGuilds;
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      throw new Error('کاربر مورد نظر یافت نشد');
+    }
+    
+    // بررسی موجودی کافی
+    if (user.coins < amount) {
+      throw new Error('موجودی کاربر کافی نیست');
+    }
+    
+    // کم کردن سکه از کاربر
+    user.coins -= amount;
+    
+    // ذخیره تغییرات
+    await user.save();
+    
+    // ثبت تراکنش
+    await mongoose.model('Transaction').create({
+      userId: user.userId,
+      type: 'admin_remove',
+      amount: -amount,
+      balance: user.coins,
+      description: description || 'کم کردن سکه توسط ادمین',
+      metadata: {
+        adminAction: true
+      }
+    });
+    
+    // ثبت لاگ
+    await Log.create({
+      level: 'info',
+      category: 'economy',
+      message: `کم کردن ${amount} سکه از کاربر ${user.username}`,
+      userId: user.userId,
+      details: { amount, newBalance: user.coins, description }
+    });
+    
+    return {
+      success: true,
+      message: `${amount} سکه با موفقیت از کاربر ${user.username} کم شد`,
+      newBalance: user.coins
+    };
   } catch (error) {
-    console.error('Error getting user guilds:', error);
-    return [];
+    console.error(`خطا در کم کردن سکه از کاربر با شناسه ${userId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * افزودن آیتم به کاربر
+ * @param {string} userId شناسه کاربر
+ * @param {string} itemId شناسه آیتم
+ * @param {number} quantity تعداد
+ * @returns {Promise<Object>} نتیجه عملیات
+ */
+export async function addUserItem(userId, itemId, quantity) {
+  try {
+    if (!quantity || quantity <= 0) {
+      throw new Error('تعداد آیتم باید عددی بزرگتر از صفر باشد');
+    }
+    
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      throw new Error('کاربر مورد نظر یافت نشد');
+    }
+    
+    const item = await mongoose.model('Item').findById(itemId);
+    
+    if (!item) {
+      throw new Error('آیتم مورد نظر یافت نشد');
+    }
+    
+    // بررسی وجود کوله‌پشتی کاربر
+    if (!user.inventory) {
+      user.inventory = [];
+    }
+    
+    // بررسی وجود آیتم در کوله‌پشتی
+    const existingItem = user.inventory.find(invItem => invItem.itemId.toString() === itemId);
+    
+    if (existingItem) {
+      // به‌روزرسانی تعداد آیتم موجود
+      existingItem.quantity += quantity;
+    } else {
+      // افزودن آیتم جدید به کوله‌پشتی
+      user.inventory.push({
+        itemId,
+        quantity,
+        purchasedAt: new Date()
+      });
+    }
+    
+    // ذخیره تغییرات
+    await user.save();
+    
+    // ثبت لاگ
+    await Log.create({
+      level: 'info',
+      category: 'item',
+      message: `افزودن ${quantity} عدد آیتم ${item.name} به کاربر ${user.username}`,
+      userId: user.userId,
+      details: { itemId, itemName: item.name, quantity }
+    });
+    
+    return {
+      success: true,
+      message: `${quantity} عدد ${item.name} با موفقیت به کاربر ${user.username} اضافه شد`
+    };
+  } catch (error) {
+    console.error(`خطا در افزودن آیتم به کاربر با شناسه ${userId}:`, error);
+    throw error;
   }
 }
 
 /**
  * مسدود کردن کاربر
- * 
  * @param {string} userId شناسه کاربر
  * @param {string} reason دلیل مسدودیت
- * @returns {Promise<boolean>} آیا عملیات موفق بود؟
+ * @returns {Promise<Object>} نتیجه عملیات
  */
-export async function banUser(userId, reason = '') {
+export async function banUser(userId, reason) {
   try {
-    // بروزرسانی وضعیت کاربر
-    await updateUser(userId, {
-      banned: true,
-      banReason: reason,
-      banDate: new Date().toISOString()
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      throw new Error('کاربر مورد نظر یافت نشد');
+    }
+    
+    // مسدود کردن کاربر
+    user.isBanned = true;
+    user.banReason = reason || 'نامشخص';
+    user.bannedAt = new Date();
+    
+    // ذخیره تغییرات
+    await user.save();
+    
+    // ثبت لاگ
+    await Log.create({
+      level: 'warning',
+      category: 'user',
+      message: `مسدود کردن کاربر ${user.username}`,
+      userId: user.userId,
+      details: { reason }
     });
     
-    return true;
+    return {
+      success: true,
+      message: `کاربر ${user.username} با موفقیت مسدود شد`
+    };
   } catch (error) {
-    console.error('Error banning user:', error);
-    return false;
+    console.error(`خطا در مسدود کردن کاربر با شناسه ${userId}:`, error);
+    throw error;
   }
 }
 
 /**
  * رفع مسدودیت کاربر
- * 
  * @param {string} userId شناسه کاربر
- * @returns {Promise<boolean>} آیا عملیات موفق بود؟
+ * @returns {Promise<Object>} نتیجه عملیات
  */
 export async function unbanUser(userId) {
   try {
-    // بروزرسانی وضعیت کاربر
-    await updateUser(userId, {
-      banned: false,
-      banReason: null,
-      banDate: null
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      throw new Error('کاربر مورد نظر یافت نشد');
+    }
+    
+    // رفع مسدودیت کاربر
+    user.isBanned = false;
+    user.banReason = undefined;
+    user.bannedAt = undefined;
+    
+    // ذخیره تغییرات
+    await user.save();
+    
+    // ثبت لاگ
+    await Log.create({
+      level: 'info',
+      category: 'user',
+      message: `رفع مسدودیت کاربر ${user.username}`,
+      userId: user.userId
     });
     
-    return true;
+    return {
+      success: true,
+      message: `مسدودیت کاربر ${user.username} با موفقیت رفع شد`
+    };
   } catch (error) {
-    console.error('Error unbanning user:', error);
-    return false;
+    console.error(`خطا در رفع مسدودیت کاربر با شناسه ${userId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * ریست کردن اطلاعات کاربر
+ * @param {string} userId شناسه کاربر
+ * @param {Object} options گزینه‌های ریست
+ * @returns {Promise<Object>} نتیجه عملیات
+ */
+export async function resetUserData(userId, options) {
+  try {
+    const {
+      resetCoins = false,
+      resetCrystals = false,
+      resetItems = false,
+      resetLevel = false,
+      resetBank = false
+    } = options;
+    
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      throw new Error('کاربر مورد نظر یافت نشد');
+    }
+    
+    const resetFields = [];
+    
+    // ریست سکه‌ها
+    if (resetCoins) {
+      user.coins = 0;
+      resetFields.push('سکه‌ها');
+    }
+    
+    // ریست کریستال‌ها
+    if (resetCrystals) {
+      user.crystals = 0;
+      resetFields.push('کریستال‌ها');
+    }
+    
+    // ریست آیتم‌ها
+    if (resetItems) {
+      user.inventory = [];
+      resetFields.push('آیتم‌ها');
+    }
+    
+    // ریست سطح
+    if (resetLevel) {
+      user.level = 1;
+      user.xp = 0;
+      resetFields.push('سطح و تجربه');
+    }
+    
+    // ریست اطلاعات بانکی
+    if (resetBank) {
+      user.bankBalance = 0;
+      user.loanAmount = 0;
+      user.loanDueDate = null;
+      resetFields.push('اطلاعات بانکی');
+    }
+    
+    // ذخیره تغییرات
+    await user.save();
+    
+    // ثبت لاگ
+    await Log.create({
+      level: 'warning',
+      category: 'user',
+      message: `ریست کردن اطلاعات کاربر ${user.username}`,
+      userId: user.userId,
+      details: { resetFields }
+    });
+    
+    return {
+      success: true,
+      message: `اطلاعات کاربر ${user.username} با موفقیت ریست شد (${resetFields.join(', ')})`
+    };
+  } catch (error) {
+    console.error(`خطا در ریست کردن اطلاعات کاربر با شناسه ${userId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * خروجی CSV از لیست کاربران
+ * @param {string} search عبارت جستجو
+ * @param {Object} filter فیلترها
+ * @param {Object} sort ترتیب بندی
+ * @returns {Promise<string>} محتوای CSV
+ */
+export async function exportUsersToCsv(search, filter, sort) {
+  try {
+    // ساخت شرایط جستجو
+    const query = {};
+    
+    // جستجو در نام کاربری یا اسم نمایشی
+    if (search) {
+      query.$or = [
+        { username: { $regex: search, $options: 'i' } },
+        { displayName: { $regex: search, $options: 'i' } },
+        { discordTag: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    // اعمال فیلترها
+    if (filter.isActive !== undefined) {
+      query.isActive = filter.isActive;
+    }
+    
+    if (filter.isBanned !== undefined) {
+      query.isBanned = filter.isBanned;
+    }
+    
+    // ترتیب بندی
+    const sortOption = {};
+    sortOption[sort.field || 'createdAt'] = sort.order === 'asc' ? 1 : -1;
+    
+    // دریافت کاربران
+    const users = await User.find(query).sort(sortOption);
+    
+    // تعریف ستون‌های CSV
+    const csvStringifier = createObjectCsvStringifier({
+      header: [
+        { id: 'username', title: 'نام کاربری' },
+        { id: 'displayName', title: 'نام نمایشی' },
+        { id: 'discordTag', title: 'تگ دیسکورد' },
+        { id: 'coins', title: 'سکه' },
+        { id: 'level', title: 'سطح' },
+        { id: 'xp', title: 'تجربه' },
+        { id: 'bankBalance', title: 'موجودی بانک' },
+        { id: 'isActive', title: 'فعال' },
+        { id: 'isBanned', title: 'مسدود' },
+        { id: 'createdAt', title: 'تاریخ ثبت نام' },
+        { id: 'lastLogin', title: 'آخرین ورود' }
+      ]
+    });
+    
+    // تبدیل داده‌ها به فرمت مناسب
+    const csvData = users.map(user => ({
+      username: user.username,
+      displayName: user.displayName || '-',
+      discordTag: user.discordTag || '-',
+      coins: user.coins || 0,
+      level: user.level || 1,
+      xp: user.xp || 0,
+      bankBalance: user.bankBalance || 0,
+      isActive: user.isActive ? 'بله' : 'خیر',
+      isBanned: user.isBanned ? 'بله' : 'خیر',
+      createdAt: user.createdAt ? user.createdAt.toLocaleDateString('fa-IR') : '-',
+      lastLogin: user.lastLogin ? user.lastLogin.toLocaleDateString('fa-IR') : '-'
+    }));
+    
+    // ایجاد CSV
+    return csvStringifier.getHeaderString() + csvStringifier.stringifyRecords(csvData);
+  } catch (error) {
+    console.error('خطا در خروجی CSV از لیست کاربران:', error);
+    throw error;
   }
 }

@@ -80,7 +80,7 @@ export async function showUserDetails(req, res) {
       return res.redirect('/admin/users');
     }
     
-    res.render('users/details', {
+    res.render('users/view', {
       title: `جزئیات کاربر: ${user.username}`,
       user
     });
@@ -139,7 +139,7 @@ export async function processUserEdit(req, res) {
     }
     
     req.flash('success_msg', 'اطلاعات کاربر با موفقیت بروزرسانی شد');
-    res.redirect(`/admin/users/details/${userId}`);
+    res.redirect(`/admin/users/view/${userId}`);
   } catch (error) {
     console.error('خطا در پردازش فرم ویرایش کاربر:', error);
     req.flash('error_msg', 'خطا در بروزرسانی اطلاعات کاربر');
@@ -154,22 +154,52 @@ export async function processUserEdit(req, res) {
  */
 export async function addCoins(req, res) {
   try {
-    const userId = req.params.id;
-    const { amount, description } = req.body;
+    // اگر از صفحه جزئیات کاربر آمده باشد، از پارامتر id استفاده می‌کنیم
+    // در غیر این صورت از فیلد userId در بدنه درخواست استفاده می‌کنیم (فرم مودال)
+    const userId = req.params.id || req.body.userId;
+    const { amount, description, reason } = req.body;
+    
+    if (!userId) {
+      req.flash('error_msg', 'شناسه کاربر الزامی است');
+      return res.redirect('/admin/users');
+    }
     
     if (!amount || isNaN(amount) || parseInt(amount) <= 0) {
       req.flash('error_msg', 'مقدار سکه باید عددی بزرگتر از صفر باشد');
-      return res.redirect(`/admin/users/details/${userId}`);
+      
+      // اگر از صفحه جزئیات آمده، به همان صفحه برگردیم
+      if (req.params.id) {
+        return res.redirect(`/admin/users/view/${req.params.id}`);
+      }
+      
+      return res.redirect('/admin/users');
     }
     
-    const result = await addUserCoins(userId, parseInt(amount), description);
+    // ترکیب دلیل و توضیحات
+    const finalDescription = reason ? 
+      (description ? `${reason}: ${description}` : reason) : 
+      (description || 'افزودن سکه توسط ادمین');
+    
+    const result = await addUserCoins(userId, parseInt(amount), finalDescription);
     
     req.flash('success_msg', `${amount} سکه با موفقیت به کاربر اضافه شد`);
-    res.redirect(`/admin/users/details/${userId}`);
+    
+    // اگر از صفحه جزئیات آمده، به همان صفحه برگردیم
+    if (req.params.id) {
+      return res.redirect(`/admin/users/view/${req.params.id}`);
+    }
+    
+    res.redirect('/admin/users');
   } catch (error) {
     console.error('خطا در افزودن سکه به کاربر:', error);
     req.flash('error_msg', `خطا در افزودن سکه: ${error.message}`);
-    res.redirect(`/admin/users/details/${req.params.id}`);
+    
+    // اگر از صفحه جزئیات آمده، به همان صفحه برگردیم
+    if (req.params.id) {
+      return res.redirect(`/admin/users/view/${req.params.id}`);
+    }
+    
+    res.redirect('/admin/users');
   }
 }
 
@@ -180,22 +210,52 @@ export async function addCoins(req, res) {
  */
 export async function removeCoins(req, res) {
   try {
-    const userId = req.params.id;
-    const { amount, description } = req.body;
+    // اگر از صفحه جزئیات کاربر آمده باشد، از پارامتر id استفاده می‌کنیم
+    // در غیر این صورت از فیلد userId در بدنه درخواست استفاده می‌کنیم (فرم مودال)
+    const userId = req.params.id || req.body.userId;
+    const { amount, description, reason } = req.body;
+    
+    if (!userId) {
+      req.flash('error_msg', 'شناسه کاربر الزامی است');
+      return res.redirect('/admin/users');
+    }
     
     if (!amount || isNaN(amount) || parseInt(amount) <= 0) {
       req.flash('error_msg', 'مقدار سکه باید عددی بزرگتر از صفر باشد');
-      return res.redirect(`/admin/users/details/${userId}`);
+      
+      // اگر از صفحه جزئیات آمده، به همان صفحه برگردیم
+      if (req.params.id) {
+        return res.redirect(`/admin/users/view/${req.params.id}`);
+      }
+      
+      return res.redirect('/admin/users');
     }
     
-    const result = await removeUserCoins(userId, parseInt(amount), description);
+    // ترکیب دلیل و توضیحات
+    const finalDescription = reason ? 
+      (description ? `${reason}: ${description}` : reason) : 
+      (description || 'کم کردن سکه توسط ادمین');
+    
+    const result = await removeUserCoins(userId, parseInt(amount), finalDescription);
     
     req.flash('success_msg', `${amount} سکه با موفقیت از کاربر کم شد`);
-    res.redirect(`/admin/users/details/${userId}`);
+    
+    // اگر از صفحه جزئیات آمده، به همان صفحه برگردیم
+    if (req.params.id) {
+      return res.redirect(`/admin/users/view/${req.params.id}`);
+    }
+    
+    res.redirect('/admin/users');
   } catch (error) {
     console.error('خطا در کم کردن سکه از کاربر:', error);
     req.flash('error_msg', `خطا در کم کردن سکه: ${error.message}`);
-    res.redirect(`/admin/users/details/${req.params.id}`);
+    
+    // اگر از صفحه جزئیات آمده، به همان صفحه برگردیم
+    if (req.params.id) {
+      return res.redirect(`/admin/users/view/${req.params.id}`);
+    }
+    
+    res.redirect('/admin/users');
   }
 }
 
@@ -206,27 +266,58 @@ export async function removeCoins(req, res) {
  */
 export async function addItem(req, res) {
   try {
-    const userId = req.params.id;
-    const { itemId, quantity } = req.body;
+    // اگر از صفحه جزئیات کاربر آمده باشد، از پارامتر id استفاده می‌کنیم
+    // در غیر این صورت از فیلد userId در بدنه درخواست استفاده می‌کنیم (فرم مودال)
+    const userId = req.params.id || req.body.userId;
+    const { itemId, quantity, reason, description } = req.body;
+    
+    if (!userId) {
+      req.flash('error_msg', 'شناسه کاربر الزامی است');
+      return res.redirect('/admin/users');
+    }
     
     if (!itemId) {
       req.flash('error_msg', 'انتخاب آیتم الزامی است');
-      return res.redirect(`/admin/users/details/${userId}`);
+      
+      // اگر از صفحه جزئیات آمده، به همان صفحه برگردیم
+      if (req.params.id) {
+        return res.redirect(`/admin/users/view/${req.params.id}`);
+      }
+      
+      return res.redirect('/admin/users');
     }
     
     if (!quantity || isNaN(quantity) || parseInt(quantity) <= 0) {
       req.flash('error_msg', 'تعداد آیتم باید عددی بزرگتر از صفر باشد');
-      return res.redirect(`/admin/users/details/${userId}`);
+      
+      // اگر از صفحه جزئیات آمده، به همان صفحه برگردیم
+      if (req.params.id) {
+        return res.redirect(`/admin/users/view/${req.params.id}`);
+      }
+      
+      return res.redirect('/admin/users');
     }
     
     const result = await addUserItem(userId, itemId, parseInt(quantity));
     
     req.flash('success_msg', result.message);
-    res.redirect(`/admin/users/details/${userId}`);
+    
+    // اگر از صفحه جزئیات آمده، به همان صفحه برگردیم
+    if (req.params.id) {
+      return res.redirect(`/admin/users/view/${req.params.id}`);
+    }
+    
+    res.redirect('/admin/users');
   } catch (error) {
     console.error('خطا در افزودن آیتم به کاربر:', error);
     req.flash('error_msg', `خطا در افزودن آیتم: ${error.message}`);
-    res.redirect(`/admin/users/details/${req.params.id}`);
+    
+    // اگر از صفحه جزئیات آمده، به همان صفحه برگردیم
+    if (req.params.id) {
+      return res.redirect(`/admin/users/view/${req.params.id}`);
+    }
+    
+    res.redirect('/admin/users');
   }
 }
 
@@ -243,11 +334,11 @@ export async function banUser(req, res) {
     const result = await banUserService(userId, reason);
     
     req.flash('success_msg', 'کاربر با موفقیت مسدود شد');
-    res.redirect(`/admin/users/details/${userId}`);
+    res.redirect(`/admin/users/view/${userId}`);
   } catch (error) {
     console.error('خطا در مسدود کردن کاربر:', error);
     req.flash('error_msg', `خطا در مسدود کردن کاربر: ${error.message}`);
-    res.redirect(`/admin/users/details/${req.params.id}`);
+    res.redirect(`/admin/users/view/${req.params.id}`);
   }
 }
 
@@ -263,11 +354,11 @@ export async function unbanUser(req, res) {
     const result = await unbanUserService(userId);
     
     req.flash('success_msg', 'مسدودیت کاربر با موفقیت رفع شد');
-    res.redirect(`/admin/users/details/${userId}`);
+    res.redirect(`/admin/users/view/${userId}`);
   } catch (error) {
     console.error('خطا در رفع مسدودیت کاربر:', error);
     req.flash('error_msg', `خطا در رفع مسدودیت کاربر: ${error.message}`);
-    res.redirect(`/admin/users/details/${req.params.id}`);
+    res.redirect(`/admin/users/view/${req.params.id}`);
   }
 }
 
@@ -299,17 +390,17 @@ export async function resetUser(req, res) {
     // بررسی انتخاب حداقل یک گزینه
     if (!Object.values(options).some(val => val)) {
       req.flash('error_msg', 'حداقل یک گزینه باید انتخاب شود');
-      return res.redirect(`/admin/users/details/${userId}`);
+      return res.redirect(`/admin/users/view/${userId}`);
     }
     
     const result = await resetUserData(userId, options);
     
     req.flash('success_msg', result.message);
-    res.redirect(`/admin/users/details/${userId}`);
+    res.redirect(`/admin/users/view/${userId}`);
   } catch (error) {
     console.error('خطا در ریست کردن اطلاعات کاربر:', error);
     req.flash('error_msg', `خطا در ریست کردن اطلاعات کاربر: ${error.message}`);
-    res.redirect(`/admin/users/details/${req.params.id}`);
+    res.redirect(`/admin/users/view/${req.params.id}`);
   }
 }
 
@@ -349,3 +440,138 @@ export async function exportUsers(req, res) {
     res.redirect('/admin/users');
   }
 }
+
+// تعریف کنترلر برای ارائه به صورت یک آبجکت
+export const usersController = {
+  showDashboard: (req, res) => {
+    res.render('users/dashboard', { title: 'مدیریت کاربران' });
+  },
+  showUsersList,
+  filterUsers: (req, res) => {
+    // بازیابی پارامترهای فیلتر از بدنه درخواست
+    const { search, isActive, isBanned, minCoins, maxCoins, minLevel, maxLevel } = req.body;
+    
+    // ساخت URL با پارامترهای فیلتر
+    let url = '/admin/users/list?';
+    if (search) url += `search=${encodeURIComponent(search)}&`;
+    if (isActive) url += `isActive=${isActive}&`;
+    if (isBanned) url += `isBanned=${isBanned}&`;
+    if (minCoins) url += `minCoins=${minCoins}&`;
+    if (maxCoins) url += `maxCoins=${maxCoins}&`;
+    if (minLevel) url += `minLevel=${minLevel}&`;
+    if (maxLevel) url += `maxLevel=${maxLevel}&`;
+    
+    res.redirect(url);
+  },
+  showUserDetails,
+  showUserEdit,
+  updateUser: processUserEdit,
+  addCoins,
+  removeCoins,
+  addItem,
+  banUser,
+  unbanUser,
+  resetUser,
+  exportUsers,
+  
+  // توابع اضافی که در routes/users.js استفاده شده است
+  showUserEconomy: (req, res) => {
+    res.render('users/economy', { title: 'اقتصاد کاربر', userId: req.params.id });
+  },
+  updateUserEconomy: (req, res) => {
+    // پیاده‌سازی به‌روزرسانی اقتصاد کاربر
+    res.redirect(`/admin/users/${req.params.id}/economy`);
+  },
+  addUserTransaction: (req, res) => {
+    // پیاده‌سازی افزودن تراکنش
+    res.redirect(`/admin/users/${req.params.id}/economy/transactions`);
+  },
+  showUserTransactions: (req, res) => {
+    res.render('users/transactions', { title: 'تراکنش‌های کاربر', userId: req.params.id });
+  },
+  showUserStats: (req, res) => {
+    res.render('users/stats', { title: 'آمار کاربر', userId: req.params.id });
+  },
+  resetUserStats: (req, res) => {
+    // پیاده‌سازی ریست آمار کاربر
+    res.redirect(`/admin/users/${req.params.id}/stats`);
+  },
+  showUserFriends: (req, res) => {
+    res.render('users/friends', { title: 'دوستان کاربر', userId: req.params.id });
+  },
+  addUserFriend: (req, res) => {
+    // پیاده‌سازی افزودن دوست
+    res.redirect(`/admin/users/${req.params.id}/friends`);
+  },
+  removeUserFriend: (req, res) => {
+    // پیاده‌سازی حذف دوست
+    res.redirect(`/admin/users/${req.params.id}/friends`);
+  },
+  showUserInventory: (req, res) => {
+    res.render('users/inventory', { title: 'کوله‌پشتی کاربر', userId: req.params.id });
+  },
+  addItemToInventory: (req, res) => {
+    // پیاده‌سازی افزودن آیتم به کوله‌پشتی
+    res.redirect(`/admin/users/${req.params.id}/inventory`);
+  },
+  removeItemFromInventory: (req, res) => {
+    // پیاده‌سازی حذف آیتم از کوله‌پشتی
+    res.redirect(`/admin/users/${req.params.id}/inventory`);
+  },
+  showUserRewards: (req, res) => {
+    res.render('users/rewards', { title: 'جوایز کاربر', userId: req.params.id });
+  },
+  addUserReward: (req, res) => {
+    // پیاده‌سازی افزودن جایزه
+    res.redirect(`/admin/users/${req.params.id}/rewards`);
+  },
+  removeUserReward: (req, res) => {
+    // پیاده‌سازی حذف جایزه
+    res.redirect(`/admin/users/${req.params.id}/rewards`);
+  },
+  showUserRoles: (req, res) => {
+    res.render('users/roles', { title: 'نقش‌های کاربر', userId: req.params.id });
+  },
+  addUserRole: (req, res) => {
+    // پیاده‌سازی افزودن نقش
+    res.redirect(`/admin/users/${req.params.id}/roles`);
+  },
+  removeUserRole: (req, res) => {
+    // پیاده‌سازی حذف نقش
+    res.redirect(`/admin/users/${req.params.id}/roles`);
+  },
+  showUserBanks: (req, res) => {
+    res.render('users/banks', { title: 'حساب‌های بانکی کاربر', userId: req.params.id });
+  },
+  updateUserBank: (req, res) => {
+    // پیاده‌سازی به‌روزرسانی حساب بانکی
+    res.redirect(`/admin/users/${req.params.id}/bank`);
+  },
+  showUserStocks: (req, res) => {
+    res.render('users/stocks', { title: 'سهام کاربر', userId: req.params.id });
+  },
+  updateUserStocks: (req, res) => {
+    // پیاده‌سازی به‌روزرسانی سهام
+    res.redirect(`/admin/users/${req.params.id}/stocks`);
+  },
+  showUserLogs: (req, res) => {
+    res.render('users/logs', { title: 'لاگ‌های کاربر', userId: req.params.id });
+  },
+  filterUserLogs: (req, res) => {
+    // پیاده‌سازی فیلتر لاگ‌ها
+    res.redirect(`/admin/users/${req.params.id}/logs`);
+  },
+  exportUserLogs: (req, res) => {
+    // پیاده‌سازی خروجی لاگ‌ها
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename=user-logs.csv');
+    res.send('لاگ‌های کاربر');
+  },
+  showSettings: (req, res) => {
+    res.render('users/settings', { title: 'تنظیمات کاربران' });
+  },
+  updateSettings: (req, res) => {
+    // پیاده‌سازی به‌روزرسانی تنظیمات
+    res.redirect('/admin/users/settings');
+  }
+};

@@ -1,0 +1,721 @@
+<%- contentFor('body') %>
+
+<div class="row">
+  <div class="col-md-4">
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5 class="mb-0">اطلاعات کاربر</h5>
+      </div>
+      <div class="card-body text-center pb-4">
+        <div class="avatar-container mb-3">
+          <% if (user.avatar) { %>
+            <img src="<%= user.avatar %>" alt="<%= user.name %>" class="rounded-circle img-fluid" style="width: 100px; height: 100px;">
+          <% } else { %>
+            <div class="avatar-placeholder rounded-circle d-flex align-items-center justify-content-center bg-secondary text-white" style="width: 100px; height: 100px; font-size: 2rem; margin: 0 auto;">
+              <%= user.name.substring(0, 1).toUpperCase() %>
+            </div>
+          <% } %>
+        </div>
+        <h5><%= user.name %></h5>
+        <p class="text-muted"><%= user.tag || '' %></p>
+        
+        <div class="d-flex justify-content-center mt-3 gap-2">
+          <% if (user.banned) { %>
+            <button type="button" class="btn btn-success" onclick="confirmUnban('<%= user._id %>', '<%= user.name %>')">
+              <span data-feather="unlock"></span>
+              رفع مسدودیت
+            </button>
+          <% } else { %>
+            <button type="button" class="btn btn-danger" onclick="confirmBan('<%= user._id %>', '<%= user.name %>')">
+              <span data-feather="lock"></span>
+              مسدودیت
+            </button>
+          <% } %>
+          
+          <a href="/admin/users/edit/<%= user._id %>" class="btn btn-warning">
+            <span data-feather="edit"></span>
+            ویرایش
+          </a>
+        </div>
+      </div>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item">
+          <div class="row">
+            <div class="col-5 text-muted">شناسه دیسکورد:</div>
+            <div class="col-7 text-end"><code><%= user.discordId %></code></div>
+          </div>
+        </li>
+        <li class="list-group-item">
+          <div class="row">
+            <div class="col-5 text-muted">وضعیت:</div>
+            <div class="col-7 text-end">
+              <% if (user.banned) { %>
+                <span class="badge text-bg-danger">مسدود</span>
+              <% } else if (user.active) { %>
+                <span class="badge text-bg-success">فعال</span>
+              <% } else { %>
+                <span class="badge text-bg-secondary">غیرفعال</span>
+              <% } %>
+            </div>
+          </div>
+        </li>
+        <li class="list-group-item">
+          <div class="row">
+            <div class="col-5 text-muted">تاریخ عضویت:</div>
+            <div class="col-7 text-end"><%= new Date(user.createdAt).toLocaleDateString('fa-IR') %></div>
+          </div>
+        </li>
+        <li class="list-group-item">
+          <div class="row">
+            <div class="col-5 text-muted">آخرین فعالیت:</div>
+            <div class="col-7 text-end"><%= new Date(user.lastActivity || user.updatedAt).toLocaleDateString('fa-IR') %></div>
+          </div>
+        </li>
+      </ul>
+    </div>
+    
+    <div class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">اقتصاد</h5>
+        <div class="dropdown">
+          <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="economyActionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            عملیات
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="economyActionsDropdown">
+            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#addCoinsModal">افزودن سکه</a></li>
+            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#removeCoinsModal">کسر سکه</a></li>
+            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#addItemModal">افزودن آیتم</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-danger" href="#" onclick="confirmResetEconomy('<%= user._id %>', '<%= user.name %>')">ریست اقتصادی</a></li>
+          </ul>
+        </div>
+      </div>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item">
+          <div class="row">
+            <div class="col-5 text-muted">موجودی فعلی:</div>
+            <div class="col-7 text-end fw-bold"><%= user.balance.toLocaleString() %> <span class="text-muted">CC</span></div>
+          </div>
+        </li>
+        <li class="list-group-item">
+          <div class="row">
+            <div class="col-5 text-muted">موجودی بانکی:</div>
+            <div class="col-7 text-end"><%= (user.bankBalance || 0).toLocaleString() %> <span class="text-muted">CC</span></div>
+          </div>
+        </li>
+        <li class="list-group-item">
+          <div class="row">
+            <div class="col-5 text-muted">مجموع کسب شده:</div>
+            <div class="col-7 text-end text-success"><%= (user.totalEarned || 0).toLocaleString() %> <span class="text-muted">CC</span></div>
+          </div>
+        </li>
+        <li class="list-group-item">
+          <div class="row">
+            <div class="col-5 text-muted">مجموع خرج شده:</div>
+            <div class="col-7 text-end text-danger"><%= (user.totalSpent || 0).toLocaleString() %> <span class="text-muted">CC</span></div>
+          </div>
+        </li>
+      </ul>
+    </div>
+    
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5 class="mb-0">استریک روزانه</h5>
+      </div>
+      <div class="card-body">
+        <div class="d-flex justify-content-between mb-2">
+          <span>استریک فعلی:</span>
+          <span class="fw-bold"><%= user.dailyStreak || 0 %> روز</span>
+        </div>
+        <div class="d-flex justify-content-between mb-2">
+          <span>بهترین استریک:</span>
+          <span><%= user.bestDailyStreak || 0 %> روز</span>
+        </div>
+        <div class="d-flex justify-content-between">
+          <span>آخرین دریافت:</span>
+          <span><%= user.lastDaily ? new Date(user.lastDaily).toLocaleDateString('fa-IR') : 'هیچوقت' %></span>
+        </div>
+        
+        <div class="progress mt-3" style="height: 15px;">
+          <div class="progress-bar bg-success" role="progressbar" style="width: <%= user.dailyStreak % 7 * 100 / 7 %>%;" aria-valuenow="<%= user.dailyStreak % 7 %>" aria-valuemin="0" aria-valuemax="7"></div>
+        </div>
+        <div class="d-flex justify-content-between mt-1">
+          <small>روز <%= user.dailyStreak % 7 %></small>
+          <small>جایزه هفتگی</small>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-8">
+    <div class="card mb-4">
+      <div class="card-header">
+        <ul class="nav nav-tabs card-header-tabs" id="userTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="transactions-tab" data-bs-toggle="tab" data-bs-target="#transactions" type="button" role="tab" aria-controls="transactions" aria-selected="true">تراکنش‌ها</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="items-tab" data-bs-toggle="tab" data-bs-target="#items" type="button" role="tab" aria-controls="items" aria-selected="false">آیتم‌ها</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="games-tab" data-bs-toggle="tab" data-bs-target="#games" type="button" role="tab" aria-controls="games" aria-selected="false">آمار بازی‌ها</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="notes-tab" data-bs-toggle="tab" data-bs-target="#notes" type="button" role="tab" aria-controls="notes" aria-selected="false">یادداشت‌های ادمین</button>
+          </li>
+        </ul>
+      </div>
+      <div class="card-body tab-content">
+        <!-- تراکنش‌ها -->
+        <div class="tab-pane fade show active" id="transactions" role="tabpanel" aria-labelledby="transactions-tab">
+          <% if (transactions && transactions.length > 0) { %>
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>تاریخ</th>
+                    <th>نوع</th>
+                    <th>مبلغ</th>
+                    <th>موجودی بعد</th>
+                    <th>توضیحات</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% transactions.forEach(tx => { %>
+                    <tr>
+                      <td><%= new Date(tx.createdAt).toLocaleString('fa-IR') %></td>
+                      <td>
+                        <% 
+                          let badgeClass = 'bg-secondary';
+                          let icon = '';
+                          
+                          switch(tx.type) {
+                            case 'admin_add':
+                              badgeClass = 'bg-success';
+                              icon = 'plus-circle';
+                              break;
+                            case 'admin_remove':
+                              badgeClass = 'bg-danger';
+                              icon = 'minus-circle';
+                              break;
+                            case 'daily':
+                              badgeClass = 'bg-primary';
+                              icon = 'calendar';
+                              break;
+                            case 'work':
+                              badgeClass = 'bg-info';
+                              icon = 'briefcase';
+                              break;
+                            case 'game_win':
+                              badgeClass = 'bg-success';
+                              icon = 'award';
+                              break;
+                            case 'game_lose':
+                              badgeClass = 'bg-danger';
+                              icon = 'x-octagon';
+                              break;
+                            case 'transfer_in':
+                              badgeClass = 'bg-success';
+                              icon = 'arrow-right';
+                              break;
+                            case 'transfer_out':
+                              badgeClass = 'bg-warning';
+                              icon = 'arrow-left';
+                              break;
+                            case 'bank_deposit':
+                              badgeClass = 'bg-info';
+                              icon = 'download';
+                              break;
+                            case 'bank_withdraw':
+                              badgeClass = 'bg-info';
+                              icon = 'upload';
+                              break;
+                            case 'item_purchase':
+                              badgeClass = 'bg-warning';
+                              icon = 'shopping-bag';
+                              break;
+                          }
+                        %>
+                        <span class="badge <%= badgeClass %>">
+                          <% if (icon) { %><span data-feather="<%= icon %>" style="width: 14px; height: 14px;"></span><% } %>
+                          <%= tx.typeFa || tx.type %>
+                        </span>
+                      </td>
+                      <td class="<%= tx.amount >= 0 ? 'text-success' : 'text-danger' %>">
+                        <%= tx.amount >= 0 ? '+' : '' %><%= tx.amount.toLocaleString() %>
+                      </td>
+                      <td><%= tx.balanceAfter.toLocaleString() %></td>
+                      <td><small><%= tx.description || '-' %></small></td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+            
+            <% if (transactions.length >= 15) { %>
+              <div class="text-center mt-3">
+                <a href="/admin/economy/transactions?userId=<%= user.discordId %>" class="btn btn-sm btn-outline-primary">مشاهده تمام تراکنش‌ها</a>
+              </div>
+            <% } %>
+          <% } else { %>
+            <div class="text-center py-4">
+              <span data-feather="credit-card" style="width: 48px; height: 48px; opacity: 0.5;"></span>
+              <h5 class="mt-3">هیچ تراکنشی یافت نشد</h5>
+              <p class="text-muted">این کاربر هنوز هیچ تراکنش مالی انجام نداده است.</p>
+            </div>
+          <% } %>
+        </div>
+        
+        <!-- آیتم‌ها -->
+        <div class="tab-pane fade" id="items" role="tabpanel" aria-labelledby="items-tab">
+          <% if (items && items.length > 0) { %>
+            <div class="row row-cols-1 row-cols-md-2 g-4">
+              <% items.forEach(item => { %>
+                <div class="col">
+                  <div class="card h-100">
+                    <div class="card-body">
+                      <div class="d-flex align-items-center mb-2">
+                        <div class="item-icon me-2 rounded bg-light p-2">
+                          <span data-feather="<%= item.icon || 'package' %>" style="width: 24px; height: 24px;"></span>
+                        </div>
+                        <h6 class="card-title mb-0"><%= item.name %></h6>
+                        <span class="ms-auto badge bg-primary"><%= item.quantity %>x</span>
+                      </div>
+                      <p class="card-text small"><%= item.description || 'بدون توضیحات' %></p>
+                      <div class="d-flex justify-content-between">
+                        <small class="text-muted">تاریخ دریافت: <%= new Date(item.acquiredAt).toLocaleDateString('fa-IR') %></small>
+                        <small>
+                          <% if (item.rarity === 'common') { %><span class="text-muted">معمولی</span><% } %>
+                          <% if (item.rarity === 'uncommon') { %><span class="text-primary">غیرمعمول</span><% } %>
+                          <% if (item.rarity === 'rare') { %><span class="text-info">کمیاب</span><% } %>
+                          <% if (item.rarity === 'epic') { %><span class="text-warning">حماسی</span><% } %>
+                          <% if (item.rarity === 'legendary') { %><span class="text-danger">افسانه‌ای</span><% } %>
+                        </small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              <% }); %>
+            </div>
+          <% } else { %>
+            <div class="text-center py-4">
+              <span data-feather="package" style="width: 48px; height: 48px; opacity: 0.5;"></span>
+              <h5 class="mt-3">هیچ آیتمی یافت نشد</h5>
+              <p class="text-muted">این کاربر هنوز هیچ آیتمی دریافت نکرده است.</p>
+            </div>
+          <% } %>
+        </div>
+        
+        <!-- آمار بازی‌ها -->
+        <div class="tab-pane fade" id="games" role="tabpanel" aria-labelledby="games-tab">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="card mb-3">
+                <div class="card-header">
+                  <h6 class="mb-0">خلاصه بازی‌ها</h6>
+                </div>
+                <div class="card-body">
+                  <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                      کل بازی‌ها
+                      <span class="badge bg-primary rounded-pill"><%= (user.gameStats && user.gameStats.totalGames) || 0 %></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                      برد‌ها
+                      <span class="badge bg-success rounded-pill"><%= (user.gameStats && user.gameStats.wins) || 0 %></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                      باخت‌ها
+                      <span class="badge bg-danger rounded-pill"><%= (user.gameStats && user.gameStats.losses) || 0 %></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                      نرخ برد
+                      <span class="fw-bold"><%= 
+                        (user.gameStats && user.gameStats.totalGames > 0) ? 
+                        Math.round((user.gameStats.wins / user.gameStats.totalGames) * 100) : 0 
+                      %>%</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="card mb-3">
+                <div class="card-header">
+                  <h6 class="mb-0">آمار مالی بازی‌ها</h6>
+                </div>
+                <div class="card-body">
+                  <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                      مجموع سکه‌های برده
+                      <span class="text-success"><%= ((user.gameStats && user.gameStats.totalWon) || 0).toLocaleString() %> CC</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                      مجموع سکه‌های باخته
+                      <span class="text-danger"><%= ((user.gameStats && user.gameStats.totalLost) || 0).toLocaleString() %> CC</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                      سود/زیان خالص
+                      <span class="<%= 
+                        (user.gameStats && (user.gameStats.totalWon - user.gameStats.totalLost) >= 0) ? 
+                        'text-success' : 'text-danger' 
+                      %>"><%= 
+                        ((user.gameStats && (user.gameStats.totalWon - user.gameStats.totalLost)) || 0).toLocaleString()
+                      %> CC</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                      بیشترین برد یکجا
+                      <span class="text-success"><%= ((user.gameStats && user.gameStats.biggestWin) || 0).toLocaleString() %> CC</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <% if (user.gameStats && user.gameStats.games) { %>
+            <div class="card mt-3">
+              <div class="card-header">
+                <h6 class="mb-0">آمار بازی‌های مختلف</h6>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-sm">
+                  <thead>
+                    <tr>
+                      <th>نام بازی</th>
+                      <th>تعداد بازی</th>
+                      <th>برد</th>
+                      <th>باخت</th>
+                      <th>نرخ برد</th>
+                      <th>سود/زیان</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% Object.entries(user.gameStats.games).forEach(([gameName, stats]) => { %>
+                      <tr>
+                        <td><%= gameName %></td>
+                        <td><%= stats.played || 0 %></td>
+                        <td class="text-success"><%= stats.wins || 0 %></td>
+                        <td class="text-danger"><%= stats.losses || 0 %></td>
+                        <td><%= 
+                          stats.played > 0 ? 
+                          Math.round((stats.wins / stats.played) * 100) : 0 
+                        %>%</td>
+                        <td class="<%= (stats.won - stats.lost) >= 0 ? 'text-success' : 'text-danger' %>">
+                          <%= (stats.won - stats.lost).toLocaleString() %> CC
+                        </td>
+                      </tr>
+                    <% }); %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          <% } %>
+          
+          <% if (!user.gameStats || !user.gameStats.totalGames) { %>
+            <div class="text-center py-4 mt-3">
+              <span data-feather="play" style="width: 48px; height: 48px; opacity: 0.5;"></span>
+              <h5 class="mt-3">هیچ آماری یافت نشد</h5>
+              <p class="text-muted">این کاربر هنوز در هیچ بازی شرکت نکرده است.</p>
+            </div>
+          <% } %>
+        </div>
+        
+        <!-- یادداشت‌های ادمین -->
+        <div class="tab-pane fade" id="notes" role="tabpanel" aria-labelledby="notes-tab">
+          <form action="/admin/users/add-note/<%= user._id %>" method="post" class="mb-4">
+            <div class="mb-3">
+              <label for="noteContent" class="form-label">افزودن یادداشت جدید</label>
+              <textarea class="form-control" id="noteContent" name="content" rows="3" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">ثبت یادداشت</button>
+          </form>
+          
+          <hr>
+          
+          <% if (adminNotes && adminNotes.length > 0) { %>
+            <div class="admin-notes">
+              <% adminNotes.forEach(note => { %>
+                <div class="card mb-3">
+                  <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                      <small class="text-muted">
+                        <span data-feather="user" style="width: 14px; height: 14px;"></span>
+                        <%= note.adminName || 'ادمین' %>
+                      </small>
+                      <small class="text-muted"><%= new Date(note.createdAt).toLocaleString('fa-IR') %></small>
+                    </div>
+                    <p class="card-text"><%= note.content %></p>
+                    <form action="/admin/users/delete-note/<%= user._id %>/<%= note._id %>" method="post" class="text-end">
+                      <button type="submit" class="btn btn-sm btn-outline-danger">حذف</button>
+                    </form>
+                  </div>
+                </div>
+              <% }); %>
+            </div>
+          <% } else { %>
+            <div class="text-center py-4">
+              <span data-feather="file-text" style="width: 48px; height: 48px; opacity: 0.5;"></span>
+              <h5 class="mt-3">یادداشتی وجود ندارد</h5>
+              <p class="text-muted">هنوز هیچ یادداشتی برای این کاربر ثبت نشده است.</p>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Coins Modal -->
+<div class="modal fade" id="addCoinsModal" tabindex="-1" aria-labelledby="addCoinsModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form action="/admin/users/add-coins" method="post">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addCoinsModalLabel">افزودن سکه به کاربر</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="userId" value="<%= user.discordId %>">
+          <div class="mb-3">
+            <label for="coinsAmountAdd" class="form-label">مقدار سکه</label>
+            <input type="number" class="form-control" id="coinsAmountAdd" name="amount" required min="1" placeholder="مثال: 1000">
+          </div>
+          <div class="mb-3">
+            <label for="reasonAdd" class="form-label">دلیل افزودن سکه</label>
+            <select class="form-select" id="reasonAdd" name="reason" required>
+              <option value="">انتخاب کنید</option>
+              <option value="admin_gift">هدیه ادمین</option>
+              <option value="event_reward">جایزه رویداد</option>
+              <option value="compensation">جبران خسارت</option>
+              <option value="bug_reward">گزارش باگ</option>
+              <option value="giveaway">رویداد قرعه‌کشی</option>
+              <option value="other">سایر</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="descriptionAdd" class="form-label">توضیحات (اختیاری)</label>
+            <textarea class="form-control" id="descriptionAdd" name="description" rows="2" placeholder="توضیحات بیشتر در مورد این تراکنش"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+          <button type="submit" class="btn btn-primary">افزودن سکه</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Remove Coins Modal -->
+<div class="modal fade" id="removeCoinsModal" tabindex="-1" aria-labelledby="removeCoinsModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form action="/admin/users/remove-coins" method="post">
+        <div class="modal-header">
+          <h5 class="modal-title" id="removeCoinsModalLabel">کسر سکه از کاربر</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="userId" value="<%= user.discordId %>">
+          <div class="mb-3">
+            <label for="coinsAmountRemove" class="form-label">مقدار سکه</label>
+            <input type="number" class="form-control" id="coinsAmountRemove" name="amount" required min="1" placeholder="مثال: 1000">
+          </div>
+          <div class="mb-3">
+            <label for="reasonRemove" class="form-label">دلیل کسر سکه</label>
+            <select class="form-select" id="reasonRemove" name="reason" required>
+              <option value="">انتخاب کنید</option>
+              <option value="penalty">جریمه</option>
+              <option value="rule_violation">نقض قوانین</option>
+              <option value="rollback">بازگشت تراکنش</option>
+              <option value="item_purchase">خرید آیتم</option>
+              <option value="refund">استرداد</option>
+              <option value="other">سایر</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="descriptionRemove" class="form-label">توضیحات (اختیاری)</label>
+            <textarea class="form-control" id="descriptionRemove" name="description" rows="2" placeholder="توضیحات بیشتر در مورد این تراکنش"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+          <button type="submit" class="btn btn-danger">کسر سکه</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Add Item Modal -->
+<div class="modal fade" id="addItemModal" tabindex="-1" aria-labelledby="addItemModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form action="/admin/users/add-item" method="post">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addItemModalLabel">افزودن آیتم به کاربر</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="userId" value="<%= user.discordId %>">
+          <div class="mb-3">
+            <label for="itemId" class="form-label">آیتم</label>
+            <select class="form-select" id="itemId" name="itemId" required>
+              <option value="">انتخاب آیتم</option>
+              <% if (allItems && allItems.length > 0) { %>
+                <% allItems.forEach(item => { %>
+                  <option value="<%= item._id %>"><%= item.name %> (<%= item.rarity %>)</option>
+                <% }); %>
+              <% } %>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="quantity" class="form-label">تعداد</label>
+            <input type="number" class="form-control" id="quantity" name="quantity" required min="1" value="1">
+          </div>
+          <div class="mb-3">
+            <label for="reason" class="form-label">دلیل اعطای آیتم</label>
+            <select class="form-select" id="reason" name="reason" required>
+              <option value="">انتخاب کنید</option>
+              <option value="admin_gift">هدیه ادمین</option>
+              <option value="event_reward">جایزه رویداد</option>
+              <option value="compensation">جبران خسارت</option>
+              <option value="giveaway">قرعه‌کشی</option>
+              <option value="other">سایر</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="description" class="form-label">توضیحات (اختیاری)</label>
+            <textarea class="form-control" id="description" name="description" rows="2" placeholder="توضیحات بیشتر در مورد این آیتم"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+          <button type="submit" class="btn btn-primary">افزودن آیتم</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Ban/Unban/Reset Confirmation Modals (similar to index.ejs) -->
+<div class="modal fade" id="banConfirmationModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">تأیید مسدودیت کاربر</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+      </div>
+      <div class="modal-body">
+        <p>آیا از مسدود کردن کاربر <strong id="banUserName"></strong> اطمینان دارید؟</p>
+        <p class="text-danger">با این کار، کاربر دسترسی خود به تمام قابلیت‌های بات را از دست خواهد داد.</p>
+        <form id="banForm" action="" method="post">
+          <div class="mb-3">
+            <label for="banReason" class="form-label">دلیل مسدودیت</label>
+            <input type="text" class="form-control" id="banReason" name="reason" required>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+        <button type="button" class="btn btn-danger" onclick="document.getElementById('banForm').submit()">مسدود کردن</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="unbanConfirmationModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">تأیید رفع مسدودیت کاربر</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+      </div>
+      <div class="modal-body">
+        <p>آیا از رفع مسدودیت کاربر <strong id="unbanUserName"></strong> اطمینان دارید؟</p>
+        <form id="unbanForm" action="" method="post"></form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+        <button type="button" class="btn btn-success" onclick="document.getElementById('unbanForm').submit()">رفع مسدودیت</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="resetConfirmationModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">تأیید ریست اطلاعات کاربر</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+      </div>
+      <div class="modal-body">
+        <p>آیا از ریست کردن اطلاعات کاربر <strong id="resetUserName"></strong> اطمینان دارید؟</p>
+        <p class="text-danger fw-bold">هشدار: این عملیات غیرقابل بازگشت است و تمام اطلاعات کاربر از جمله سکه‌ها، آیتم‌ها و سابقه بازی‌ها حذف خواهد شد!</p>
+        <form id="resetForm" action="" method="post">
+          <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" id="resetConfirmCheck" required>
+            <label class="form-check-label" for="resetConfirmCheck">
+              من تأیید می‌کنم که می‌خواهم این عملیات را انجام دهم و از عواقب آن آگاه هستم.
+            </label>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+        <button type="button" class="btn btn-danger" id="resetConfirmButton" disabled>ریست اطلاعات</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // تأیید مسدودیت کاربر
+  function confirmBan(userId, userName) {
+    document.getElementById('banUserName').textContent = userName;
+    document.getElementById('banForm').action = `/admin/users/ban/${userId}`;
+    new bootstrap.Modal(document.getElementById('banConfirmationModal')).show();
+  }
+  
+  // تأیید رفع مسدودیت کاربر
+  function confirmUnban(userId, userName) {
+    document.getElementById('unbanUserName').textContent = userName;
+    document.getElementById('unbanForm').action = `/admin/users/unban/${userId}`;
+    new bootstrap.Modal(document.getElementById('unbanConfirmationModal')).show();
+  }
+  
+  // تأیید ریست اطلاعات کاربر
+  function confirmReset(userId, userName) {
+    document.getElementById('resetUserName').textContent = userName;
+    document.getElementById('resetForm').action = `/admin/users/reset/${userId}`;
+    
+    // فعال/غیرفعال کردن دکمه تأیید بر اساس چک‌باکس
+    const resetCheckbox = document.getElementById('resetConfirmCheck');
+    const resetButton = document.getElementById('resetConfirmButton');
+    
+    resetCheckbox.checked = false;
+    resetButton.disabled = true;
+    
+    resetCheckbox.addEventListener('change', function() {
+      resetButton.disabled = !this.checked;
+    });
+    
+    resetButton.addEventListener('click', function() {
+      if (resetCheckbox.checked) {
+        document.getElementById('resetForm').submit();
+      }
+    });
+    
+    new bootstrap.Modal(document.getElementById('resetConfirmationModal')).show();
+  }
+  
+  // تأیید ریست اقتصادی کاربر
+  function confirmResetEconomy(userId, userName) {
+    if (confirm(`آیا مطمئن هستید که می‌خواهید حساب اقتصادی کاربر ${userName} را ریست کنید؟\nاین عمل غیرقابل بازگشت است و تمام سکه‌ها، سابقه تراکنش‌ها و آیتم‌های کاربر حذف خواهد شد.`)) {
+      window.location.href = `/admin/users/reset-economy/${userId}`;
+    }
+  }
+</script>

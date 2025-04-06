@@ -1,172 +1,267 @@
 /**
  * کنترلر احراز هویت پنل ادمین
- * 
- * این کنترلر مسئول مدیریت ورود، خروج و سایر عملیات مرتبط با احراز هویت است.
  */
-
 import bcrypt from 'bcryptjs';
-import { getAdminByUsername, updateAdminPassword } from '../services/adminService.js';
+import { AdminUser } from '../models/adminUser.js';
 
 /**
  * نمایش صفحه ورود
- * 
- * @param {Request} req درخواست اکسپرس
- * @param {Response} res پاسخ اکسپرس
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
  */
-const showLoginPage = (req, res) => {
-  // اگر کاربر قبلاً وارد شده باشد، به داشبورد هدایت می‌شود
-  if (req.session.user) {
-    return res.redirect('/admin/dashboard');
-  }
-  
-  res.render('login', { 
+export async function showLogin(req, res) {
+  res.render('auth/login', {
     title: 'ورود به پنل مدیریت',
-    layout: 'auth-layout'
+    layout: 'auth-layout',
   });
-};
+}
 
 /**
  * پردازش فرم ورود
- * 
- * @param {Request} req درخواست اکسپرس
- * @param {Response} res پاسخ اکسپرس
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
  */
-const login = async (req, res) => {
-  const { username, password } = req.body;
-  
+export async function processLogin(req, res) {
   try {
+    const { username, password } = req.body;
+    
     // بررسی وجود نام کاربری و رمز عبور
     if (!username || !password) {
-      req.flash('error', 'لطفاً نام کاربری و رمز عبور را وارد کنید.');
+      req.flash('error', 'لطفاً نام کاربری و رمز عبور را وارد کنید');
       return res.redirect('/admin/login');
     }
     
-    // دریافت اطلاعات ادمین از پایگاه داده
-    const admin = await getAdminByUsername(username);
+    // یافتن کاربر در پایگاه داده
+    const user = await AdminUser.findOne({ username });
     
-    // بررسی وجود ادمین
-    if (!admin) {
-      req.flash('error', 'نام کاربری یا رمز عبور اشتباه است.');
+    // بررسی وجود کاربر
+    if (!user) {
+      req.flash('error', 'نام کاربری یا رمز عبور اشتباه است');
       return res.redirect('/admin/login');
     }
     
-    // بررسی رمز عبور
-    const isPasswordValid = await bcrypt.compare(password, admin.password);
+    // بررسی فعال بودن کاربر
+    if (!user.active) {
+      req.flash('error', 'حساب کاربری شما غیرفعال شده است. لطفاً با مدیر سیستم تماس بگیرید');
+      return res.redirect('/admin/login');
+    }
+    
+    // بررسی قفل بودن کاربر
+    if (user.locked) {
+      req.flash('error', 'حساب کاربری شما قفل شده است. لطفاً با مدیر سیستم تماس بگیرید');
+      return res.redirect('/admin/login');
+    }
+    
+    // بررسی صحت رمز عبور
+    const isPasswordValid = await bcrypt.compare(password, user.password);
     
     if (!isPasswordValid) {
-      req.flash('error', 'نام کاربری یا رمز عبور اشتباه است.');
+      // افزایش تعداد تلاش‌های ناموفق
+      user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
+      
+      // قفل کردن کاربر بعد از 5 تلاش ناموفق
+      if (user.failedLoginAttempts >= 5) {
+        user.locked = true;
+        user.lockedAt = new Date();
+        await user.save();
+        req.flash('error', 'حساب کاربری شما به دلیل 5 تلاش ناموفق قفل شده است');
+        return res.redirect('/admin/login');
+      }
+      
+      await user.save();
+      req.flash('error', 'نام کاربری یا رمز عبور اشتباه است');
       return res.redirect('/admin/login');
     }
+    
+    // ریست کردن تعداد تلاش‌های ناموفق
+    user.failedLoginAttempts = 0;
+    user.lastLogin = new Date();
+    await user.save();
     
     // ذخیره اطلاعات کاربر در جلسه
     req.session.user = {
-      id: admin.id,
-      username: admin.username,
-      role: admin.role,
-      permissions: admin.permissions || [],
-      name: admin.name || admin.username
+      id: user._id,
+      username: user.username,
+      name: user.name,
+      role: user.role,
+      permissions: user.permissions,
     };
     
-    // ثبت رویداد ورود
-    console.log(`Admin login: ${username} at ${new Date().toISOString()}`);
+    // ثبت ورود موفق به سیستم در لاگ
+    // TODO: ثبت لاگ
     
-    // هدایت به داشبورد
-    req.flash('success', `${admin.name || admin.username} عزیز، خوش آمدید!`);
+    // ریدایرکت به داشبورد
+    req.flash('success', `${user.name} عزیز، خوش آمدید`);
     res.redirect('/admin/dashboard');
   } catch (error) {
-    console.error('Login error:', error);
-    req.flash('error', 'خطا در فرآیند ورود. لطفاً دوباره تلاش کنید.');
+    console.error('خطا در پردازش فرم ورود:', error);
+    req.flash('error', 'خطایی در سیستم رخ داده است');
     res.redirect('/admin/login');
   }
-};
+}
 
 /**
- * خروج از پنل مدیریت
- * 
- * @param {Request} req درخواست اکسپرس
- * @param {Response} res پاسخ اکسپرس
+ * خروج از حساب کاربری
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
  */
-const logout = (req, res) => {
-  const username = req.session.user?.username;
-  
+export async function logout(req, res) {
   // پاک کردن جلسه
-  req.session.destroy(err => {
-    if (err) {
-      console.error('Logout error:', err);
-    } else {
-      console.log(`Admin logout: ${username} at ${new Date().toISOString()}`);
-    }
-    
+  req.session.destroy(() => {
     res.redirect('/admin/login');
   });
-};
+}
 
 /**
- * نمایش صفحه تغییر رمز عبور
- * 
- * @param {Request} req درخواست اکسپرس
- * @param {Response} res پاسخ اکسپرس
+ * نمایش صفحه فراموشی رمز عبور
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
  */
-const showChangePasswordPage = (req, res) => {
-  res.render('change-password', { 
-    title: 'تغییر رمز عبور',
-    user: req.session.user
+export async function showForgotPassword(req, res) {
+  res.render('auth/forgot-password', {
+    title: 'فراموشی رمز عبور',
+    layout: 'auth-layout',
   });
-};
+}
 
 /**
- * پردازش فرم تغییر رمز عبور
- * 
- * @param {Request} req درخواست اکسپرس
- * @param {Response} res پاسخ اکسپرس
+ * پردازش فرم فراموشی رمز عبور
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
  */
-const changePassword = async (req, res) => {
-  const { currentPassword, newPassword, confirmPassword } = req.body;
-  const userId = req.session.user.id;
-  
+export async function processForgotPassword(req, res) {
   try {
-    // بررسی وجود تمام فیلدها
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      req.flash('error', 'لطفاً تمام فیلدها را پر کنید.');
-      return res.redirect('/admin/change-password');
+    const { email } = req.body;
+    
+    // بررسی وجود ایمیل
+    if (!email) {
+      req.flash('error', 'لطفاً ایمیل خود را وارد کنید');
+      return res.redirect('/admin/forgot-password');
     }
     
-    // بررسی تطابق رمز عبور جدید و تأیید آن
-    if (newPassword !== confirmPassword) {
-      req.flash('error', 'رمز عبور جدید و تأیید آن مطابقت ندارند.');
-      return res.redirect('/admin/change-password');
+    // یافتن کاربر با ایمیل
+    const user = await AdminUser.findOne({ email });
+    
+    // عدم اطلاع رسانی به کاربر در صورت عدم وجود ایمیل (برای جلوگیری از حملات)
+    if (!user) {
+      req.flash('info', 'اگر ایمیل در سیستم ما ثبت شده باشد، لینک بازنشانی رمز عبور برای شما ارسال خواهد شد');
+      return res.redirect('/admin/login');
     }
     
-    // دریافت اطلاعات ادمین از پایگاه داده
-    const admin = await getAdminByUsername(req.session.user.username);
+    // ایجاد توکن بازنشانی
+    const resetToken = await generateResetToken();
     
-    // بررسی رمز عبور فعلی
-    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, admin.password);
+    // ذخیره توکن در پایگاه داده
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = new Date(Date.now() + 3600000); // منقضی شدن بعد از 1 ساعت
+    await user.save();
     
-    if (!isCurrentPasswordValid) {
-      req.flash('error', 'رمز عبور فعلی اشتباه است.');
-      return res.redirect('/admin/change-password');
-    }
+    // ارسال ایمیل بازنشانی رمز عبور
+    // TODO: ارسال ایمیل
+    console.log(`لینک بازنشانی رمز عبور: /admin/reset-password/${resetToken}`);
     
-    // رمزنگاری رمز عبور جدید
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    
-    // بروزرسانی رمز عبور
-    await updateAdminPassword(userId, hashedPassword);
-    
-    req.flash('success', 'رمز عبور با موفقیت تغییر یافت.');
-    res.redirect('/admin/dashboard');
+    req.flash('info', 'لینک بازنشانی رمز عبور به ایمیل شما ارسال شد');
+    res.redirect('/admin/login');
   } catch (error) {
-    console.error('Change password error:', error);
-    req.flash('error', 'خطا در تغییر رمز عبور. لطفاً دوباره تلاش کنید.');
-    res.redirect('/admin/change-password');
+    console.error('خطا در پردازش فرم فراموشی رمز عبور:', error);
+    req.flash('error', 'خطایی در سیستم رخ داده است');
+    res.redirect('/admin/forgot-password');
   }
-};
+}
+
+/**
+ * نمایش صفحه بازنشانی رمز عبور
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ */
+export async function showResetPassword(req, res) {
+  try {
+    const { token } = req.params;
+    
+    // یافتن کاربر با توکن بازنشانی
+    const user = await AdminUser.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: new Date() }, // توکن هنوز منقضی نشده باشد
+    });
+    
+    // بررسی اعتبار توکن
+    if (!user) {
+      req.flash('error', 'لینک بازنشانی رمز عبور نامعتبر یا منقضی شده است');
+      return res.redirect('/admin/forgot-password');
+    }
+    
+    res.render('auth/reset-password', {
+      title: 'بازنشانی رمز عبور',
+      layout: 'auth-layout',
+      token,
+    });
+  } catch (error) {
+    console.error('خطا در نمایش صفحه بازنشانی رمز عبور:', error);
+    req.flash('error', 'خطایی در سیستم رخ داده است');
+    res.redirect('/admin/forgot-password');
+  }
+}
+
+/**
+ * پردازش فرم بازنشانی رمز عبور
+ * @param {Object} req درخواست
+ * @param {Object} res پاسخ
+ */
+export async function processResetPassword(req, res) {
+  try {
+    const { token } = req.params;
+    const { password, confirmPassword } = req.body;
+    
+    // بررسی یکسان بودن رمز عبور و تکرار آن
+    if (password !== confirmPassword) {
+      req.flash('error', 'رمز عبور و تکرار آن یکسان نیستند');
+      return res.redirect(`/admin/reset-password/${token}`);
+    }
+    
+    // یافتن کاربر با توکن بازنشانی
+    const user = await AdminUser.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: new Date() }, // توکن هنوز منقضی نشده باشد
+    });
+    
+    // بررسی اعتبار توکن
+    if (!user) {
+      req.flash('error', 'لینک بازنشانی رمز عبور نامعتبر یا منقضی شده است');
+      return res.redirect('/admin/forgot-password');
+    }
+    
+    // تغییر رمز عبور
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+    
+    req.flash('success', 'رمز عبور شما با موفقیت تغییر یافت');
+    res.redirect('/admin/login');
+  } catch (error) {
+    console.error('خطا در پردازش فرم بازنشانی رمز عبور:', error);
+    req.flash('error', 'خطایی در سیستم رخ داده است');
+    res.redirect('/admin/forgot-password');
+  }
+}
+
+/**
+ * تولید توکن تصادفی برای بازنشانی رمز عبور
+ * @returns {string} توکن تصادفی
+ */
+async function generateResetToken() {
+  // فعلاً یک توکن تصادفی ساده تولید می‌کنیم
+  return Math.random().toString(36).substring(2, 15) + 
+         Math.random().toString(36).substring(2, 15);
+}
 
 export const authController = {
-  showLoginPage,
-  login,
+  showLogin,
+  processLogin,
   logout,
-  showChangePasswordPage,
-  changePassword
+  showForgotPassword,
+  processForgotPassword,
+  showResetPassword,
+  processResetPassword,
 };

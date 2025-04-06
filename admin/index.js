@@ -137,10 +137,13 @@ export function setupAdminPanel(app) {
 export async function connectToDatabase() {
   try {
     console.log('🔄 در حال اتصال به پایگاه داده...');
-    // اتصال به پایگاه داده در اینجا انجام می‌شود
+    
+    // استفاده از ماژول اتصال به دیتابیس
+    const dbConnection = await import('./lib/database.js');
+    const connection = await dbConnection.connectToDatabase();
     
     console.log('✅ اتصال به پایگاه داده با موفقیت انجام شد');
-    return true;
+    return connection;
   } catch (error) {
     console.error('❌ خطا در اتصال به پایگاه داده:', error);
     throw error;

@@ -313,7 +313,7 @@ export async function getUserTransactions(userId, limit = 10) {
     
     const transactions = Array.from({ length: limit }, (_, i) => {
       const type = transactionTypes[Math.floor(Math.random() * transactionTypes.length)];
-      const amount = Math.floor(Math.random() * 5000) * (type.includes('lose') || type.includes('remove') || txType === 'robbery' ? -1 : 1);
+      const amount = Math.floor(Math.random() * 5000) * (type.includes('lose') || type.includes('remove') || type === 'robbery' ? -1 : 1);
       const recipientId = type === 'transfer' ? `user_${Math.floor(Math.random() * 100) + 1}` : null;
       
       return {
@@ -333,6 +333,91 @@ export async function getUserTransactions(userId, limit = 10) {
   } catch (error) {
     console.error(`خطا در دریافت تراکنش‌های کاربر ${userId}:`, error);
     throw error;
+  }
+}
+
+/**
+ * دریافت آمار بازار سهام
+ * @returns {Promise<Object>} آمار بازار سهام
+ */
+export async function getStockMarketOverview() {
+  try {
+    // در حالت واقعی این داده‌ها از دیتابیس دریافت می‌شوند
+    const stocks = [
+      {
+        id: 'CCOIN',
+        name: 'سکوین',
+        price: 250,
+        change: 2.5,
+        volume: 15000,
+        marketCap: 25000000
+      },
+      {
+        id: 'BANK',
+        name: 'بانک',
+        price: 150,
+        change: -1.2,
+        volume: 8500,
+        marketCap: 15000000
+      },
+      {
+        id: 'TECH',
+        name: 'تکنولوژی',
+        price: 320,
+        change: 4.8,
+        volume: 12000,
+        marketCap: 32000000
+      },
+      {
+        id: 'MINE',
+        name: 'معدن',
+        price: 180,
+        change: 0.5,
+        volume: 6000,
+        marketCap: 18000000
+      },
+      {
+        id: 'FARM',
+        name: 'کشاورزی',
+        price: 90,
+        change: -0.8,
+        volume: 5000,
+        marketCap: 9000000
+      }
+    ];
+
+    // شاخص‌های کلی بازار
+    const marketIndexes = {
+      totalMarketCap: stocks.reduce((sum, stock) => sum + stock.marketCap, 0),
+      totalVolume: stocks.reduce((sum, stock) => sum + stock.volume, 0),
+      avgChange: stocks.reduce((sum, stock) => sum + stock.change, 0) / stocks.length,
+      topGainer: stocks.reduce((top, stock) => stock.change > top.change ? stock : top, { change: -Infinity }),
+      topLoser: stocks.reduce((bottom, stock) => stock.change < bottom.change ? stock : bottom, { change: Infinity })
+    };
+
+    // تاریخچه قیمت و حجم معاملات (نمونه برای 7 روز گذشته)
+    const days = 7;
+    const history = Array.from({ length: days }, (_, i) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (days - i - 1));
+      
+      return {
+        date: date.toISOString().split('T')[0],
+        totalVolume: 40000 + Math.floor(Math.random() * 15000),
+        totalValue: 20000000 + Math.floor(Math.random() * 5000000),
+        indexValue: 100 + (Math.random() * 10 - 5)
+      };
+    });
+
+    return {
+      stocks,
+      marketIndexes,
+      history,
+      lastUpdate: new Date().toISOString()
+    };
+  } catch (error) {
+    console.error('خطا در دریافت آمار بازار سهام:', error);
+    return {};
   }
 }
 
@@ -368,6 +453,12 @@ function generateTransactionDescription(type, amount, recipientId) {
       return 'سود حساب بانکی';
     case 'robbery':
       return amount > 0 ? 'سرقت موفق' : 'سرقت ناموفق';
+    case 'stock_buy':
+      return 'خرید سهام';
+    case 'stock_sell':
+      return 'فروش سهام';
+    case 'stock_dividend':
+      return 'سود سهام';
     default:
       return 'تراکنش';
   }

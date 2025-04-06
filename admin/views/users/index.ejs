@@ -1,0 +1,361 @@
+<%- contentFor('body') %>
+
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">مدیریت کاربران</h5>
+        <div>
+          <a href="/admin/users/export" class="btn btn-sm btn-outline-secondary me-1">
+            <span data-feather="download"></span>
+            خروجی اکسل
+          </a>
+          <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addCoinsModal">
+            <span data-feather="plus"></span>
+            افزودن سکه
+          </button>
+          <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#removeCoinsModal">
+            <span data-feather="minus"></span>
+            کسر سکه
+          </button>
+        </div>
+      </div>
+      <div class="card-body">
+        <!-- Search Form -->
+        <form action="/admin/users" method="get" class="mb-4">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="input-group">
+                <span class="input-group-text" id="search-addon">
+                  <span data-feather="search"></span>
+                </span>
+                <input type="text" class="form-control" placeholder="جستجو بر اساس نام، شناسه دیسکورد یا ایمیل" name="q" value="<%= typeof query !== 'undefined' ? query : '' %>">
+              </div>
+            </div>
+            <div class="col-md-3">
+              <select class="form-select" name="status">
+                <option value="">همه وضعیت‌ها</option>
+                <option value="active" <%= typeof status !== 'undefined' && status === 'active' ? 'selected' : '' %>>فعال</option>
+                <option value="banned" <%= typeof status !== 'undefined' && status === 'banned' ? 'selected' : '' %>>مسدود</option>
+                <option value="inactive" <%= typeof status !== 'undefined' && status === 'inactive' ? 'selected' : '' %>>غیرفعال</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <select class="form-select" name="sort">
+                <option value="createdAt_desc" <%= typeof sort !== 'undefined' && sort === 'createdAt_desc' ? 'selected' : '' %>>جدیدترین</option>
+                <option value="createdAt_asc" <%= typeof sort !== 'undefined' && sort === 'createdAt_asc' ? 'selected' : '' %>>قدیمی‌ترین</option>
+                <option value="balance_desc" <%= typeof sort !== 'undefined' && sort === 'balance_desc' ? 'selected' : '' %>>بیشترین سکه</option>
+                <option value="balance_asc" <%= typeof sort !== 'undefined' && sort === 'balance_asc' ? 'selected' : '' %>>کمترین سکه</option>
+                <option value="name_asc" <%= typeof sort !== 'undefined' && sort === 'name_asc' ? 'selected' : '' %>>نام (الفبا)</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-primary w-100">اعمال فیلتر</button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Users Table -->
+        <div class="table-responsive">
+          <table class="table table-striped table-sm">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">نام کاربری</th>
+                <th scope="col">شناسه دیسکورد</th>
+                <th scope="col">موجودی</th>
+                <th scope="col">وضعیت</th>
+                <th scope="col">تاریخ عضویت</th>
+                <th scope="col">عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (typeof users !== 'undefined' && users.length > 0) { %>
+                <% users.forEach((user, index) => { %>
+                  <tr>
+                    <td><%= (page - 1) * limit + index + 1 %></td>
+                    <td><%= user.name %></td>
+                    <td><%= user.discordId %></td>
+                    <td><%= user.balance.toLocaleString() %> <span class="text-muted">CC</span></td>
+                    <td>
+                      <% if (user.banned) { %>
+                        <span class="badge text-bg-danger">مسدود</span>
+                      <% } else if (user.active) { %>
+                        <span class="badge text-bg-success">فعال</span>
+                      <% } else { %>
+                        <span class="badge text-bg-secondary">غیرفعال</span>
+                      <% } %>
+                    </td>
+                    <td><%= new Date(user.createdAt).toLocaleDateString('fa-IR') %></td>
+                    <td>
+                      <div class="btn-group btn-group-sm" role="group">
+                        <a href="/admin/users/view/<%= user._id %>" class="btn btn-info" title="مشاهده جزئیات">
+                          <span data-feather="eye"></span>
+                        </a>
+                        <a href="/admin/users/edit/<%= user._id %>" class="btn btn-warning" title="ویرایش">
+                          <span data-feather="edit"></span>
+                        </a>
+                        <% if (user.banned) { %>
+                          <button type="button" class="btn btn-success" title="رفع مسدودیت" onclick="confirmUnban('<%= user._id %>', '<%= user.name %>')">
+                            <span data-feather="unlock"></span>
+                          </button>
+                        <% } else { %>
+                          <button type="button" class="btn btn-danger" title="مسدودیت" onclick="confirmBan('<%= user._id %>', '<%= user.name %>')">
+                            <span data-feather="lock"></span>
+                          </button>
+                        <% } %>
+                        <button type="button" class="btn btn-secondary" title="ریست اطلاعات" onclick="confirmReset('<%= user._id %>', '<%= user.name %>')">
+                          <span data-feather="refresh-cw"></span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                <% }); %>
+              <% } else { %>
+                <tr>
+                  <td colspan="7" class="text-center py-4">
+                    <div class="d-flex flex-column align-items-center">
+                      <span data-feather="users" style="width: 48px; height: 48px; opacity: 0.5;"></span>
+                      <h5 class="mt-3">کاربری یافت نشد</h5>
+                      <p class="text-muted small">با تغییر فیلترها یا معیارهای جستجو، مجدداً تلاش کنید.</p>
+                    </div>
+                  </td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
+          <nav aria-label="صفحه‌بندی">
+            <ul class="pagination justify-content-center mt-4">
+              <li class="page-item <%= page <= 1 ? 'disabled' : '' %>">
+                <a class="page-link" href="<%= page <= 1 ? '#' : `/admin/users?page=${page - 1}${typeof query !== 'undefined' && query ? `&q=${query}` : ''}${typeof status !== 'undefined' && status ? `&status=${status}` : ''}${typeof sort !== 'undefined' && sort ? `&sort=${sort}` : ''}` %>" aria-label="قبلی">
+                  <span aria-hidden="true">&laquo;</span>
+                </a>
+              </li>
+              
+              <% for(let i = Math.max(1, page - 2); i <= Math.min(totalPages, page + 2); i++) { %>
+                <li class="page-item <%= i === page ? 'active' : '' %>">
+                  <a class="page-link" href="/admin/users?page=<%= i %><%= typeof query !== 'undefined' && query ? `&q=${query}` : '' %><%= typeof status !== 'undefined' && status ? `&status=${status}` : '' %><%= typeof sort !== 'undefined' && sort ? `&sort=${sort}` : '' %>">
+                    <%= i %>
+                  </a>
+                </li>
+              <% } %>
+              
+              <li class="page-item <%= page >= totalPages ? 'disabled' : '' %>">
+                <a class="page-link" href="<%= page >= totalPages ? '#' : `/admin/users?page=${page + 1}${typeof query !== 'undefined' && query ? `&q=${query}` : ''}${typeof status !== 'undefined' && status ? `&status=${status}` : ''}${typeof sort !== 'undefined' && sort ? `&sort=${sort}` : ''}` %>" aria-label="بعدی">
+                  <span aria-hidden="true">&raquo;</span>
+                </a>
+              </li>
+            </ul>
+          </nav>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Coins Modal -->
+<div class="modal fade" id="addCoinsModal" tabindex="-1" aria-labelledby="addCoinsModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form action="/admin/users/add-coins" method="post">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addCoinsModalLabel">افزودن سکه به کاربر</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="userIdAdd" class="form-label">شناسه دیسکورد کاربر</label>
+            <input type="text" class="form-control" id="userIdAdd" name="userId" required placeholder="لطفاً شناسه دیسکورد کاربر را وارد کنید">
+          </div>
+          <div class="mb-3">
+            <label for="coinsAmountAdd" class="form-label">مقدار سکه</label>
+            <input type="number" class="form-control" id="coinsAmountAdd" name="amount" required min="1" placeholder="مثال: 1000">
+          </div>
+          <div class="mb-3">
+            <label for="reasonAdd" class="form-label">دلیل افزودن سکه</label>
+            <select class="form-select" id="reasonAdd" name="reason" required>
+              <option value="">انتخاب کنید</option>
+              <option value="admin_gift">هدیه ادمین</option>
+              <option value="event_reward">جایزه رویداد</option>
+              <option value="compensation">جبران خسارت</option>
+              <option value="bug_reward">گزارش باگ</option>
+              <option value="giveaway">رویداد قرعه‌کشی</option>
+              <option value="other">سایر</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="descriptionAdd" class="form-label">توضیحات (اختیاری)</label>
+            <textarea class="form-control" id="descriptionAdd" name="description" rows="2" placeholder="توضیحات بیشتر در مورد این تراکنش"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+          <button type="submit" class="btn btn-primary">افزودن سکه</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Remove Coins Modal -->
+<div class="modal fade" id="removeCoinsModal" tabindex="-1" aria-labelledby="removeCoinsModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form action="/admin/users/remove-coins" method="post">
+        <div class="modal-header">
+          <h5 class="modal-title" id="removeCoinsModalLabel">کسر سکه از کاربر</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="userIdRemove" class="form-label">شناسه دیسکورد کاربر</label>
+            <input type="text" class="form-control" id="userIdRemove" name="userId" required placeholder="لطفاً شناسه دیسکورد کاربر را وارد کنید">
+          </div>
+          <div class="mb-3">
+            <label for="coinsAmountRemove" class="form-label">مقدار سکه</label>
+            <input type="number" class="form-control" id="coinsAmountRemove" name="amount" required min="1" placeholder="مثال: 1000">
+          </div>
+          <div class="mb-3">
+            <label for="reasonRemove" class="form-label">دلیل کسر سکه</label>
+            <select class="form-select" id="reasonRemove" name="reason" required>
+              <option value="">انتخاب کنید</option>
+              <option value="penalty">جریمه</option>
+              <option value="rule_violation">نقض قوانین</option>
+              <option value="rollback">بازگشت تراکنش</option>
+              <option value="item_purchase">خرید آیتم</option>
+              <option value="refund">استرداد</option>
+              <option value="other">سایر</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="descriptionRemove" class="form-label">توضیحات (اختیاری)</label>
+            <textarea class="form-control" id="descriptionRemove" name="description" rows="2" placeholder="توضیحات بیشتر در مورد این تراکنش"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+          <button type="submit" class="btn btn-danger">کسر سکه</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Ban Confirmation Modal (Hidden, shown by JavaScript) -->
+<div class="modal fade" id="banConfirmationModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">تأیید مسدودیت کاربر</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+      </div>
+      <div class="modal-body">
+        <p>آیا از مسدود کردن کاربر <strong id="banUserName"></strong> اطمینان دارید؟</p>
+        <p class="text-danger">با این کار، کاربر دسترسی خود به تمام قابلیت‌های بات را از دست خواهد داد.</p>
+        <form id="banForm" action="" method="post">
+          <div class="mb-3">
+            <label for="banReason" class="form-label">دلیل مسدودیت</label>
+            <input type="text" class="form-control" id="banReason" name="reason" required>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+        <button type="button" class="btn btn-danger" onclick="document.getElementById('banForm').submit()">مسدود کردن</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Unban Confirmation Modal (Hidden, shown by JavaScript) -->
+<div class="modal fade" id="unbanConfirmationModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">تأیید رفع مسدودیت کاربر</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+      </div>
+      <div class="modal-body">
+        <p>آیا از رفع مسدودیت کاربر <strong id="unbanUserName"></strong> اطمینان دارید؟</p>
+        <form id="unbanForm" action="" method="post"></form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+        <button type="button" class="btn btn-success" onclick="document.getElementById('unbanForm').submit()">رفع مسدودیت</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Reset Confirmation Modal (Hidden, shown by JavaScript) -->
+<div class="modal fade" id="resetConfirmationModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">تأیید ریست اطلاعات کاربر</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+      </div>
+      <div class="modal-body">
+        <p>آیا از ریست کردن اطلاعات کاربر <strong id="resetUserName"></strong> اطمینان دارید؟</p>
+        <p class="text-danger fw-bold">هشدار: این عملیات غیرقابل بازگشت است و تمام اطلاعات کاربر از جمله سکه‌ها، آیتم‌ها و سابقه بازی‌ها حذف خواهد شد!</p>
+        <form id="resetForm" action="" method="post">
+          <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" id="resetConfirmCheck" required>
+            <label class="form-check-label" for="resetConfirmCheck">
+              من تأیید می‌کنم که می‌خواهم این عملیات را انجام دهم و از عواقب آن آگاه هستم.
+            </label>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+        <button type="button" class="btn btn-danger" id="resetConfirmButton" disabled>ریست اطلاعات</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // تأیید مسدودیت کاربر
+  function confirmBan(userId, userName) {
+    document.getElementById('banUserName').textContent = userName;
+    document.getElementById('banForm').action = `/admin/users/ban/${userId}`;
+    new bootstrap.Modal(document.getElementById('banConfirmationModal')).show();
+  }
+  
+  // تأیید رفع مسدودیت کاربر
+  function confirmUnban(userId, userName) {
+    document.getElementById('unbanUserName').textContent = userName;
+    document.getElementById('unbanForm').action = `/admin/users/unban/${userId}`;
+    new bootstrap.Modal(document.getElementById('unbanConfirmationModal')).show();
+  }
+  
+  // تأیید ریست اطلاعات کاربر
+  function confirmReset(userId, userName) {
+    document.getElementById('resetUserName').textContent = userName;
+    document.getElementById('resetForm').action = `/admin/users/reset/${userId}`;
+    
+    // فعال/غیرفعال کردن دکمه تأیید بر اساس چک‌باکس
+    const resetCheckbox = document.getElementById('resetConfirmCheck');
+    const resetButton = document.getElementById('resetConfirmButton');
+    
+    resetCheckbox.checked = false;
+    resetButton.disabled = true;
+    
+    resetCheckbox.addEventListener('change', function() {
+      resetButton.disabled = !this.checked;
+    });
+    
+    resetButton.addEventListener('click', function() {
+      if (resetCheckbox.checked) {
+        document.getElementById('resetForm').submit();
+      }
+    });
+    
+    new bootstrap.Modal(document.getElementById('resetConfirmationModal')).show();
+  }
+</script>

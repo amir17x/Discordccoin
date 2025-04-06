@@ -1,624 +1,346 @@
 /**
  * سرویس مدیریت لاگ‌ها
  * 
- * این سرویس مسئول بارگیری و مدیریت لاگ‌های سیستم است.
+ * این ماژول شامل توابع مورد نیاز برای مدیریت لاگ‌ها و گزارش‌های سیستم است.
  */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { dbClient } from '../lib/database.js';
-
-// تبدیل مسیر نسبی به مسیر مطلق
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const LOG_SETTINGS_PATH = path.join(__dirname, '../../config/log-settings.json');
+import { Log } from '../models/log.js';
+import { Server } from '../models/server.js';
 
 /**
- * دریافت تنظیمات لاگ
- * @returns {Promise<Object>} تنظیمات لاگ
+ * دریافت لیست لاگ‌ها با امکان فیلتر و صفحه‌بندی
+ * @param {Object} params پارامترهای جستجو
+ * @returns {Promise<Object>} لیست لاگ‌ها و اطلاعات صفحه‌بندی
  */
-export async function getLogSettings() {
+export async function getLogs(params) {
   try {
-    if (!fs.existsSync(LOG_SETTINGS_PATH)) {
-      // ایجاد تنظیمات پیش‌فرض اگر فایل وجود ندارد
-      const defaultSettings = {
-        systemLogs: {
-          enabled: true,
-          level: 'info',
-          maxEntries: 10000,
-          retention: 30 // روز
-        },
-        userLogs: {
-          enabled: true,
-          retention: 60 // روز
-        },
-        transactionLogs: {
-          enabled: true,
-          retention: 90 // روز
-        },
-        gameLogs: {
-          enabled: true,
-          retention: 30 // روز
-        },
-        adminLogs: {
-          enabled: true,
-          retention: 120 // روز
-        },
-        aiLogs: {
-          enabled: true,
-          retention: 60 // روز
-        },
-        errorLogs: {
-          enabled: true,
-          retention: 90 // روز
+    const {
+      page = 1,
+      limit = 20,
+      search = '',
+      level = '',
+      category = '',
+      startDate = null,
+      endDate = null,
+      serverId = null,
+      userId = null,
+      sortBy = 'timestamp',
+      sortOrder = 'desc'
+    } = params;
+    
+    // ساخت شرایط جستجو
+    const query = {};
+    
+    // جستجو در پیام
+    if (search) {
+      query.message = { $regex: search, $options: 'i' };
+    }
+    
+    // فیلتر سطح لاگ
+    if (level) {
+      if (Array.isArray(level)) {
+        query.level = { $in: level };
+      } else {
+        query.level = level;
+      }
+    }
+    
+    // فیلتر دسته
+    if (category) {
+      if (Array.isArray(category)) {
+        query.category = { $in: category };
+      } else {
+        query.category = category;
+      }
+    }
+    
+    // فیلتر بازه زمانی
+    if (startDate) {
+      query.timestamp = { ...query.timestamp, $gte: new Date(startDate) };
+    }
+    
+    if (endDate) {
+      const endDateObj = new Date(endDate);
+      endDateObj.setHours(23, 59, 59, 999);
+      query.timestamp = { ...query.timestamp, $lte: endDateObj };
+    }
+    
+    // فیلتر سرور
+    if (serverId) {
+      query.serverId = serverId;
+    }
+    
+    // فیلتر کاربر
+    if (userId) {
+      query.userId = userId;
+    }
+    
+    // محاسبه تعداد کل رکوردها برای صفحه‌بندی
+    const totalLogs = await Log.countDocuments(query);
+    
+    // محاسبه تعداد صفحات
+    const totalPages = Math.ceil(totalLogs / limit);
+    
+    // ترتیب بندی
+    const sort = {};
+    sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+    
+    // دریافت لاگ‌ها
+    const logs = await Log.find(query)
+      .sort(sort)
+      .skip((page - 1) * limit)
+      .limit(limit);
+    
+    return {
+      logs,
+      pagination: {
+        page,
+        limit,
+        totalPages,
+        totalLogs
+      }
+    };
+  } catch (error) {
+    console.error('خطا در دریافت لیست لاگ‌ها:', error);
+    throw error;
+  }
+}
+
+/**
+ * دریافت اطلاعات یک لاگ با شناسه
+ * @param {string} logId شناسه لاگ
+ * @returns {Promise<Object>} اطلاعات لاگ
+ */
+export async function getLogById(logId) {
+  try {
+    return await Log.findById(logId);
+  } catch (error) {
+    console.error(`خطا در دریافت اطلاعات لاگ با شناسه ${logId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * دریافت لاگ‌های یک سرور
+ * @param {string} serverId شناسه سرور
+ * @param {Object} params پارامترهای فیلتر و صفحه‌بندی
+ * @returns {Promise<Object>} لیست لاگ‌ها و اطلاعات صفحه‌بندی
+ */
+export async function getServerLogs(serverId, params = {}) {
+  try {
+    if (!serverId) {
+      throw new Error('شناسه سرور الزامی است');
+    }
+    
+    // بررسی وجود سرور
+    const server = await Server.findOne({ serverId });
+    if (!server) {
+      throw new Error('سرور یافت نشد');
+    }
+    
+    // اضافه کردن شناسه سرور به پارامترها
+    params.serverId = serverId;
+    
+    return await getLogs(params);
+  } catch (error) {
+    console.error(`خطا در دریافت لاگ‌های سرور ${serverId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * دریافت لاگ‌های یک کاربر
+ * @param {string} userId شناسه کاربر
+ * @param {Object} params پارامترهای فیلتر و صفحه‌بندی
+ * @returns {Promise<Object>} لیست لاگ‌ها و اطلاعات صفحه‌بندی
+ */
+export async function getUserLogs(userId, params = {}) {
+  try {
+    if (!userId) {
+      throw new Error('شناسه کاربر الزامی است');
+    }
+    
+    // اضافه کردن شناسه کاربر به پارامترها
+    params.userId = userId;
+    
+    return await getLogs(params);
+  } catch (error) {
+    console.error(`خطا در دریافت لاگ‌های کاربر ${userId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * دریافت خلاصه لاگ‌ها
+ * @returns {Promise<Object>} خلاصه وضعیت لاگ‌ها
+ */
+export async function getLogsOverview() {
+  try {
+    // تعداد لاگ‌ها به تفکیک سطح
+    const logsByLevel = await Log.aggregate([
+      { $group: { _id: '$level', count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]);
+    
+    // تعداد لاگ‌ها به تفکیک دسته
+    const logsByCategory = await Log.aggregate([
+      { $group: { _id: '$category', count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]);
+    
+    // تعداد لاگ‌های هر روز در 7 روز اخیر
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    const logsByDay = await Log.aggregate([
+      { $match: { timestamp: { $gte: sevenDaysAgo } } },
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$timestamp' } },
+          count: { $sum: 1 }
         }
-      };
-      
-      fs.writeFileSync(LOG_SETTINGS_PATH, JSON.stringify(defaultSettings, null, 2));
-      return defaultSettings;
-    }
+      },
+      { $sort: { _id: 1 } }
+    ]);
     
-    const settings = JSON.parse(fs.readFileSync(LOG_SETTINGS_PATH, 'utf8'));
-    return settings;
-  } catch (error) {
-    console.error('Error loading log settings:', error);
-    throw new Error('خطا در بارگیری تنظیمات لاگ');
-  }
-}
-
-/**
- * بروزرسانی تنظیمات لاگ
- * @param {Object} settings تنظیمات جدید
- * @returns {Promise<Object>} تنظیمات بروزرسانی شده
- */
-export async function updateLogSettings(settings) {
-  try {
-    // اطمینان از وجود مسیر فایل
-    const dir = path.dirname(LOG_SETTINGS_PATH);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
+    // تعداد لاگ‌های خطا در 24 ساعت اخیر
+    const oneDayAgo = new Date();
+    oneDayAgo.setDate(oneDayAgo.getDate() - 1);
     
-    // ذخیره تنظیمات جدید
-    fs.writeFileSync(LOG_SETTINGS_PATH, JSON.stringify(settings, null, 2));
-    return settings;
-  } catch (error) {
-    console.error('Error updating log settings:', error);
-    throw new Error('خطا در بروزرسانی تنظیمات لاگ');
-  }
-}
-
-/**
- * دریافت لاگ‌های سیستم
- * @param {Object} options گزینه‌های فیلتر لاگ‌ها
- * @returns {Promise<Array>} لاگ‌های سیستم
- */
-export async function getSystemLogs(options = {}) {
-  try {
-    const { page = 1, limit = 50, level, startDate, endDate } = options;
+    const recentErrors = await Log.countDocuments({
+      level: { $in: ['error', 'critical'] },
+      timestamp: { $gte: oneDayAgo }
+    });
     
-    // ایجاد فیلتر برای جستجو
-    const filter = {};
-    if (level) filter.level = level;
-    
-    if (startDate || endDate) {
-      filter.timestamp = {};
-      if (startDate) filter.timestamp.$gte = new Date(startDate);
-      if (endDate) filter.timestamp.$lte = new Date(endDate);
-    }
-    
-    // تنظیم صفحه‌بندی
-    const skip = (page - 1) * limit;
-    const limitValue = limit > 0 ? parseInt(limit) : 0;
-    
-    // دریافت لاگ‌ها از پایگاه داده
-    const logs = await dbClient.collection('system_logs')
-      .find(filter)
+    // 10 لاگ خطای اخیر
+    const recentErrorLogs = await Log.find({
+      level: { $in: ['error', 'critical'] }
+    })
       .sort({ timestamp: -1 })
-      .skip(skip)
-      .limit(limitValue)
-      .toArray();
+      .limit(10);
     
-    return logs;
+    return {
+      totalLogs: await Log.countDocuments(),
+      logsByLevel,
+      logsByCategory,
+      logsByDay,
+      recentErrors,
+      recentErrorLogs
+    };
   } catch (error) {
-    console.error('Error fetching system logs:', error);
-    return [];
+    console.error('خطا در دریافت خلاصه لاگ‌ها:', error);
+    throw error;
   }
 }
 
 /**
- * دریافت لاگ‌های کاربران
- * @param {Object} options گزینه‌های فیلتر لاگ‌ها
- * @returns {Promise<Array>} لاگ‌های کاربران
+ * پاک کردن لاگ‌های قدیمی
+ * @param {number} days تعداد روز (لاگ‌های قدیمی‌تر از این تعداد روز حذف می‌شوند)
+ * @returns {Promise<Object>} نتیجه عملیات
  */
-export async function getUserLogs(options = {}) {
+export async function clearOldLogs(days) {
   try {
-    const { page = 1, limit = 50, userId, action, startDate, endDate } = options;
-    
-    // ایجاد فیلتر برای جستجو
-    const filter = {};
-    if (userId) filter.userId = userId;
-    if (action) filter.action = action;
-    
-    if (startDate || endDate) {
-      filter.timestamp = {};
-      if (startDate) filter.timestamp.$gte = new Date(startDate);
-      if (endDate) filter.timestamp.$lte = new Date(endDate);
+    if (!days || isNaN(days) || days <= 0) {
+      throw new Error('تعداد روز باید عددی مثبت باشد');
     }
     
-    // تنظیم صفحه‌بندی
-    const skip = (page - 1) * limit;
-    const limitValue = limit > 0 ? parseInt(limit) : 0;
+    const date = new Date();
+    date.setDate(date.getDate() - days);
     
-    // دریافت لاگ‌ها از پایگاه داده
-    const logs = await dbClient.collection('user_logs')
-      .find(filter)
-      .sort({ timestamp: -1 })
-      .skip(skip)
-      .limit(limitValue)
-      .toArray();
+    const result = await Log.deleteMany({ timestamp: { $lt: date } });
     
-    return logs;
-  } catch (error) {
-    console.error('Error fetching user logs:', error);
-    return [];
-  }
-}
-
-/**
- * دریافت لاگ‌های تراکنش‌ها
- * @param {Object} options گزینه‌های فیلتر لاگ‌ها
- * @returns {Promise<Array>} لاگ‌های تراکنش‌ها
- */
-export async function getTransactionLogs(options = {}) {
-  try {
-    const { page = 1, limit = 50, userId, type, startDate, endDate } = options;
-    
-    // ایجاد فیلتر برای جستجو
-    const filter = {};
-    if (userId) filter.userId = userId;
-    if (type) filter.type = type;
-    
-    if (startDate || endDate) {
-      filter.timestamp = {};
-      if (startDate) filter.timestamp.$gte = new Date(startDate);
-      if (endDate) filter.timestamp.$lte = new Date(endDate);
-    }
-    
-    // تنظیم صفحه‌بندی
-    const skip = (page - 1) * limit;
-    const limitValue = limit > 0 ? parseInt(limit) : 0;
-    
-    // دریافت لاگ‌ها از پایگاه داده
-    const logs = await dbClient.collection('transaction_logs')
-      .find(filter)
-      .sort({ timestamp: -1 })
-      .skip(skip)
-      .limit(limitValue)
-      .toArray();
-    
-    return logs;
-  } catch (error) {
-    console.error('Error fetching transaction logs:', error);
-    return [];
-  }
-}
-
-/**
- * دریافت لاگ‌های بازی‌ها
- * @param {Object} options گزینه‌های فیلتر لاگ‌ها
- * @returns {Promise<Array>} لاگ‌های بازی‌ها
- */
-export async function getGameLogs(options = {}) {
-  try {
-    const { page = 1, limit = 50, userId, gameType, result, startDate, endDate } = options;
-    
-    // ایجاد فیلتر برای جستجو
-    const filter = {};
-    if (userId) filter.userId = userId;
-    if (gameType) filter.gameType = gameType;
-    if (result) filter.result = result;
-    
-    if (startDate || endDate) {
-      filter.timestamp = {};
-      if (startDate) filter.timestamp.$gte = new Date(startDate);
-      if (endDate) filter.timestamp.$lte = new Date(endDate);
-    }
-    
-    // تنظیم صفحه‌بندی
-    const skip = (page - 1) * limit;
-    const limitValue = limit > 0 ? parseInt(limit) : 0;
-    
-    // دریافت لاگ‌ها از پایگاه داده
-    const logs = await dbClient.collection('game_logs')
-      .find(filter)
-      .sort({ timestamp: -1 })
-      .skip(skip)
-      .limit(limitValue)
-      .toArray();
-    
-    return logs;
-  } catch (error) {
-    console.error('Error fetching game logs:', error);
-    return [];
-  }
-}
-
-/**
- * دریافت لاگ‌های ادمین
- * @param {Object} options گزینه‌های فیلتر لاگ‌ها
- * @returns {Promise<Array>} لاگ‌های ادمین
- */
-export async function getAdminLogs(options = {}) {
-  try {
-    const { page = 1, limit = 50, adminId, action, startDate, endDate } = options;
-    
-    // ایجاد فیلتر برای جستجو
-    const filter = {};
-    if (adminId) filter.adminId = adminId;
-    if (action) filter.action = action;
-    
-    if (startDate || endDate) {
-      filter.timestamp = {};
-      if (startDate) filter.timestamp.$gte = new Date(startDate);
-      if (endDate) filter.timestamp.$lte = new Date(endDate);
-    }
-    
-    // تنظیم صفحه‌بندی
-    const skip = (page - 1) * limit;
-    const limitValue = limit > 0 ? parseInt(limit) : 0;
-    
-    // دریافت لاگ‌ها از پایگاه داده
-    const logs = await dbClient.collection('admin_logs')
-      .find(filter)
-      .sort({ timestamp: -1 })
-      .skip(skip)
-      .limit(limitValue)
-      .toArray();
-    
-    return logs;
-  } catch (error) {
-    console.error('Error fetching admin logs:', error);
-    return [];
-  }
-}
-
-/**
- * دریافت لاگ‌های هوش مصنوعی
- * @param {Object} options گزینه‌های فیلتر لاگ‌ها
- * @returns {Promise<Array>} لاگ‌های هوش مصنوعی
- */
-export async function getAILogs(options = {}) {
-  try {
-    const { page = 1, limit = 50, userId, model, startDate, endDate } = options;
-    
-    // ایجاد فیلتر برای جستجو
-    const filter = {};
-    if (userId) filter.userId = userId;
-    if (model) filter.model = model;
-    
-    if (startDate || endDate) {
-      filter.timestamp = {};
-      if (startDate) filter.timestamp.$gte = new Date(startDate);
-      if (endDate) filter.timestamp.$lte = new Date(endDate);
-    }
-    
-    // تنظیم صفحه‌بندی
-    const skip = (page - 1) * limit;
-    const limitValue = limit > 0 ? parseInt(limit) : 0;
-    
-    // دریافت لاگ‌ها از پایگاه داده
-    const logs = await dbClient.collection('ai_logs')
-      .find(filter)
-      .sort({ timestamp: -1 })
-      .skip(skip)
-      .limit(limitValue)
-      .toArray();
-    
-    return logs;
-  } catch (error) {
-    console.error('Error fetching AI logs:', error);
-    return [];
-  }
-}
-
-/**
- * دریافت لاگ‌های خطا
- * @param {Object} options گزینه‌های فیلتر لاگ‌ها
- * @returns {Promise<Array>} لاگ‌های خطا
- */
-export async function getErrorLogs(options = {}) {
-  try {
-    const { page = 1, limit = 50, module, severity, startDate, endDate } = options;
-    
-    // ایجاد فیلتر برای جستجو
-    const filter = {};
-    if (module) filter.module = module;
-    if (severity) filter.severity = severity;
-    
-    if (startDate || endDate) {
-      filter.timestamp = {};
-      if (startDate) filter.timestamp.$gte = new Date(startDate);
-      if (endDate) filter.timestamp.$lte = new Date(endDate);
-    }
-    
-    // تنظیم صفحه‌بندی
-    const skip = (page - 1) * limit;
-    const limitValue = limit > 0 ? parseInt(limit) : 0;
-    
-    // دریافت لاگ‌ها از پایگاه داده
-    const logs = await dbClient.collection('error_logs')
-      .find(filter)
-      .sort({ timestamp: -1 })
-      .skip(skip)
-      .limit(limitValue)
-      .toArray();
-    
-    return logs;
-  } catch (error) {
-    console.error('Error fetching error logs:', error);
-    return [];
-  }
-}
-
-/**
- * پاکسازی لاگ‌ها
- * @param {string} logType نوع لاگ
- * @returns {Promise<boolean>} نتیجه عملیات
- */
-export async function clearLogs(logType) {
-  try {
-    let collectionName;
-    
-    // تعیین نام مجموعه بر اساس نوع لاگ
-    switch (logType) {
-      case 'system':
-        collectionName = 'system_logs';
-        break;
-      case 'user':
-        collectionName = 'user_logs';
-        break;
-      case 'transaction':
-        collectionName = 'transaction_logs';
-        break;
-      case 'game':
-        collectionName = 'game_logs';
-        break;
-      case 'admin':
-        collectionName = 'admin_logs';
-        break;
-      case 'ai':
-        collectionName = 'ai_logs';
-        break;
-      case 'error':
-        collectionName = 'error_logs';
-        break;
-      default:
-        throw new Error('نوع لاگ نامعتبر است');
-    }
-    
-    // پاکسازی مجموعه
-    await dbClient.collection(collectionName).deleteMany({});
-    
-    return true;
-  } catch (error) {
-    console.error(`Error clearing ${logType} logs:`, error);
-    throw new Error(`خطا در پاکسازی لاگ‌های ${logType}`);
-  }
-}
-
-/**
- * ثبت یک تراکنش
- * @param {Object} data داده‌های تراکنش
- * @returns {Promise<Object>} تراکنش ثبت شده
- */
-export async function logTransaction(userId, username, type, amount, description) {
-  try {
-    const transaction = {
-      userId,
-      username,
-      type,
-      amount,
-      description,
-      timestamp: new Date()
+    return {
+      success: true,
+      deletedCount: result.deletedCount,
+      message: `${result.deletedCount} لاگ قدیمی‌تر از ${days} روز با موفقیت حذف شد`
     };
-    
-    await dbClient.collection('transaction_logs').insertOne(transaction);
-    return transaction;
   } catch (error) {
-    console.error('Error logging transaction:', error);
-    return null;
+    console.error('خطا در پاک کردن لاگ‌های قدیمی:', error);
+    throw error;
   }
 }
 
 /**
- * ثبت یک بازی
- * @param {Object} data داده‌های بازی
- * @returns {Promise<Object>} بازی ثبت شده
- */
-export async function logGame(userId, username, gameType, result, bet, reward) {
-  try {
-    const game = {
-      userId,
-      username,
-      gameType,
-      result,
-      bet,
-      reward,
-      timestamp: new Date()
-    };
-    
-    await dbClient.collection('game_logs').insertOne(game);
-    return game;
-  } catch (error) {
-    console.error('Error logging game:', error);
-    return null;
-  }
-}
-
-/**
- * ثبت فعالیت کاربر
- * @param {Object} data داده‌های فعالیت
- * @returns {Promise<Object>} فعالیت ثبت شده
- */
-export async function logUserActivity(userId, username, activity, details) {
-  try {
-    const userActivity = {
-      userId,
-      username,
-      activity,
-      details,
-      timestamp: new Date()
-    };
-    
-    await dbClient.collection('user_logs').insertOne(userActivity);
-    return userActivity;
-  } catch (error) {
-    console.error('Error logging user activity:', error);
-    return null;
-  }
-}
-
-/**
- * ثبت فعالیت ادمین
- * @param {Object} data داده‌های فعالیت
- * @returns {Promise<Object>} فعالیت ثبت شده
- */
-export async function logAdminActivity(adminId, adminName, action, targetId, targetName, details) {
-  try {
-    const adminActivity = {
-      adminId,
-      adminName,
-      action,
-      targetId,
-      targetName,
-      details,
-      timestamp: new Date()
-    };
-    
-    await dbClient.collection('admin_logs').insertOne(adminActivity);
-    return adminActivity;
-  } catch (error) {
-    console.error('Error logging admin activity:', error);
-    return null;
-  }
-}
-
-/**
- * ثبت درخواست هوش مصنوعی
- * @param {Object} data داده‌های درخواست
- * @returns {Promise<Object>} درخواست ثبت شده
- */
-export async function logAI(userId, username, model, prompt, tokens, processingTime) {
-  try {
-    const aiRequest = {
-      userId,
-      username,
-      model,
-      prompt,
-      tokens,
-      processingTime,
-      timestamp: new Date()
-    };
-    
-    await dbClient.collection('ai_logs').insertOne(aiRequest);
-    return aiRequest;
-  } catch (error) {
-    console.error('Error logging AI request:', error);
-    return null;
-  }
-}
-
-/**
- * ثبت خطا
- * @param {Object} data داده‌های خطا
- * @returns {Promise<Object>} خطای ثبت شده
- */
-export async function logError(error, module, userId, username, stackTrace = '') {
-  try {
-    const errorLog = {
-      error: error.message || String(error),
-      module,
-      userId,
-      username,
-      stackTrace,
-      timestamp: new Date()
-    };
-    
-    await dbClient.collection('error_logs').insertOne(errorLog);
-    return errorLog;
-  } catch (err) {
-    console.error('Error logging error:', err);
-    return null;
-  }
-}
-
-/**
- * ثبت پیام سیستم
- * @param {string} level سطح پیام
- * @param {string} message متن پیام
- * @returns {Promise<Object>} پیام ثبت شده
- */
-export async function logSystem(level, message) {
-  try {
-    const systemLog = {
-      level,
-      message,
-      timestamp: new Date()
-    };
-    
-    await dbClient.collection('system_logs').insertOne(systemLog);
-    return systemLog;
-  } catch (error) {
-    console.error('Error logging system message:', error);
-    return null;
-  }
-}
-
-/**
- * ثبت رویداد
- * @param {Object} data داده‌های رویداد
- * @returns {Promise<Object>} رویداد ثبت شده
- */
-export async function logEvent(userId, username, eventType, severity, details) {
-  try {
-    const event = {
-      userId,
-      username,
-      eventType,
-      severity,
-      details,
-      timestamp: new Date()
-    };
-    
-    await dbClient.collection('event_logs').insertOne(event);
-    return event;
-  } catch (error) {
-    console.error('Error logging event:', error);
-    return null;
-  }
-}
-
-/**
- * ثبت لاگ اختصاصی
- * @param {string} collectionName نام مجموعه
- * @param {Object} data داده‌های لاگ
+ * ثبت لاگ جدید
+ * @param {Object} logData اطلاعات لاگ
  * @returns {Promise<Object>} لاگ ثبت شده
  */
-export async function logCustom(eventType, details, fields = {}) {
+export async function createLog(logData) {
   try {
-    const customLog = {
-      eventType,
-      details,
-      ...fields,
-      timestamp: new Date()
-    };
+    const {
+      level = 'info',
+      category = 'system',
+      message,
+      userId = null,
+      serverId = null,
+      details = {}
+    } = logData;
     
-    await dbClient.collection('custom_logs').insertOne(customLog);
-    return customLog;
+    if (!message) {
+      throw new Error('پیام لاگ الزامی است');
+    }
+    
+    const newLog = new Log({
+      level,
+      category,
+      message,
+      userId,
+      serverId,
+      details,
+      timestamp: new Date()
+    });
+    
+    await newLog.save();
+    
+    return newLog;
   } catch (error) {
-    console.error('Error logging custom data:', error);
-    return null;
+    console.error('خطا در ثبت لاگ جدید:', error);
+    throw error;
   }
 }
+
+/**
+ * خروجی CSV از لاگ‌ها
+ * @param {Object} params پارامترهای فیلتر
+ * @returns {Promise<string>} محتوای CSV
+ */
+export async function exportLogsToCsv(params) {
+  try {
+    // محدود کردن تعداد رکوردها
+    params.limit = params.limit || 1000;
+    
+    // دریافت لاگ‌ها
+    const { logs } = await getLogs(params);
+    
+    // تعریف هدر CSV
+    let csv = 'ID,Timestamp,Level,Category,Message,UserID,ServerID,Details\n';
+    
+    // افزودن رکوردها به CSV
+    for (const log of logs) {
+      // پیام و جزئیات را برای CSV آماده می‌کنیم
+      const message = log.message?.replace(/,/g, ' ').replace(/"/g, '""');
+      const details = log.details ? JSON.stringify(log.details).replace(/,/g, ' ').replace(/"/g, '""') : '';
+      
+      csv += `${log._id},"${new Date(log.timestamp).toISOString()}",${log.level},${log.category},"${message}",${log.userId || ''},${log.serverId || ''},"${details}"\n`;
+    }
+    
+    return csv;
+  } catch (error) {
+    console.error('خطا در خروجی CSV از لاگ‌ها:', error);
+    throw error;
+  }
+}
+
+/**
+ * سرویس لاگ
+ */
+export const logsService = {
+  getLogs,
+  getLogById,
+  getServerLogs,
+  getUserLogs,
+  getLogsOverview,
+  clearOldLogs,
+  createLog,
+  exportLogsToCsv
+};
