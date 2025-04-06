@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="fa">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ورود به پنل مدیریت | CCoin</title>
+  
+  <!-- فونت Vazirmatn -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
+  
+  <!-- آیکون‌های Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- استایل‌های Fluent UI -->
+  <link rel="stylesheet" href="/admin/css/fluent-ui/fluent.css">
+  
+  <style>
+    .login-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background-color: var(--fluent-neutral-lightest);
+    }
+    
+    .login-card {
+      width: 100%;
+      max-width: 450px;
+      background-color: var(--fluent-white);
+      border-radius: var(--fluent-radius-lg);
+      box-shadow: var(--fluent-shadow-lg);
+      overflow: hidden;
+    }
+    
+    .login-header {
+      background-color: var(--fluent-primary);
+      color: var(--fluent-white);
+      padding: var(--fluent-space-l);
+      text-align: center;
+    }
+    
+    .login-header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+    
+    .login-logo {
+      margin-bottom: var(--fluent-space-m);
+      max-width: 80px;
+    }
+    
+    .login-body {
+      padding: var(--fluent-space-l);
+    }
+    
+    .login-footer {
+      padding: var(--fluent-space-m);
+      text-align: center;
+      border-top: 1px solid var(--fluent-neutral-lighter-alt);
+      background-color: var(--fluent-neutral-lightest);
+      font-size: 0.875rem;
+      color: var(--fluent-neutral);
+    }
+    
+    .form-alert {
+      margin-bottom: var(--fluent-space-m);
+    }
+    
+    .login-btn {
+      width: 100%;
+      padding: var(--fluent-space-s) var(--fluent-space-m);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-header">
+        <img src="/admin/images/ccoin-logo.png" alt="CCoin Logo" class="login-logo">
+        <h1>ورود به پنل مدیریت CCoin</h1>
+      </div>
+      
+      <div class="login-body">
+        <% if (messages.error) { %>
+          <div class="fluent-alert fluent-alert-danger form-alert">
+            <i class="fas fa-exclamation-circle"></i> <%= messages.error %>
+          </div>
+        <% } %>
+        
+        <form action="/admin/login" method="POST">
+          <div class="fluent-form-group">
+            <label for="username" class="fluent-form-label">نام کاربری</label>
+            <div class="fluent-input-group">
+              <span class="fluent-input-group-text">
+                <i class="fas fa-user"></i>
+              </span>
+              <input type="text" id="username" name="username" class="fluent-form-control" placeholder="نام کاربری خود را وارد کنید" required>
+            </div>
+          </div>
+          
+          <div class="fluent-form-group">
+            <label for="password" class="fluent-form-label">رمز عبور</label>
+            <div class="fluent-input-group">
+              <span class="fluent-input-group-text">
+                <i class="fas fa-lock"></i>
+              </span>
+              <input type="password" id="password" name="password" class="fluent-form-control" placeholder="رمز عبور خود را وارد کنید" required>
+            </div>
+          </div>
+          
+          <div class="fluent-form-check fluent-mb-3">
+            <input type="checkbox" id="remember" name="remember" class="fluent-form-check-input">
+            <label for="remember" class="fluent-form-check-label">مرا به خاطر بسپار</label>
+          </div>
+          
+          <button type="submit" class="fluent-btn fluent-btn-primary login-btn">
+            <i class="fas fa-sign-in-alt"></i> ورود به پنل
+          </button>
+        </form>
+      </div>
+      
+      <div class="login-footer">
+        <p>پنل مدیریت CCoin &copy; <%= new Date().getFullYear() %>. تمامی حقوق محفوظ است.</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- اسکریپت‌های Fluent UI -->
+  <script src="/admin/js/fluent-ui/fluent.js"></script>
+</body>
+</html>

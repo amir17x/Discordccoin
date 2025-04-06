@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="fa">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> | پنل مدیریت CCoin</title>
+  
+  <!-- فونت Vazirmatn -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
+  
+  <!-- آیکون‌های Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- استایل‌های Fluent UI -->
+  <link rel="stylesheet" href="/admin/css/fluent-ui/fluent.css">
+  
+  <!-- استایل‌های اختصاصی صفحات -->
+  <% if (typeof pageStyles !== 'undefined' && pageStyles) { %>
+    <link rel="stylesheet" href="<%= pageStyles %>">
+  <% } %>
+</head>
+<body>
+  <!-- هدر -->
+  <header class="fluent-header">
+    <div class="fluent-header-container">
+      <div class="fluent-header-brand">
+        <img src="/admin/images/ccoin-logo.png" alt="CCoin">
+        <span>پنل مدیریت CCoin</span>
+      </div>
+      
+      <div class="fluent-header-nav">
+        <button id="fluent-menu-toggle" class="fluent-btn fluent-btn-outline fluent-d-md-none">
+          <i class="fas fa-bars"></i>
+        </button>
+        
+        <div class="fluent-dropdown fluent-d-none fluent-d-md-block">
+          <button class="fluent-dropdown-toggle fluent-header-nav-item">
+            <i class="fas fa-user-circle"></i>
+            <span><%= user ? user.username : 'کاربر' %></span>
+          </button>
+          
+          <div class="fluent-dropdown-menu fluent-dropdown-menu-right">
+            <a href="/admin/profile" class="fluent-dropdown-item">
+              <i class="fas fa-user"></i>
+              پروفایل
+            </a>
+            <a href="/admin/settings" class="fluent-dropdown-item">
+              <i class="fas fa-cog"></i>
+              تنظیمات
+            </a>
+            <div class="fluent-dropdown-divider"></div>
+            <a href="/admin/logout" class="fluent-dropdown-item">
+              <i class="fas fa-sign-out-alt"></i>
+              خروج
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+  
+  <!-- نوار کناری -->
+  <aside class="fluent-sidebar">
+    <nav class="fluent-sidebar-nav">
+      <a href="/admin/dashboard" class="fluent-sidebar-nav-item <%= activePage === 'dashboard' ? 'active' : '' %>">
+        <i class="fas fa-tachometer-alt"></i>
+        <span>داشبورد</span>
+      </a>
+      
+      <a href="/admin/servers" class="fluent-sidebar-nav-item <%= activePage === 'servers' ? 'active' : '' %>">
+        <i class="fas fa-server"></i>
+        <span>سرورها</span>
+      </a>
+      
+      <a href="/admin/users" class="fluent-sidebar-nav-item <%= activePage === 'users' ? 'active' : '' %>">
+        <i class="fas fa-users"></i>
+        <span>کاربران</span>
+      </a>
+      
+      <a href="/admin/economy" class="fluent-sidebar-nav-item <%= activePage === 'economy' ? 'active' : '' %>">
+        <i class="fas fa-coins"></i>
+        <span>اقتصاد</span>
+      </a>
+      
+      <a href="/admin/shop" class="fluent-sidebar-nav-item <%= activePage === 'shop' ? 'active' : '' %>">
+        <i class="fas fa-shopping-cart"></i>
+        <span>فروشگاه</span>
+      </a>
+      
+      <a href="/admin/stock-market" class="fluent-sidebar-nav-item <%= activePage === 'stock-market' ? 'active' : '' %>">
+        <i class="fas fa-chart-line"></i>
+        <span>بازار سهام</span>
+      </a>
+      
+      <a href="/admin/lottery" class="fluent-sidebar-nav-item <%= activePage === 'lottery' ? 'active' : '' %>">
+        <i class="fas fa-ticket-alt"></i>
+        <span>قرعه‌کشی</span>
+      </a>
+      
+      <a href="/admin/bank" class="fluent-sidebar-nav-item <%= activePage === 'bank' ? 'active' : '' %>">
+        <i class="fas fa-university"></i>
+        <span>بانک</span>
+      </a>
+      
+      <a href="/admin/logs" class="fluent-sidebar-nav-item <%= activePage === 'logs' ? 'active' : '' %>">
+        <i class="fas fa-list"></i>
+        <span>گزارش‌ها</span>
+      </a>
+      
+      <a href="/admin/settings" class="fluent-sidebar-nav-item <%= activePage === 'settings' ? 'active' : '' %>">
+        <i class="fas fa-cog"></i>
+        <span>تنظیمات</span>
+      </a>
+      
+      <a href="/admin/logout" class="fluent-sidebar-nav-item">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>خروج</span>
+      </a>
+    </nav>
+  </aside>
+  
+  <!-- محتوای اصلی -->
+  <main class="fluent-content">
+    <% if (typeof flashMessages !== 'undefined' && flashMessages) { %>
+      <% if (flashMessages.success) { %>
+        <div class="fluent-alert fluent-alert-success">
+          <i class="fas fa-check-circle"></i> <%= flashMessages.success %>
+          <button class="fluent-alert-close">&times;</button>
+        </div>
+      <% } %>
+      
+      <% if (flashMessages.error) { %>
+        <div class="fluent-alert fluent-alert-danger">
+          <i class="fas fa-exclamation-circle"></i> <%= flashMessages.error %>
+          <button class="fluent-alert-close">&times;</button>
+        </div>
+      <% } %>
+      
+      <% if (flashMessages.warning) { %>
+        <div class="fluent-alert fluent-alert-warning">
+          <i class="fas fa-exclamation-triangle"></i> <%= flashMessages.warning %>
+          <button class="fluent-alert-close">&times;</button>
+        </div>
+      <% } %>
+      
+      <% if (flashMessages.info) { %>
+        <div class="fluent-alert fluent-alert-info">
+          <i class="fas fa-info-circle"></i> <%= flashMessages.info %>
+          <button class="fluent-alert-close">&times;</button>
+        </div>
+      <% } %>
+    <% } %>
+    
+    <%- body %>
+  </main>
+  
+  <!-- پاورقی -->
+  <footer class="fluent-footer">
+    <p>پنل مدیریت CCoin &copy; <%= new Date().getFullYear() %>. تمامی حقوق محفوظ است.</p>
+  </footer>
+  
+  <!-- اسکریپت‌های Fluent UI -->
+  <script src="/admin/js/fluent-ui/fluent.js"></script>
+  
+  <!-- اسکریپت‌های اختصاصی صفحات -->
+  <% if (typeof pageScripts !== 'undefined' && pageScripts) { %>
+    <% if (Array.isArray(pageScripts)) { %>
+      <% pageScripts.forEach(function(script) { %>
+        <script src="<%= script %>"></script>
+      <% }); %>
+    <% } else { %>
+      <script src="<%= pageScripts %>"></script>
+    <% } %>
+  <% } %>
+</body>
+</html>

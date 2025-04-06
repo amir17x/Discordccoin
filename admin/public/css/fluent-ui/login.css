@@ -1,0 +1,101 @@
+/**
+ * استایل‌های اختصاصی صفحه ورود Fluent UI
+ */
+
+.fluent-input-group {
+  display: flex;
+  position: relative;
+}
+
+.fluent-input-group-text {
+  display: flex;
+  align-items: center;
+  padding: var(--fluent-space-s) var(--fluent-space-m);
+  background-color: var(--fluent-neutral-lightest);
+  border: 1px solid var(--fluent-neutral-lighter);
+  border-left: none;
+  border-radius: 0 var(--fluent-radius-md) var(--fluent-radius-md) 0;
+  color: var(--fluent-neutral);
+}
+
+.fluent-input-group .fluent-form-control {
+  border-radius: var(--fluent-radius-md) 0 0 var(--fluent-radius-md);
+}
+
+.fluent-form-check {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--fluent-space-m);
+}
+
+.fluent-form-check-input {
+  margin-left: var(--fluent-space-s);
+  width: 18px;
+  height: 18px;
+}
+
+.fluent-form-check-label {
+  font-size: 0.875rem;
+  color: var(--fluent-neutral-dark);
+}
+
+/* اصلاح استایل برای نمایش پیغام‌های فلش */
+.fluent-messages-container {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+  width: 300px;
+}
+
+.fluent-message {
+  background-color: var(--fluent-white);
+  border-radius: var(--fluent-radius-md);
+  box-shadow: var(--fluent-shadow-md);
+  padding: var(--fluent-space-m);
+  margin-bottom: var(--fluent-space-m);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.fluent-message.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.fluent-message-success {
+  border-right: 4px solid var(--fluent-success);
+}
+
+.fluent-message-danger {
+  border-right: 4px solid var(--fluent-error);
+}
+
+.fluent-message-warning {
+  border-right: 4px solid var(--fluent-warning);
+}
+
+.fluent-message-info {
+  border-right: 4px solid var(--fluent-info);
+}
+
+.fluent-message-content {
+  flex: 1;
+}
+
+.fluent-message-close {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: var(--fluent-neutral);
+  margin-right: 5px;
+}
+
+.fluent-message-close:hover {
+  color: var(--fluent-neutral-dark);
+}

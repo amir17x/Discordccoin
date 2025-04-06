@@ -6,150 +6,119 @@
  */
 
 import express from 'express';
-import path from 'path';
-import expressLayouts from 'express-ejs-layouts';
 import session from 'express-session';
-import MongoStore from 'connect-mongo';
 import flash from 'connect-flash';
-import methodOverride from 'method-override';
-import morgan from 'morgan';
-import dotenv from 'dotenv';
+import { MongoClient } from 'mongodb';
+import path from 'path';
 import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import expressLayouts from 'express-ejs-layouts';
 
-// مسیرها
-import indexRouter from './routes/index.js';
-import authRouter from './routes/auth.js';
-import dashboardRouter from './routes/dashboard.js';
-import usersRouter from './routes/users.js';
-import economyRouter from './routes/economy.js';
-import serversRouter from './routes/servers.js';
-import shopRouter from './routes/shop.js';
-import gamesRouter from './routes/games.js';
-import eventsRouter from './routes/events.js';
-import logsRouter from './routes/logs.js';
-import settingsRouter from './routes/settings.js';
-import rolesRouter from './routes/roles.js';
-import aiRouter from './routes/ai.js';
-import testApiRouter from './routes/test-api.js';
-
-// میدلور‌ها
+// میدلورها
 import { checkAuth, setLocals } from './middleware/auth.js';
 import { handleError } from './middleware/error.js';
 
-// تنظیمات محیطی
-dotenv.config();
+// مسیرهای Fluent UI
+import fluentRoutes from './routes/fluent.js';
 
-// تنظیمات مسیر
+// مسیرها - فعلاً غیرفعال تا زمان پیاده سازی مجدد با Fluent UI
+// import indexRoutes from './routes/index.js';
+// import authRoutes from './routes/auth.js';
+// import dashboardRoutes from './routes/dashboard.js';
+// import serversRoutes from './routes/servers.js';
+// import shopRoutes from './routes/shop.js';
+
+// تنظیم مسیر فعلی
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = dirname(__filename);
 
-/**
- * راه‌اندازی پنل مدیریت
- * @param {Express} app اپلیکیشن اکسپرس
- */
-export function setupAdminPanel(app) {
-  console.log('⏳ تنظیم session در پنل ادمین با استفاده از MongoStore...');
-  
-  // تنظیم session
-  const sessionOptions = {
-    secret: process.env.SESSION_SECRET || 'ccoin_secret_key',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      maxAge: 24 * 60 * 60 * 1000, // 1 روز
-      secure: process.env.NODE_ENV === 'production',
-      httpOnly: true,
-    }
-  };
-  
-  // اگر MongoDB در دسترس باشد، از آن برای ذخیره session استفاده می‌کنیم
-  if (process.env.MONGODB_URI) {
-    sessionOptions.store = MongoStore.create({
-      mongoUrl: process.env.MONGODB_URI,
-      ttl: 24 * 60 * 60, // 1 روز
-      autoRemove: 'native',
-      touchAfter: 12 * 3600, // 12 ساعت
-      collectionName: 'admin_sessions',
-    });
-    console.log('✅ MongoStore با موفقیت به تنظیمات session اضافه شد');
-  }
-  
-  app.use(session(sessionOptions));
-  console.log('✅ Session با موفقیت در پنل ادمین تنظیم شد');
-  
-  // تنظیم میدلور‌ها
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
-  app.use(methodOverride('_method'));
-  app.use(flash());
-  app.use(morgan('dev'));
-  
-  // تنظیم static فایل‌ها
-  app.use('/admin/public', express.static(path.join(__dirname, 'public')));
-  
-  // تنظیم موتور قالب
-  app.set('views', path.join(__dirname, 'views'));
-  app.set('view engine', 'ejs');
-  
-  // تنظیم layout
-  app.use(expressLayouts);
-  app.set('layout', 'layout');
-  
-  // میدلور‌های کاستوم
-  app.use(setLocals);
-  
-  // تنظیم مسیرها
-  app.use('/admin/auth', authRouter);
-  app.use('/admin/login', authRouter);
-  app.use('/admin/forgot-password', authRouter);
-  app.use('/admin/reset-password', authRouter);
-  app.use('/admin/logout', authRouter);
-  
-  // مسیرهایی که نیاز به احراز هویت دارند
-  app.use('/admin/dashboard', checkAuth, dashboardRouter);
-  app.use('/admin/users', checkAuth, usersRouter);
-  app.use('/admin/economy', checkAuth, economyRouter);
-  app.use('/admin/servers', checkAuth, serversRouter);
-  app.use('/admin/shop', checkAuth, shopRouter);
-  app.use('/admin/games', checkAuth, gamesRouter);
-  app.use('/admin/events', checkAuth, eventsRouter);
-  app.use('/admin/logs', checkAuth, logsRouter);
-  app.use('/admin/settings', checkAuth, settingsRouter);
-  app.use('/admin/roles', checkAuth, rolesRouter);
-  app.use('/admin/ai', checkAuth, aiRouter);
-  
-  // API تست
-  app.use('/admin/test-api', checkAuth, testApiRouter);
-  
-  // مسیر ریشه
-  app.use('/admin', indexRouter);
-  
-  // مدیریت خطاها
-  app.use('/admin/*', (req, res) => {
-    if (process.env.USE_FLUENT_UI === 'true') {
-      res.status(404).render('fluent-404', {
-        title: 'صفحه یافت نشد',
-        currentRoute: req.path,
-        layout: 'layouts/fluent-main',
-        user: req.session.user
-      });
-    } else {
-      res.status(404).render('404', {
-        title: 'صفحه یافت نشد'
-      });
-    }
-  });
-  
-  app.use(handleError);
-}
+// تنظیمات منتقل شده از متغیرهای محیطی
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/ccoin';
+const SESSION_SECRET = process.env.SESSION_SECRET || 'ccoin-admin-secret';
+const PORT = process.env.ADMIN_PORT || 5000;
+
+// اتصال به پایگاه داده
+let db;
 
 /**
  * اتصال به پایگاه داده و تنظیم اولیه
  * @returns {Promise<Object>} اتصال به پایگاه داده
  */
 export async function connectToDatabase() {
-  // پیاده‌سازی اتصال به پایگاه داده
-  return { success: true };
+  if (db) return db;
+  
+  try {
+    const client = await MongoClient.connect(MONGO_URI);
+    console.log('🗄️ اتصال به MongoDB با موفقیت برقرار شد');
+    db = client.db();
+    return db;
+  } catch (error) {
+    console.error('خطا در اتصال به پایگاه داده:', error);
+    throw error;
+  }
+}
+
+/**
+ * راه‌اندازی پنل مدیریت
+ * @param {Express} app اپلیکیشن اکسپرس
+ */
+export function setupAdminPanel(app) {
+  // تنظیم مسیر فایل‌های استاتیک
+  app.use('/admin/static', express.static(path.join(__dirname, 'public')));
+  
+  // تنظیم موتور قالب
+  app.set('views', path.join(__dirname, 'views'));
+  app.set('view engine', 'ejs');
+  
+  // تنظیم layouts
+  app.use(expressLayouts);
+  app.set('layout', 'layouts/fluent/main');
+  app.set('layout extractScripts', true);
+  app.set('layout extractStyles', true);
+  
+  // میدلورهای عمومی
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+  
+  // تنظیم سشن
+  app.use(session({
+    secret: SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: { 
+      maxAge: 24 * 60 * 60 * 1000,  // ۱ روز
+      secure: process.env.NODE_ENV === 'production'
+    }
+  }));
+  
+  // تنظیم فلش مسیج
+  app.use(flash());
+  
+  // تنظیم متغیرهای locals
+  app.use('/admin', setLocals);
+  
+  // مسیرهای پنل مدیریت Fluent UI
+  app.use('/admin', fluentRoutes);
+  
+  // تنظیم مسیر فایل‌های استاتیک Fluent UI
+  app.use('/admin', express.static(path.join(__dirname, 'public')));
+  
+  // مسیرهای پنل مدیریت قدیمی - موقتاً غیرفعال
+  // app.use('/admin', indexRoutes);
+  // app.use('/admin/auth', authRoutes);
+  // app.use('/admin/dashboard', checkAuth, dashboardRoutes);
+  // app.use('/admin/servers', checkAuth, serversRoutes);
+  // app.use('/admin/shop', checkAuth, shopRoutes);
+  
+  // تغییر مسیر صفحه اصلی به صفحه ورود Fluent UI
+  app.get('/admin', (req, res) => {
+    res.redirect('/admin/login');
+  });
+  
+  // مدیریت خطاها
+  app.use('/admin', handleError);
+  
+  console.log('✅ پنل مدیریت با موفقیت راه‌اندازی شد');
 }
 
 /**
@@ -158,10 +127,10 @@ export async function connectToDatabase() {
  */
 if (import.meta.url === `file://${process.argv[1]}`) {
   const app = express();
+  
   setupAdminPanel(app);
   
-  const PORT = process.env.ADMIN_PORT || 5000;
   app.listen(PORT, () => {
-    console.log(`[express] Server is running on port ${PORT}`);
+    console.log(`🚀 پنل مدیریت روی پورت ${PORT} راه‌اندازی شد`);
   });
 }

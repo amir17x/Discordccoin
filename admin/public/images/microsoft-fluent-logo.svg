@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="60" viewBox="0 0 240 60">
+  <style>
+    .text { font-family: 'Segoe UI', sans-serif; fill: #0078d4; }
+    .title { font-size: 24px; font-weight: 600; }
+    .subtitle { font-size: 18px; font-weight: 400; }
+  </style>
+  <text x="10" y="25" class="text title">Microsoft Fluent UI</text>
+  <text x="10" y="45" class="text subtitle">سیستم طراحی مدرن</text>
+</svg>
