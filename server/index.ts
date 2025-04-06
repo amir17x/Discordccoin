@@ -132,35 +132,33 @@ app.use((req, res, next) => {
     log("Continuing without Discord bot functionality", "warn");
   }
 
-  // راه‌اندازی پنل ادمین جدید
-  try {
-    const { setupAdminPanel } = await import("../admin/index");
-    setupAdminPanel(app);
-    log("Admin panel initialized successfully", "success");
-  } catch (adminError) {
-    log(`Error initializing admin panel: ${adminError}`, "error");
-    
-    // صفحه موقت ادمین در صورت خطا
-    app.get('/admin', (_req, res) => {
-      res.send(`
-        <html>
-          <head>
-            <title>Ccoin Admin Panel</title>
-            <style>
-              body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-              h1 { color: #333; text-align: center; }
-              .notice { background: #f8f9fa; border-left: 4px solid #e74c3c; padding: 15px; margin: 20px 0; }
-            </style>
-          </head>
-          <body>
-            <h1>Ccoin Admin Panel</h1>
-            <div class="notice">خطا در بارگذاری پنل ادمین. لطفاً با مدیر سیستم تماس بگیرید.</div>
-            <div class="notice">${adminError}</div>
-          </body>
-        </html>
-      `);
-    });
-  }
+  // راه‌اندازی پنل ادمین - موقتا غیرفعال شده
+  log("Admin panel temporarily disabled", "info");
+  
+  // نمایش صفحه پیام غیرفعال بودن پنل ادمین
+  app.get('/admin', (_req, res) => {
+    res.send(`
+      <html>
+        <head>
+          <title>Ccoin Admin Panel</title>
+          <style>
+            body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; text-align: center; }
+            h1 { color: #333; }
+            .notice { background: #f8f9fa; border-left: 4px solid #3498db; padding: 15px; margin: 20px 0; text-align: right; }
+          </style>
+        </head>
+        <body>
+          <h1>Ccoin Admin Panel</h1>
+          <div class="notice">پنل ادمین موقتاً غیرفعال شده است. به زودی با بروزرسانی‌های جدید در دسترس قرار خواهد گرفت.</div>
+        </body>
+      </html>
+    `);
+  });
+  
+  // غیرفعال کردن مسیرهای زیرمجموعه پنل ادمین
+  app.all('/admin/*', (_req, res) => {
+    res.redirect('/admin');
+  });
 
   const server = await registerRoutes(app);
 

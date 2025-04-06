@@ -497,9 +497,9 @@ export async function mainMenu(
             .setLabel('🤖 CCOIN AI')
             .setStyle(ButtonStyle.Primary),
           new ButtonBuilder()
-            .setCustomId('donate')
             .setLabel('❤️ حمایت از ربات')
-            .setStyle(ButtonStyle.Secondary),
+            .setStyle(ButtonStyle.Link)
+            .setURL('https://hamibash.com/discordccoinbot'),
         );
         
       // Row 5: AI Assistant و دستاوردها - حذف این بخش و استفاده از row4 برای CCOIN AI

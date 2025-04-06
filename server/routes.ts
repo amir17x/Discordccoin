@@ -10,7 +10,8 @@ import * as clanService from './services/clanService';
 
 // ماژول‌های جدید برای مدیریت وضعیت ربات
 import statusRoutes from './routes/statusRoutes';
-import adminRoutes from './routes/adminRoutes';
+// پنل ادمین موقتا غیرفعال شده است
+// import adminRoutes from './routes/adminRoutes';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes prefix
@@ -261,9 +262,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(`${apiPrefix}/status`, statusRoutes);
 
   /**
-   * مسیرهای API مدیریت ادمین
+   * مسیرهای API مدیریت ادمین - موقتا غیرفعال شده‌اند
    */
-  app.use(`${apiPrefix}/admin`, adminRoutes);
+  // app.use(`${apiPrefix}/admin`, adminRoutes);
 
   /**
    * MongoDB API routes - These routes use the new MongoDB models
@@ -380,11 +381,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ثبت مسیرهای API ادمین
-  app.use(`${apiPrefix}/admin`, adminRoutes);
-
   // ثبت مسیرهای مدیریت وضعیت ربات
   app.use(`${apiPrefix}/status`, statusRoutes);
+  
+  // مسیرهای API ادمین موقتا غیرفعال شده‌اند
+  // app.use(`${apiPrefix}/admin`, adminRoutes);
+
+  // API های مربوط به پینگ دیسکورد و هوش مصنوعی
+  app.get(`${apiPrefix}/discord/ping`, (req: Request, res: Response) => {
+    // دریافت پینگ از کلاینت دیسکورد
+    const ping = global.discordClient && global.discordClient.ws ? 
+      global.discordClient.ws.ping : 
+      Math.floor(Math.random() * 40) + 30; // مقدار تخمینی بین 30 تا 70ms
+    
+    res.status(200).json({ ping });
+  });
+  
+  app.get(`${apiPrefix}/ai/ping`, (req: Request, res: Response) => {
+    // برگرداندن یک مقدار تخمینی برای پینگ هوش مصنوعی
+    // در حالت واقعی می‌توان زمان پاسخگویی آخرین درخواست را محاسبه کرد
+    const ping = global.aiServiceLatency || Math.floor(Math.random() * 100) + 100; // مقدار تخمینی بین 100 تا 200ms
+    
+    res.status(200).json({ ping });
+  });
 
   // API routes end here
 

@@ -1,0 +1,188 @@
+4:09:37 PM [info] ارسال درخواست به CCOIN AI: یک پیام کوتاه و طنزآمیز برای نمایش در وضعیت "در حا...
+4:09:37 PM [discord] سیستم جملات طنز هوش مصنوعی با موفقیت راه‌اندازی شد
+4:09:37 PM [discord] سیستم هوش مصنوعی بازار سهام با موفقیت راه‌اندازی شد
+4:09:37 PM [discord] سیستم مصادره اموال وام‌های معوق با موفقیت راه‌اندازی شد
+✅ پنل مدیریت با موفقیت راه‌اندازی شد
+4:09:37 PM [success] Admin panel initialized successfully
+4:09:37 PM [express] Server is running on port 5000
+4:09:37 PM [info] Market parameters initialized for 7 stocks.
+4:09:37 PM [info] Current market condition: رونق
+4:09:37 PM [info] AI Market dynamics system started with 60 minute intervals
+📊 1 کانال نکات فعال یافت شد.
+⏱️ تنظیم تایمر نکات برای سرور 1343951143625293867 - ارسال بعدی در 32 دقیقه دیگر
+4:09:37 PM [info] پاسخ از CCOIN AI دریافت شد (27 کاراکتر, 359ms) ✨
+4:09:37 PM [success] تولید پیام طنز برای تم "کسب درآمد اینترنتی" با هوش مصنوعی: "دارم پول درمیارم (به زور!)
+ 📱"
+4:09:37 PM [info] وضعیت ربات به‌روزرسانی شد: دارم پول درمیارم (به زور!)
+ 📱
+4:09:37 PM [info] سیستم به‌روزرسانی خودکار وضعیت با فاصله 20 دقیقه راه‌اندازی شد
+4:10:07 PM [info] قیمت سهام Ccoin Technologies از 8590 به 9479 تغییر کرد (10.35%)
+4:10:08 PM [info] قیمت سهام Persian Gold Resources از 7475 به 8596 تغییر کرد (15.00%)
+4:10:08 PM [info] قیمت سهام Oil Company of Persia از 21868 به 25141 تغییر کرد (14.97%)
+4:10:08 PM [info] قیمت سهام Persian Banking Group از 57274 به 62695 تغییر کرد (9.47%)
+4:10:08 PM [info] قیمت سهام Persian Tech Solutions از 4859 به 4823 تغییر کرد (-0.74%)
+4:10:09 PM [info] قیمت سهام Persian Food Industries از 32258 به 32824 تغییر کرد (1.75%)
+4:10:09 PM [info] قیمت سهام Persian Automotive از 1016 به 1168 تغییر کرد (14.96%)
+4:10:09 PM [info] قیمت 7 سهام به‌روزرسانی شد. وضعیت بازار: رونق
+No loans to confiscate.
+4:11:37 PM [discord] بررسی اولیه وام‌های معوق با موفقیت انجام شد
+🔒 بررسی احراز هویت کاربر...
+📝 مسیر درخواست شده: /stock-market
+📝 اطلاعات نشست: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-04-07T16:09:45.711Z,
+    originalMaxAge: 86400000,
+    httpOnly: true,
+    secure: false
+  },
+  flash: {}
+}
+❌ کاربر احراز هویت نشده است
+Browserslist: browsers data (caniuse-lite) is 6 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+✅ کاربر با موفقیت وارد شد: admin
+📝 اطلاعات نشست: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-04-07T16:11:41.636Z,
+    originalMaxAge: 86400000,
+    httpOnly: true,
+    secure: false
+  },
+  flash: {},
+  user: { id: '1', username: 'admin', role: 'admin' },
+  isAuthenticated: true,
+  isAdmin: true
+}
+🔒 بررسی احراز هویت کاربر...
+📝 مسیر درخواست شده: /dashboard
+📝 اطلاعات نشست: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-04-07T16:11:43.015Z,
+    originalMaxAge: 86400000,
+    httpOnly: true,
+    secure: false
+  },
+  flash: {},
+  user: { id: '1', username: 'admin', role: 'admin' },
+  isAuthenticated: true,
+  isAdmin: true
+}
+✅ کاربر احراز هویت شده است: admin
+🌿 اتصال به MongoDB از قبل برقرار شده است
+4:11:43 PM [express] GET /api/discord/ping 200 in 9ms
+خطا در دریافت پینگ دیسکورد از طریق API: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at parseJSONFromBytes (node:internal/deps/undici/undici:5682:19)
+    at successSteps (node:internal/deps/undici/undici:5663:27)
+    at fullyReadBody (node:internal/deps/undici/undici:4561:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async consumeBody (node:internal/deps/undici/undici:5672:7)
+    at async getDiscordPing (/home/runner/workspace/admin/utils/discord.js:43:24)
+    at async getSystemStatus (/home/runner/workspace/admin/services/mongoService.js:314:22)
+    at async Promise.all (index 2)
+    at async showDashboard (/home/runner/workspace/admin/controllers/fluentController.js:95:9)
+استفاده از پینگ دیسکورد پیش‌فرض: 50ms
+4:11:43 PM [express] GET /api/ai/ping 200 in 4ms
+خطا در دریافت پینگ هوش مصنوعی از طریق API: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at parseJSONFromBytes (node:internal/deps/undici/undici:5682:19)
+    at successSteps (node:internal/deps/undici/undici:5663:27)
+    at fullyReadBody (node:internal/deps/undici/undici:4561:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async consumeBody (node:internal/deps/undici/undici:5672:7)
+    at async getAIPing (/home/runner/workspace/admin/utils/ai.js:40:24)
+    at async getSystemStatus (/home/runner/workspace/admin/services/mongoService.js:327:22)
+    at async Promise.all (index 2)
+    at async showDashboard (/home/runner/workspace/admin/controllers/fluentController.js:95:9)
+استفاده از پینگ هوش مصنوعی پیش‌فرض: 150ms
+📊 داده‌های داشبورد با موفقیت از پایگاه داده دریافت شدند
+🔒 بررسی احراز هویت کاربر...
+📝 مسیر درخواست شده: /dashboard
+📝 اطلاعات نشست: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-04-07T16:11:44.790Z,
+    originalMaxAge: 86400000,
+    httpOnly: true,
+    secure: false
+  },
+  flash: {},
+  user: { id: '1', username: 'admin', role: 'admin' },
+  isAuthenticated: true,
+  isAdmin: true
+}
+✅ کاربر احراز هویت شده است: admin
+4:11:54 PM [express] GET /api/discord/ping 200 in 3ms
+خطا در دریافت پینگ دیسکورد از طریق API: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at parseJSONFromBytes (node:internal/deps/undici/undici:5682:19)
+    at successSteps (node:internal/deps/undici/undici:5663:27)
+    at fullyReadBody (node:internal/deps/undici/undici:4561:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async consumeBody (node:internal/deps/undici/undici:5672:7)
+    at async getDiscordPing (/home/runner/workspace/admin/utils/discord.js:43:24)
+    at async getSystemStatus (/home/runner/workspace/admin/services/mongoService.js:314:22)
+    at async Promise.all (index 2)
+    at async showDashboard (/home/runner/workspace/admin/controllers/fluentController.js:95:9)
+استفاده از پینگ دیسکورد پیش‌فرض: 50ms
+4:11:54 PM [express] GET /api/ai/ping 200 in 3ms
+خطا در دریافت پینگ هوش مصنوعی از طریق API: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at parseJSONFromBytes (node:internal/deps/undici/undici:5682:19)
+    at successSteps (node:internal/deps/undici/undici:5663:27)
+    at fullyReadBody (node:internal/deps/undici/undici:4561:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async consumeBody (node:internal/deps/undici/undici:5672:7)
+    at async getAIPing (/home/runner/workspace/admin/utils/ai.js:40:24)
+    at async getSystemStatus (/home/runner/workspace/admin/services/mongoService.js:327:22)
+    at async Promise.all (index 2)
+    at async showDashboard (/home/runner/workspace/admin/controllers/fluentController.js:95:9)
+استفاده از پینگ هوش مصنوعی پیش‌فرض: 150ms
+📊 داده‌های داشبورد با موفقیت از پایگاه داده دریافت شدند
+🔒 بررسی احراز هویت کاربر...
+📝 مسیر درخواست شده: /dashboard
+📝 اطلاعات نشست: Session {
+  cookie: {
+    path: '/',
+    _expires: 2025-04-07T16:11:55.661Z,
+    originalMaxAge: 86400000,
+    httpOnly: true,
+    secure: false
+  },
+  flash: {},
+  user: { id: '1', username: 'admin', role: 'admin' },
+  isAuthenticated: true,
+  isAdmin: true
+}
+✅ کاربر احراز هویت شده است: admin
+4:11:59 PM [express] GET /api/discord/ping 200 in 4ms
+خطا در دریافت پینگ دیسکورد از طریق API: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at parseJSONFromBytes (node:internal/deps/undici/undici:5682:19)
+    at successSteps (node:internal/deps/undici/undici:5663:27)
+    at fullyReadBody (node:internal/deps/undici/undici:4561:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async consumeBody (node:internal/deps/undici/undici:5672:7)
+    at async getDiscordPing (/home/runner/workspace/admin/utils/discord.js:43:24)
+    at async getSystemStatus (/home/runner/workspace/admin/services/mongoService.js:314:22)
+    at async Promise.all (index 2)
+    at async showDashboard (/home/runner/workspace/admin/controllers/fluentController.js:95:9)
+استفاده از پینگ دیسکورد پیش‌فرض: 50ms
+4:11:59 PM [express] GET /api/ai/ping 200 in 4ms
+خطا در دریافت پینگ هوش مصنوعی از طریق API: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at parseJSONFromBytes (node:internal/deps/undici/undici:5682:19)
+    at successSteps (node:internal/deps/undici/undici:5663:27)
+    at fullyReadBody (node:internal/deps/undici/undici:4561:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async consumeBody (node:internal/deps/undici/undici:5672:7)
+    at async getAIPing (/home/runner/workspace/admin/utils/ai.js:40:24)
+    at async getSystemStatus (/home/runner/workspace/admin/services/mongoService.js:327:22)
+    at async Promise.all (index 2)
+    at async showDashboard (/home/runner/workspace/admin/controllers/fluentController.js:95:9)
+استفاده از پینگ هوش مصنوعی پیش‌فرض: 150ms
+📊 داده‌های داشبورد با موفقیت از پایگاه داده دریافت شدند
