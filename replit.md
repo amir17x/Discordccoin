@@ -127,6 +127,11 @@ This is a Discord bot called "Ccoin" built with Discord.js and TypeScript. It's 
 
 # Recent Changes
 
+- **Internal Notification System**: Replaced AI-generated notifications with fast internal personalized system
+  - Created `internalNotifications.ts` with 25+ smart notification templates
+  - Notifications now based on user context (wallet, level, clan status, etc.) without API calls
+  - Significantly improved /menu command loading speed by removing AI dependency
+  - Maintains personalization through rule-based logic and user behavior analysis
 - **Admin Panel Enhancements**: Complete overhaul of web admin panel with all Discord admin command features
 - **Performance Fix**: Resolved auto-refresh causing rapid API calls, now uses manual refresh
 - **Feature Parity**: Web admin panel now matches Discord /admin functionality
