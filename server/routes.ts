@@ -10,27 +10,27 @@ import * as clanService from './services/clanService';
 
 // ماژول‌های جدید برای مدیریت وضعیت ربات
 import statusRoutes from './routes/statusRoutes';
-// پنل ادمین موقتا غیرفعال شده است
-// import adminRoutes from './routes/adminRoutes';
+// ماژول‌های پنل ادمین
+import adminRoutes from './routes/adminRoutes';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes prefix
   const apiPrefix = "/api";
 
-  // Health check endpoint - غیرفعال شده
-  // app.get(`${apiPrefix}/health`, (req: Request, res: Response) => {
-  //   res.status(200).json({ status: "ok" });
-  // });
+  // Health check endpoint
+  app.get(`${apiPrefix}/health`, (req: Request, res: Response) => {
+    res.status(200).json({ status: "ok" });
+  });
 
-  // Bot status endpoint - غیرفعال شده
-  // app.get(`${apiPrefix}/bot/status`, (req: Request, res: Response) => {
-  //   res.status(200).json({ 
-  //     status: "online",
-  //     version: "1.0.0",
-  //     uptime: process.uptime(),
-  //     memoryUsage: process.memoryUsage()
-  //   });
-  // });
+  // Bot status endpoint
+  app.get(`${apiPrefix}/bot/status`, (req: Request, res: Response) => {
+    res.status(200).json({ 
+      status: "online",
+      version: "1.5.0",
+      uptime: process.uptime(),
+      memoryUsage: process.memoryUsage()
+    });
+  });
 
   // Get all users
   app.get(`${apiPrefix}/users`, async (req: Request, res: Response) => {
@@ -238,23 +238,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(200).json(achievements);
   });
 
-  // Stats endpoint - غیرفعال شده
-  // app.get(`${apiPrefix}/stats`, async (req: Request, res: Response) => {
-  //   const users = await storage.getAllUsers();
-  //   const clans = await storage.getAllClans();
-  //   
-  //   const totalUsers = users.length;
-  //   const totalCcoin = users.reduce((sum, user) => sum + user.wallet + user.bank, 0);
-  //   const totalCrystals = users.reduce((sum, user) => sum + user.crystals, 0);
-  //   const totalClans = clans.length;
-  //   
-  //   res.status(200).json({
-  //     totalUsers,
-  //     totalCcoin,
-  //     totalCrystals,
-  //     totalClans
-  //   });
-  // });
+  // Stats endpoint
+  app.get(`${apiPrefix}/stats`, async (req: Request, res: Response) => {
+    const users = await storage.getAllUsers();
+    const clans = await storage.getAllClans();
+    
+    const totalUsers = users.length;
+    const totalCcoin = users.reduce((sum, user) => sum + (user.wallet || 0) + (user.bank || 0), 0);
+    const totalCrystals = users.reduce((sum, user) => sum + (user.crystals || 0), 0);
+    const totalClans = clans.length;
+    
+    res.status(200).json({
+      totalUsers,
+      totalCcoin,
+      totalCrystals,
+      totalClans
+    });
+  });
   
   /**
    * مسیرهای API مدیریت وضعیت ربات
@@ -262,9 +262,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(`${apiPrefix}/status`, statusRoutes);
 
   /**
-   * مسیرهای API مدیریت ادمین - موقتا غیرفعال شده‌اند
+   * مسیرهای API مدیریت ادمین
    */
-  // app.use(`${apiPrefix}/admin`, adminRoutes);
+  app.use(`${apiPrefix}/admin`, adminRoutes);
 
   /**
    * MongoDB API routes - These routes use the new MongoDB models
@@ -381,11 +381,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ثبت مسیرهای مدیریت وضعیت ربات
-  app.use(`${apiPrefix}/status`, statusRoutes);
-  
-  // مسیرهای API ادمین موقتا غیرفعال شده‌اند
-  // app.use(`${apiPrefix}/admin`, adminRoutes);
+
 
   // API های مربوط به پینگ دیسکورد و هوش مصنوعی
   app.get(`${apiPrefix}/discord/ping`, (req: Request, res: Response) => {
