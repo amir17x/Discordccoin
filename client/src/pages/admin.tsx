@@ -23,7 +23,11 @@ export default function Admin() {
     queryKey: ['/api/admin/stats'],
     refetchOnWindowFocus: false,
     refetchInterval: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
     staleTime: Infinity,
+    gcTime: Infinity,
+    enabled: false, // غیرفعال کردن بارگیری خودکار
   });
 
   const { data: usersList, isLoading: usersLoading, refetch: refetchUsers } = useQuery<Array<{
@@ -39,7 +43,11 @@ export default function Admin() {
     queryKey: ['/api/admin/users'],
     refetchOnWindowFocus: false,
     refetchInterval: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
     staleTime: Infinity,
+    gcTime: Infinity,
+    enabled: false, // غیرفعال کردن بارگیری خودکار
   });
 
   // Manual refresh function
@@ -60,10 +68,9 @@ export default function Admin() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
       setCoinAmount("");
       setSelectedUserId("");
+      // اطلاعات فقط با دکمه refresh دستی به‌روزرسانی می‌شوند
     },
   });
 
@@ -76,8 +83,7 @@ export default function Admin() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
+      // اطلاعات فقط با دکمه refresh دستی به‌روزرسانی می‌شوند
     },
   });
 

@@ -58,95 +58,139 @@ export async function mainMenu(
     const now = new Date();
     const dailyAvailable = !lastDaily || (now.getTime() - lastDaily.getTime() > 24 * 60 * 60 * 1000);
     
-    // تولید پیام‌های شخصی بر اساس وضعیت کاربر (سیستم داخلی)
+    // تولید پیام‌های شخصی بر اساس وضعیت کاربر (سیستم داخلی سریع)
     const getPersonalizedMessage = () => {
-      try {
-        // استفاده از سیستم تولید پیام داخلی
-        const { generatePersonalizedMessage } = require('../utils/internalNotifications');
-        
-        // ساخت context کاربر
-        const userContext = {
-          wallet: user.wallet,
-          bank: user.bank,
-          crystals: user.crystals,
-          level: user.level || 1,
-          experience: user.experience || 0,
-          dailyStreak: user.dailyStreak || 0,
-          lastDaily: user.lastDaily ? new Date(user.lastDaily) : null,
-          clanId: user.clanId || null,
-          points: user.points || 0,
-          totalMoney: totalMoney,
-          dailyAvailable: dailyAvailable
-        };
-        
-        return generatePersonalizedMessage(userContext);
-      } catch (error) {
-        console.error('خطا در تولید پیام شخصی:', error);
-        
-        // fallback ساده
-        const fallbackMessages = [
-          "امروز روز شانس توئه! 🍀 یه بازی انجام بده!",
-          "می‌خوای پولدار بشی؟ 💰 سهام بخر!",
-          "تو می‌تونی بهترین باشی! 🏆 به تلاشت ادامه بده!"
+      // پیام‌های بر اساس موجودی
+      if (user.wallet === 0) {
+        const brokeMessages = [
+          "کیف پولت خالیه! 😅 یه دزدی بکن یا ماموریت‌ها رو انجام بده!",
+          "خالی مثل کویر! 🏜️ برو یه کم سکه جمع کن با مینی گیم‌ها!", 
+          "جیبت خالیه رفیق! 🕳️ چطوره برای دریافت پاداش روزانه اقدام کنی؟"
         ];
-        
-        return fallbackMessages[Math.floor(Math.random() * fallbackMessages.length)];
+        return brokeMessages[Math.floor(Math.random() * brokeMessages.length)];
+      } else if (user.wallet < 1000) {
+        return `فقط ${user.wallet.toLocaleString('fa-IR')} سکه داری! 😱 یه ماموریت انجام بده!`;
+      } else if (user.wallet > 100000) {
+        return "تو یه میلیونری! 🤑 انقدر پول داری که می‌تونی کل سرور رو بخری!";
+      } else if (user.bank > user.wallet * 5) {
+        return "بانکت پر از سکه‌ست! 🏦 تو یه سرمایه‌گذار حرفه‌ای هستی!";
       }
+      
+      // پیام‌های بر اساس پاداش روزانه
+      if (dailyAvailable) {
+        return "پاداش روزانه‌ات منتظرته! 🎁 برو بگیرش!";
+      }
+      
+      // پیام‌های بر اساس استریک
+      if (user.dailyStreak && user.dailyStreak > 10) {
+        return `${user.dailyStreak} روز استریک! 🔥 تو واقعاً مداومی!`;
+      }
+      
+      // پیام‌های عادی تصادفی
+      const randomMessages = [
+        "امروز روز شانس توئه! 🍀 یه بازی انجام بده!",
+        "می‌خوای پولدار بشی؟ 💰 سهام بخر!",
+        "تو می‌تونی بهترین باشی! 🏆 به تلاشت ادامه بده!",
+        "یادت نره هر روز پاداش روزانه بگیری! ⏰",
+        "از فروشگاه آیتم‌های جدید بخر! 🛍️"
+      ];
+      
+      return randomMessages[Math.floor(Math.random() * randomMessages.length)];
     };
     
-    // تولید اعلانات داخلی شخصی‌سازی شده (بدون استفاده از API هوش مصنوعی)
+    // تولید اعلانات داخلی شخصی‌سازی شده (سریع و بدون import)
     const getNotifications = () => {
-      try {
-        // استفاده از سیستم اعلانات داخلی جدید
-        const { generateInternalNotifications } = require('../utils/internalNotifications');
-        
-        // ساخت context کاربر برای سیستم اعلانات
-        const userContext = {
-          wallet: user.wallet,
-          bank: user.bank,
-          crystals: user.crystals,
-          level: user.level || 1,
-          experience: user.experience || 0,
-          dailyStreak: user.dailyStreak || 0,
-          lastDaily: user.lastDaily ? new Date(user.lastDaily) : null,
-          clanId: user.clanId || null,
-          points: user.points || 0,
-          totalMoney: totalMoney,
-          dailyAvailable: dailyAvailable
-        };
-        
-        // تولید اعلانات شخصی‌سازی شده
-        const personalizedNotifications = generateInternalNotifications(userContext, 3);
-        
-        // اضافه کردن شماره به ابتدای هر اعلان
-        const numberedNotifications = personalizedNotifications.map((notification, index) => 
-          `${index + 1}. ${notification}`
-        );
-        
-        // تبدیل آرایه به رشته با جداکننده خط جدید
-        return "اعلانیه‌ها:\n" + numberedNotifications.map(text => `\`${text}\``).join("\n");
-      } catch (error) {
-        console.error('خطا در تولید اعلانات داخلی:', error);
-        
-        // fallback برای زمان خطا
-        const fallbackNotifications = [
-          "امروز روز شانس توئه! 🍀 یه بازی انجام بده!",
-          "می‌خوای پولدار بشی؟ 💰 از فروشگاه آیتم بخر!",
-          "تو می‌تونی بهترین باشی! 🏆 به تلاشت ادامه بده!"
-        ];
-        
-        const numberedNotifications = fallbackNotifications.map((notification, index) => 
-          `${index + 1}. ${notification}`
-        );
-        
-        return "اعلانیه‌ها:\n" + numberedNotifications.map(text => `\`${text}\``).join("\n");
+      const smartNotifications: string[] = [];
+      
+      // اعلانات مربوط به موجودی کاربر (اولویت بالا)
+      if (user.wallet < 1000) {
+        smartNotifications.push(`فقط ${user.wallet.toLocaleString('fa-IR')} سکه تو کیف پولت داری! 😱 یه ماموریت انجام بده!`);
+      } else if (user.wallet > 50000) {
+        smartNotifications.push(`${user.wallet.toLocaleString('fa-IR')} سکه داری! 🤑 یکم سرمایه‌گذاری کن!`);
       }
+      
+      // اعلانات مربوط به پاداش روزانه (اولویت بالا)
+      if (dailyAvailable) {
+        smartNotifications.push(`پاداش روزانه‌ات آماده دریافته! 🎁 زود بگیرش!`);
+      } else {
+        const lastDailyDate = new Date(user.lastDaily || Date.now());
+        const nextDaily = new Date(lastDailyDate.getTime() + 24 * 60 * 60 * 1000);
+        const hoursRemaining = Math.floor((nextDaily.getTime() - Date.now()) / (60 * 60 * 1000));
+        if (hoursRemaining > 0) {
+          smartNotifications.push(`${hoursRemaining} ساعت دیگه تا پاداش روزانه بعدیت مونده! ⏰`);
+        }
+      }
+      
+      // اعلانات مربوط به استریک
+      if (user.dailyStreak && user.dailyStreak > 3) {
+        smartNotifications.push(`استریک ${user.dailyStreak} روزه داری! 🔥 فردا هم فراموش نکن!`);
+      }
+      
+      // اعلانات مربوط به کلن
+      if (user.clanId) {
+        smartNotifications.push(`عضو کلن هستی! 🏰 یادت نره به هم‌تیمی‌هات کمک کنی!`);
+      } else {
+        smartNotifications.push(`هنوز کلن نداری! 🏯 به یکی بپیوند یا خودت بساز!`);
+      }
+      
+      // اعلانات مربوط به بانک
+      if (user.bank === 0 && user.wallet > 5000) {
+        smartNotifications.push(`بانکت خالیه! 🏦 یکم پول توش بریز تا سود بگیری!`);
+      }
+      
+      // اعلانات مربوط به کریستال
+      if (user.crystals === 0) {
+        smartNotifications.push(`کریستال نداری! 💎 از بازی‌ها کریستال بگیر!`);
+      } else if (user.crystals > 100) {
+        smartNotifications.push(`${user.crystals.toLocaleString('fa-IR')} کریستال داری! ✨ از فروشگاه ویژه خرید کن!`);
+      }
+      
+      // اعلانات عمومی پرکاربرد
+      smartNotifications.push(`در بازی‌ها شرکت کن و جایزه بگیر! 🎮 امتیازت: ${(user.points || 0).toLocaleString('fa-IR')}`);
+      smartNotifications.push(`ماموریت‌های جدید = سکه بیشتر! 🎯 چک کردی امروز؟`);
+      smartNotifications.push(`بازار سهام رو یادت نره! 📈 قیمت‌ها دائم تغییر می‌کنن!`);
+      
+      // انتخاب سه مورد بر اساس اولویت
+      const selectedNotifications: string[] = [];
+      
+      // اولویت بالا: موجودی کم، پاداش روزانه
+      if (user.wallet < 1000 || dailyAvailable) {
+        selectedNotifications.push(smartNotifications.find(n => n.includes('سکه تو کیف پولت') || n.includes('پاداش روزانه‌ات آماده')) || smartNotifications[0]);
+      }
+      
+      // اولویت متوسط: کلن، استریک، بانک، کریستال
+      const mediumPriority = smartNotifications.filter(n => 
+        n.includes('کلن') || n.includes('استریک') || n.includes('بانکت') || n.includes('کریستال')
+      );
+      if (mediumPriority.length > 0 && selectedNotifications.length < 3) {
+        selectedNotifications.push(mediumPriority[0]);
+      }
+      
+      // پر کردن باقی با اعلانات عمومی
+      while (selectedNotifications.length < 3) {
+        const generalNotifications = smartNotifications.filter(n => 
+          !selectedNotifications.includes(n) && (n.includes('بازی‌ها') || n.includes('ماموریت') || n.includes('سهام'))
+        );
+        if (generalNotifications.length > 0) {
+          selectedNotifications.push(generalNotifications[Math.floor(Math.random() * generalNotifications.length)]);
+        } else {
+          selectedNotifications.push(smartNotifications[Math.floor(Math.random() * smartNotifications.length)]);
+        }
+      }
+      
+      // اضافه کردن شماره به ابتدای هر اعلان
+      const numberedNotifications = selectedNotifications.slice(0, 3).map((notification, index) => 
+        `${index + 1}. ${notification}`
+      );
+      
+      // تبدیل آرایه به رشته با جداکننده خط جدید
+      return "اعلانیه‌ها:\n" + numberedNotifications.map(text => `\`${text}\``).join("\n");
     };
     
     // پیام شخصی کاربر
     const personalMessage = getPersonalizedMessage();
     // اعلانات کاربر
-    const notifications = await getNotifications();
+    const notifications = getNotifications();
     
     // انتخاب یک رنگ تصادفی برای نمایش در هر بار استفاده
     const themeColors = [
