@@ -99,13 +99,53 @@ export async function gamesMenu(
           .setLabel('🔢 حدس عدد')
           .setStyle(ButtonStyle.Primary), // آبی برای بازی‌های منطقی
         new ButtonBuilder()
-          .setCustomId('wheel')
-          .setLabel('🎡 گردونه شانس')
-          .setStyle(ButtonStyle.Secondary) // خاکستری برای بخش‌های در حال توسعه
+          .setCustomId('game:diceduel:start')
+          .setLabel('🎲 دوئل تاس')
+          .setStyle(ButtonStyle.Success) // سبز برای بازی‌های شانسی
       );
       
     const soloGameRow3 = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
+        new ButtonBuilder()
+          .setCustomId('game:quickpoker:start')
+          .setLabel('🃏 پوکر سریع')
+          .setStyle(ButtonStyle.Primary), // آبی برای بازی‌های کارتی
+        new ButtonBuilder()
+          .setCustomId('game:typerace:start')
+          .setLabel('⌨️ مسابقه تایپ')
+          .setStyle(ButtonStyle.Success) // سبز برای بازی‌های مهارتی
+      );
+      
+    const soloGameRow4 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('game:dart:start')
+          .setLabel('🎯 پرتاب دارت')
+          .setStyle(ButtonStyle.Success), // سبز برای بازی‌های دقت
+        new ButtonBuilder()
+          .setCustomId('game:bomb:start')
+          .setLabel('💣 بمب زمان‌دار')
+          .setStyle(ButtonStyle.Danger) // قرمز برای بازی‌های هیجانی
+      );
+      
+    const soloGameRow5 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('game:penalty:start')
+          .setLabel('⚽ پنالتی شانس')
+          .setStyle(ButtonStyle.Primary), // آبی برای بازی‌های ورزشی
+        new ButtonBuilder()
+          .setCustomId('game:archery:start')
+          .setLabel('🏹 تیراندازی')
+          .setStyle(ButtonStyle.Success) // سبز برای بازی‌های دقت
+      );
+      
+    const soloGameRow6 = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('game:quiz:start')
+          .setLabel('❓ اطلاعات عمومی')
+          .setStyle(ButtonStyle.Primary), // آبی برای بازی‌های دانشی
         new ButtonBuilder()
           .setCustomId('menu')
           .setLabel('🔙 بازگشت')
@@ -135,24 +175,24 @@ export async function gamesMenu(
         .setThumbnail('https://img.icons8.com/fluency/48/joystick.png'); // آیکون joystick برای بازی‌های تک‌نفره
 
       if (interaction.deferred) {
-        await interaction.editReply({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3] });
+        await interaction.editReply({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3, soloGameRow4, soloGameRow5, soloGameRow6] });
       } else if (followUp) {
-        await interaction.followUp({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3], ephemeral: true });
+        await interaction.followUp({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3, soloGameRow4, soloGameRow5, soloGameRow6], ephemeral: true });
       } else if ('update' in interaction && typeof interaction.update === 'function') {
         try {
-          await interaction.update({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3] });
+          await interaction.update({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3, soloGameRow4, soloGameRow5, soloGameRow6] });
         } catch (e) {
           if (!interaction.replied && !interaction.deferred) {
-            await interaction.reply({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3], ephemeral: true });
+            await interaction.reply({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3, soloGameRow4, soloGameRow5, soloGameRow6], ephemeral: true });
           } else {
-            await interaction.followUp({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3], ephemeral: true });
+            await interaction.followUp({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3, soloGameRow4, soloGameRow5, soloGameRow6], ephemeral: true });
           }
         }
       } else {
         if (!interaction.replied && !interaction.deferred) {
-          await interaction.reply({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3], ephemeral: true });
+          await interaction.reply({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3, soloGameRow4, soloGameRow5, soloGameRow6], ephemeral: true });
         } else {
-          await interaction.followUp({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3], ephemeral: true });
+          await interaction.followUp({ embeds: [embed], components: [soloGameRow1, soloGameRow2, soloGameRow3, soloGameRow4, soloGameRow5, soloGameRow6], ephemeral: true });
         }
       }
     } else if (state === 'competitive') {

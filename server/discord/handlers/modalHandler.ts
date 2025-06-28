@@ -39,6 +39,7 @@ import { adminMenu } from '../components/adminMenu';
 import { clansMenu } from '../components/clansMenu';
 import { handleQuizQuestionModalSubmit } from '../components/groupGames';
 import { generateAIResponse } from '../services/aiService';
+import { handleTypeRaceModal } from '../games/typeRace';
 
 /**
  * تبدیل ModalSubmitInteraction به MessageComponentInteraction
@@ -63,6 +64,12 @@ export async function handleModalSubmit(interaction: ModalSubmitInteraction) {
     if (customId.startsWith('spy_invite_modal_')) {
       const { processSpyInviteModal } = await import('../components/spyGame');
       await processSpyInviteModal(interaction);
+      return;
+    }
+    
+    // پردازش مودال بازی مسابقه تایپ
+    if (customId === 'type_race_modal') {
+      await handleTypeRaceModal(interaction);
       return;
     }
     

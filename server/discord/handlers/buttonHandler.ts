@@ -106,6 +106,13 @@ import { handleCoinFlip } from '../games/coinFlip';
 import { handleRockPaperScissors } from '../games/rockPaperScissors';
 import { handleNumberGuess } from '../games/numberGuess';
 import { handleDiceDuel } from '../games/diceDuel';
+import { handleQuickPoker } from '../games/quickPoker';
+import { handleTypeRace } from '../games/typeRace';
+import { handleDart } from '../games/dart';
+import { handleBomb } from '../games/bomb';
+import { handlePenalty } from '../games/penalty';
+import { handleArchery } from '../games/archery';
+import { handleQuiz } from '../games/quiz';
 import { showMatchmakingMenu, startRandomMatchmaking, showInviteOpponentMenu, cancelMatchmaking } from '../games/matchmaking';
 import { log } from '../utils/logger';
 import { botConfig } from '../utils/config';
@@ -1480,6 +1487,42 @@ export async function handleButtonInteraction(interaction: ButtonInteraction) {
           const guess = parseInt(params[2]);
           await handleNumberGuess(interaction, 'guess', guess);
         }
+        return;
+      }
+      
+      // بازی‌های جدید تک‌نفره
+      if (gameType === 'quick_poker') {
+        await handleQuickPoker(interaction, params[1]);
+        return;
+      }
+      
+      if (gameType === 'type_race') {
+        await handleTypeRace(interaction, params[1]);
+        return;
+      }
+      
+      if (gameType === 'dart') {
+        await handleDart(interaction, params[1]);
+        return;
+      }
+      
+      if (gameType === 'bomb') {
+        await handleBomb(interaction, params[1] + (params[2] ? ':' + params[2] : ''));
+        return;
+      }
+      
+      if (gameType === 'penalty') {
+        await handlePenalty(interaction, params[1]);
+        return;
+      }
+      
+      if (gameType === 'archery') {
+        await handleArchery(interaction, params[1]);
+        return;
+      }
+      
+      if (gameType === 'quiz') {
+        await handleQuiz(interaction, params[1] + (params[2] ? ':' + params[2] : ''));
         return;
       }
       
