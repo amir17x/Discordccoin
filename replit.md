@@ -113,8 +113,25 @@ This is a Discord bot called "Ccoin" built with Discord.js and TypeScript. It's 
 
 # Changelog
 
-- June 28, 2025. Initial setup
+- June 28, 2025: Initial setup
+- December 28, 2024: Major admin panel improvements
+  - Fixed React infinite re-rendering issue by disabling auto-refresh
+  - Added manual refresh button for admin panel
+  - Implemented comprehensive admin features matching Discord /admin command
+  - Added 6 main tabs: Users, Economy, Items, Clans, Broadcast, Settings
+  - Enhanced user management with detailed info display
+  - Added item management system
+  - Created broadcast/notification system
+  - Implemented advanced statistics and system settings
+  - All Discord admin features now available in web panel
+
+# Recent Changes
+
+- **Admin Panel Enhancements**: Complete overhaul of web admin panel with all Discord admin command features
+- **Performance Fix**: Resolved auto-refresh causing rapid API calls, now uses manual refresh
+- **Feature Parity**: Web admin panel now matches Discord /admin functionality
+- **User Experience**: Better organization with tabs and detailed user information display
 
 # User Preferences
 
-Preferred communication style: Simple, everyday language.
+Preferred communication style: Simple, everyday language in Persian/Farsi.

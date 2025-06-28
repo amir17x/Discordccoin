@@ -148,4 +148,117 @@ router.post('/remove-coins', async (req, res) => {
   }
 });
 
+// دریافت لیست آیتم‌ها
+router.get('/items', async (req, res) => {
+  try {
+    const items = await storage.getAllItems();
+    res.json(items);
+  } catch (error) {
+    console.error('Admin items error:', error);
+    res.status(500).json({ error: 'Failed to fetch items' });
+  }
+});
+
+// اضافه کردن آیتم جدید
+router.post('/add-item', async (req, res) => {
+  try {
+    const { name, price, description, type } = req.body;
+    
+    if (!name || !price) {
+      return res.status(400).json({ error: 'Name and price are required' });
+    }
+
+    const newItem = await storage.createItem({
+      name,
+      price: parseInt(price),
+      description: description || '',
+      type: type || 'misc',
+      emoji: '🎁'
+    });
+
+    res.json({ 
+      success: true, 
+      message: `آیتم ${name} با موفقیت اضافه شد`,
+      item: newItem
+    });
+  } catch (error) {
+    console.error('Add item error:', error);
+    res.status(500).json({ error: 'Failed to add item' });
+  }
+});
+
+// مسدود/آزاد کردن کاربر
+router.post('/toggle-ban', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+
+    const user = await storage.getUserByDiscordId(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const newBanStatus = !user.isBanned;
+    const updatedUser = await storage.updateUser(userId, {
+      isBanned: newBanStatus
+    });
+
+    res.json({ 
+      success: true, 
+      message: `کاربر ${newBanStatus ? 'مسدود' : 'آزاد'} شد`,
+      user: {
+        discordId: updatedUser.discordId,
+        banned: updatedUser.banned
+      }
+    });
+  } catch (error) {
+    console.error('Toggle ban error:', error);
+    res.status(500).json({ error: 'Failed to toggle ban status' });
+  }
+});
+
+// آمار پیشرفته
+router.get('/advanced-stats', async (req, res) => {
+  try {
+    const users = await storage.getAllUsers();
+    
+    // محاسبه آمار پیشرفته
+    const totalUsers = users.length;
+    const activeUsers = users.filter(user => user.lastActive && 
+      new Date(user.lastActive).getTime() > Date.now() - (7 * 24 * 60 * 60 * 1000)
+    ).length;
+    const bannedUsers = users.filter(user => user.banned).length;
+    
+    const usersByLevel = users.reduce((acc, user) => {
+      const level = user.level || 1;
+      acc[level] = (acc[level] || 0) + 1;
+      return acc;
+    }, {} as Record<number, number>);
+
+    const wealthDistribution = {
+      poor: users.filter(user => (user.wallet || 0) + (user.bank || 0) < 1000).length,
+      middle: users.filter(user => {
+        const total = (user.wallet || 0) + (user.bank || 0);
+        return total >= 1000 && total < 10000;
+      }).length,
+      rich: users.filter(user => (user.wallet || 0) + (user.bank || 0) >= 10000).length
+    };
+
+    res.json({
+      totalUsers,
+      activeUsers,
+      bannedUsers,
+      usersByLevel,
+      wealthDistribution,
+      avgWealth: users.reduce((sum, user) => sum + (user.wallet || 0) + (user.bank || 0), 0) / totalUsers
+    });
+  } catch (error) {
+    console.error('Advanced stats error:', error);
+    res.status(500).json({ error: 'Failed to fetch advanced stats' });
+  }
+});
+
 export default router;
