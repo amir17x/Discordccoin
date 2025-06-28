@@ -4,64 +4,148 @@
  */
 
 import express from 'express';
-import {
-  getUsers,
-  getUserDetails,
-  updateUser,
-  addCoins,
-  removeCoins,
-  resetUserEconomy,
-  resetAllEconomy,
-  distributeCoins,
-  toggleUserBan,
-  getUserTransactions,
-  getTopUsers,
-  getStats
-} from '../controllers/adminController';
-import { isAuthenticated, isAdmin } from '../middleware/auth';
+import { storage } from '../storage';
 
 const router = express.Router();
 
-// همه مسیرها نیاز به احراز هویت و دسترسی ادمین دارند
-// در حالت توسعه، احراز هویت و کنترل دسترسی موقتاً غیرفعال می‌شود
-if (process.env.NODE_ENV === 'production') {
-  router.use(isAuthenticated);
-  router.use(isAdmin);
-} else {
-  // در محیط توسعه، میدلور ساده‌ای برای احراز هویت استفاده می‌شود
-  router.use((req, res, next) => {
-    // اضافه کردن اطلاعات کاربر مجازی به نشست برای محیط توسعه
-    if (!req.session.user) {
-      req.session.isAuthenticated = true;
-      req.session.isAdmin = true;
-      req.session.user = {
-        id: 'test-admin-id',
-        discordId: 'test-admin-discord-id',
-        username: 'admin-test-user'
-      };
+// دریافت آمار کلی ادمین
+router.get('/stats', async (req, res) => {
+  try {
+    const users = await storage.getAllUsers();
+    const totalUsers = users.length;
+    const totalCoins = users.reduce((sum, user) => sum + (user.wallet || 0) + (user.bank || 0), 0);
+    const totalCrystals = users.reduce((sum, user) => sum + (user.crystals || 0), 0);
+    
+    // محاسبه تعداد کلن‌ها
+    const clans = users.filter(user => user.clanId).map(user => user.clanId);
+    const totalClans = new Set(clans).size;
+
+    res.json({
+      totalUsers,
+      totalCoins,
+      totalCrystals,
+      totalClans
+    });
+  } catch (error) {
+    console.error('Admin stats error:', error);
+    res.status(500).json({ error: 'Failed to fetch admin stats' });
+  }
+});
+
+// دریافت لیست کاربران
+router.get('/users', async (req, res) => {
+  try {
+    const users = await storage.getAllUsers();
+    const limitedUsers = users.slice(0, 50).map(user => ({
+      discordId: user.discordId,
+      username: user.username,
+      wallet: user.wallet || 0,
+      bank: user.bank || 0,
+      crystals: user.crystals || 0,
+      banned: user.banned || false,
+      level: user.level || 1,
+      clanId: user.clanId
+    }));
+    
+    res.json(limitedUsers);
+  } catch (error) {
+    console.error('Admin users error:', error);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+// اضافه کردن سکه به کاربر
+router.post('/add-coins', async (req, res) => {
+  try {
+    const { userId, amount } = req.body;
+    
+    if (!userId || !amount || amount <= 0) {
+      return res.status(400).json({ error: 'Invalid userId or amount' });
     }
-    next();
-  });
-}
 
-// مسیرهای مدیریت کاربران
-router.get('/users', getUsers);
-router.get('/users/top', getTopUsers);
-router.get('/users/:userId', getUserDetails);
-router.put('/users/:userId', updateUser);
-router.get('/users/:userId/transactions', getUserTransactions);
+    const user = await storage.getUserByDiscordId(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
 
-// مسیرهای مدیریت اقتصاد
-router.post('/economy/add-coins/:userId', addCoins);
-router.post('/economy/remove-coins/:userId', removeCoins);
-router.post('/economy/reset/:userId', resetUserEconomy);
-router.post('/economy/reset-all', resetAllEconomy);
-router.post('/economy/distribute', distributeCoins);
+    // اضافه کردن سکه به کیف پول کاربر
+    const updatedUser = await storage.updateUser(userId, {
+      wallet: (user.wallet || 0) + parseInt(amount)
+    });
 
-// مسیرهای مدیریت دسترسی
-router.post('/users/:userId/toggle-ban', toggleUserBan);
+    res.json({ 
+      success: true, 
+      message: `${amount} سکه به کاربر ${userId} اضافه شد`,
+      user: {
+        discordId: updatedUser.discordId,
+        wallet: updatedUser.wallet,
+        bank: updatedUser.bank
+      }
+    });
+  } catch (error) {
+    console.error('Add coins error:', error);
+    res.status(500).json({ error: 'Failed to add coins' });
+  }
+});
 
-// مسیرهای آماری
-router.get('/stats', getStats);
+// بازنشانی کل اقتصاد
+router.post('/reset-economy', async (req, res) => {
+  try {
+    const users = await storage.getAllUsers();
+    
+    // بازنشانی اقتصاد تمام کاربران
+    for (const user of users) {
+      await storage.updateUser(user.discordId, {
+        wallet: 100, // مقدار ابتدایی
+        bank: 0,
+        crystals: 0,
+        level: 1
+      });
+    }
+
+    res.json({ 
+      success: true, 
+      message: `اقتصاد ${users.length} کاربر بازنشانی شد`,
+      resetCount: users.length
+    });
+  } catch (error) {
+    console.error('Reset economy error:', error);
+    res.status(500).json({ error: 'Failed to reset economy' });
+  }
+});
+
+// حذف سکه از کاربر
+router.post('/remove-coins', async (req, res) => {
+  try {
+    const { userId, amount } = req.body;
+    
+    if (!userId || !amount || amount <= 0) {
+      return res.status(400).json({ error: 'Invalid userId or amount' });
+    }
+
+    const user = await storage.getUserByDiscordId(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const newWallet = Math.max(0, (user.wallet || 0) - parseInt(amount));
+    const updatedUser = await storage.updateUser(userId, {
+      wallet: newWallet
+    });
+
+    res.json({ 
+      success: true, 
+      message: `${amount} سکه از کاربر ${userId} کم شد`,
+      user: {
+        discordId: updatedUser.discordId,
+        wallet: updatedUser.wallet,
+        bank: updatedUser.bank
+      }
+    });
+  } catch (error) {
+    console.error('Remove coins error:', error);
+    res.status(500).json({ error: 'Failed to remove coins' });
+  }
+});
 
 export default router;

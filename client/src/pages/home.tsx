@@ -4,11 +4,8 @@ import BotStatus from "@/components/BotStatus";
 import BotStatistics from "@/components/BotStatistics";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
-  const { toast } = useToast();
-  
   const { data: healthData, isLoading: healthLoading, error: healthError } = useQuery({
     queryKey: ['/api/health'],
   });
@@ -30,13 +27,10 @@ export default function Home() {
     queryKey: ['/api/bot/status'],
   });
   
-  if (healthError || statsError || statusError) {
-    toast({
-      title: "Error",
-      description: "Failed to fetch data from server. Please check your connection.",
-      variant: "destructive",
-    });
-  }
+  // Log errors silently
+  if (healthError) console.error("Health API error:", healthError);
+  if (statsError) console.error("Stats API error:", statsError);
+  if (statusError) console.error("Status API error:", statusError);
   
   return (
     <div className="min-h-screen bg-background">
